@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  headscale:
+    image: headscale/headscale:latest
+    container_name: blackroad-headscale
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # HTTP
+      - "9090:9090"   # Metrics
+      - "50443:50443" # gRPC
+    volumes:
+      - ./config:/etc/headscale
+      - ./data:/var/lib/headscale
+    command: headscale serve
+    networks:
+      - blackroad-net
+
+  headscale-ui:
+    image: ghcr.io/gurucomputing/headscale-ui:latest
+    container_name: blackroad-headscale-ui
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      - HEADSCALE_URL=http://headscale:8080
+    depends_on:
+      - headscale
+    networks:
+      - blackroad-net
+
+networks:
+  blackroad-net:
+    driver: bridge
