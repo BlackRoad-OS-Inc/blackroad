@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us & Book a Demo | BlackRoad OS</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Get in touch with BlackRoad OS. Book a demo, ask questions, or request a custom quote for your team.">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            font-weight: 800;
+        }
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 40px 0;
+        }
+        @media (max-width: 868px) {
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .contact-form {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+        }
+        .contact-form h2 {
+            color: #10b981;
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1rem;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: inherit;
+        }
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        .submit-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 18px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+        .contact-info {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+        }
+        .contact-info h2 {
+            color: #10b981;
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+        }
+        .info-item {
+            padding: 20px 0;
+            border-bottom: 1px solid #334155;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-item .icon {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        .info-item h3 {
+            color: #10b981;
+            margin-bottom: 10px;
+        }
+        .info-item p {
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        .info-item a {
+            color: #10b981;
+            text-decoration: none;
+        }
+        .info-item a:hover {
+            text-decoration: underline;
+        }
+        .quick-links {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            margin-top: 40px;
+        }
+        .quick-links h3 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        .quick-links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .quick-link-btn {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            transition: transform 0.2s, background 0.2s;
+            display: block;
+        }
+        .quick-link-btn:hover {
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Get in Touch</h1>
+        <p>Let's talk about how BlackRoad OS can help your team ship faster</p>
+    </div>
+
+    <div class="container">
+        <div class="contact-grid">
+            <!-- Contact Form -->
+            <div class="contact-form">
+                <h2>Send Us a Message</h2>
+
+                <form id="contact-form" onsubmit="handleSubmit(event)">
+                    <div class="form-group">
+                        <label for="name">Your Name *</label>
+                        <input type="text" id="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="company">Company Name</label>
+                        <input type="text" id="company">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inquiry-type">I'm interested in: *</label>
+                        <select id="inquiry-type" required>
+                            <option value="">Select an option...</option>
+                            <option value="demo">Booking a demo</option>
+                            <option value="pricing">Custom pricing quote</option>
+                            <option value="enterprise">Enterprise features</option>
+                            <option value="migration">Migration help</option>
+                            <option value="partnership">Partnership opportunity</option>
+                            <option value="support">Technical support</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message *</label>
+                        <textarea id="message" required placeholder="Tell us about your project and how we can help..."></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Send Message →</button>
+
+                    <p style="margin-top: 15px; font-size: 0.9rem; opacity: 0.7;">
+                        We typically respond within 4 hours during business hours.
+                    </p>
+                </form>
+            </div>
+
+            <!-- Contact Info -->
+            <div>
+                <div class="contact-info">
+                    <h2>Other Ways to Reach Us</h2>
+
+                    <div class="info-item">
+                        <div class="icon">📧</div>
+                        <h3>Email</h3>
+                        <p><a href="mailto:blackroad.systems@gmail.com">blackroad.systems@gmail.com</a></p>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">4-hour response time for founders</p>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="icon">💬</div>
+                        <h3>Discord Community</h3>
+                        <p><a href="https://discord.gg/blackroad" target="_blank">Join our Discord →</a></p>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">Chat with the team and other users</p>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="icon">🐦</div>
+                        <h3>Twitter/X</h3>
+                        <p><a href="https://twitter.com/blackroad_os" target="_blank">@blackroad_os</a></p>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">Follow for updates and announcements</p>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="icon">📅</div>
+                        <h3>Book a Demo</h3>
+                        <p><a href="https://cal.com/blackroad/demo" target="_blank">Schedule 30-min call →</a></p>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">See BlackRoad OS in action</p>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="icon">🏢</div>
+                        <h3>Enterprise Sales</h3>
+                        <p><a href="mailto:blackroad.systems@gmail.com?subject=Enterprise Inquiry">blackroad.systems@gmail.com</a></p>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">Custom quotes for teams 50+</p>
+                    </div>
+                </div>
+
+                <div class="quick-links" style="margin-top: 20px;">
+                    <h3>Quick Links</h3>
+                    <div class="quick-links-grid">
+                        <a href="pricing.html" class="quick-link-btn">💰 Pricing</a>
+                        <a href="features.html" class="quick-link-btn">⚡ Features</a>
+                        <a href="faq.html" class="quick-link-btn">❓ FAQ</a>
+                        <a href="calculator.html" class="quick-link-btn">📊 ROI Calculator</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Quick Hits -->
+        <div style="margin-top: 60px;">
+            <h2 style="text-align: center; font-size: 2rem; color: #10b981; margin-bottom: 30px;">
+                Common Questions
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div style="background: #1e293b; padding: 25px; border-radius: 15px;">
+                    <h4 style="color: #10b981; margin-bottom: 10px;">How fast is onboarding?</h4>
+                    <p style="color: #cbd5e1;">Most teams are up and running in under 30 minutes. We provide white-glove onboarding for enterprise customers.</p>
+                </div>
+
+                <div style="background: #1e293b; padding: 25px; border-radius: 15px;">
+                    <h4 style="color: #10b981; margin-bottom: 10px;">Do you offer custom contracts?</h4>
+                    <p style="color: #cbd5e1;">Yes! For teams 50+ we offer custom MSAs, payment terms, and SLAs. Contact enterprise sales.</p>
+                </div>
+
+                <div style="background: #1e293b; padding: 25px; border-radius: 15px;">
+                    <h4 style="color: #10b981; margin-bottom: 10px;">Can you help us migrate?</h4>
+                    <p style="color: #cbd5e1;">Absolutely. We offer free migration assistance from Vercel, Netlify, Heroku, and other platforms.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleSubmit(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const company = document.getElementById('company').value;
+            const inquiryType = document.getElementById('inquiry-type').value;
+            const message = document.getElementById('message').value;
+
+            // In production, send to your backend/email service
+            console.log('Contact form submitted:', {
+                name, email, company, inquiryType, message
+            });
+
+            // Show success message
+            const form = document.querySelector('.contact-form');
+            form.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px;">
+                    <div style="font-size: 5rem; margin-bottom: 20px;">✅</div>
+                    <h2 style="color: #10b981; margin-bottom: 15px;">Message Sent!</h2>
+                    <p style="color: #cbd5e1; font-size: 1.1rem; margin-bottom: 30px;">
+                        Thanks for reaching out! We'll get back to you within 4 hours.
+                    </p>
+                    <p style="opacity: 0.8;">
+                        We sent a confirmation to <strong>${email}</strong>
+                    </p>
+                    <a href="index.html" style="display: inline-block; margin-top: 30px; background: #10b981; color: white; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: 600;">
+                        Back to Home
+                    </a>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

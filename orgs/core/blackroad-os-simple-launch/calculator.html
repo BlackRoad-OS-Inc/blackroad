@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROI Calculator - How Much Will You Save? | BlackRoad OS</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Calculate how much money and time you'll save by switching to BlackRoad OS. Interactive savings calculator.">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            font-weight: 800;
+        }
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 40px 0;
+        }
+        @media (max-width: 968px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .calculator-panel {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+        }
+        .calculator-panel h2 {
+            color: #10b981;
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 30px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .form-group input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #334155;
+            outline: none;
+        }
+        .form-group input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+        }
+        .range-value {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .results-panel {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 40px;
+            border-radius: 20px;
+            color: white;
+        }
+        .results-panel h2 {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+        }
+        .result-item {
+            background: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .result-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .result-value {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+        .result-subtext {
+            font-size: 0.95rem;
+            opacity: 0.8;
+        }
+        .breakdown {
+            background: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        .breakdown h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .breakdown-item {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+        .cta-button {
+            background: white;
+            color: #10b981;
+            border: none;
+            padding: 20px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            width: 100%;
+            transition: transform 0.2s;
+            margin-top: 30px;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+        }
+        .cta-button:hover {
+            transform: translateY(-3px);
+        }
+        .tool-list {
+            margin: 30px 0;
+        }
+        .tool-item {
+            background: #1e293b;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tool-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        .tool-name {
+            flex: 1;
+            font-weight: 600;
+        }
+        .tool-price {
+            color: #10b981;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ROI Calculator</h1>
+        <p>See exactly how much you'll save by switching to BlackRoad OS</p>
+    </div>
+
+    <div class="container">
+        <div class="calculator-grid">
+            <!-- Input Panel -->
+            <div class="calculator-panel">
+                <h2>Your Current Setup</h2>
+
+                <div class="form-group">
+                    <label for="team-size">Team Size <span class="range-value" id="team-size-display">5</span></label>
+                    <input type="range" id="team-size" min="1" max="50" value="5" oninput="updateCalculations()">
+                </div>
+
+                <div class="form-group">
+                    <label>Tools You're Currently Using:</label>
+                    <div class="tool-list">
+                        <div class="tool-item">
+                            <input type="checkbox" id="tool-vercel" checked onchange="updateCalculations()">
+                            <span class="tool-name">Vercel/Netlify</span>
+                            <span class="tool-price">$20/user</span>
+                        </div>
+                        <div class="tool-item">
+                            <input type="checkbox" id="tool-github" checked onchange="updateCalculations()">
+                            <span class="tool-name">GitHub Teams</span>
+                            <span class="tool-price">$4/user</span>
+                        </div>
+                        <div class="tool-item">
+                            <input type="checkbox" id="tool-linear" checked onchange="updateCalculations()">
+                            <span class="tool-name">Linear</span>
+                            <span class="tool-price">$8/user</span>
+                        </div>
+                        <div class="tool-item">
+                            <input type="checkbox" id="tool-slack" checked onchange="updateCalculations()">
+                            <span class="tool-name">Slack Pro</span>
+                            <span class="tool-price">$8/user</span>
+                        </div>
+                        <div class="tool-item">
+                            <input type="checkbox" id="tool-notion" checked onchange="updateCalculations()">
+                            <span class="tool-name">Notion</span>
+                            <span class="tool-price">$8/user</span>
+                        </div>
+                        <div class="tool-item">
+                            <input type="checkbox" id="tool-datadog" onchange="updateCalculations()">
+                            <span class="tool-name">Datadog/Monitoring</span>
+                            <span class="tool-price">$15/user</span>
+                        </div>
+                        <div class="tool-item">
+                            <input type="checkbox" id="tool-sentry" onchange="updateCalculations()">
+                            <span class="tool-name">Sentry</span>
+                            <span class="tool-price">$26/team</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="context-switching">Hours lost per week to context switching <span class="range-value" id="context-switching-display">10</span></label>
+                    <input type="range" id="context-switching" min="1" max="40" value="10" oninput="updateCalculations()">
+                    <small style="opacity: 0.7;">Average developer hourly cost: $75</small>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="results-panel">
+                <h2>Your Savings with BlackRoad OS</h2>
+
+                <div class="result-item">
+                    <div class="result-label">Monthly Savings</div>
+                    <div class="result-value" id="monthly-savings">$0</div>
+                    <div class="result-subtext">vs your current tool stack</div>
+                </div>
+
+                <div class="result-item">
+                    <div class="result-label">Annual Savings</div>
+                    <div class="result-value" id="annual-savings">$0</div>
+                    <div class="result-subtext">first year savings</div>
+                </div>
+
+                <div class="result-item">
+                    <div class="result-label">Time Savings</div>
+                    <div class="result-value" id="time-savings">0 hrs</div>
+                    <div class="result-subtext">per week reclaimed from context switching</div>
+                </div>
+
+                <div class="breakdown">
+                    <h3>Cost Breakdown</h3>
+                    <div class="breakdown-item">
+                        <span>Current monthly cost:</span>
+                        <span id="current-cost">$0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>BlackRoad OS cost:</span>
+                        <span id="blackroad-cost">$29</span>
+                    </div>
+                    <div class="breakdown-item" style="border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px; margin-top: 10px; font-weight: bold; font-size: 1.1rem;">
+                        <span>You save:</span>
+                        <span id="total-savings">$0</span>
+                    </div>
+                </div>
+
+                <a href="https://buy.stripe.com/9B6cN4fOr6bYbvi8xD" class="cta-button">
+                    Get 50% Off Forever - Save <span id="cta-savings">$0</span>/yr
+                </a>
+
+                <p style="text-align: center; margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">
+                    ✅ 14-day free trial • ✅ No credit card required
+                </p>
+            </div>
+        </div>
+
+        <!-- Additional Benefits -->
+        <div style="background: #1e293b; padding: 50px; border-radius: 20px; margin-top: 40px;">
+            <h2 style="text-align: center; font-size: 2rem; color: #10b981; margin-bottom: 40px;">
+                Beyond Just Money: The Full ROI
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">⚡</div>
+                    <h3 style="color: #10b981; margin-bottom: 10px;">3x Faster Shipping</h3>
+                    <p style="color: #cbd5e1;">Deploy in seconds, ship features faster, beat competitors to market</p>
+                </div>
+
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">🧠</div>
+                    <h3 style="color: #10b981; margin-bottom: 10px;">Less Mental Overhead</h3>
+                    <p style="color: #cbd5e1;">One platform to learn, one login, one bill, one source of truth</p>
+                </div>
+
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">😌</div>
+                    <h3 style="color: #10b981; margin-bottom: 10px;">Better Team Morale</h3>
+                    <p style="color: #cbd5e1;">Developers love tools that just work, reduce frustration</p>
+                </div>
+
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">📈</div>
+                    <h3 style="color: #10b981; margin-bottom: 10px;">Improved Productivity</h3>
+                    <p style="color: #cbd5e1;">20+ hours saved per week means more features shipped</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateCalculations() {
+            const teamSize = parseInt(document.getElementById('team-size').value);
+            const contextSwitching = parseInt(document.getElementById('context-switching').value);
+
+            // Update display values
+            document.getElementById('team-size-display').textContent = teamSize;
+            document.getElementById('context-switching-display').textContent = contextSwitching;
+
+            // Calculate tool costs
+            let toolCost = 0;
+            const tools = [
+                { id: 'tool-vercel', perUser: 20 },
+                { id: 'tool-github', perUser: 4 },
+                { id: 'tool-linear', perUser: 8 },
+                { id: 'tool-slack', perUser: 8 },
+                { id: 'tool-notion', perUser: 8 },
+                { id: 'tool-datadog', perUser: 15 },
+                { id: 'tool-sentry', perUser: 26, isFlat: true }
+            ];
+
+            tools.forEach(tool => {
+                if (document.getElementById(tool.id).checked) {
+                    toolCost += tool.isFlat ? tool.perUser : (tool.perUser * teamSize);
+                }
+            });
+
+            // BlackRoad OS cost (flat $29 for founding members)
+            const blackroadCost = 29;
+
+            // Calculate savings
+            const monthlySavings = toolCost - blackroadCost;
+            const annualSavings = monthlySavings * 12;
+
+            // Calculate time savings value (75/hr * hours saved)
+            const timeSavingsValue = contextSwitching * 4.33 * 75; // 4.33 weeks per month
+
+            // Update displays
+            document.getElementById('current-cost').textContent = '$' + toolCost.toLocaleString();
+            document.getElementById('blackroad-cost').textContent = '$29';
+            document.getElementById('total-savings').textContent = '$' + monthlySavings.toLocaleString();
+            document.getElementById('monthly-savings').textContent = '$' + monthlySavings.toLocaleString();
+            document.getElementById('annual-savings').textContent = '$' + annualSavings.toLocaleString();
+            document.getElementById('time-savings').textContent = contextSwitching + ' hrs/week';
+            document.getElementById('cta-savings').textContent = '$' + annualSavings.toLocaleString();
+        }
+
+        // Initial calculation
+        updateCalculations();
+    </script>
+</body>
+</html>
