@@ -1,0 +1,90 @@
+---
+# Orchestrator Configuration
+# This file defines how RedLight, YellowLight, and GreenLight templates orchestrate together
+
+version: "1.0"
+name: "Traffic Light Orchestration System"
+description: "Orchestrates activities using traffic light metaphor for status and priority management"
+
+orchestration:
+  templates:
+    - redlight
+    - yellowlight
+    - greenlight
+  
+  workflow:
+    description: "Standard traffic light workflow progression"
+    sequence:
+      - stage: "Assessment"
+        templates: [redlight, yellowlight, greenlight]
+        description: "Evaluate current status and determine appropriate signal"
+        
+      - stage: "Action"
+        templates: [redlight, yellowlight, greenlight]
+        description: "Execute actions based on signal status"
+        
+      - stage: "Resolution"
+        templates: [yellowlight, greenlight]
+        description: "Move towards successful resolution"
+    
+    transitions:
+      - from: redlight
+        to: yellowlight
+        condition: "Critical issue mitigated"
+        
+      - from: yellowlight
+        to: greenlight
+        condition: "All concerns addressed"
+        
+      - from: greenlight
+        to: yellowlight
+        condition: "New warning detected"
+        
+      - from: yellowlight
+        to: redlight
+        condition: "Situation escalates to critical"
+
+rules:
+  priority_override:
+    description: "RedLight always takes precedence over other signals"
+    order: [redlight, yellowlight, greenlight]
+    
+  concurrent_signals:
+    allow: false
+    description: "Only one traffic light signal can be active at a time"
+    
+  escalation_path:
+    - greenlight -> yellowlight (warnings appear)
+    - yellowlight -> redlight (critical threshold reached)
+    
+  de_escalation_path:
+    - redlight -> yellowlight (issue contained)
+    - yellowlight -> greenlight (all clear)
+
+monitoring:
+  metrics:
+    - redlight_count
+    - yellowlight_count
+    - greenlight_count
+    - transition_time
+    - resolution_time
+    
+  alerts:
+    redlight_threshold: 1
+    yellowlight_threshold: 3
+    stuck_in_yellow_duration: "24h"
+
+integration:
+  github:
+    enabled: true
+    labels:
+      redlight: "🔴 critical"
+      yellowlight: "🟡 warning"
+      greenlight: "🟢 ready"
+      
+  notifications:
+    enabled: true
+    channels:
+      - slack
+      - email
+      - github_notifications

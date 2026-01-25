@@ -1,0 +1,47 @@
+---
+# GreenLight Template - Go/Success Actions
+# Use this template for successful operations, approvals, or actions ready to proceed
+
+name: GreenLight
+status: success
+priority: normal
+color: "#00FF00"
+
+triggers:
+  - type: approval
+  - type: success
+  - type: ready_to_proceed
+  - type: completion
+
+actions:
+  - name: "Proceed with Activity"
+    description: "Continue with planned operations"
+    required: true
+    
+  - name: "Deploy Changes"
+    description: "Roll out approved changes to production"
+    required: false
+    
+  - name: "Notify Success"
+    description: "Inform team of successful completion"
+    required: true
+    channels:
+      - slack
+      - email
+    
+  - name: "Document Success"
+    description: "Record successful outcome and learnings"
+    required: true
+    
+  - name: "Schedule Next Steps"
+    description: "Plan and schedule follow-up activities"
+    required: false
+
+notification:
+  template: "🟢 GREENLIGHT: All clear - {{issue_title}}"
+  urgency: low
+  
+metadata:
+  icon: "🟢"
+  emoji: ":green_circle:"
+  signal: "GO"
