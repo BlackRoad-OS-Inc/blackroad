@@ -1,0 +1,82 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lucidia-math"
+version = "0.1.0"
+description = "Lucidia Math - Advanced mathematical engines: consciousness modeling, unified geometry, quantum finance, prime exploration"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "BlackRoad OS", email = "hello@blackroad.io" }
+]
+keywords = [
+    "mathematics",
+    "geometry",
+    "quantum",
+    "finance",
+    "primes",
+    "consciousness",
+    "fractals",
+    "trinary-logic"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.24.0",
+    "sympy>=1.12",
+    "scipy>=1.10.0",
+    "mpmath>=1.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+viz = [
+    "matplotlib>=3.7.0",
+    "plotly>=5.14.0",
+]
+
+[project.scripts]
+lucidia-math = "forge.main:main"
+
+[project.urls]
+Homepage = "https://blackroad.io"
+Documentation = "https://docs.blackroad.io/lucidia-math"
+Repository = "https://github.com/BlackRoad-OS/lucidia-math"
+Issues = "https://github.com/BlackRoad-OS/lucidia-math/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["forge", "lab"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
