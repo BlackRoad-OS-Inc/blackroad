@@ -1,0 +1,18 @@
+# --- Phase A: key + ssh config ---
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+ssh-keygen -t ed25519 -f ~/.ssh/lucidia_deploy -N "" -C "lucidia-deploy@pi"
+
+ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> ~/.ssh/known_hosts
+chmod 644 ~/.ssh/known_hosts
+
+cat > ~/.ssh/config <<'EOF'
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/lucidia_deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+
+echo "==== PUBLIC KEY (add to GitHub → Repo → Settings → Deploy Keys, name: lucidia-pi, enable Write) ===="
+cat ~/.ssh/lucidia_deploy.pub
