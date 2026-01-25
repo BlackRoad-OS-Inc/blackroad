@@ -1,0 +1,25 @@
+name: BlackRoad Agent Integration
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, edited]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  blackroad-agent:
+    runs-on: ubuntu-latest
+    if: contains(github.event.comment.body, '@blackroad') || contains(github.event.issue.body, '@blackroad') || contains(github.event.pull_request.body, '@blackroad')
+
+    steps:
+      - name: Trigger BlackRoad Agent
+        run: |
+          echo "🤖 BlackRoad agent trigger detected"
+          echo "Organization: ${{ github.repository_owner }}"
+          echo "Repository: ${{ github.event.repository.name }}"
+          echo "Issue/PR: ${{ github.event.issue.number || github.event.pull_request.number }}"
+          # Webhook to be added: POST to blackroad-github-webhook.workers.dev
