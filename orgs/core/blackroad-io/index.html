@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS, Inc. - The Complete AI-Powered Ecosystem</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* OFFICIAL BlackRoad Colors (from blackroad_brand_take_2.html) */
+            --sunrise-orange: #FF9D00;
+            --warm-orange: #FF6B00;
+            --hot-pink: #FF0066;
+            --electric-magenta: #FF006B;
+            --deep-magenta: #D600AA;
+            --vivid-purple: #7700FF;
+            --cyber-blue: #0066FF;
+
+            /* Neutrals */
+            --pure-black: #000000;
+            --deep-black: #0A0A0A;
+            --charcoal: #1A1A1A;
+            --pure-white: #FFFFFF;
+
+            /* Official Gradients */
+            --gradient-br: linear-gradient(180deg, #FF9D00 0%, #FF6B00 25%, #FF0066 75%, #FF006B 100%);
+            --gradient-os: linear-gradient(180deg, #FF006B 0%, #D600AA 25%, #7700FF 75%, #0066FF 100%);
+            --gradient-full: linear-gradient(180deg, #FF9D00 0%, #FF6B00 14%, #FF0066 28%, #FF006B 42%, #D600AA 57%, #7700FF 71%, #0066FF 100%);
+
+            /* Spacing (Golden Ratio φ = 1.618) */
+            --space-xs: 8px;
+            --space-sm: 13px;
+            --space-md: 21px;
+            --space-lg: 34px;
+            --space-xl: 55px;
+            --space-2xl: 89px;
+            --space-3xl: 144px;
+
+            /* Easing */
+            --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+            background: var(--pure-black);
+            color: var(--pure-white);
+            line-height: 1.618;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background Grid */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 157, 0, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 157, 0, 0.02) 1px, transparent 1px);
+            background-size: 55px 55px;
+            animation: grid-move 30s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes grid-move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(55px, 55px); }
+        }
+
+        /* Floating Orbs */
+        .orbs {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            animation: orb-pulse 10s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--hot-pink);
+            opacity: 0.08;
+            top: -200px;
+            right: -100px;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--cyber-blue);
+            opacity: 0.06;
+            bottom: -150px;
+            left: -100px;
+            animation-delay: -5s;
+        }
+
+        .orb-3 {
+            width: 550px;
+            height: 550px;
+            background: var(--vivid-purple);
+            opacity: 0.05;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -2.5s;
+        }
+
+        @keyframes orb-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.05; }
+            50% { transform: scale(1.2); opacity: 0.1; }
+        }
+
+        /* Container */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: var(--space-xl);
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: var(--space-3xl) 0 var(--space-2xl);
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: 800;
+            background: var(--gradient-full);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: var(--space-md);
+            animation: title-float 3s ease-in-out infinite;
+        }
+
+        @keyframes title-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-13px); }
+        }
+
+        .company-name {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+            margin-bottom: var(--space-xl);
+        }
+
+        .tagline {
+            font-size: 1.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 800px;
+            margin: 0 auto var(--space-xl);
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-xl);
+            flex-wrap: wrap;
+            margin-bottom: var(--space-3xl);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: var(--gradient-br);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: var(--space-xs);
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-md);
+            flex-wrap: wrap;
+            margin-bottom: var(--space-3xl);
+        }
+
+        .nav-btn {
+            padding: var(--space-md) var(--space-lg);
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--space-sm);
+            color: var(--pure-white);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s var(--ease-spring);
+        }
+
+        .nav-btn:hover {
+            border-color: var(--hot-pink);
+            background: linear-gradient(135deg, var(--hot-pink) 0%, var(--vivid-purple) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 13px 34px rgba(255, 0, 102, 0.3);
+        }
+
+        /* Section */
+        section {
+            margin-bottom: var(--space-3xl);
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--gradient-os);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: var(--space-xl);
+            text-align: center;
+        }
+
+        /* App Grid */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-2xl);
+        }
+
+        .app-card {
+            background: rgba(10, 10, 10, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--space-md);
+            padding: var(--space-lg);
+            transition: all 0.3s var(--ease-spring);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-full);
+            transform: scaleX(0);
+            transition: transform 0.3s var(--ease-smooth);
+        }
+
+        .app-card:hover {
+            border-color: var(--hot-pink);
+            transform: translateY(-8px);
+            box-shadow: 0 21px 55px rgba(255, 0, 102, 0.3);
+        }
+
+        .app-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .app-icon {
+            font-size: 3rem;
+            margin-bottom: var(--space-md);
+        }
+
+        .app-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: var(--space-sm);
+        }
+
+        .app-description {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.618;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: var(--space-3xl) 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: var(--space-3xl);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--hot-pink);
+        }
+
+        .copyright {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .logo { font-size: 2.5rem; }
+            .tagline { font-size: 1.2rem; }
+            .app-grid { grid-template-columns: 1fr; }
+            .stats { gap: var(--space-lg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1 class="logo">BlackRoad OS</h1>
+            <p class="company-name">BlackRoad OS, Inc.</p>
+            <p class="tagline">The Complete AI-Powered Ecosystem</p>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number">66+</div>
+                    <div class="stat-label">Applications</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">27</div>
+                    <div class="stat-label">Empire Repos</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">15</div>
+                    <div class="stat-label">AI Workers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">10+</div>
+                    <div class="stat-label">Languages</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Proprietary</div>
+                </div>
+            </div>
+
+            <nav>
+                <a href="https://os.blackroad.io" class="nav-btn">🌐 OS Interface</a>
+                <a href="https://music.blackroad.io" class="nav-btn">🎵 Music Studio</a>
+                <a href="https://lucidia.earth" class="nav-btn">💫 Lucidia</a>
+                <a href="https://docs.blackroad.io" class="nav-btn">📚 Documentation</a>
+                <a href="https://brand.blackroad.io" class="nav-btn">🎨 Brand</a>
+                <a href="https://github.com/BlackRoad-OS" class="nav-btn">💻 GitHub</a>
+            </nav>
+        </header>
+
+        <section>
+            <h2>🌌 The Empire</h2>
+
+            <div class="app-grid">
+                <div class="app-card" onclick="window.open('https://music.blackroad.io', '_blank')">
+                    <div class="app-icon">🎵</div>
+                    <div class="app-title">BlackRoad Music</div>
+                    <div class="app-description">AI-powered remix studio with beat detection, auto-mix, and Web Audio API integration. Create music like never before.</div>
+                </div>
+
+                <div class="app-card" onclick="window.open('https://os.blackroad.io', '_blank')">
+                    <div class="app-icon">💻</div>
+                    <div class="app-title">BlackRoad OS Interface</div>
+                    <div class="app-description">Unified app launcher for 66+ applications. Search, filter, and access the entire ecosystem from one place.</div>
+                </div>
+
+                <div class="app-card" onclick="window.open('https://lucidia.earth', '_blank')">
+                    <div class="app-icon">💫</div>
+                    <div class="app-title">Lucidia</div>
+                    <div class="app-description">The soul site. AI companion built on transparency, consent, and care. Experience Minnesota wilderness in HD.</div>
+                </div>
+
+                <div class="app-card">
+                    <div class="app-icon">🤖</div>
+                    <div class="app-title">AI Agents (30k)</div>
+                    <div class="app-description">Deploy and manage 30,000 autonomous AI agents with Kubernetes orchestration. Scale like never before.</div>
+                </div>
+
+                <div class="app-card">
+                    <div class="app-icon">⚛️</div>
+                    <div class="app-title">Quantum Computing</div>
+                    <div class="app-description">Real quantum computing on Raspberry Pi 5. Photons, qudits, AI acceleration. The future is here.</div>
+                </div>
+
+                <div class="app-card">
+                    <div class="app-icon">🌍</div>
+                    <div class="app-title">Earth Systems</div>
+                    <div class="app-description">12 different Earth visualization engines. From biomes to street views, explore our planet like never before.</div>
+                </div>
+
+                <div class="app-card">
+                    <div class="app-icon">🎮</div>
+                    <div class="app-title">Game Engines</div>
+                    <div class="app-description">Multiple game engines including Lucidia Minnesota HD, metaverse platform, and living world simulations.</div>
+                </div>
+
+                <div class="app-card">
+                    <div class="app-icon">🎬</div>
+                    <div class="app-title">Motion Gallery</div>
+                    <div class="app-description">Official motion design library with hundreds of animations. Pulse, rotate, bounce, morph - all with official colors.</div>
+                </div>
+
+                <div class="app-card">
+                    <div class="app-icon">🎨</div>
+                    <div class="app-title">Brand System</div>
+                    <div class="app-description">Official BlackRoad colors, JetBrains Mono typography, Golden Ratio spacing. Design perfection.</div>
+                </div>
+
+                <div class="app-card">
+                    <div class="app-icon">📟</div>
+                    <div class="app-title">Pager System</div>
+                    <div class="app-description">Alert pager with homescreen, monitoring dashboard, and real-time notifications. Stay connected.</div>
+                </div>
+
+                <div class="app-card">
+                    <div class="app-icon">🏗️</div>
+                    <div class="app-title">Architecture</div>
+                    <div class="app-description">Visualization tools for system architecture, infrastructure planning, and technical documentation.</div>
+                </div>
+
+                <div class="app-card" onclick="window.open('https://github.com/BlackRoad-OS', '_blank')">
+                    <div class="app-icon">🚀</div>
+                    <div class="app-title">And 55 More...</div>
+                    <div class="app-description">27 empire repos just deployed! 3D worlds, animation showcase, metaverse, all Earth systems, Lucidia game, and more. Explore at github.com/BlackRoad-OS</div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-links">
+                <a href="https://blackroad.io">Home</a>
+                <a href="https://os.blackroad.io">OS Interface</a>
+                <a href="https://docs.blackroad.io">Documentation</a>
+                <a href="https://brand.blackroad.io">Brand</a>
+                <a href="https://lucidia.earth">Lucidia</a>
+                <a href="https://github.com/BlackRoad-OS">GitHub</a>
+                <a href="mailto:blackroad.systems@gmail.com">Contact</a>
+            </div>
+            <p class="copyright">© 2026 BlackRoad OS, Inc. • Built with Claude Code • JetBrains Mono • Official Colors</p>
+        </footer>
+    </div>
+
+    <script>
+        console.log('🌌 BlackRoad OS, Inc. initialized');
+        console.log('   Colors: Official (#FF9D00 → #0066FF)');
+        console.log('   Typography: JetBrains Mono');
+        console.log('   Spacing: Golden Ratio (φ = 1.618)');
+        console.log('   Applications: 66+');
+        console.log('   Empire Repos: 27 (just deployed!)');
+        console.log('   AI Workers: 15');
+        console.log('   Languages: 10+');
+        console.log('   License: 100% Proprietary');
+        console.log('   🚀 Ready to change the world!');
+    </script>
+</body>
+</html>
