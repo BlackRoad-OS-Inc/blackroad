@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad World — Earth Edition</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            overflow: hidden; 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #000;
+        }
+        #canvas-container { position: fixed; inset: 0; }
+
+        /* === TOP BAR === */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .logo-text {
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .logo-sub {
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+        }
+
+        /* Resources */
+        .resources {
+            display: flex;
+            gap: 12px;
+            margin-left: auto;
+        }
+        .resource {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 14px;
+            border-radius: 20px;
+            color: white;
+            font-size: 13px;
+            backdrop-filter: blur(10px);
+        }
+        .resource-icon { font-size: 16px; }
+        .resource-value { font-weight: 600; }
+
+        /* Level */
+        .level-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .level-badge {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .xp-bar {
+            width: 80px;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF1D6C, #F5A623);
+            transition: width 0.3s;
+        }
+
+        /* === BIOME INFO === */
+        .biome-panel {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 16px;
+            padding: 16px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            min-width: 220px;
+        }
+        .biome-title {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .biome-desc {
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        .biome-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .biome-stat {
+            background: rgba(255,255,255,0.05);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .biome-stat-icon { font-size: 18px; }
+        .biome-stat-value { color: white; font-weight: 600; font-size: 14px; }
+        .biome-stat-label { color: rgba(255,255,255,0.5); font-size: 10px; }
+
+        /* === MINIMAP === */
+        .minimap {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            width: 180px;
+            height: 180px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 16px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+        .minimap-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .minimap-label {
+            position: absolute;
+            bottom: 4px;
+            left: 8px;
+            color: rgba(255,255,255,0.5);
+            font-size: 10px;
+        }
+
+        /* === BUILD BAR === */
+        .build-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            background: rgba(0,0,0,0.9);
+            padding: 10px 16px;
+            border-radius: 50px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .build-btn {
+            width: 52px;
+            height: 52px;
+            background: rgba(255,255,255,0.08);
+            border: none;
+            border-radius: 12px;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+        }
+        .build-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-3px); }
+        .build-btn.active { background: #FF1D6C; }
+        .build-btn.locked { opacity: 0.3; cursor: not-allowed; }
+        .build-btn-cost {
+            font-size: 8px;
+            color: #F5A623;
+            position: absolute;
+            bottom: 3px;
+        }
+        .build-btn-key {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.4);
+        }
+
+        /* === CONTROLS === */
+        .controls {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 100;
+        }
+        .ctrl-btn {
+            width: 44px;
+            height: 44px;
+            background: rgba(0,0,0,0.85);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.15); }
+        .ctrl-btn.active { background: #FF1D6C; border-color: #FF1D6C; }
+
+        /* === TIME === */
+        .time-display {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 12px 20px;
+            border-radius: 16px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        .time-text { color: white; font-size: 28px; font-weight: 300; }
+        .day-text { color: rgba(255,255,255,0.5); font-size: 12px; }
+        .weather-row { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 8px; 
+            margin-top: 8px;
+            color: white;
+            font-size: 13px;
+        }
+
+        /* === TERRAIN INFO === */
+        .terrain-info {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            padding: 10px 20px;
+            border-radius: 50px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 20px;
+            color: white;
+            font-size: 13px;
+        }
+        .terrain-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* === NOTIFICATIONS === */
+        .notifications {
+            position: fixed;
+            top: 140px;
+            right: 20px;
+            width: 260px;
+            z-index: 200;
+            pointer-events: none;
+        }
+        .notification {
+            background: rgba(0,0,0,0.9);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            color: white;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideIn 0.3s ease;
+            border-left: 3px solid #4CAF50;
+        }
+        .notification.warning { border-left-color: #F5A623; }
+        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } }
+
+        /* === LOADING === */
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.8s;
+        }
+        .loading.hidden { opacity: 0; pointer-events: none; }
+        .loading-title { font-size: 36px; color: white; margin-bottom: 8px; font-weight: 300; }
+        .loading-sub { color: rgba(255,255,255,0.5); margin-bottom: 30px; font-size: 14px; }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #FF1D6C;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-progress {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .loading-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF1D6C, #F5A623);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* === COMPASS === */
+        .compass {
+            position: fixed;
+            top: 200px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 50%;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .compass-needle {
+            width: 4px;
+            height: 30px;
+            background: linear-gradient(180deg, #FF1D6C 50%, white 50%);
+            border-radius: 2px;
+            transition: transform 0.1s;
+        }
+        .compass-label {
+            position: absolute;
+            color: rgba(255,255,255,0.5);
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .compass-n { top: 4px; }
+        .compass-s { bottom: 4px; }
+        .compass-e { right: 6px; }
+        .compass-w { left: 6px; }
+    </style>
+</head>
+<body>
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="loading-title">🌍 BlackRoad Earth</div>
+        <div class="loading-sub">Generating terrain...</div>
+        <div class="loading-spinner"></div>
+        <div class="loading-progress">
+            <div class="loading-progress-fill" id="loadingProgress"></div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">
+            <div class="logo-icon">🌍</div>
+            <div>
+                <div class="logo-text">BlackRoad Earth</div>
+                <div class="logo-sub">Living World Simulator</div>
+            </div>
+        </div>
+        
+        <div class="level-display">
+            <div class="level-badge" id="levelBadge">1</div>
+            <div>
+                <div style="font-size: 11px;">Level <span id="levelNum">1</span></div>
+                <div class="xp-bar">
+                    <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="resources">
+            <div class="resource">
+                <span class="resource-icon">🪵</span>
+                <span class="resource-value" id="resWood">100</span>
+            </div>
+            <div class="resource">
+                <span class="resource-icon">🪨</span>
+                <span class="resource-value" id="resStone">50</span>
+            </div>
+            <div class="resource">
+                <span class="resource-icon">🌾</span>
+                <span class="resource-value" id="resFood">200</span>
+            </div>
+            <div class="resource">
+                <span class="resource-icon">💎</span>
+                <span class="resource-value" id="resGems">25</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terrain Info -->
+    <div class="terrain-info">
+        <div class="terrain-stat">
+            <span>🏔️</span>
+            <span>Elevation: <strong id="elevationVal">0m</strong></span>
+        </div>
+        <div class="terrain-stat">
+            <span>🌡️</span>
+            <span>Temp: <strong id="tempVal">22°C</strong></span>
+        </div>
+        <div class="terrain-stat">
+            <span>🌲</span>
+            <span>Population: <strong id="popVal">0</strong></span>
+        </div>
+    </div>
+
+    <!-- Biome Panel -->
+    <div class="biome-panel">
+        <div class="biome-title" id="biomeTitle">🌲 Temperate Forest</div>
+        <div class="biome-desc" id="biomeDesc">Lush forests with moderate climate</div>
+        <div class="biome-stats">
+            <div class="biome-stat">
+                <div class="biome-stat-icon">🌳</div>
+                <div class="biome-stat-value" id="statTrees">0</div>
+                <div class="biome-stat-label">Trees</div>
+            </div>
+            <div class="biome-stat">
+                <div class="biome-stat-icon">🏠</div>
+                <div class="biome-stat-value" id="statHouses">0</div>
+                <div class="biome-stat-label">Houses</div>
+            </div>
+            <div class="biome-stat">
+                <div class="biome-stat-icon">🐰</div>
+                <div class="biome-stat-value" id="statAnimals">0</div>
+                <div class="biome-stat-label">Animals</div>
+            </div>
+            <div class="biome-stat">
+                <div class="biome-stat-icon">🤖</div>
+                <div class="biome-stat-value" id="statAgents">0</div>
+                <div class="biome-stat-label">Agents</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimap -->
+    <div class="minimap">
+        <canvas class="minimap-canvas" id="minimapCanvas" width="180" height="180"></canvas>
+        <div class="minimap-label">Terrain Map</div>
+    </div>
+
+    <!-- Time Display -->
+    <div class="time-display">
+        <div class="time-text" id="timeText">12:00</div>
+        <div class="day-text">Day <span id="dayNum">1</span> • <span id="seasonText">Spring</span></div>
+        <div class="weather-row">
+            <span id="weatherIcon">☀️</span>
+            <span id="weatherText">Clear</span>
+            <span id="tempDisplay">22°C</span>
+        </div>
+    </div>
+
+    <!-- Compass -->
+    <div class="compass">
+        <div class="compass-needle" id="compassNeedle"></div>
+        <span class="compass-label compass-n">N</span>
+        <span class="compass-label compass-s">S</span>
+        <span class="compass-label compass-e">E</span>
+        <span class="compass-label compass-w">W</span>
+    </div>
+
+    <!-- Build Bar -->
+    <div class="build-bar">
+        <button class="build-btn" data-build="tree" title="Plant Tree">
+            🌲<span class="build-btn-cost">5🪵</span><span class="build-btn-key">1</span>
+        </button>
+        <button class="build-btn" data-build="flower" title="Plant Flowers">
+            🌸<span class="build-btn-cost">2🌾</span><span class="build-btn-key">2</span>
+        </button>
+        <button class="build-btn" data-build="house" title="Build House">
+            🏠<span class="build-btn-cost">20🪵</span><span class="build-btn-key">3</span>
+        </button>
+        <button class="build-btn" data-build="farm" title="Build Farm">
+            🌾<span class="build-btn-cost">15🪵</span><span class="build-btn-key">4</span>
+        </button>
+        <button class="build-btn" data-build="mine" title="Build Mine">
+            ⛏️<span class="build-btn-cost">25🪵</span><span class="build-btn-key">5</span>
+        </button>
+        <button class="build-btn" data-build="tower" title="Watch Tower">
+            🗼<span class="build-btn-cost">30🪨</span><span class="build-btn-key">6</span>
+        </button>
+        <button class="build-btn" data-build="agent" title="Spawn Agent">
+            🤖<span class="build-btn-cost">50💎</span><span class="build-btn-key">7</span>
+        </button>
+        <button class="build-btn" data-build="bridge" title="Build Bridge">
+            🌉<span class="build-btn-cost">40🪵</span><span class="build-btn-key">8</span>
+        </button>
+        <button class="build-btn locked" data-build="castle" title="Castle (Lvl 5)">
+            🏰<span class="build-btn-cost">200🪨</span><span class="build-btn-key">9</span>
+        </button>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="ctrl-btn active" id="btnRotate" title="Auto Rotate">🔄</button>
+        <button class="ctrl-btn" id="btnDay" title="Day">☀️</button>
+        <button class="ctrl-btn" id="btnNight" title="Night">🌙</button>
+        <button class="ctrl-btn" id="btnRain" title="Rain">🌧️</button>
+        <button class="ctrl-btn" id="btnSnow" title="Snow">❄️</button>
+        <button class="ctrl-btn" id="btnSpeed" title="Speed x3">⏩</button>
+    </div>
+
+    <!-- Notifications -->
+    <div class="notifications" id="notifications"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    // ==================== SIMPLEX NOISE ====================
+    // Fast simplex noise for terrain generation
+    class SimplexNoise {
+        constructor(seed = Math.random()) {
+            this.p = new Uint8Array(256);
+            for (let i = 0; i < 256; i++) this.p[i] = i;
+            
+            // Fisher-Yates shuffle with seed
+            let n = seed * 2147483647;
+            for (let i = 255; i > 0; i--) {
+                n = (n * 16807) % 2147483647;
+                const j = Math.floor((n / 2147483647) * (i + 1));
+                [this.p[i], this.p[j]] = [this.p[j], this.p[i]];
+            }
+            
+            this.perm = new Uint8Array(512);
+            for (let i = 0; i < 512; i++) this.perm[i] = this.p[i & 255];
+        }
+        
+        noise2D(x, y) {
+            const F2 = 0.5 * (Math.sqrt(3) - 1);
+            const G2 = (3 - Math.sqrt(3)) / 6;
+            
+            const s = (x + y) * F2;
+            const i = Math.floor(x + s);
+            const j = Math.floor(y + s);
+            
+            const t = (i + j) * G2;
+            const X0 = i - t;
+            const Y0 = j - t;
+            const x0 = x - X0;
+            const y0 = y - Y0;
+            
+            let i1, j1;
+            if (x0 > y0) { i1 = 1; j1 = 0; }
+            else { i1 = 0; j1 = 1; }
+            
+            const x1 = x0 - i1 + G2;
+            const y1 = y0 - j1 + G2;
+            const x2 = x0 - 1 + 2 * G2;
+            const y2 = y0 - 1 + 2 * G2;
+            
+            const ii = i & 255;
+            const jj = j & 255;
+            
+            const grad = (hash, x, y) => {
+                const h = hash & 7;
+                const u = h < 4 ? x : y;
+                const v = h < 4 ? y : x;
+                return ((h & 1) ? -u : u) + ((h & 2) ? -2 * v : 2 * v);
+            };
+            
+            let n0 = 0, n1 = 0, n2 = 0;
+            
+            let t0 = 0.5 - x0 * x0 - y0 * y0;
+            if (t0 >= 0) {
+                t0 *= t0;
+                n0 = t0 * t0 * grad(this.perm[ii + this.perm[jj]], x0, y0);
+            }
+            
+            let t1 = 0.5 - x1 * x1 - y1 * y1;
+            if (t1 >= 0) {
+                t1 *= t1;
+                n1 = t1 * t1 * grad(this.perm[ii + i1 + this.perm[jj + j1]], x1, y1);
+            }
+            
+            let t2 = 0.5 - x2 * x2 - y2 * y2;
+            if (t2 >= 0) {
+                t2 *= t2;
+                n2 = t2 * t2 * grad(this.perm[ii + 1 + this.perm[jj + 1]], x2, y2);
+            }
+            
+            return 70 * (n0 + n1 + n2);
+        }
+        
+        // Fractal Brownian Motion for more natural terrain
+        fbm(x, y, octaves = 6, lacunarity = 2, gain = 0.5) {
+            let sum = 0;
+            let amp = 1;
+            let freq = 1;
+            let max = 0;
+            
+            for (let i = 0; i < octaves; i++) {
+                sum += this.noise2D(x * freq, y * freq) * amp;
+                max += amp;
+                amp *= gain;
+                freq *= lacunarity;
+            }
+            
+            return sum / max;
+        }
+    }
+
+    // ==================== GAME STATE ====================
+    const GAME = {
+        level: 1,
+        xp: 0,
+        xpNeeded: 100,
+        day: 1,
+        hour: 12,
+        minute: 0,
+        speed: 1,
+        season: 'spring',
+        
+        resources: {
+            wood: 100,
+            stone: 50,
+            food: 200,
+            gems: 25
+        },
+        
+        counts: {
+            trees: 0,
+            flowers: 0,
+            houses: 0,
+            animals: 0,
+            agents: 0
+        }
+    };
+
+    // ==================== BIOMES ====================
+    const BIOMES = {
+        ocean: { name: 'Ocean', icon: '🌊', color: 0x1a5fb4, desc: 'Deep waters', temp: 15 },
+        beach: { name: 'Beach', icon: '🏖️', color: 0xf9e79f, desc: 'Sandy shores', temp: 25 },
+        plains: { name: 'Plains', icon: '🌾', color: 0x7daa4a, desc: 'Open grasslands', temp: 20 },
+        forest: { name: 'Forest', icon: '🌲', color: 0x2d5a27, desc: 'Dense woodland', temp: 18 },
+        hills: { name: 'Hills', icon: '⛰️', color: 0x6b8e23, desc: 'Rolling highlands', temp: 15 },
+        mountain: { name: 'Mountain', icon: '🏔️', color: 0x808080, desc: 'Rocky peaks', temp: 5 },
+        snow: { name: 'Snow Peak', icon: '🗻', color: 0xffffff, desc: 'Frozen summit', temp: -10 },
+        desert: { name: 'Desert', icon: '🏜️', color: 0xdaa520, desc: 'Arid wasteland', temp: 35 },
+        swamp: { name: 'Swamp', icon: '🌿', color: 0x556b2f, desc: 'Murky wetlands', temp: 22 },
+        tundra: { name: 'Tundra', icon: '❄️', color: 0xb0c4de, desc: 'Frozen plains', temp: -5 }
+    };
+
+    // ==================== THREE.JS ====================
+    let scene, camera, renderer;
+    let terrain, water;
+    let trees = [], flowers = [], houses = [], animals = [], agents = [];
+    let clouds = [], birds = [], rain = null, snow = null;
+    let noise;
+    let time = 0;
+    let autoRotate = true;
+    let isNight = false;
+    let weatherState = 'clear';
+
+    // Camera
+    let isDragging = false;
+    let prevMouse = { x: 0, y: 0 };
+    let camAngle = 0, camHeight = 80, camDist = 150;
+
+    // Terrain settings
+    const TERRAIN = {
+        size: 300,
+        segments: 200,
+        maxHeight: 60,
+        waterLevel: 0
+    };
+
+    // Initialize terrain data structure
+    let terrainData = {
+        heights: [],
+        biomes: [],
+        width: TERRAIN.segments + 1,
+        height: TERRAIN.segments + 1
+    };
+
+    function init() {
+        noise = new SimplexNoise(12345);
+        
+        // Scene
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.FogExp2(0x87CEEB, 0.003);
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+        updateCamera();
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Generate world
+        setLoadingProgress(10);
+        createLights();
+        setLoadingProgress(20);
+        generateTerrain();
+        setLoadingProgress(50);
+        createWater();
+        setLoadingProgress(60);
+        populateWorld();
+        setLoadingProgress(80);
+        createAtmosphere();
+        setLoadingProgress(90);
+        createMinimap();
+        setLoadingProgress(100);
+
+        // Events
+        setupEvents();
+        updateUI();
+
+        // Start
+        setTimeout(() => {
+            document.getElementById('loading').classList.add('hidden');
+            notify('🌍 Welcome to BlackRoad Earth!');
+            animate();
+        }, 500);
+    }
+
+    function setLoadingProgress(percent) {
+        document.getElementById('loadingProgress').style.width = percent + '%';
+    }
+
+    function createLights() {
+        // Ambient
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        
+        // Sun
+        window.sunLight = new THREE.DirectionalLight(0xfffaf0, 1.2);
+        window.sunLight.position.set(200, 200, 100);
+        window.sunLight.castShadow = true;
+        window.sunLight.shadow.mapSize.set(4096, 4096);
+        window.sunLight.shadow.camera.near = 1;
+        window.sunLight.shadow.camera.far = 600;
+        window.sunLight.shadow.camera.left = -200;
+        window.sunLight.shadow.camera.right = 200;
+        window.sunLight.shadow.camera.top = 200;
+        window.sunLight.shadow.camera.bottom = -200;
+        window.sunLight.shadow.bias = -0.0005;
+        scene.add(window.sunLight);
+
+        // Hemisphere
+        window.hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x7CBA3D, 0.5);
+        scene.add(window.hemiLight);
+    }
+
+    function generateTerrain() {
+        const { size, segments, maxHeight, waterLevel } = TERRAIN;
+        const geo = new THREE.PlaneGeometry(size, size, segments, segments);
+        const pos = geo.attributes.position.array;
+        const colors = new Float32Array(pos.length);
+        
+        // Generate heightmap with multiple noise layers
+        for (let i = 0; i <= segments; i++) {
+            terrainData.heights[i] = [];
+            terrainData.biomes[i] = [];
+            
+            for (let j = 0; j <= segments; j++) {
+                const x = (j / segments - 0.5) * size;
+                const z = (i / segments - 0.5) * size;
+                
+                // Continental shape - large scale
+                const continental = noise.fbm(x * 0.003, z * 0.003, 3, 2, 0.5);
+                
+                // Mountain ranges - medium scale with ridges
+                const mountains = Math.pow(Math.abs(noise.fbm(x * 0.008, z * 0.008, 4, 2.5, 0.6)), 1.5) * 2;
+                
+                // Hills - small scale variation
+                const hills = noise.fbm(x * 0.02, z * 0.02, 3, 2, 0.5) * 0.3;
+                
+                // Detail - fine texture
+                const detail = noise.fbm(x * 0.05, z * 0.05, 2, 2, 0.5) * 0.1;
+                
+                // Combine
+                let height = continental * 0.6 + mountains * 0.8 + hills + detail;
+                
+                // Create some flat areas for building
+                const flatness = noise.fbm(x * 0.01, z * 0.01, 2, 2, 0.5);
+                if (flatness > 0.2 && height > 0 && height < 0.4) {
+                    height = height * 0.3 + 0.15;
+                }
+                
+                // Edge falloff for island feel
+                const dist = Math.sqrt(x * x + z * z) / (size * 0.5);
+                if (dist > 0.7) {
+                    const falloff = 1 - Math.pow((dist - 0.7) / 0.3, 2);
+                    height *= Math.max(0, falloff);
+                    height -= (1 - falloff) * 0.5;
+                }
+                
+                // Scale to world height
+                height *= maxHeight;
+                
+                terrainData.heights[i][j] = height;
+                
+                // Determine biome
+                let biome;
+                if (height < waterLevel - 5) biome = 'ocean';
+                else if (height < waterLevel + 1) biome = 'beach';
+                else if (height < 8) {
+                    const moisture = noise.fbm(x * 0.01 + 100, z * 0.01, 2, 2, 0.5);
+                    if (moisture < -0.3) biome = 'desert';
+                    else if (moisture > 0.4) biome = 'swamp';
+                    else biome = 'plains';
+                }
+                else if (height < 20) biome = 'forest';
+                else if (height < 35) biome = 'hills';
+                else if (height < 50) biome = 'mountain';
+                else biome = 'snow';
+                
+                terrainData.biomes[i][j] = biome;
+            }
+        }
+
+        // Apply heights and colors to geometry
+        for (let i = 0; i < pos.length; i += 3) {
+            const idx = i / 3;
+            const row = Math.floor(idx / (segments + 1));
+            const col = idx % (segments + 1);
+            
+            const height = terrainData.heights[row]?.[col] || 0;
+            const biome = terrainData.biomes[row]?.[col] || 'plains';
+            
+            pos[i + 2] = height;
+            
+            // Color based on biome
+            const biomeData = BIOMES[biome];
+            const color = new THREE.Color(biomeData.color);
+            
+            // Add variation
+            const variation = noise.noise2D(pos[i] * 0.1, pos[i + 1] * 0.1) * 0.1;
+            color.r = Math.max(0, Math.min(1, color.r + variation));
+            color.g = Math.max(0, Math.min(1, color.g + variation));
+            color.b = Math.max(0, Math.min(1, color.b + variation));
+            
+            colors[i] = color.r;
+            colors[i + 1] = color.g;
+            colors[i + 2] = color.b;
+        }
+
+        geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geo.computeVertexNormals();
+
+        // Material
+        const mat = new THREE.MeshStandardMaterial({
+            vertexColors: true,
+            roughness: 0.85,
+            metalness: 0.05,
+            flatShading: false
+        });
+
+        terrain = new THREE.Mesh(geo, mat);
+        terrain.rotation.x = -Math.PI / 2;
+        terrain.receiveShadow = true;
+        terrain.castShadow = true;
+        scene.add(terrain);
+    }
+
+    function createWater() {
+        // Main ocean
+        const waterGeo = new THREE.PlaneGeometry(600, 600, 100, 100);
+        const waterMat = new THREE.MeshStandardMaterial({
+            color: 0x2196F3,
+            transparent: true,
+            opacity: 0.75,
+            roughness: 0.1,
+            metalness: 0.3
+        });
+        
+        water = new THREE.Mesh(waterGeo, waterMat);
+        water.rotation.x = -Math.PI / 2;
+        water.position.y = TERRAIN.waterLevel;
+        water.receiveShadow = true;
+        scene.add(water);
+        
+        // Add some wave animation data
+        water.userData = {
+            originalPositions: waterGeo.attributes.position.array.slice()
+        };
+    }
+
+    function populateWorld() {
+        const { segments } = TERRAIN;
+        
+        // Populate based on biomes
+        for (let i = 0; i < segments; i += 4) {
+            for (let j = 0; j < segments; j += 4) {
+                const biome = terrainData.biomes[i]?.[j];
+                const height = terrainData.heights[i]?.[j] || 0;
+                
+                if (!biome || height < TERRAIN.waterLevel + 1) continue;
+                
+                const worldX = (j / segments - 0.5) * TERRAIN.size;
+                const worldZ = (i / segments - 0.5) * TERRAIN.size;
+                
+                // Trees based on biome
+                if (Math.random() < getTreeDensity(biome)) {
+                    const tree = createTree(biome);
+                    tree.position.set(
+                        worldX + (Math.random() - 0.5) * 10,
+                        height,
+                        worldZ + (Math.random() - 0.5) * 10
+                    );
+                    trees.push(tree);
+                    scene.add(tree);
+                }
+                
+                // Flowers in certain biomes
+                if ((biome === 'plains' || biome === 'forest') && Math.random() < 0.3) {
+                    for (let f = 0; f < 3; f++) {
+                        const flower = createFlower();
+                        flower.position.set(
+                            worldX + (Math.random() - 0.5) * 15,
+                            height,
+                            worldZ + (Math.random() - 0.5) * 15
+                        );
+                        flowers.push(flower);
+                        scene.add(flower);
+                    }
+                }
+                
+                // Animals
+                if (Math.random() < 0.05 && biome !== 'ocean' && biome !== 'snow') {
+                    const animal = createAnimal(biome);
+                    animal.position.set(worldX, height + 0.3, worldZ);
+                    animals.push(animal);
+                    scene.add(animal);
+                }
+            }
+        }
+        
+        // Add some initial houses in good spots
+        for (let i = 0; i < 12; i++) {
+            const pos = findBuildableSpot();
+            if (pos) {
+                const house = createHouse();
+                house.position.copy(pos);
+                houses.push(house);
+                scene.add(house);
+            }
+        }
+        
+        // Initial agents
+        for (let i = 0; i < 8; i++) {
+            const pos = findBuildableSpot();
+            if (pos) {
+                const agent = createAgent();
+                agent.position.set(pos.x, pos.y + 1, pos.z);
+                agents.push(agent);
+                scene.add(agent);
+            }
+        }
+        
+        // Birds
+        for (let i = 0; i < 25; i++) {
+            const bird = createBird();
+            birds.push(bird);
+            scene.add(bird);
+        }
+        
+        updateCounts();
+    }
+
+    function getTreeDensity(biome) {
+        switch (biome) {
+            case 'forest': return 0.6;
+            case 'hills': return 0.3;
+            case 'plains': return 0.15;
+            case 'swamp': return 0.4;
+            case 'mountain': return 0.1;
+            case 'tundra': return 0.05;
+            default: return 0;
+        }
+    }
+
+    function createTree(biome) {
+        const group = new THREE.Group();
+        
+        // Different tree types based on biome
+        let trunkColor = 0x8B4513;
+        let leafColor, leafType;
+        
+        switch (biome) {
+            case 'forest':
+                leafColor = 0x228B22;
+                leafType = Math.random() > 0.5 ? 'pine' : 'oak';
+                break;
+            case 'hills':
+            case 'mountain':
+                leafColor = 0x2d5a27;
+                leafType = 'pine';
+                break;
+            case 'plains':
+                leafColor = 0x32CD32;
+                leafType = 'oak';
+                break;
+            case 'swamp':
+                leafColor = 0x556b2f;
+                leafType = 'willow';
+                trunkColor = 0x4a3728;
+                break;
+            case 'desert':
+                leafColor = 0x228B22;
+                leafType = 'palm';
+                break;
+            default:
+                leafColor = 0x32CD32;
+                leafType = 'oak';
+        }
+        
+        const scale = 0.6 + Math.random() * 0.6;
+        
+        // Trunk
+        const trunk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.15 * scale, 0.25 * scale, 2 * scale, 6),
+            new THREE.MeshStandardMaterial({ color: trunkColor })
+        );
+        trunk.position.y = scale;
+        trunk.castShadow = true;
+        group.add(trunk);
+        
+        // Leaves based on type
+        if (leafType === 'pine') {
+            for (let i = 0; i < 4; i++) {
+                const cone = new THREE.Mesh(
+                    new THREE.ConeGeometry((1.5 - i * 0.3) * scale, 1.5 * scale, 6),
+                    new THREE.MeshStandardMaterial({ color: leafColor })
+                );
+                cone.position.y = (2 + i * 1) * scale;
+                cone.castShadow = true;
+                group.add(cone);
+            }
+        } else if (leafType === 'oak') {
+            const leaves = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(1.5 * scale, 1),
+                new THREE.MeshStandardMaterial({ color: leafColor })
+            );
+            leaves.position.y = 3 * scale;
+            leaves.castShadow = true;
+            group.add(leaves);
+        } else if (leafType === 'palm') {
+            trunk.geometry = new THREE.CylinderGeometry(0.1 * scale, 0.2 * scale, 3 * scale, 6);
+            trunk.position.y = 1.5 * scale;
+            
+            for (let i = 0; i < 6; i++) {
+                const frond = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.2 * scale, 2 * scale, 4),
+                    new THREE.MeshStandardMaterial({ color: leafColor })
+                );
+                frond.position.y = 3 * scale;
+                frond.rotation.z = Math.PI / 4;
+                frond.rotation.y = (i / 6) * Math.PI * 2;
+                group.add(frond);
+            }
+        } else if (leafType === 'willow') {
+            const leaves = new THREE.Mesh(
+                new THREE.SphereGeometry(1.2 * scale, 8, 8),
+                new THREE.MeshStandardMaterial({ color: leafColor })
+            );
+            leaves.scale.y = 1.5;
+            leaves.position.y = 2.5 * scale;
+            leaves.castShadow = true;
+            group.add(leaves);
+        }
+        
+        group.userData = { type: 'tree', sway: Math.random() * Math.PI * 2 };
+        return group;
+    }
+
+    function createFlower() {
+        const group = new THREE.Group();
+        const colors = [0xFF69B4, 0xFFD700, 0xFF6347, 0x9370DB, 0x00CED1, 0xFFFFFF, 0xFF1D6C];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        const stem = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 0.4, 4),
+            new THREE.MeshStandardMaterial({ color: 0x228B22 })
+        );
+        stem.position.y = 0.2;
+        group.add(stem);
+        
+        for (let i = 0; i < 5; i++) {
+            const petal = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 6, 6),
+                new THREE.MeshStandardMaterial({ color })
+            );
+            petal.scale.set(1, 0.3, 0.5);
+            petal.position.y = 0.4;
+            petal.position.x = Math.cos((i / 5) * Math.PI * 2) * 0.1;
+            petal.position.z = Math.sin((i / 5) * Math.PI * 2) * 0.1;
+            group.add(petal);
+        }
+        
+        const center = new THREE.Mesh(
+            new THREE.SphereGeometry(0.06, 6, 6),
+            new THREE.MeshStandardMaterial({ color: 0xFFD700 })
+        );
+        center.position.y = 0.4;
+        group.add(center);
+        
+        group.scale.setScalar(0.5 + Math.random() * 0.5);
+        group.userData = { type: 'flower', sway: Math.random() * Math.PI * 2 };
+        return group;
+    }
+
+    function createHouse() {
+        const group = new THREE.Group();
+        const roofColors = [0xE74C3C, 0x3498DB, 0xFF1D6C, 0xF5A623, 0x9C27B0, 0x27ae60];
+        const scale = 0.8 + Math.random() * 0.4;
+        
+        // Walls
+        const walls = new THREE.Mesh(
+            new THREE.BoxGeometry(3 * scale, 2.5 * scale, 3 * scale),
+            new THREE.MeshStandardMaterial({ color: 0xFAF0E6 })
+        );
+        walls.position.y = 1.25 * scale;
+        walls.castShadow = true;
+        walls.receiveShadow = true;
+        group.add(walls);
+        
+        // Roof
+        const roof = new THREE.Mesh(
+            new THREE.ConeGeometry(2.5 * scale, 1.5 * scale, 4),
+            new THREE.MeshStandardMaterial({ color: roofColors[Math.floor(Math.random() * roofColors.length)] })
+        );
+        roof.position.y = 3.25 * scale;
+        roof.rotation.y = Math.PI / 4;
+        roof.castShadow = true;
+        group.add(roof);
+        
+        // Door
+        const door = new THREE.Mesh(
+            new THREE.BoxGeometry(0.5 * scale, 1 * scale, 0.1),
+            new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+        );
+        door.position.set(0, 0.5 * scale, 1.55 * scale);
+        group.add(door);
+        
+        // Windows
+        const windowMat = new THREE.MeshStandardMaterial({ color: 0x87CEEB, emissive: 0x000000 });
+        [[-0.7, 1.5, 1.55], [0.7, 1.5, 1.55]].forEach(([x, y, z]) => {
+            const win = new THREE.Mesh(
+                new THREE.BoxGeometry(0.4 * scale, 0.4 * scale, 0.1),
+                windowMat.clone()
+            );
+            win.position.set(x * scale, y * scale, z * scale);
+            group.add(win);
+        });
+        
+        // Chimney
+        const chimney = new THREE.Mesh(
+            new THREE.BoxGeometry(0.4 * scale, 1 * scale, 0.4 * scale),
+            new THREE.MeshStandardMaterial({ color: 0x8B0000 })
+        );
+        chimney.position.set(0.8 * scale, 3.5 * scale, 0);
+        chimney.castShadow = true;
+        group.add(chimney);
+        
+        group.rotation.y = Math.random() * Math.PI * 2;
+        group.userData = { type: 'house' };
+        return group;
+    }
+
+    function createAnimal(biome) {
+        const group = new THREE.Group();
+        
+        let color, scale = 0.4 + Math.random() * 0.3;
+        switch (biome) {
+            case 'forest': color = [0x8B4513, 0xFFFFFF, 0x808080][Math.floor(Math.random() * 3)]; break;
+            case 'plains': color = [0xD2B48C, 0xFFFFFF, 0x000000][Math.floor(Math.random() * 3)]; break;
+            case 'hills': color = [0x808080, 0xFFFFFF][Math.floor(Math.random() * 2)]; break;
+            case 'swamp': color = 0x228B22; break;
+            default: color = 0xD2B48C;
+        }
+        
+        const mat = new THREE.MeshStandardMaterial({ color });
+        
+        // Body
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.3 * scale, 8, 8), mat);
+        body.scale.set(1, 0.7, 1.2);
+        group.add(body);
+        
+        // Head
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.2 * scale, 8, 8), mat);
+        head.position.set(0, 0.15 * scale, 0.3 * scale);
+        group.add(head);
+        
+        // Eyes
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        [[-0.06, 0.22, 0.45], [0.06, 0.22, 0.45]].forEach(([x, y, z]) => {
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(0.03 * scale, 6, 6), eyeMat);
+            eye.position.set(x * scale, y * scale, z * scale);
+            group.add(eye);
+        });
+        
+        // Ears
+        [[-0.08, 0.32, 0.25], [0.08, 0.32, 0.25]].forEach(([x, y, z]) => {
+            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.05 * scale, 0.15 * scale, 6), mat);
+            ear.position.set(x * scale, y * scale, z * scale);
+            group.add(ear);
+        });
+        
+        group.userData = {
+            type: 'animal',
+            targetX: group.position.x,
+            targetZ: group.position.z,
+            speed: 0.02 + Math.random() * 0.02,
+            hop: Math.random() * Math.PI * 2,
+            idle: 0
+        };
+        
+        return group;
+    }
+
+    function createAgent() {
+        const group = new THREE.Group();
+        const colors = [0xFF1D6C, 0x2979FF, 0xF5A623, 0x9C27B0];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Body
+        const body = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.25, 0.35, 0.7, 8),
+            new THREE.MeshStandardMaterial({ color, metalness: 0.5, roughness: 0.3 })
+        );
+        body.position.y = 0.35;
+        group.add(body);
+        
+        // Head
+        const head = new THREE.Mesh(
+            new THREE.SphereGeometry(0.25, 12, 12),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.3 })
+        );
+        head.position.y = 0.85;
+        group.add(head);
+        
+        // Eye
+        const eye = new THREE.Mesh(
+            new THREE.CircleGeometry(0.12, 16),
+            new THREE.MeshBasicMaterial({ color: 0xFF1D6C })
+        );
+        eye.position.set(0, 0.9, 0.23);
+        group.add(eye);
+        
+        // Antenna
+        const antenna = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 0.2, 6),
+            new THREE.MeshStandardMaterial({ color: 0x333333 })
+        );
+        antenna.position.set(0, 1.15, 0);
+        group.add(antenna);
+        
+        const ball = new THREE.Mesh(
+            new THREE.SphereGeometry(0.05, 8, 8),
+            new THREE.MeshBasicMaterial({ color: 0xFF1D6C })
+        );
+        ball.position.set(0, 1.3, 0);
+        ball.userData = { glow: 0 };
+        group.add(ball);
+        
+        // Hover ring
+        const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(0.35, 0.03, 6, 24),
+            new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4 })
+        );
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = -0.1;
+        group.add(ring);
+        
+        group.userData = {
+            type: 'agent',
+            targetX: 0,
+            targetZ: 0,
+            speed: 0.03 + Math.random() * 0.02,
+            hover: Math.random() * Math.PI * 2,
+            ball
+        };
+        
+        return group;
+    }
+
+    function createBird() {
+        const group = new THREE.Group();
+        const colors = [0x4169E1, 0xFF6347, 0xFFD700, 0x32CD32, 0x9370DB];
+        const mat = new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)] });
+        
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.15, 6, 6), mat);
+        body.scale.set(1, 0.7, 1.3);
+        group.add(body);
+        
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 0.2), mat);
+        wing.position.y = 0.05;
+        wing.userData = { flap: Math.random() * Math.PI * 2 };
+        group.add(wing);
+        
+        const beak = new THREE.Mesh(
+            new THREE.ConeGeometry(0.04, 0.12, 4),
+            new THREE.MeshStandardMaterial({ color: 0xFFA500 })
+        );
+        beak.position.set(0, 0, 0.18);
+        beak.rotation.x = Math.PI / 2;
+        group.add(beak);
+        
+        group.position.set(
+            (Math.random() - 0.5) * 200,
+            20 + Math.random() * 30,
+            (Math.random() - 0.5) * 200
+        );
+        
+        group.userData = {
+            type: 'bird',
+            angle: Math.random() * Math.PI * 2,
+            radius: 30 + Math.random() * 60,
+            speed: 0.004 + Math.random() * 0.008,
+            wing
+        };
+        
+        return group;
+    }
+
+    function createAtmosphere() {
+        // Clouds
+        for (let i = 0; i < 20; i++) {
+            const cloud = createCloud();
+            clouds.push(cloud);
+            scene.add(cloud);
+        }
+        
+        // Rain system
+        const rainCount = 8000;
+        const rainGeo = new THREE.BufferGeometry();
+        const rainPos = new Float32Array(rainCount * 3);
+        const rainVel = new Float32Array(rainCount);
+        
+        for (let i = 0; i < rainCount; i++) {
+            rainPos[i * 3] = (Math.random() - 0.5) * 300;
+            rainPos[i * 3 + 1] = Math.random() * 100;
+            rainPos[i * 3 + 2] = (Math.random() - 0.5) * 300;
+            rainVel[i] = 0.5 + Math.random() * 0.5;
+        }
+        
+        rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+        rain = new THREE.Points(rainGeo, new THREE.PointsMaterial({ color: 0x8888ff, size: 0.15, transparent: true, opacity: 0.6 }));
+        rain.userData = { velocities: rainVel };
+        rain.visible = false;
+        scene.add(rain);
+        
+        // Snow system
+        const snowCount = 5000;
+        const snowGeo = new THREE.BufferGeometry();
+        const snowPos = new Float32Array(snowCount * 3);
+        const snowVel = new Float32Array(snowCount * 2);
+        
+        for (let i = 0; i < snowCount; i++) {
+            snowPos[i * 3] = (Math.random() - 0.5) * 300;
+            snowPos[i * 3 + 1] = Math.random() * 100;
+            snowPos[i * 3 + 2] = (Math.random() - 0.5) * 300;
+            snowVel[i * 2] = 0.1 + Math.random() * 0.1;
+            snowVel[i * 2 + 1] = (Math.random() - 0.5) * 0.02;
+        }
+        
+        snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+        snow = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.3, transparent: true, opacity: 0.8 }));
+        snow.userData = { velocities: snowVel };
+        snow.visible = false;
+        scene.add(snow);
+    }
+
+    function createCloud() {
+        const group = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+        
+        const puffs = 4 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < puffs; i++) {
+            const puff = new THREE.Mesh(
+                new THREE.SphereGeometry(2 + Math.random() * 2, 8, 8),
+                mat
+            );
+            puff.position.set(
+                (Math.random() - 0.5) * 6,
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 4
+            );
+            group.add(puff);
+        }
+        
+        group.position.set(
+            (Math.random() - 0.5) * 300,
+            40 + Math.random() * 30,
+            (Math.random() - 0.5) * 300
+        );
+        
+        group.userData = { speed: 0.05 + Math.random() * 0.1 };
+        return group;
+    }
+
+    function findBuildableSpot() {
+        const { segments, size, waterLevel } = TERRAIN;
+        
+        for (let attempt = 0; attempt < 50; attempt++) {
+            const i = Math.floor(Math.random() * segments);
+            const j = Math.floor(Math.random() * segments);
+            const height = terrainData.heights[i]?.[j];
+            const biome = terrainData.biomes[i]?.[j];
+            
+            if (height > waterLevel + 2 && height < 30 && 
+                (biome === 'plains' || biome === 'forest' || biome === 'hills')) {
+                const x = (j / segments - 0.5) * size;
+                const z = (i / segments - 0.5) * size;
+                return new THREE.Vector3(x, height, z);
+            }
+        }
+        return null;
+    }
+
+    function getHeightAt(x, z) {
+        const { segments, size } = TERRAIN;
+        const i = Math.floor((z / size + 0.5) * segments);
+        const j = Math.floor((x / size + 0.5) * segments);
+        return terrainData.heights[i]?.[j] || 0;
+    }
+
+    function getBiomeAt(x, z) {
+        const { segments, size } = TERRAIN;
+        const i = Math.floor((z / size + 0.5) * segments);
+        const j = Math.floor((x / size + 0.5) * segments);
+        return terrainData.biomes[i]?.[j] || 'plains';
+    }
+
+    function createMinimap() {
+        const canvas = document.getElementById('minimapCanvas');
+        const ctx = canvas.getContext('2d');
+        const { segments } = TERRAIN;
+        const scale = 180 / segments;
+        
+        for (let i = 0; i < segments; i++) {
+            for (let j = 0; j < segments; j++) {
+                const biome = terrainData.biomes[i]?.[j] || 'ocean';
+                const color = BIOMES[biome].color;
+                
+                ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
+                ctx.fillRect(j * scale, i * scale, scale + 1, scale + 1);
+            }
+        }
+    }
+
+    // ==================== BUILD SYSTEM ====================
+    const BUILD_COSTS = {
+        tree: { wood: 5 },
+        flower: { food: 2 },
+        house: { wood: 20, stone: 10 },
+        farm: { wood: 15, stone: 5 },
+        mine: { wood: 25, stone: 10 },
+        tower: { stone: 30 },
+        agent: { gems: 50 },
+        bridge: { wood: 40 },
+        castle: { wood: 100, stone: 200 }
+    };
+
+    function canAfford(type) {
+        const costs = BUILD_COSTS[type];
+        if (!costs) return false;
+        for (const [res, amount] of Object.entries(costs)) {
+            if (GAME.resources[res] < amount) return false;
+        }
+        return true;
+    }
+
+    function spendResources(type) {
+        const costs = BUILD_COSTS[type];
+        for (const [res, amount] of Object.entries(costs)) {
+            GAME.resources[res] -= amount;
+        }
+        updateUI();
+    }
+
+    function build(type) {
+        if (!canAfford(type)) {
+            notify('⚠️ Not enough resources!', 'warning');
+            return;
+        }
+        
+        if (type === 'castle' && GAME.level < 5) {
+            notify('🔒 Unlock at Level 5', 'warning');
+            return;
+        }
+        
+        const pos = findBuildableSpot();
+        if (!pos) {
+            notify('⚠️ No suitable location!', 'warning');
+            return;
+        }
+        
+        spendResources(type);
+        
+        switch (type) {
+            case 'tree':
+                const tree = createTree(getBiomeAt(pos.x, pos.z));
+                tree.position.copy(pos);
+                trees.push(tree);
+                scene.add(tree);
+                notify('🌲 Tree planted!');
+                addXP(5);
+                break;
+            case 'flower':
+                for (let i = 0; i < 5; i++) {
+                    const flower = createFlower();
+                    flower.position.set(pos.x + (Math.random() - 0.5) * 5, pos.y, pos.z + (Math.random() - 0.5) * 5);
+                    flowers.push(flower);
+                    scene.add(flower);
+                }
+                notify('🌸 Flowers planted!');
+                addXP(3);
+                break;
+            case 'house':
+                const house = createHouse();
+                house.position.copy(pos);
+                houses.push(house);
+                scene.add(house);
+                notify('🏠 House built!');
+                addXP(25);
+                break;
+            case 'farm':
+                notify('🌾 Farm built! +5 food/cycle');
+                addXP(20);
+                break;
+            case 'mine':
+                notify('⛏️ Mine built! +3 stone/cycle');
+                addXP(20);
+                break;
+            case 'tower':
+                notify('🗼 Watch tower built!');
+                addXP(30);
+                break;
+            case 'agent':
+                const agent = createAgent();
+                agent.position.set(pos.x, pos.y + 1, pos.z);
+                agents.push(agent);
+                scene.add(agent);
+                notify('🤖 Agent deployed!');
+                addXP(50);
+                break;
+            case 'bridge':
+                notify('🌉 Bridge constructed!');
+                addXP(35);
+                break;
+            case 'castle':
+                notify('🏰 Castle built!');
+                addXP(200);
+                break;
+        }
+        
+        updateCounts();
+    }
+
+    function addXP(amount) {
+        GAME.xp += amount;
+        while (GAME.xp >= GAME.xpNeeded) {
+            GAME.xp -= GAME.xpNeeded;
+            GAME.level++;
+            GAME.xpNeeded = Math.floor(GAME.xpNeeded * 1.5);
+            
+            GAME.resources.wood += 50;
+            GAME.resources.stone += 30;
+            GAME.resources.gems += 15;
+            
+            notify(`🎉 Level ${GAME.level}! Rewards added.`);
+            
+            if (GAME.level >= 5) {
+                document.querySelector('[data-build="castle"]')?.classList.remove('locked');
+            }
+        }
+        updateUI();
+    }
+
+    function updateCounts() {
+        GAME.counts.trees = trees.length;
+        GAME.counts.flowers = flowers.length;
+        GAME.counts.houses = houses.length;
+        GAME.counts.animals = animals.length;
+        GAME.counts.agents = agents.length;
+        
+        document.getElementById('statTrees').textContent = GAME.counts.trees;
+        document.getElementById('statHouses').textContent = GAME.counts.houses;
+        document.getElementById('statAnimals').textContent = GAME.counts.animals;
+        document.getElementById('statAgents').textContent = GAME.counts.agents;
+        document.getElementById('popVal').textContent = GAME.counts.trees + GAME.counts.houses + GAME.counts.animals + GAME.counts.agents;
+    }
+
+    // ==================== TIME & WEATHER ====================
+    function updateTime() {
+        GAME.minute += 0.5 * GAME.speed;
+        if (GAME.minute >= 60) {
+            GAME.minute = 0;
+            GAME.hour++;
+            
+            GAME.resources.food = Math.min(999, GAME.resources.food + 2);
+            GAME.resources.wood = Math.min(999, GAME.resources.wood + 1);
+            GAME.resources.stone = Math.min(999, GAME.resources.stone + 1);
+            
+            if (GAME.hour >= 24) {
+                GAME.hour = 0;
+                GAME.day++;
+                
+                if (GAME.day % 30 === 1) {
+                    const seasons = ['Spring', 'Summer', 'Autumn', 'Winter'];
+                    GAME.season = seasons[(Math.floor(GAME.day / 30)) % 4];
+                }
+                
+                GAME.resources.gems += 2;
+                notify(`☀️ Day ${GAME.day}!`);
+            }
+            
+            if (GAME.hour === 20) setNight(true);
+            else if (GAME.hour === 6) setNight(false);
+        }
+        updateUI();
+    }
+
+    function setNight(night) {
+        isNight = night;
+        
+        if (night) {
+            scene.background = new THREE.Color(0x0a0a1a);
+            scene.fog = new THREE.FogExp2(0x0a0a1a, 0.004);
+            window.sunLight.intensity = 0.1;
+            window.sunLight.color.setHex(0x4444aa);
+            window.hemiLight.intensity = 0.1;
+        } else {
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.FogExp2(0x87CEEB, 0.003);
+            window.sunLight.intensity = 1.2;
+            window.sunLight.color.setHex(0xfffaf0);
+            window.hemiLight.intensity = 0.5;
+        }
+        
+        document.getElementById('btnDay').classList.toggle('active', !night);
+        document.getElementById('btnNight').classList.toggle('active', night);
+    }
+
+    function setWeather(type) {
+        rain.visible = type === 'rain';
+        snow.visible = type === 'snow';
+        weatherState = type;
+        
+        document.getElementById('btnRain').classList.toggle('active', type === 'rain');
+        document.getElementById('btnSnow').classList.toggle('active', type === 'snow');
+        
+        if (type === 'rain') notify('🌧️ Rain started!');
+        else if (type === 'snow') notify('❄️ Snow falling!');
+        else notify('☀️ Weather cleared!');
+    }
+
+    function updateUI() {
+        document.getElementById('resWood').textContent = GAME.resources.wood;
+        document.getElementById('resStone').textContent = GAME.resources.stone;
+        document.getElementById('resFood').textContent = GAME.resources.food;
+        document.getElementById('resGems').textContent = GAME.resources.gems;
+        
+        document.getElementById('levelBadge').textContent = GAME.level;
+        document.getElementById('levelNum').textContent = GAME.level;
+        document.getElementById('xpFill').style.width = (GAME.xp / GAME.xpNeeded * 100) + '%';
+        
+        const h = GAME.hour.toString().padStart(2, '0');
+        const m = Math.floor(GAME.minute).toString().padStart(2, '0');
+        document.getElementById('timeText').textContent = `${h}:${m}`;
+        document.getElementById('dayNum').textContent = GAME.day;
+        document.getElementById('seasonText').textContent = GAME.season;
+        
+        document.getElementById('weatherIcon').textContent = weatherState === 'rain' ? '🌧️' : weatherState === 'snow' ? '❄️' : (isNight ? '🌙' : '☀️');
+        document.getElementById('weatherText').textContent = weatherState === 'rain' ? 'Rainy' : weatherState === 'snow' ? 'Snowy' : (isNight ? 'Clear Night' : 'Clear');
+        
+        const temp = GAME.season === 'Winter' ? -5 : GAME.season === 'Summer' ? 28 : 18;
+        document.getElementById('tempDisplay').textContent = temp + '°C';
+        document.getElementById('tempVal').textContent = temp + '°C';
+    }
+
+    function notify(message, type = 'success') {
+        const container = document.getElementById('notifications');
+        const el = document.createElement('div');
+        el.className = 'notification ' + type;
+        el.textContent = message;
+        container.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+    }
+
+    // ==================== EVENTS ====================
+    function setupEvents() {
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        renderer.domElement.addEventListener('mousedown', e => {
+            isDragging = true;
+            prevMouse = { x: e.clientX, y: e.clientY };
+        });
+        
+        renderer.domElement.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const dx = e.clientX - prevMouse.x;
+            const dy = e.clientY - prevMouse.y;
+            camAngle += dx * 0.005;
+            camHeight = Math.max(20, Math.min(150, camHeight - dy * 0.3));
+            updateCamera();
+            prevMouse = { x: e.clientX, y: e.clientY };
+        });
+        
+        renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+        renderer.domElement.addEventListener('mouseleave', () => isDragging = false);
+        
+        renderer.domElement.addEventListener('wheel', e => {
+            camDist = Math.max(50, Math.min(350, camDist + e.deltaY * 0.15));
+            updateCamera();
+        });
+
+        renderer.domElement.addEventListener('touchstart', e => {
+            isDragging = true;
+            prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }, { passive: true });
+        
+        renderer.domElement.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            const dx = e.touches[0].clientX - prevMouse.x;
+            const dy = e.touches[0].clientY - prevMouse.y;
+            camAngle += dx * 0.005;
+            camHeight = Math.max(20, Math.min(150, camHeight - dy * 0.3));
+            updateCamera();
+            prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }, { passive: true });
+        
+        renderer.domElement.addEventListener('touchend', () => isDragging = false);
+
+        document.addEventListener('keydown', e => {
+            const num = parseInt(e.key);
+            if (num >= 1 && num <= 9) {
+                const types = ['tree', 'flower', 'house', 'farm', 'mine', 'tower', 'agent', 'bridge', 'castle'];
+                build(types[num - 1]);
+            }
+        });
+
+        document.querySelectorAll('.build-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!btn.classList.contains('locked')) {
+                    build(btn.dataset.build);
+                }
+            });
+        });
+
+        document.getElementById('btnRotate').addEventListener('click', function() {
+            autoRotate = !autoRotate;
+            this.classList.toggle('active', autoRotate);
+        });
+        
+        document.getElementById('btnDay').addEventListener('click', () => setNight(false));
+        document.getElementById('btnNight').addEventListener('click', () => setNight(true));
+        document.getElementById('btnRain').addEventListener('click', () => setWeather(weatherState === 'rain' ? 'clear' : 'rain'));
+        document.getElementById('btnSnow').addEventListener('click', () => setWeather(weatherState === 'snow' ? 'clear' : 'snow'));
+        
+        document.getElementById('btnSpeed').addEventListener('click', function() {
+            GAME.speed = GAME.speed === 1 ? 3 : 1;
+            this.classList.toggle('active', GAME.speed > 1);
+        });
+    }
+
+    function updateCamera() {
+        camera.position.x = Math.sin(camAngle) * camDist;
+        camera.position.z = Math.cos(camAngle) * camDist;
+        camera.position.y = camHeight;
+        camera.lookAt(0, 10, 0);
+        
+        // Compass
+        const needle = document.getElementById('compassNeedle');
+        if (needle) needle.style.transform = `rotate(${-camAngle * 180 / Math.PI}deg)`;
+        
+        // Elevation display
+        const centerHeight = getHeightAt(0, 0);
+        document.getElementById('elevationVal').textContent = Math.floor(centerHeight * 10) + 'm';
+    }
+
+    // ==================== ANIMATION ====================
+    function animate() {
+        requestAnimationFrame(animate);
+        time += 0.016;
+
+        if (autoRotate && !isDragging) {
+            camAngle += 0.001;
+            updateCamera();
+        }
+
+        updateTime();
+
+        // Trees sway
+        trees.forEach(t => {
+            if (t.userData.sway !== undefined) {
+                t.userData.sway += 0.01;
+                t.rotation.z = Math.sin(t.userData.sway) * 0.015;
+            }
+        });
+
+        // Flowers sway
+        flowers.forEach(f => {
+            if (f.userData.sway !== undefined) {
+                f.userData.sway += 0.015;
+                f.rotation.z = Math.sin(f.userData.sway) * 0.03;
+            }
+        });
+
+        // Animals
+        animals.forEach(a => {
+            const d = a.userData;
+            d.idle += 0.016;
+            
+            if (d.idle > 2 + Math.random() * 2) {
+                d.idle = 0;
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 5 + Math.random() * 15;
+                d.targetX = a.position.x + Math.cos(angle) * dist;
+                d.targetZ = a.position.z + Math.sin(angle) * dist;
+                
+                // Keep on land
+                const maxDist = 120;
+                const targetDist = Math.sqrt(d.targetX ** 2 + d.targetZ ** 2);
+                if (targetDist > maxDist) {
+                    d.targetX *= maxDist / targetDist;
+                    d.targetZ *= maxDist / targetDist;
+                }
+            }
+
+            const dx = d.targetX - a.position.x;
+            const dz = d.targetZ - a.position.z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+
+            if (dist > 0.5) {
+                a.position.x += (dx / dist) * d.speed;
+                a.position.z += (dz / dist) * d.speed;
+                a.rotation.y = Math.atan2(dx, dz);
+                
+                d.hop += 0.12;
+                const h = getHeightAt(a.position.x, a.position.z);
+                a.position.y = h + 0.3 + Math.abs(Math.sin(d.hop)) * 0.15;
+            }
+        });
+
+        // Agents
+        agents.forEach(ag => {
+            const d = ag.userData;
+            d.hover += 0.03;
+            
+            const h = getHeightAt(ag.position.x, ag.position.z);
+            ag.position.y = h + 1.2 + Math.sin(d.hover) * 0.2;
+
+            if (Math.random() < 0.003) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 20 + Math.random() * 30;
+                d.targetX = Math.cos(angle) * dist;
+                d.targetZ = Math.sin(angle) * dist;
+            }
+
+            const dx = d.targetX - ag.position.x;
+            const dz = d.targetZ - ag.position.z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+
+            if (dist > 1) {
+                ag.position.x += (dx / dist) * d.speed;
+                ag.position.z += (dz / dist) * d.speed;
+                ag.rotation.y = Math.atan2(dx, dz);
+            }
+
+            if (d.ball) {
+                d.ball.userData.glow += 0.08;
+                d.ball.material.color.setHSL((Math.sin(d.ball.userData.glow) + 1) * 0.15, 1, 0.5);
+            }
+        });
+
+        // Birds
+        birds.forEach(b => {
+            const d = b.userData;
+            d.angle += d.speed;
+            b.position.x = Math.cos(d.angle) * d.radius;
+            b.position.z = Math.sin(d.angle) * d.radius;
+            b.rotation.y = d.angle + Math.PI / 2;
+
+            if (d.wing) {
+                d.wing.userData.flap += 0.2;
+                d.wing.rotation.z = Math.sin(d.wing.userData.flap) * 0.35;
+            }
+        });
+
+        // Clouds
+        clouds.forEach(c => {
+            c.position.x += c.userData.speed;
+            if (c.position.x > 200) c.position.x = -200;
+        });
+
+        // Water waves
+        if (water.userData.originalPositions) {
+            const pos = water.geometry.attributes.position.array;
+            const orig = water.userData.originalPositions;
+            
+            for (let i = 0; i < pos.length; i += 3) {
+                const x = orig[i];
+                const y = orig[i + 1];
+                pos[i + 2] = Math.sin(x * 0.05 + time) * 0.3 + Math.sin(y * 0.05 + time * 0.8) * 0.2;
+            }
+            water.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // Rain
+        if (rain.visible) {
+            const pos = rain.geometry.attributes.position.array;
+            const vel = rain.userData.velocities;
+            for (let i = 0; i < pos.length / 3; i++) {
+                pos[i * 3 + 1] -= vel[i];
+                if (pos[i * 3 + 1] < 0) {
+                    pos[i * 3 + 1] = 100;
+                    pos[i * 3] = (Math.random() - 0.5) * 300;
+                    pos[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+            }
+            rain.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // Snow
+        if (snow.visible) {
+            const pos = snow.geometry.attributes.position.array;
+            const vel = snow.userData.velocities;
+            for (let i = 0; i < pos.length / 3; i++) {
+                pos[i * 3 + 1] -= vel[i * 2];
+                pos[i * 3] += vel[i * 2 + 1];
+                if (pos[i * 3 + 1] < 0) {
+                    pos[i * 3 + 1] = 100;
+                    pos[i * 3] = (Math.random() - 0.5) * 300;
+                    pos[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+            }
+            snow.geometry.attributes.position.needsUpdate = true;
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    // Start
+    init();
+    </script>
+</body>
+</html>
