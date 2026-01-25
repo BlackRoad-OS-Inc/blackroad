@@ -1,0 +1,22 @@
+This generates an ed25519 deploy key on the droplet, pins GitHub’s host keys, configures SSH to use the key, and prints the public key for you to paste into GitHub (Deploy Keys → Write access).
+
+# --- Phase A: key + ssh config ---
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+ssh-keygen -t ed25519 -f ~/.ssh/lucidia_deploy -N "" -C "lucidia-deploy@droplet"
+
+# Pin GitHub host keys so cron never hangs on prompts
+ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> ~/.ssh/known_hosts
+chmod 644 ~/.ssh/known_hosts
+
+# Force this identity for github.com
+cat > ~/.ssh/config <<'EOF'
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/lucidia_deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+
+echo "==== PUBLIC KEY (add to GitHub → Repo → Settings → Deploy Keys, name: lucidia-droplet, enable Write) ===="
+cat ~/.ssh/lucidia_deploy.pub

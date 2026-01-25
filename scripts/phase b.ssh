@@ -1,0 +1,18 @@
+# --- Phase B: clone + cron ---
+if ! command -v git >/dev/null; then
+  apt-get update && apt-get install -y git
+fi
+
+sudo mkdir -p /opt/lucidia
+sudo chown -R $USER:$USER /opt/lucidia
+
+[ -d /opt/lucidia/.git ] || git clone git@github.com:blackboxprogramming/lucidia.git /opt/lucidia
+cd /opt/lucidia
+git fetch --all && git reset --hard origin/main
+chmod +x scripts/pull_and_restart.sh || true
+
+# Pull every minute
+( crontab -l 2>/dev/null | grep -v 'pull_and_restart.sh'; echo '* * * * * /opt/lucidia/scripts/pull_and_restart.sh >> /tmp/lucidia_cron.log 2>&1' ) | crontab -
+
+# Test once
+/opt/lucidia/scripts/pull_and_restart.sh && echo "Droplet manual deploy OK"

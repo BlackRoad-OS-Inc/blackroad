@@ -1,0 +1,3 @@
+## BLACKROAD MANIFESTO
+
+BlackRoad is not a product, it is a path...

@@ -1,0 +1,23 @@
+name: Auto Label
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const name = context.repo.repo.toLowerCase()
+            const labels = []
+            if (name.includes("lab")) labels.push("labs")
+            else labels.push("core")
+
+            await github.rest.issues.addLabels({
+              ...context.repo,
+              issue_number: context.issue.number,
+              labels
+            })
