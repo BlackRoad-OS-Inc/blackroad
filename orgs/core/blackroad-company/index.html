@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad - Company</title>
+    <meta name="description" content="BlackRoad: Building transparent, sovereign AI infrastructure. Founded 2024. Building the operating system for AI collaboration.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --br-sunrise: #FF9D00;
+            --br-hot-pink: #FF0066;
+            --br-deep-magenta: #D600AA;
+            --br-vivid-purple: #7700FF;
+            --br-cyber-blue: #0066FF;
+            --br-black: #000000;
+            --br-charcoal: #0D0D0D;
+            --br-white: #FFFFFF;
+            --br-gradient-brand: linear-gradient(180deg, #FF9D00 0%, #FF6B00 50%, #FF0066 100%);
+            --br-gradient-os: linear-gradient(180deg, #FF0066 0%, #D600AA 33%, #7700FF 66%, #0066FF 100%);
+            --br-font-display: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+            --br-font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            font-family: var(--br-font-body);
+            background: var(--br-black);
+            color: var(--br-white);
+            line-height: 1.6;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, rgba(255, 0, 102, 0.1), rgba(119, 0, 255, 0.1));
+        }
+
+        .hero-content {
+            max-width: 1000px;
+        }
+
+        .logo-large {
+            font-family: var(--br-font-display);
+            font-size: clamp(4rem, 10vw, 7rem);
+            font-weight: 800;
+            margin-bottom: 2rem;
+            background: var(--br-gradient-brand);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .mission {
+            font-size: clamp(1.5rem, 3vw, 2.25rem);
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 3rem;
+            line-height: 1.5;
+        }
+
+        .founded {
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 4rem;
+        }
+
+        .section {
+            max-width: 1200px;
+            margin: 6rem auto;
+            padding: 0 2rem;
+        }
+
+        h2 {
+            font-family: var(--br-font-display);
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .gradient-text {
+            background: var(--br-gradient-os);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .value-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2.5rem;
+            transition: all 0.3s;
+        }
+
+        .value-card:hover {
+            border-color: var(--br-hot-pink);
+            box-shadow: 0 0 30px rgba(255, 0, 102, 0.2);
+        }
+
+        .value-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .value-card h3 {
+            font-family: var(--br-font-display);
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+            color: var(--br-sunrise);
+        }
+
+        .value-card p {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        .team {
+            background: var(--br-gradient-os);
+            padding: 6rem 2rem;
+            margin: 6rem 0;
+        }
+
+        .team-content {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .team h2 {
+            color: var(--br-white);
+        }
+
+        .team p {
+            font-size: 1.25rem;
+            line-height: 1.9;
+            margin-bottom: 1.5rem;
+        }
+
+        .products {
+            max-width: 1200px;
+            margin: 6rem auto;
+            padding: 0 2rem;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .product-card {
+            background: var(--br-charcoal);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2.5rem;
+            transition: all 0.3s;
+        }
+
+        .product-card:hover {
+            border-color: var(--br-vivid-purple);
+            box-shadow: 0 0 30px rgba(119, 0, 255, 0.3);
+        }
+
+        .product-card h3 {
+            font-family: var(--br-font-display);
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+            color: var(--br-vivid-purple);
+        }
+
+        .product-card .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            margin-bottom: 1rem;
+        }
+
+        .stats-banner {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 3rem;
+            margin: 4rem 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: var(--br-font-display);
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--br-hot-pink);
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0.5rem;
+        }
+
+        .contact {
+            max-width: 800px;
+            margin: 6rem auto;
+            padding: 0 2rem;
+            text-align: center;
+        }
+
+        .contact-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 3rem;
+            margin-top: 2rem;
+        }
+
+        .contact-link {
+            display: inline-block;
+            margin: 1rem;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            background: var(--br-gradient-brand);
+            color: var(--br-white);
+            box-shadow: 0 0 30px rgba(255, 0, 102, 0.3);
+        }
+
+        .contact-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 40px rgba(255, 0, 102, 0.5);
+        }
+
+        .footer {
+            background: rgba(5, 5, 5, 0.9);
+            padding: 3rem 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--br-hot-pink);
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+
+            .values-grid, .products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="logo-large">BlackRoad</h1>
+            <p class="mission">
+                Building transparent, sovereign AI infrastructure for the future of human-AI collaboration
+            </p>
+            <p class="founded">Founded 2024</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="stats-banner">
+            <div class="stats-grid">
+                <div>
+                    <div class="stat-number">113+</div>
+                    <div class="stat-label">Repositories</div>
+                </div>
+                <div>
+                    <div class="stat-number">899K+</div>
+                    <div class="stat-label">Lines of Code</div>
+                </div>
+                <div>
+                    <div class="stat-number">125</div>
+                    <div class="stat-label">Deployments</div>
+                </div>
+                <div>
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+                <div>
+                    <div class="stat-number">20</div>
+                    <div class="stat-label">AI Agents</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Our <span class="gradient-text">Values</span></h2>
+        <div class="values-grid">
+            <div class="value-card">
+                <div class="icon">🔍</div>
+                <h3>Transparency</h3>
+                <p>
+                    Every decision logged. Every action auditable. Complete visibility into AI behavior with PS-SHA-∞ cryptographic verification.
+                </p>
+            </div>
+
+            <div class="value-card">
+                <div class="icon">🤝</div>
+                <h3>Consent</h3>
+                <p>
+                    Humans always have the final say. AI as companion, not replacement. No hidden actions. No surprises.
+                </p>
+            </div>
+
+            <div class="value-card">
+                <div class="icon">🔓</div>
+                <h3>Sovereignty</h3>
+                <p>
+                    No vendor lock-in. Multi-cloud deployment. Your data stays yours. Complete infrastructure independence.
+                </p>
+            </div>
+
+            <div class="value-card">
+                <div class="icon">⚡</div>
+                <h3>Velocity</h3>
+                <p>
+                    119 deployments in 24 hours. Automated pipelines. Zero rollbacks. Production-ready at extreme scale.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="team">
+        <div class="team-content">
+            <h2>The Team</h2>
+            <p>
+                BlackRoad is built by a lean, focused team combining deep technical expertise with AI collaboration experience.
+            </p>
+            <p>
+                We're engineers, architects, and builders who believe in transparent technology and human-centered AI.
+            </p>
+            <p style="margin-top: 2rem; font-size: 1.1rem;">
+                <strong>Founded by Alexa Amundson</strong><br>
+                Builder. Architect. 899K+ LOC. 100% success rate.
+            </p>
+        </div>
+    </section>
+
+    <section class="products">
+        <h2>What We've <span class="gradient-text">Built</span></h2>
+        <div class="products-grid">
+            <div class="product-card">
+                <span class="status">LIVE</span>
+                <h3>BlackRoad OS</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); line-height: 1.8;">
+                    Operating system for AI collaboration. 113+ repositories, 15 organizations, complete cryptographic audit trail.
+                </p>
+            </div>
+
+            <div class="product-card">
+                <span class="status">LIVE</span>
+                <h3>Lucidia Platform</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); line-height: 1.8;">
+                    First autonomous AI with dual-brain architecture. 362,706 LOC. Built herself while being born.
+                </p>
+            </div>
+
+            <div class="product-card">
+                <span class="status">LIVE</span>
+                <h3>PRISM Enterprise</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); line-height: 1.8;">
+                    Complete ERP/CRM system with ISI analysis, AI agents, and real-time orchestration. 16K+ files.
+                </p>
+            </div>
+
+            <div class="product-card">
+                <span class="status">LIVE</span>
+                <h3>Multi-Cloud Infrastructure</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); line-height: 1.8;">
+                    Cloudflare (79 projects), Railway, DigitalOcean, Raspberry Pi. Zero vendor lock-in. $0/month cost.
+                </p>
+            </div>
+
+            <div class="product-card">
+                <span class="status">LIVE</span>
+                <h3>Alice Migration System</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); line-height: 1.8;">
+                    Autonomous migration architect. 78 repos, 17,681+ files migrated. 100% success rate.
+                </p>
+            </div>
+
+            <div class="product-card">
+                <span class="status">LIVE</span>
+                <h3>Codex System</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); line-height: 1.8;">
+                    Universal code indexing and search. 8,789 components across 56 repositories.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact">
+        <h2>Work With Us</h2>
+        <div class="contact-box">
+            <p style="font-size: 1.25rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 2rem;">
+                Interested in partnerships, enterprise deployments, or joining the team?
+            </p>
+            <a href="mailto:blackroad.systems@gmail.com" class="contact-link">Get in Touch</a>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="https://blackroad.io">Platform</a>
+            <a href="https://blackroad.systems">Systems</a>
+            <a href="https://lucidia.earth">Lucidia</a>
+            <a href="https://blackroad.me">Team</a>
+            <a href="https://github.com/BlackRoad-OS">GitHub</a>
+            <a href="https://docs.blackroad.io">Docs</a>
+        </div>
+        <p style="color: rgba(255, 255, 255, 0.5);">&copy; 2025 BlackRoad. Building the future of AI collaboration.</p>
+    </footer>
+</body>
+</html>
