@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Pitstop — Secure Portal</title>
+    <meta name="description" content="Secure authentication portal for BlackRoad systems">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-darker: #050505;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent-orange: #FF9D00;
+            --accent-red: #FF006B;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --success: #27AE60;
+            --error: #E74C3C;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #0a0a0a 100%);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .gradient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.3;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(45deg, var(--accent-orange), var(--accent-red));
+            top: -200px;
+            left: -200px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(45deg, var(--accent-purple), var(--accent-blue));
+            bottom: -150px;
+            right: -150px;
+            animation-delay: 5s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(50px, -50px) scale(1.1); }
+            66% { transform: translate(-30px, 30px) scale(0.9); }
+        }
+
+        /* Main Container */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 480px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 60px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-text {
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(45deg, var(--accent-orange), var(--accent-red), var(--accent-purple), var(--accent-blue));
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease infinite;
+            margin-bottom: 8px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .logo-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(119, 0, 255, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(45deg, var(--accent-orange), var(--accent-red));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .submit-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 157, 0, 0.3);
+        }
+
+        .submit-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .submit-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: var(--error);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .info-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .info-text {
+            color: var(--text-secondary);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .footer a {
+            color: var(--accent-purple);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Toast Notification System */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--bg-darker);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: toastSlideIn 0.3s ease;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            max-width: 380px;
+        }
+
+        .toast.hiding {
+            animation: toastSlideOut 0.3s ease forwards;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes toastSlideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+        }
+
+        .toast-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 18px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .toast-close:hover {
+            color: var(--text-primary);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--accent-orange);
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        /* Rate limit warning */
+        .rate-limit-warning {
+            background: rgba(255, 157, 0, 0.1);
+            border: 1px solid rgba(255, 157, 0, 0.3);
+            color: var(--accent-orange);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .rate-limit-warning.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        /* Session expiry banner */
+        .session-expiry-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, var(--accent-orange), var(--accent-red));
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1001;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .session-expiry-banner.show {
+            transform: translateY(0);
+        }
+
+        .session-expiry-banner button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 6px;
+            margin-left: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .session-expiry-banner button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Accessibility focus styles */
+        .form-input:focus-visible,
+        .submit-button:focus-visible {
+            outline: 2px solid var(--accent-purple);
+            outline-offset: 2px;
+        }
+
+        /* Skip link for accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--accent-purple);
+            color: white;
+            padding: 8px 16px;
+            z-index: 1002;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            transition: top 0.3s;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* Password visibility toggle */
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 18px;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+
+        /* Keyboard shortcut hints */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+        }
+
+        .keyboard-hint kbd {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip Link for Accessibility -->
+    <a href="#login-form" class="skip-link">Skip to login form</a>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container" role="alert" aria-live="polite"></div>
+
+    <!-- Session Expiry Banner -->
+    <div class="session-expiry-banner" id="session-expiry-banner" role="alert">
+        <span id="expiry-message">Your session will expire soon.</span>
+        <button onclick="extendSession()" aria-label="Extend session">Extend Session</button>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="background" id="background" aria-hidden="true">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="login-card" role="main">
+            <div class="logo">
+                <div class="logo-text" aria-label="Pitstop">PITSTOP</div>
+                <div class="logo-subtitle">BlackRoad Secure Portal</div>
+            </div>
+
+            <div class="error-message" id="error-message" role="alert" aria-live="assertive">
+                Invalid credentials. Please try again.
+            </div>
+
+            <div class="rate-limit-warning" id="rate-limit-warning" role="alert">
+                <span id="rate-limit-text">Too many failed attempts. Please wait <span id="countdown">30</span> seconds.</span>
+            </div>
+
+            <form id="login-form" aria-label="Login form">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username</label>
+                    <input
+                        type="text"
+                        id="username"
+                        class="form-input"
+                        placeholder="Enter your username"
+                        autocomplete="username"
+                        aria-required="true"
+                        aria-describedby="username-error"
+                        required
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input
+                            type="password"
+                            id="password"
+                            class="form-input"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            aria-required="true"
+                            style="padding-right: 50px;"
+                            required
+                        />
+                        <button type="button" class="password-toggle" id="password-toggle" aria-label="Show password" tabindex="0">
+                            👁️
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-button" id="submit-button" aria-describedby="submit-status">
+                    <span id="button-text">Enter Pitstop</span>
+                    <span class="spinner hidden" id="spinner" aria-hidden="true"></span>
+                </button>
+            </form>
+
+            <div class="info-section">
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-icon">🌌</div>
+                        <div class="info-text">Universe Access</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">📁</div>
+                        <div class="info-text">File Management</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">⚙️</div>
+                        <div class="info-text">System Tools</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🔐</div>
+                        <div class="info-text">Secure Access</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>Protected by BlackRoad Security</p>
+                <p>© 2025 BlackRoad OS, Inc. • <a href="mailto:blackroad.systems@gmail.com">Support</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Hint -->
+    <div class="keyboard-hint" aria-hidden="true">
+        <kbd>Enter</kbd> Submit • <kbd>Tab</kbd> Navigate
+    </div>
+
+    <script>
+        // ============================================
+        // TOAST NOTIFICATION SYSTEM
+        // ============================================
+        const toastContainer = document.getElementById('toast-container');
+
+        function showToast(type, title, message, duration = 5000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                info: 'ℹ'
+            };
+
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || 'ℹ'}</span>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" aria-label="Close notification">&times;</button>
+            `;
+
+            toast.querySelector('.toast-close').onclick = () => dismissToast(toast);
+            toastContainer.appendChild(toast);
+
+            // Auto dismiss
+            if (duration > 0) {
+                setTimeout(() => dismissToast(toast), duration);
+            }
+
+            return toast;
+        }
+
+        function dismissToast(toast) {
+            if (!toast || toast.classList.contains('hiding')) return;
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 300);
+        }
+
+        // ============================================
+        // RATE LIMITING SYSTEM
+        // ============================================
+        const RATE_LIMIT_KEY = 'blackroad_login_attempts';
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_DURATION = 30000; // 30 seconds
+
+        function getLoginAttempts() {
+            const data = localStorage.getItem(RATE_LIMIT_KEY);
+            if (!data) return { attempts: 0, lockoutUntil: 0 };
+            return JSON.parse(data);
+        }
+
+        function recordFailedAttempt() {
+            const data = getLoginAttempts();
+            data.attempts++;
+
+            if (data.attempts >= MAX_ATTEMPTS) {
+                data.lockoutUntil = Date.now() + LOCKOUT_DURATION;
+            }
+
+            localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(data));
+            return data;
+        }
+
+        function clearAttempts() {
+            localStorage.removeItem(RATE_LIMIT_KEY);
+        }
+
+        function isLockedOut() {
+            const data = getLoginAttempts();
+            if (data.lockoutUntil > Date.now()) {
+                return Math.ceil((data.lockoutUntil - Date.now()) / 1000);
+            }
+            if (data.lockoutUntil > 0 && data.lockoutUntil <= Date.now()) {
+                clearAttempts();
+            }
+            return false;
+        }
+
+        function updateLockoutUI() {
+            const remainingSeconds = isLockedOut();
+            const warningEl = document.getElementById('rate-limit-warning');
+            const countdownEl = document.getElementById('countdown');
+
+            if (remainingSeconds) {
+                warningEl.classList.add('show');
+                countdownEl.textContent = remainingSeconds;
+                submitButton.disabled = true;
+                setTimeout(updateLockoutUI, 1000);
+            } else {
+                warningEl.classList.remove('show');
+                submitButton.disabled = false;
+            }
+        }
+
+        // ============================================
+        // PASSWORD VISIBILITY TOGGLE
+        // ============================================
+        const passwordInput = document.getElementById('password');
+        const passwordToggle = document.getElementById('password-toggle');
+        let passwordVisible = false;
+
+        passwordToggle.addEventListener('click', () => {
+            passwordVisible = !passwordVisible;
+            passwordInput.type = passwordVisible ? 'text' : 'password';
+            passwordToggle.textContent = passwordVisible ? '🙈' : '👁️';
+            passwordToggle.setAttribute('aria-label', passwordVisible ? 'Hide password' : 'Show password');
+        });
+
+        // ============================================
+        // SESSION MANAGEMENT
+        // ============================================
+        const SESSION_KEY = 'blackroad_pitstop_session';
+        const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+        const SESSION_WARNING_TIME = 5 * 60 * 1000; // 5 minutes before expiry
+
+        function checkSession() {
+            const session = localStorage.getItem(SESSION_KEY);
+            if (session) {
+                try {
+                    const sessionData = JSON.parse(session);
+                    const now = Date.now();
+
+                    if (sessionData.expires > now) {
+                        // Valid session - redirect to dashboard
+                        window.location.href = 'dashboard.html';
+                        return;
+                    } else {
+                        // Expired session
+                        localStorage.removeItem(SESSION_KEY);
+                        showToast('warning', 'Session Expired', 'Please log in again to continue.');
+                    }
+                } catch (e) {
+                    localStorage.removeItem(SESSION_KEY);
+                }
+            }
+        }
+
+        function createSession(username) {
+            const sessionData = {
+                username: username,
+                timestamp: Date.now(),
+                expires: Date.now() + SESSION_DURATION
+            };
+            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+        }
+
+        function extendSession() {
+            const session = localStorage.getItem(SESSION_KEY);
+            if (session) {
+                const sessionData = JSON.parse(session);
+                sessionData.expires = Date.now() + SESSION_DURATION;
+                localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+                document.getElementById('session-expiry-banner').classList.remove('show');
+                showToast('success', 'Session Extended', 'Your session has been extended for 24 hours.');
+            }
+        }
+
+        // ============================================
+        // ANIMATED STARFIELD BACKGROUND
+        // ============================================
+        const background = document.getElementById('background');
+        for (let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animationDelay = `${Math.random() * 3}s`;
+            background.appendChild(star);
+        }
+
+        // ============================================
+        // AUTHENTICATION SYSTEM
+        // ============================================
+        const VALID_CREDENTIALS = {
+            'alexa': 'blackroad2025',
+            'admin': 'blackroad2025',
+            'demo': 'demo123'
+        };
+
+        // DOM Elements
+        const form = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const submitButton = document.getElementById('submit-button');
+        const buttonText = document.getElementById('button-text');
+        const spinner = document.getElementById('spinner');
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            checkSession();
+            updateLockoutUI();
+
+            // Focus username input
+            document.getElementById('username').focus();
+        });
+
+        // Form submission handler
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Check lockout
+            if (isLockedOut()) {
+                showToast('error', 'Account Locked', 'Too many failed attempts. Please wait.');
+                return;
+            }
+
+            const username = document.getElementById('username').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+
+            // Validation
+            if (!username || !password) {
+                showToast('warning', 'Missing Fields', 'Please enter both username and password.');
+                return;
+            }
+
+            // Hide previous errors
+            errorMessage.classList.remove('show');
+
+            // Show loading state
+            submitButton.disabled = true;
+            buttonText.textContent = 'Authenticating';
+            spinner.classList.remove('hidden');
+
+            // Simulate network delay for realism
+            await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400));
+
+            // Check credentials
+            if (VALID_CREDENTIALS[username] && VALID_CREDENTIALS[username] === password) {
+                // Success!
+                clearAttempts();
+                buttonText.textContent = 'Access Granted';
+                spinner.classList.add('hidden');
+
+                showToast('success', 'Welcome Back!', `Logging in as ${username}...`);
+
+                // Create session
+                createSession(username);
+
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 800);
+            } else {
+                // Failed login
+                const attemptData = recordFailedAttempt();
+                const remainingAttempts = MAX_ATTEMPTS - attemptData.attempts;
+
+                submitButton.disabled = false;
+                buttonText.textContent = 'Enter Pitstop';
+                spinner.classList.add('hidden');
+                errorMessage.classList.add('show');
+
+                if (remainingAttempts > 0) {
+                    showToast('error', 'Authentication Failed',
+                        `Invalid credentials. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`);
+                } else {
+                    showToast('error', 'Account Locked',
+                        `Too many failed attempts. Please wait 30 seconds.`);
+                    updateLockoutUI();
+                }
+
+                // Shake animation
+                document.querySelector('.login-card').style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    document.querySelector('.login-card').style.animation = '';
+                }, 500);
+            }
+        });
+
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Enter to submit
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+
+            // Escape to clear form
+            if (e.key === 'Escape') {
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                errorMessage.classList.remove('show');
+            }
+        });
+
+        // ============================================
+        // SHAKE ANIMATION (Dynamic CSS)
+        // ============================================
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+                20%, 40%, 60%, 80% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
