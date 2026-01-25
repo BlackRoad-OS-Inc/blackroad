@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Earth | RoadWorld Module</title>
+
+    <!-- MapLibre GL -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../src/css/main.css">
+</head>
+<body>
+    <div id="map"></div>
+    <div class="crosshair"></div>
+
+    <!-- Header -->
+    <div class="ui-overlay header">
+        <div>
+            <div class="logo">BLACKROAD EARTH</div>
+            <div class="logo-sub">ROADWORLD MODULE</div>
+        </div>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value highlight" id="zoom-level">1.0</div>
+                <div class="stat-label">Zoom Level</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="altitude">10,000 km</div>
+                <div class="stat-label">Altitude</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="resolution">10 km/px</div>
+                <div class="stat-label">Resolution</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="coordinates">0°, 0°</div>
+                <div class="stat-label">Center</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="globe-mode-indicator">
+        <div class="mode-dot"></div>
+        <span id="view-mode">GLOBE VIEW</span>
+    </div>
+
+    <!-- Search -->
+    <div class="ui-overlay search-container">
+        <input type="text" class="search-input" id="search" placeholder="Search any location... (Times Square, Eiffel Tower, 123 Main St)">
+        <button class="search-btn" id="search-btn">FLY TO</button>
+    </div>
+
+    <!-- Zoom Panel -->
+    <div class="ui-overlay zoom-panel">
+        <div class="zoom-title">DETAIL LEVEL</div>
+        <div class="zoom-bar">
+            <div class="zoom-fill" id="zoom-fill" style="width: 5%"></div>
+        </div>
+        <div class="zoom-labels">
+            <span>Space</span>
+            <span>Street</span>
+        </div>
+        <div class="scale-list">
+            <div class="scale-item active" data-min="0" data-max="3">
+                <span class="scale-icon">🌍</span>
+                <span>Planet View</span>
+            </div>
+            <div class="scale-item" data-min="3" data-max="6">
+                <span class="scale-icon">🗺️</span>
+                <span>Continent</span>
+            </div>
+            <div class="scale-item" data-min="6" data-max="10">
+                <span class="scale-icon">🏔️</span>
+                <span>Region / Country</span>
+            </div>
+            <div class="scale-item" data-min="10" data-max="14">
+                <span class="scale-icon">🏙️</span>
+                <span>City</span>
+            </div>
+            <div class="scale-item" data-min="14" data-max="17">
+                <span class="scale-icon">🏘️</span>
+                <span>Neighborhood</span>
+            </div>
+            <div class="scale-item" data-min="17" data-max="20">
+                <span class="scale-icon">🏠</span>
+                <span>Street Level</span>
+            </div>
+            <div class="scale-item" data-min="20" data-max="24">
+                <span class="scale-icon">🚶</span>
+                <span>Building Detail</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="ui-overlay info-panel">
+        <div class="info-section">
+            <div class="info-label">Location</div>
+            <div class="info-value large" id="location-name">Earth</div>
+        </div>
+        <div class="info-section">
+            <div class="info-label">Latitude</div>
+            <div class="info-value" id="lat">0.000000°</div>
+        </div>
+        <div class="info-section">
+            <div class="info-label">Longitude</div>
+            <div class="info-value" id="lng">0.000000°</div>
+        </div>
+        <div class="info-section">
+            <div class="info-label">Tile Coordinates</div>
+            <div class="info-value" id="tile-coords">z0 / x0 / y0</div>
+        </div>
+        <div class="info-section">
+            <div class="info-label">Saved Locations</div>
+            <div class="info-value" id="saved-count">0</div>
+        </div>
+    </div>
+
+    <!-- Layer Selection -->
+    <div class="ui-overlay layer-panel">
+        <button class="layer-btn active" data-style="satellite">🛰️ Satellite</button>
+        <button class="layer-btn" data-style="streets">🗺️ Streets</button>
+        <button class="layer-btn" data-style="dark">🌙 Dark</button>
+        <button class="layer-btn" data-style="terrain">🏔️ Terrain</button>
+        <button class="layer-btn" data-style="hybrid">🔀 Hybrid</button>
+    </div>
+
+    <!-- Quick Locations -->
+    <div class="ui-overlay quick-locations">
+        <button class="quick-btn" data-lat="40.7580" data-lng="-73.9855" data-zoom="18">Times Square <span>NYC</span></button>
+        <button class="quick-btn" data-lat="48.8584" data-lng="2.2945" data-zoom="18">Eiffel Tower <span>Paris</span></button>
+        <button class="quick-btn" data-lat="35.6595" data-lng="139.7004" data-zoom="18">Shibuya Crossing <span>Tokyo</span></button>
+        <button class="quick-btn" data-lat="51.5007" data-lng="-0.1246" data-zoom="18">Big Ben <span>London</span></button>
+        <button class="quick-btn" data-lat="40.6892" data-lng="-74.0445" data-zoom="17">Statue of Liberty <span>NYC</span></button>
+        <button class="quick-btn" data-lat="37.8199" data-lng="-122.4783" data-zoom="16">Golden Gate <span>SF</span></button>
+    </div>
+
+    <!-- Controls -->
+    <div class="ui-overlay controls">
+        <button class="ctrl-btn" id="btn-home" title="Home">🏠</button>
+        <button class="ctrl-btn" id="btn-north" title="Reset North">🧭</button>
+        <div class="divider"></div>
+        <button class="ctrl-btn" id="btn-zoom-in" title="Zoom In">+</button>
+        <button class="ctrl-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+        <div class="divider"></div>
+        <button class="ctrl-btn" id="btn-3d" title="3D Buildings">🏢</button>
+        <button class="ctrl-btn" id="btn-globe" title="Globe View">🌐</button>
+        <div class="divider"></div>
+        <button class="ctrl-btn" id="btn-locate" title="My Location">📍</button>
+        <button class="ctrl-btn" id="btn-save" title="Save Location">💾</button>
+        <button class="ctrl-btn" id="btn-marker" title="Add Marker">🎯</button>
+        <div class="divider"></div>
+        <button class="ctrl-btn" id="btn-measure" title="Measure Distance">📏</button>
+        <button class="ctrl-btn" id="btn-share" title="Share Location">🔗</button>
+        <button class="ctrl-btn" id="btn-tools" title="More Tools">🛠️</button>
+    </div>
+
+    <!-- Instructions -->
+    <div class="ui-overlay instructions">
+        <div><kbd>DRAG</kbd> Pan / Rotate</div>
+        <div><kbd>SCROLL</kbd> Zoom</div>
+        <div><kbd>CTRL+DRAG</kbd> Tilt</div>
+        <div><kbd>RIGHT-CLICK</kbd> Rotate</div>
+    </div>
+
+    <!-- Tools Panel -->
+    <div class="ui-overlay tools-panel" id="tools-panel" style="display: none;">
+        <div class="panel-header">
+            <span>Tools</span>
+            <button class="panel-close" id="tools-close">✕</button>
+        </div>
+        <div class="panel-content">
+            <div class="tool-section">
+                <h4>Measurement</h4>
+                <button class="tool-btn" id="measure-distance">📏 Measure Distance</button>
+                <button class="tool-btn" id="measure-area">📐 Measure Area</button>
+                <button class="tool-btn" id="measure-clear">🗑️ Clear Measurements</button>
+                <div class="measurement-result" id="measurement-result"></div>
+            </div>
+            <div class="tool-section">
+                <h4>Markers</h4>
+                <button class="tool-btn" id="add-marker-custom">🎯 Add Marker Here</button>
+                <button class="tool-btn" id="view-markers">📍 View All Markers</button>
+                <button class="tool-btn" id="clear-markers">🗑️ Clear All Markers</button>
+            </div>
+            <div class="tool-section">
+                <h4>Share</h4>
+                <button class="tool-btn" id="copy-url">🔗 Copy Share Link</button>
+                <button class="tool-btn" id="export-view">📸 Export View</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marker Add Panel -->
+    <div class="ui-overlay marker-add-panel" id="marker-add-panel" style="display: none;">
+        <div class="panel-header">
+            <span>Add Marker</span>
+            <button class="panel-close" id="marker-add-close">✕</button>
+        </div>
+        <div class="panel-content">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="marker-name" placeholder="Enter marker name" />
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="marker-category">
+                    <option value="custom">Custom</option>
+                    <option value="favorite">Favorite</option>
+                    <option value="work">Work</option>
+                    <option value="home">Home</option>
+                    <option value="travel">Travel</option>
+                    <option value="food">Food</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Description (optional)</label>
+                <textarea id="marker-description" placeholder="Add a description"></textarea>
+            </div>
+            <button class="tool-btn primary" id="marker-save">Save Marker</button>
+        </div>
+    </div>
+
+    <!-- Saved Locations Panel -->
+    <div class="ui-overlay saved-panel" id="saved-panel" style="display: none;">
+        <div class="panel-header">
+            <span>Saved Locations</span>
+            <button class="panel-close" id="saved-close">✕</button>
+        </div>
+        <div class="panel-content">
+            <div id="saved-locations-list" class="saved-list"></div>
+        </div>
+    </div>
+
+    <!-- Game HUD -->
+    <div class="game-hud" id="game-hud" style="display: none;">
+        <div class="hud-section">
+            <div class="hud-label">Level</div>
+            <div class="hud-value" id="hud-level">1</div>
+            <div class="hud-progress">
+                <div class="hud-progress-bar" id="hud-xp-bar" style="width: 0%"></div>
+            </div>
+            <div class="hud-label" style="margin-top: 4px; font-size: 8px;">
+                <span id="hud-xp">0</span> / <span id="hud-xp-next">100</span> XP
+            </div>
+        </div>
+
+        <div class="hud-section">
+            <div class="hud-label">Inventory</div>
+            <div class="hud-inventory">
+                <div class="hud-item">
+                    <span class="hud-item-icon">⭐</span>
+                    <span class="hud-item-count" id="hud-stars">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-item-icon">💎</span>
+                    <span class="hud-item-count" id="hud-gems">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-item-icon">🏆</span>
+                    <span class="hud-item-count" id="hud-trophies">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-item-icon">🗝️</span>
+                    <span class="hud-item-count" id="hud-keys">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hud-section">
+            <div class="hud-label">Stats</div>
+            <div style="font-size: 11px; line-height: 1.6;">
+                <div>🚶 <span id="hud-distance">0 m</span></div>
+                <div>✨ <span id="hud-collected">0</span> items</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Toggle Button -->
+    <button class="game-toggle-btn" id="game-toggle" title="Toggle Game Mode">
+        🎮
+    </button>
+
+    <!-- JavaScript Modules -->
+    <script type="module" src="../src/js/main.js"></script>
+</body>
+</html>
