@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS — Jupiter Explorer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        }
+        #canvas-container { position: fixed; inset: 0; }
+
+        .hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212,165,116,0.3);
+            z-index: 100;
+            min-width: 260px;
+        }
+
+        .hud-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 16px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .stat-label { color: rgba(255,255,255,0.7); }
+        .stat-value { color: #d4a574; font-weight: 600; }
+
+        .bar {
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .fuel-fill { height: 100%; background: linear-gradient(90deg, #4caf50, #81c784); transition: width 0.3s ease; }
+        .hull-fill { height: 100%; background: linear-gradient(90deg, #2196f3, #64b5f6); transition: width 0.3s ease; }
+
+        .missions {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            padding: 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212,165,116,0.3);
+            z-index: 100;
+            min-width: 280px;
+        }
+
+        .missions-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 12px;
+        }
+
+        .mission {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 3px solid #d4a574;
+        }
+
+        .mission-name {
+            font-size: 12px;
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .mission-desc {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 6px;
+        }
+
+        .mission-progress {
+            font-size: 10px;
+            color: #d4a574;
+        }
+
+        .mission.completed {
+            border-left-color: #4caf50;
+            opacity: 0.6;
+        }
+
+        .scanner {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.9);
+            padding: 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212,165,116,0.3);
+            z-index: 100;
+            min-width: 240px;
+        }
+
+        .scanner-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 12px;
+        }
+
+        .scan-item {
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .scan-label { color: rgba(255,255,255,0.6); }
+        .scan-value { color: #d4a574; font-weight: 600; }
+
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            padding: 12px 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212,165,116,0.3);
+            z-index: 100;
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .control-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .key {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 20px 40px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 2px solid #d4a574;
+            z-index: 200;
+            font-size: 16px;
+            color: #fff;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .message.visible { opacity: 1; }
+
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(212,165,116,0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .crosshair::before, .crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(212,165,116,0.8);
+        }
+
+        .crosshair::before {
+            left: 50%;
+            top: -8px;
+            width: 2px;
+            height: 6px;
+            transform: translateX(-50%);
+        }
+
+        .crosshair::after {
+            top: 50%;
+            right: -8px;
+            width: 6px;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="crosshair"></div>
+
+    <div class="hud">
+        <div class="hud-title">Spacecraft Status</div>
+        <div class="stat">
+            <span class="stat-label">Fuel</span>
+            <span class="stat-value" id="fuelVal">100%</span>
+        </div>
+        <div class="bar"><div class="fuel-fill" id="fuelBar" style="width: 100%"></div></div>
+        <div class="stat" style="margin-top: 12px;">
+            <span class="stat-label">Hull Integrity</span>
+            <span class="stat-value" id="hullVal">100%</span>
+        </div>
+        <div class="bar"><div class="hull-fill" id="hullBar" style="width: 100%"></div></div>
+        <div class="stat" style="margin-top: 12px;">
+            <span class="stat-label">Speed</span>
+            <span class="stat-value" id="speedVal">0.0 km/s</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Distance to Jupiter</span>
+            <span class="stat-value" id="distVal">0 km</span>
+        </div>
+    </div>
+
+    <div class="missions">
+        <div class="missions-title">Mission Objectives</div>
+        <div id="missionList"></div>
+    </div>
+
+    <div class="scanner">
+        <div class="scanner-title">Scanner Data</div>
+        <div class="scan-item">
+            <span class="scan-label">Target</span>
+            <span class="scan-value" id="scanTarget">None</span>
+        </div>
+        <div class="scan-item">
+            <span class="scan-label">Distance</span>
+            <span class="scan-value" id="scanDist">--</span>
+        </div>
+        <div class="scan-item">
+            <span class="scan-label">Type</span>
+            <span class="scan-value" id="scanType">--</span>
+        </div>
+        <div class="scan-item">
+            <span class="scan-label">Resources</span>
+            <span class="scan-value" id="scanRes">--</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 8px;">Flight Controls</div>
+        <div class="control-row"><span class="key">W</span> Thrust Forward</div>
+        <div class="control-row"><span class="key">S</span> Thrust Backward</div>
+        <div class="control-row"><span class="key">A/D</span> Strafe</div>
+        <div class="control-row"><span class="key">Q/E</span> Up/Down</div>
+        <div class="control-row"><span class="key">SPACE</span> Boost</div>
+        <div class="control-row"><span class="key">F</span> Scan</div>
+        <div class="control-row"><span class="key">MOUSE</span> Orient</div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const JUPITER_RADIUS = 50;
+        const MOON_DATA = {
+            io: { name: "Io", dist: 75, radius: 1.8, color: 0xffd700, resource: 'sulfur' },
+            europa: { name: "Europa", dist: 95, radius: 1.6, color: 0xddeeff, resource: 'ice' },
+            ganymede: { name: "Ganymede", dist: 120, radius: 2.6, color: 0xa0a0a0, resource: 'minerals' },
+            callisto: { name: "Callisto", dist: 145, radius: 2.4, color: 0x8b7355, resource: 'water' }
+        };
+
+        const MISSIONS = [
+            { id: 1, name: "Approach Jupiter", desc: "Get within 200km of Jupiter", complete: false, check: () => shipDist < 200 },
+            { id: 2, name: "Scan Io", desc: "Scan the volcanic moon Io", complete: false, target: 'io' },
+            { id: 3, name: "Scan Europa", desc: "Scan the icy moon Europa", complete: false, target: 'europa' },
+            { id: 4, name: "Scan Ganymede", desc: "Scan the largest moon", complete: false, target: 'ganymede' },
+            { id: 5, name: "Scan Callisto", desc: "Scan the cratered moon", complete: false, target: 'callisto' },
+            { id: 6, name: "Collect Samples", desc: "Scan all 4 Galilean moons", complete: false, check: () => scannedMoons.size === 4 }
+        ];
+
+        let scene, camera, renderer;
+        let jupiter, moons = {}, spacecraft;
+        let shipSpeed = 0, shipDist = 300;
+        let shipFuel = 100, shipHull = 100;
+        let keys = {}, mouse = { locked: false };
+        let yaw = 0, pitch = 0;
+        let scannedMoons = new Set();
+        let currentTarget = null;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000005);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.set(0, 50, 300);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            createStars();
+            createJupiter();
+            createMoons();
+            createSpacecraft();
+            setupControls();
+            renderMissions();
+
+            animate();
+        }
+
+        function createStars() {
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(10000 * 3);
+            for (let i = 0; i < 10000; i++) {
+                const r = 1000 + Math.random() * 3000;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                pos[i*3+2] = r * Math.cos(phi);
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 2 })));
+        }
+
+        function createJupiter() {
+            jupiter = new THREE.Mesh(
+                new THREE.SphereGeometry(JUPITER_RADIUS, 64, 64),
+                new THREE.MeshBasicMaterial({ color: 0xd4a574 })
+            );
+            scene.add(jupiter);
+
+            const light = new THREE.PointLight(0xffffff, 2, 1000);
+            light.position.set(500, 200, 300);
+            scene.add(light);
+        }
+
+        function createMoons() {
+            Object.entries(MOON_DATA).forEach(([key, data]) => {
+                const moon = new THREE.Mesh(
+                    new THREE.SphereGeometry(data.radius, 32, 32),
+                    new THREE.MeshBasicMaterial({ color: data.color })
+                );
+                moon.position.x = data.dist;
+                moon.userData = { ...data, key };
+                moons[key] = moon;
+                scene.add(moon);
+            });
+        }
+
+        function createSpacecraft() {
+            spacecraft = new THREE.Group();
+            const body = new THREE.Mesh(
+                new THREE.ConeGeometry(0.5, 2, 4),
+                new THREE.MeshBasicMaterial({ color: 0xcccccc })
+            );
+            body.rotation.x = Math.PI / 2;
+            spacecraft.add(body);
+            scene.add(spacecraft);
+        }
+
+        function setupControls() {
+            document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+            document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+            document.addEventListener('keydown', e => {
+                if (e.key.toLowerCase() === 'f') tryScan();
+            });
+
+            document.addEventListener('mousemove', e => {
+                if (!mouse.locked) return;
+                yaw -= e.movementX * 0.002;
+                pitch -= e.movementY * 0.002;
+                pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
+            });
+
+            renderer.domElement.addEventListener('click', () => {
+                renderer.domElement.requestPointerLock();
+            });
+
+            document.addEventListener('pointerlockchange', () => {
+                mouse.locked = document.pointerLockElement === renderer.domElement;
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function tryScan() {
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+
+            const moonObjs = Object.values(moons);
+            const hits = raycaster.intersectObjects(moonObjs);
+
+            if (hits.length > 0) {
+                const moon = hits[0].object;
+                const data = moon.userData;
+
+                if (!scannedMoons.has(data.key)) {
+                    scannedMoons.add(data.key);
+                    showMessage(`Scanned ${data.name}!\nResource: ${data.resource}`);
+
+                    const mission = MISSIONS.find(m => m.target === data.key);
+                    if (mission) mission.complete = true;
+
+                    renderMissions();
+                } else {
+                    showMessage(`${data.name} already scanned`);
+                }
+            }
+        }
+
+        function showMessage(text) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.classList.add('visible');
+            setTimeout(() => msg.classList.remove('visible'), 3000);
+        }
+
+        function renderMissions() {
+            const list = document.getElementById('missionList');
+            list.innerHTML = '';
+
+            MISSIONS.forEach(mission => {
+                if (mission.check && !mission.complete) {
+                    mission.complete = mission.check();
+                }
+
+                const div = document.createElement('div');
+                div.className = 'mission' + (mission.complete ? ' completed' : '');
+                div.innerHTML = `
+                    <div class="mission-name">${mission.complete ? '✓' : '○'} ${mission.name}</div>
+                    <div class="mission-desc">${mission.desc}</div>
+                    <div class="mission-progress">${mission.complete ? 'Complete' : 'In Progress'}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function updateShip() {
+            const thrust = 0.5;
+            const boost = keys[' '] ? 2 : 1;
+            const dir = new THREE.Vector3();
+
+            if (keys['w']) dir.z -= thrust * boost;
+            if (keys['s']) dir.z += thrust * boost;
+            if (keys['a']) dir.x -= thrust;
+            if (keys['d']) dir.x += thrust;
+            if (keys['q']) dir.y += thrust;
+            if (keys['e']) dir.y -= thrust;
+
+            if (dir.length() > 0) {
+                dir.normalize();
+                dir.multiplyScalar(thrust * boost);
+                dir.applyQuaternion(camera.quaternion);
+                camera.position.add(dir);
+                spacecraft.position.copy(camera.position);
+
+                shipFuel = Math.max(0, shipFuel - 0.05 * boost);
+                shipSpeed = dir.length();
+            } else {
+                shipSpeed *= 0.95;
+            }
+
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = yaw;
+            camera.rotation.x = pitch;
+            spacecraft.rotation.copy(camera.rotation);
+
+            shipDist = camera.position.distanceTo(jupiter.position);
+
+            // Find closest moon
+            let closest = null;
+            let closestDist = Infinity;
+            Object.values(moons).forEach(moon => {
+                const dist = camera.position.distanceTo(moon.position);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closest = moon;
+                }
+            });
+
+            if (closest) {
+                const data = closest.userData;
+                document.getElementById('scanTarget').textContent = data.name;
+                document.getElementById('scanDist').textContent = closestDist.toFixed(1) + ' km';
+                document.getElementById('scanType').textContent = 'Moon';
+                document.getElementById('scanRes').textContent = data.resource;
+            }
+
+            document.getElementById('fuelVal').textContent = Math.round(shipFuel) + '%';
+            document.getElementById('fuelBar').style.width = shipFuel + '%';
+            document.getElementById('hullVal').textContent = Math.round(shipHull) + '%';
+            document.getElementById('hullBar').style.width = shipHull + '%';
+            document.getElementById('speedVal').textContent = (shipSpeed * 10).toFixed(1) + ' km/s';
+            document.getElementById('distVal').textContent = Math.round(shipDist) + ' km';
+
+            renderMissions();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updateShip();
+
+            jupiter.rotation.y += 0.001;
+            Object.values(moons).forEach((moon, i) => {
+                const angle = Date.now() * 0.0001 * (i + 1);
+                const data = moon.userData;
+                moon.position.x = Math.cos(angle) * data.dist;
+                moon.position.z = Math.sin(angle) * data.dist;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>

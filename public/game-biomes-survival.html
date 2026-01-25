@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS — Biomes Survival Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        }
+        #canvas-container { position: fixed; inset: 0; }
+
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .crosshair::before, .crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255,255,255,0.9);
+        }
+        .crosshair::before {
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            transform: translateX(-50%);
+        }
+        .crosshair::after {
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+
+        .hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            min-width: 280px;
+        }
+
+        .hud-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 16px;
+        }
+
+        .stat-bar {
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .health-fill { background: linear-gradient(90deg, #ff1d6c, #ff6b9d); }
+        .hunger-fill { background: linear-gradient(90deg, #ff9800, #ffc107); }
+        .thirst-fill { background: linear-gradient(90deg, #2196f3, #64b5f6); }
+        .stamina-fill { background: linear-gradient(90deg, #4caf50, #81c784); }
+
+        .inventory {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            min-width: 220px;
+        }
+
+        .inventory-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 12px;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .inv-slot {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #fff;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .inv-slot:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,29,108,0.5);
+        }
+
+        .inv-slot.has-item {
+            background: rgba(255,29,108,0.1);
+            border-color: rgba(255,29,108,0.3);
+        }
+
+        .inv-count {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .crafting {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            min-width: 220px;
+        }
+
+        .crafting-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 12px;
+        }
+
+        .recipe {
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .recipe:hover {
+            background: rgba(255,29,108,0.1);
+            border-color: rgba(255,29,108,0.3);
+        }
+
+        .recipe-name {
+            font-size: 12px;
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .recipe-materials {
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 12px 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .control-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .key {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .message {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            padding: 12px 32px;
+            border-radius: 8px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,29,108,0.3);
+            z-index: 100;
+            font-size: 14px;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .message.visible { opacity: 1; }
+
+        .day-night {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            padding: 8px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            font-size: 12px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-icon { font-size: 16px; }
+
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease;
+        }
+        .loading.hidden { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div style="font-size: 48px; margin-bottom: 20px;">⚔️</div>
+        <div style="color: rgba(255,255,255,0.7); font-size: 18px;">Loading Biomes Survival...</div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div class="crosshair"></div>
+
+    <div class="day-night">
+        <span class="time-icon" id="timeIcon">☀️</span>
+        <span id="timeDisplay">Day 1 - 08:00</span>
+    </div>
+
+    <div class="hud">
+        <div class="hud-title">Status</div>
+        <div class="stat-bar">
+            <div class="stat-label">
+                <span>Health</span>
+                <span class="stat-value" id="healthVal">100</span>
+            </div>
+            <div class="bar"><div class="bar-fill health-fill" id="healthBar" style="width: 100%"></div></div>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-label">
+                <span>Hunger</span>
+                <span class="stat-value" id="hungerVal">100</span>
+            </div>
+            <div class="bar"><div class="bar-fill hunger-fill" id="hungerBar" style="width: 100%"></div></div>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-label">
+                <span>Thirst</span>
+                <span class="stat-value" id="thirstVal">100</span>
+            </div>
+            <div class="bar"><div class="bar-fill thirst-fill" id="thirstBar" style="width: 100%"></div></div>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-label">
+                <span>Stamina</span>
+                <span class="stat-value" id="staminaVal">100</span>
+            </div>
+            <div class="bar"><div class="bar-fill stamina-fill" id="staminaBar" style="width: 100%"></div></div>
+        </div>
+        <div class="stat-label" style="margin-top: 12px;">
+            <span>Biome</span>
+            <span class="stat-value" id="biomeDisplay">Temperate Forest</span>
+        </div>
+    </div>
+
+    <div class="inventory">
+        <div class="inventory-title">Inventory (8)</div>
+        <div class="inventory-grid" id="inventoryGrid"></div>
+    </div>
+
+    <div class="crafting">
+        <div class="crafting-title">Crafting</div>
+        <div id="recipeList"></div>
+    </div>
+
+    <div class="controls">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 8px;">Controls</div>
+        <div class="control-row"><span class="key">WASD</span> Move</div>
+        <div class="control-row"><span class="key">SPACE</span> Jump</div>
+        <div class="control-row"><span class="key">SHIFT</span> Sprint</div>
+        <div class="control-row"><span class="key">E</span> Gather</div>
+        <div class="control-row"><span class="key">C</span> Craft</div>
+        <div class="control-row"><span class="key">MOUSE</span> Look</div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game constants
+        const PLAYER_HEIGHT = 1.8;
+        const PLAYER_SPEED = 0.12;
+        const SPRINT_MULTIPLIER = 2;
+        const JUMP_FORCE = 0.4;
+        const GRAVITY = 0.015;
+        const GATHER_RANGE = 4;
+
+        // Biomes
+        const BIOMES = {
+            FOREST: { name: "Temperate Forest", color: 0x2d5a27, resources: ['wood', 'berry', 'mushroom'] },
+            DESERT: { name: "Desert", color: 0xc2b280, resources: ['cactus', 'sand', 'crystal'] },
+            TUNDRA: { name: "Tundra", color: 0x8fbc8f, resources: ['ice', 'stone', 'moss'] },
+            JUNGLE: { name: "Jungle", color: 0x1a5a1a, resources: ['wood', 'fruit', 'fiber'] }
+        };
+
+        // Crafting recipes
+        const RECIPES = [
+            { name: "Campfire", materials: { wood: 5, stone: 3 }, result: 'campfire' },
+            { name: "Shelter", materials: { wood: 10, fiber: 5 }, result: 'shelter' },
+            { name: "Tool", materials: { wood: 3, stone: 2 }, result: 'tool' },
+            { name: "Torch", materials: { wood: 2, fiber: 1 }, result: 'torch' }
+        ];
+
+        // Game state
+        let gameState = {
+            health: 100,
+            maxHealth: 100,
+            hunger: 100,
+            maxHunger: 100,
+            thirst: 100,
+            maxThirst: 100,
+            stamina: 100,
+            maxStamina: 100,
+            inventory: {},
+            day: 1,
+            time: 8 * 60, // minutes from midnight
+            biome: BIOMES.FOREST,
+            velocity: new THREE.Vector3(),
+            onGround: true
+        };
+
+        let scene, camera, renderer;
+        let resources = [];
+        let keys = {};
+        let mouse = { locked: false };
+        let cameraPitch = 0, cameraYaw = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x87ceeb, 30, 150);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, PLAYER_HEIGHT, 5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            createWorld();
+            setupControls();
+            initInventoryUI();
+            initCraftingUI();
+
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                requestPointerLock();
+                animate();
+            }, 1000);
+        }
+
+        function createWorld() {
+            // Sun
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(100, 150, 100);
+            sun.castShadow = true;
+            scene.add(sun);
+            scene.add(new THREE.AmbientLight(0x404060, 0.5));
+
+            // Ground
+            const groundGeo = new THREE.PlaneGeometry(300, 300, 80, 80);
+            const positions = groundGeo.attributes.position;
+            for (let i = 0; i < positions.count; i++) {
+                positions.setZ(i, positions.getZ(i) + (Math.random() - 0.5) * 3);
+            }
+            groundGeo.computeVertexNormals();
+
+            const ground = new THREE.Mesh(
+                groundGeo,
+                new THREE.MeshStandardMaterial({ color: 0x3d5a2c, roughness: 0.9 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Resources
+            for (let i = 0; i < 80; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 5 + Math.random() * 60;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist;
+
+                if (Math.random() > 0.5) {
+                    const tree = createTree();
+                    tree.position.set(x, 0, z);
+                    resources.push({ obj: tree, type: 'wood', amount: 3 });
+                    scene.add(tree);
+                } else {
+                    const rock = createRock();
+                    rock.position.set(x, 0.3, z);
+                    resources.push({ obj: rock, type: 'stone', amount: 2 });
+                    scene.add(rock);
+                }
+            }
+        }
+
+        function createTree() {
+            const group = new THREE.Group();
+            const trunk = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.2, 0.3, 3, 8),
+                new THREE.MeshStandardMaterial({ color: 0x4a3728 })
+            );
+            trunk.position.y = 1.5;
+            trunk.castShadow = true;
+            group.add(trunk);
+
+            const leaves = new THREE.Mesh(
+                new THREE.SphereGeometry(1.5, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0x228b22 })
+            );
+            leaves.position.y = 3.5;
+            leaves.castShadow = true;
+            group.add(leaves);
+
+            group.userData = { gatherable: true };
+            return group;
+        }
+
+        function createRock() {
+            const rock = new THREE.Mesh(
+                new THREE.DodecahedronGeometry(0.4),
+                new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 })
+            );
+            rock.castShadow = true;
+            rock.userData = { gatherable: true };
+            return rock;
+        }
+
+        function setupControls() {
+            document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+            document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+            document.addEventListener('keydown', e => {
+                if (e.key.toLowerCase() === 'e') tryGather();
+                if (e.key.toLowerCase() === 'c') showMessage('Open crafting menu');
+            });
+
+            document.addEventListener('mousemove', e => {
+                if (!mouse.locked) return;
+                cameraYaw -= e.movementX * 0.002;
+                cameraPitch -= e.movementY * 0.002;
+                cameraPitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraPitch));
+            });
+
+            renderer.domElement.addEventListener('click', requestPointerLock);
+            document.addEventListener('pointerlockchange', () => {
+                mouse.locked = document.pointerLockElement === renderer.domElement;
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function requestPointerLock() {
+            renderer.domElement.requestPointerLock();
+        }
+
+        function tryGather() {
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+
+            const gatherables = resources.map(r => r.obj).filter(o => o.userData.gatherable);
+            const hits = raycaster.intersectObjects(gatherables, true);
+
+            if (hits.length > 0 && hits[0].distance < GATHER_RANGE) {
+                let target = hits[0].object;
+                while (target.parent && !target.userData.gatherable) target = target.parent;
+
+                const resData = resources.find(r => r.obj === target);
+                if (resData) {
+                    addToInventory(resData.type, resData.amount);
+                    showMessage(`Gathered ${resData.amount}x ${resData.type}`);
+                    scene.remove(target);
+                    resources = resources.filter(r => r.obj !== target);
+                    gameState.stamina = Math.max(0, gameState.stamina - 10);
+                }
+            }
+        }
+
+        function addToInventory(item, count) {
+            if (!gameState.inventory[item]) gameState.inventory[item] = 0;
+            gameState.inventory[item] += count;
+            updateInventoryUI();
+        }
+
+        function initInventoryUI() {
+            const grid = document.getElementById('inventoryGrid');
+            for (let i = 0; i < 8; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'inv-slot';
+                slot.dataset.slot = i;
+                grid.appendChild(slot);
+            }
+            updateInventoryUI();
+        }
+
+        function updateInventoryUI() {
+            const slots = document.querySelectorAll('.inv-slot');
+            const items = Object.entries(gameState.inventory);
+
+            slots.forEach((slot, i) => {
+                if (items[i]) {
+                    const [name, count] = items[i];
+                    slot.classList.add('has-item');
+                    slot.innerHTML = `<div style="font-size: 9px; text-transform: uppercase;">${name}</div><div class="inv-count">${count}</div>`;
+                } else {
+                    slot.classList.remove('has-item');
+                    slot.innerHTML = '';
+                }
+            });
+        }
+
+        function initCraftingUI() {
+            const list = document.getElementById('recipeList');
+            RECIPES.forEach(recipe => {
+                const div = document.createElement('div');
+                div.className = 'recipe';
+                const matStr = Object.entries(recipe.materials).map(([k,v]) => `${k}:${v}`).join(', ');
+                div.innerHTML = `<div class="recipe-name">${recipe.name}</div><div class="recipe-materials">${matStr}</div>`;
+                div.onclick = () => tryCraft(recipe);
+                list.appendChild(div);
+            });
+        }
+
+        function tryCraft(recipe) {
+            const canCraft = Object.entries(recipe.materials).every(([mat, count]) =>
+                (gameState.inventory[mat] || 0) >= count
+            );
+
+            if (canCraft) {
+                Object.entries(recipe.materials).forEach(([mat, count]) => {
+                    gameState.inventory[mat] -= count;
+                    if (gameState.inventory[mat] <= 0) delete gameState.inventory[mat];
+                });
+                addToInventory(recipe.result, 1);
+                showMessage(`Crafted ${recipe.name}!`);
+            } else {
+                showMessage('Not enough materials!');
+            }
+        }
+
+        function showMessage(text) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.classList.add('visible');
+            setTimeout(() => msg.classList.remove('visible'), 2500);
+        }
+
+        function updatePlayer(delta) {
+            const moveSpeed = keys['shift'] ? PLAYER_SPEED * SPRINT_MULTIPLIER : PLAYER_SPEED;
+            const dir = new THREE.Vector3();
+
+            if (keys['w']) dir.z -= 1;
+            if (keys['s']) dir.z += 1;
+            if (keys['a']) dir.x -= 1;
+            if (keys['d']) dir.x += 1;
+
+            if (dir.length() > 0) {
+                dir.normalize();
+                dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
+                camera.position.x += dir.x * moveSpeed;
+                camera.position.z += dir.z * moveSpeed;
+
+                if (keys['shift']) gameState.stamina = Math.max(0, gameState.stamina - 0.2);
+            } else {
+                gameState.stamina = Math.min(gameState.maxStamina, gameState.stamina + 0.1);
+            }
+
+            if (keys[' '] && gameState.onGround) {
+                gameState.velocity.y = JUMP_FORCE;
+                gameState.onGround = false;
+            }
+
+            if (!gameState.onGround) {
+                gameState.velocity.y -= GRAVITY;
+                camera.position.y += gameState.velocity.y;
+                if (camera.position.y <= PLAYER_HEIGHT) {
+                    camera.position.y = PLAYER_HEIGHT;
+                    gameState.velocity.y = 0;
+                    gameState.onGround = true;
+                }
+            }
+
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = cameraYaw;
+            camera.rotation.x = cameraPitch;
+
+            updateStats();
+        }
+
+        function updateStats() {
+            gameState.hunger = Math.max(0, gameState.hunger - 0.005);
+            gameState.thirst = Math.max(0, gameState.thirst - 0.008);
+
+            if (gameState.hunger < 20 || gameState.thirst < 20) {
+                gameState.health = Math.max(0, gameState.health - 0.01);
+            }
+
+            document.getElementById('healthVal').textContent = Math.round(gameState.health);
+            document.getElementById('healthBar').style.width = (gameState.health / gameState.maxHealth * 100) + '%';
+            document.getElementById('hungerVal').textContent = Math.round(gameState.hunger);
+            document.getElementById('hungerBar').style.width = (gameState.hunger / gameState.maxHunger * 100) + '%';
+            document.getElementById('thirstVal').textContent = Math.round(gameState.thirst);
+            document.getElementById('thirstBar').style.width = (gameState.thirst / gameState.maxThirst * 100) + '%';
+            document.getElementById('staminaVal').textContent = Math.round(gameState.stamina);
+            document.getElementById('staminaBar').style.width = (gameState.stamina / gameState.maxStamina * 100) + '%';
+
+            gameState.time += 0.1;
+            if (gameState.time >= 24 * 60) {
+                gameState.time = 0;
+                gameState.day++;
+            }
+
+            const hours = Math.floor(gameState.time / 60);
+            const mins = Math.floor(gameState.time % 60);
+            const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+            document.getElementById('timeDisplay').textContent = `Day ${gameState.day} - ${timeStr}`;
+            document.getElementById('timeIcon').textContent = hours >= 6 && hours < 18 ? '☀️' : '🌙';
+
+            const dist = Math.sqrt(camera.position.x**2 + camera.position.z**2);
+            if (dist < 20) gameState.biome = BIOMES.FOREST;
+            else if (dist < 40) gameState.biome = BIOMES.JUNGLE;
+            else if (dist < 60) gameState.biome = BIOMES.DESERT;
+            else gameState.biome = BIOMES.TUNDRA;
+
+            document.getElementById('biomeDisplay').textContent = gameState.biome.name;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePlayer(0.016);
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>

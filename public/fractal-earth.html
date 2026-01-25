@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucidia Earth - Fractal Terrain</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            background: #000;
+        }
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #0f0;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #0f0;
+            font-size: 14px;
+            max-width: 300px;
+            z-index: 100;
+        }
+        #controls h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #0ff;
+        }
+        #controls .stat {
+            margin: 5px 0;
+        }
+        #controls button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px 5px 5px 0;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        #controls button:hover {
+            background: #0ff;
+        }
+        .info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #0ff;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="controls">
+        <h2>∞ Lucidia Earth</h2>
+        <div class="stat">Depth: <span id="depth">0</span></div>
+        <div class="stat">Zoom: <span id="zoom">1.0</span>x</div>
+        <div class="stat">Blocks: <span id="blocks">4096</span></div>
+        <div class="stat">FPS: <span id="fps">60</span></div>
+        <hr style="margin: 10px 0; border-color: #0f0;">
+        <div style="margin-bottom: 10px;">
+            <button onclick="zoomIn()">Zoom In ↑</button>
+            <button onclick="zoomOut()">Zoom Out ↓</button>
+        </div>
+        <div>
+            <button onclick="setDepth(0)">0</button>
+            <button onclick="setDepth(1)">1</button>
+            <button onclick="setDepth(2)">2</button>
+            <button onclick="setDepth(3)">3</button>
+            <button onclick="setDepth(4)">4</button>
+            <button onclick="setDepth(5)">5</button>
+            <button onclick="setDepth(6)">6</button>
+        </div>
+        <div style="margin-top: 10px; font-size: 11px; color: #0ff;">
+            W/S or ↑/↓ to zoom<br>
+            Mouse drag to pan<br>
+            0-6 for depth levels
+        </div>
+    </div>
+
+    <div class="info">
+        <strong>PS-SHA∞ Fractal Terrain</strong><br>
+        • 64×64 recursive subdivision<br>
+        • cells(d) = 4096^d = 64^(2d)<br>
+        • Infinite precision zoom<br>
+        • Deterministic generation<br>
+        • Ground level = ~1m² per cell
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // State
+        let zoom = 1;
+        let depth = 0;
+        let offsetX = 0;
+        let offsetY = 0;
+        let targetZoom = 1;
+        let targetDepth = 0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+        // Resize canvas
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Simple hash for deterministic colors
+        function hash(str) {
+            let h = 0;
+            for (let i = 0; i < str.length; i++) {
+                h = ((h << 5) - h) + str.charCodeAt(i);
+                h = h & h;
+            }
+            return Math.abs(h);
+        }
+
+        function seededRandom(seed, x, y, depth) {
+            const h = hash(`lucidia_${seed}_${x}_${y}_${depth}`);
+            return (h % 1000) / 1000;
+        }
+
+        // Color palette
+        function getBlockColor(x, y, depth, zoom) {
+            const r1 = seededRandom('r', x, y, depth);
+            const r2 = seededRandom('g', x, y, depth);
+            const r3 = seededRandom('b', x, y, depth);
+
+            // Create vibrant fractal colors
+            const h = (r1 * 360 + depth * 30) % 360;
+            const s = 70 + r2 * 30;
+            const l = 40 + r3 * 30;
+
+            return `hsl(${h}, ${s}%, ${l}%)`;
+        }
+
+        // Draw recursive fractal grid
+        function drawFractalGrid() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Base block size (gets smaller as we zoom)
+            const baseSize = Math.min(canvas.width, canvas.height) * 0.8;
+            const blockSize = (baseSize / 64) * zoom;
+
+            // Calculate visible range
+            const visibleCols = Math.ceil(canvas.width / blockSize) + 2;
+            const visibleRows = Math.ceil(canvas.height / blockSize) + 2;
+
+            const startCol = Math.floor(-offsetX / blockSize - visibleCols / 2);
+            const startRow = Math.floor(-offsetY / blockSize - visibleRows / 2);
+
+            // Draw grid
+            for (let row = 0; row < visibleRows; row++) {
+                for (let col = 0; col < visibleCols; col++) {
+                    const gridX = startCol + col;
+                    const gridY = startRow + row;
+
+                    const x = centerX + (gridX * blockSize) + offsetX;
+                    const y = centerY + (gridY * blockSize) + offsetY;
+
+                    // Skip if outside canvas
+                    if (x + blockSize < 0 || x > canvas.width ||
+                        y + blockSize < 0 || y > canvas.height) continue;
+
+                    // Get color based on position and depth
+                    const color = getBlockColor(gridX, gridY, depth, zoom);
+
+                    // Draw block
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, y, blockSize - 1, blockSize - 1);
+
+                    // Draw subtle grid lines
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x, y, blockSize, blockSize);
+
+                    // Draw subdivision lines as we zoom in
+                    if (zoom > 2) {
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                        const subSize = blockSize / 8;
+                        for (let i = 1; i < 8; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + i * subSize, y);
+                            ctx.lineTo(x + i * subSize, y + blockSize);
+                            ctx.stroke();
+
+                            ctx.beginPath();
+                            ctx.moveTo(x, y + i * subSize);
+                            ctx.lineTo(x + blockSize, y + i * subSize);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            // Draw center crosshair
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX - 20, centerY);
+            ctx.lineTo(centerX + 20, centerY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - 20);
+            ctx.lineTo(centerX, centerY + 20);
+            ctx.stroke();
+
+            // Draw depth indicator rings
+            for (let i = 1; i <= 3; i++) {
+                ctx.strokeStyle = `rgba(0, 255, 255, ${0.1 / i})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, blockSize * i, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        // Animation loop
+        let fps = 60;
+        let lastTime = performance.now();
+        let frames = 0;
+        let fpsTime = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const now = performance.now();
+            const delta = now - lastTime;
+            lastTime = now;
+
+            // FPS calculation
+            frames++;
+            fpsTime += delta;
+            if (fpsTime >= 1000) {
+                fps = frames;
+                frames = 0;
+                fpsTime = 0;
+            }
+
+            // Smooth zoom transition
+            zoom += (targetZoom - zoom) * 0.1;
+
+            // Check if we should change depth
+            if (zoom > 8 && depth < 6) {
+                depth++;
+                zoom = zoom / 8;
+                targetZoom = targetZoom / 8;
+                offsetX = offsetX / 8;
+                offsetY = offsetY / 8;
+            } else if (zoom < 1 && depth > 0) {
+                depth--;
+                zoom = zoom * 8;
+                targetZoom = targetZoom * 8;
+                offsetX = offsetX * 8;
+                offsetY = offsetY * 8;
+            }
+
+            drawFractalGrid();
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('depth').textContent = depth;
+            document.getElementById('zoom').textContent = (zoom * Math.pow(8, depth)).toFixed(2);
+            const blocks = Math.pow(4096, depth + 1);
+            document.getElementById('blocks').textContent = blocks.toLocaleString();
+            document.getElementById('fps').textContent = Math.round(fps);
+        }
+
+        // Controls
+        window.zoomIn = function() {
+            targetZoom = Math.min(targetZoom * 1.5, 64);
+        };
+
+        window.zoomOut = function() {
+            targetZoom = Math.max(targetZoom / 1.5, 0.125);
+        };
+
+        window.setDepth = function(d) {
+            while (depth < d) {
+                depth++;
+                zoom = zoom / 8;
+                targetZoom = targetZoom / 8;
+            }
+            while (depth > d) {
+                depth--;
+                zoom = zoom * 8;
+                targetZoom = targetZoom * 8;
+            }
+        };
+
+        // Mouse controls
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                offsetX += dx;
+                offsetY += dy;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomIn();
+            } else {
+                zoomOut();
+            }
+        });
+
+        // Keyboard controls
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                zoomIn();
+            } else if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                zoomOut();
+            } else if (e.key >= '0' && e.key <= '6') {
+                setDepth(parseInt(e.key));
+            }
+        });
+
+        // Start
+        animate();
+        console.log('∞ Lucidia Earth - Infinite Fractal Zoom');
+        console.log('Controls: W/S to zoom, drag to pan, 0-6 for depth');
+    </script>
+</body>
+</html>

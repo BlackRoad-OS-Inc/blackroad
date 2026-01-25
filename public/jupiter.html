@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS — Jupiter System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        }
+        #canvas-container { position: fixed; inset: 0; }
+
+        .ui {
+            position: fixed;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .ui > * { pointer-events: auto; }
+
+        .logo {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.75);
+            padding: 10px 18px;
+            border-radius: 50px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+        }
+        .logo-icon {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #d4a574, #8b6f47);
+            border-radius: 50%;
+            position: relative;
+        }
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px; height: 10px;
+            background: #000;
+            border-radius: 50%;
+        }
+        .logo-text { color: #fff; font-weight: 600; font-size: 14px; }
+
+        .stats-bar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 10px 24px;
+            border-radius: 50px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+        }
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .stat-icon { font-size: 15px; color: #d4a574; }
+        .stat-value { font-size: 13px; font-weight: 600; color: #fff; }
+
+        .moons-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 14px 18px;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            min-width: 220px;
+        }
+        .moons-title {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 10px;
+        }
+        .moon-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .moon-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background 0.2s ease;
+        }
+        .moon-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .moon-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+        .moon-distance {
+            margin-left: auto;
+            color: rgba(255,255,255,0.4);
+            font-size: 10px;
+        }
+
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 16px 20px;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            max-width: 320px;
+        }
+        .info-panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .info-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #d4a574;
+            margin-bottom: 8px;
+        }
+        .info-desc {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        .info-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .info-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .info-stat-label { font-size: 8px; color: rgba(255,255,255,0.4); text-transform: uppercase; }
+        .info-stat-value { font-size: 13px; font-weight: 600; color: #fff; }
+
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 100;
+        }
+        .ctrl-btn {
+            width: 42px; height: 42px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .ctrl-btn:hover {
+            background: rgba(212,165,116,0.4);
+            transform: scale(1.1);
+        }
+        .ctrl-btn.active {
+            background: #d4a574;
+            border-color: #d4a574;
+        }
+
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease;
+        }
+        .loading.hidden { opacity: 0; pointer-events: none; }
+        .loading-spinner {
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #d4a574, #8b6f47, #c9a876, #a0826d);
+            animation: spin 2s linear infinite;
+            position: relative;
+        }
+        .loading-spinner::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            background: #000;
+            border-radius: 50%;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { margin-top: 20px; color: rgba(255,255,255,0.7); font-size: 14px; }
+        .loading-bar {
+            width: 160px; height: 2px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 1px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #d4a574, #8b6f47);
+            width: 0%;
+            transition: width 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Jupiter system...</div>
+        <div class="loading-bar"><div class="loading-progress" id="loadingProgress"></div></div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div class="logo">
+        <div class="logo-icon"></div>
+        <span class="logo-text">Jupiter System</span>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat"><span class="stat-icon">M</span><span class="stat-value" id="moonCount">0</span></div>
+        <div class="stat"><span class="stat-icon">S</span><span class="stat-value" id="stormCount">0</span></div>
+        <div class="stat"><span class="stat-icon">P</span><span class="stat-value" id="probeCount">0</span></div>
+    </div>
+
+    <div class="moons-panel">
+        <div class="moons-title">Galilean Moons</div>
+        <div class="moon-list" id="moonList"></div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <div class="info-name" id="infoName">Io</div>
+        <div class="info-desc" id="infoDesc">Most volcanically active body in the solar system</div>
+        <div class="info-stats">
+            <div class="info-stat">
+                <div class="info-stat-label">Diameter</div>
+                <div class="info-stat-value" id="infoDiameter">3,643 km</div>
+            </div>
+            <div class="info-stat">
+                <div class="info-stat-label">Distance</div>
+                <div class="info-stat-value" id="infoDistance">421,700 km</div>
+            </div>
+            <div class="info-stat">
+                <div class="info-stat-label">Period</div>
+                <div class="info-stat-value" id="infoPeriod">1.77 days</div>
+            </div>
+            <div class="info-stat">
+                <div class="info-stat-label">Temp</div>
+                <div class="info-stat-value" id="infoTemp">-143°C</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="ctrl-btn active" id="btnRotate" title="Auto Rotate">↻</button>
+        <button class="ctrl-btn active" id="btnMoons" title="Moons">M</button>
+        <button class="ctrl-btn active" id="btnStorms" title="Great Red Spot">S</button>
+        <button class="ctrl-btn active" id="btnProbes" title="Space Probes">P</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const JUPITER_RADIUS = 50;
+
+        // ============ GALILEAN MOONS DATA ============
+        const MOONS = {
+            IO: {
+                name: "Io",
+                color: 0xffd700,
+                radius: 1.8,
+                distance: 75,
+                period: 1.77,
+                diameter: "3,643 km",
+                temp: "-143°C",
+                desc: "Most volcanically active body in the solar system with over 400 active volcanoes"
+            },
+            EUROPA: {
+                name: "Europa",
+                color: 0xddeeff,
+                radius: 1.6,
+                distance: 95,
+                period: 3.55,
+                diameter: "3,122 km",
+                temp: "-160°C",
+                desc: "Icy moon with subsurface ocean, potential harbor for extraterrestrial life"
+            },
+            GANYMEDE: {
+                name: "Ganymede",
+                color: 0xa0a0a0,
+                radius: 2.6,
+                distance: 120,
+                period: 7.15,
+                diameter: "5,268 km",
+                temp: "-163°C",
+                desc: "Largest moon in the solar system, larger than Mercury, has its own magnetic field"
+            },
+            CALLISTO: {
+                name: "Callisto",
+                color: 0x8b7355,
+                radius: 2.4,
+                distance: 145,
+                period: 16.69,
+                diameter: "4,821 km",
+                temp: "-139°C",
+                desc: "Most heavily cratered object in the solar system, ancient surface"
+            }
+        };
+
+        // ============ SCENE SETUP ============
+        let scene, camera, renderer;
+        let jupiter, atmosphere, greatRedSpot;
+        let moonObjects = [];
+        let probes = [];
+        let storms = [];
+
+        let time = 0;
+        let autoRotate = true;
+        let showMoons = true;
+        let showStorms = true;
+        let showProbes = true;
+
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        let spherical = { theta: 0, phi: Math.PI / 3, radius: 180 };
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000005);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 3000);
+            updateCamera();
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            createStars();
+            createLights();
+            createJupiter();
+            createAtmosphere();
+            createMoons();
+            createStorms();
+            createProbes();
+            buildMoonUI();
+            updateCounts();
+
+            window.addEventListener('resize', onResize);
+            setupControls();
+
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                animate();
+            }, 1000);
+        }
+
+        function createStars() {
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(8000 * 3);
+            for (let i = 0; i < 8000; i++) {
+                const r = 800 + Math.random() * 1500;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                pos[i * 3 + 2] = r * Math.cos(phi);
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.5 })));
+        }
+
+        function createLights() {
+            const sunLight = new THREE.DirectionalLight(0xfff5e6, 1.8);
+            sunLight.position.set(400, 200, 300);
+            scene.add(sunLight);
+
+            const ambient = new THREE.AmbientLight(0x404060, 0.3);
+            scene.add(ambient);
+        }
+
+        function createJupiter() {
+            const geo = new THREE.SphereGeometry(JUPITER_RADIUS, 128, 128);
+
+            // Create procedural Jupiter texture
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            // Base gradient (tan/brown bands)
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#d4b896');
+            gradient.addColorStop(0.2, '#c9a876');
+            gradient.addColorStop(0.4, '#a0826d');
+            gradient.addColorStop(0.5, '#d4a574');
+            gradient.addColorStop(0.6, '#b89968');
+            gradient.addColorStop(0.8, '#c9a876');
+            gradient.addColorStop(1, '#d4b896');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Add horizontal bands
+            for (let i = 0; i < 50; i++) {
+                const y = (i / 50) * canvas.height;
+                const opacity = 0.1 + Math.random() * 0.15;
+                const height = 10 + Math.random() * 30;
+                const color = i % 2 === 0 ? `rgba(180, 150, 100, ${opacity})` : `rgba(220, 180, 130, ${opacity})`;
+                ctx.fillStyle = color;
+                ctx.fillRect(0, y, canvas.width, height);
+            }
+
+            // Add turbulence
+            for (let i = 0; i < 200; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const size = 20 + Math.random() * 60;
+                const opacity = 0.05 + Math.random() * 0.1;
+                const color = Math.random() > 0.5 ? `rgba(200, 170, 120, ${opacity})` : `rgba(160, 130, 100, ${opacity})`;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.ellipse(x, y, size * 2, size * 0.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+
+            jupiter = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
+                map: texture,
+                shininess: 5,
+                specular: new THREE.Color(0x222222)
+            }));
+            scene.add(jupiter);
+
+            // Great Red Spot
+            createGreatRedSpot();
+        }
+
+        function createGreatRedSpot() {
+            const spotGeo = new THREE.SphereGeometry(JUPITER_RADIUS + 0.2, 32, 32, 0, Math.PI * 0.3, Math.PI * 0.3, Math.PI * 0.15);
+            const spotMat = new THREE.MeshBasicMaterial({
+                color: 0xcc5544,
+                transparent: true,
+                opacity: 0.5,
+                side: THREE.DoubleSide
+            });
+            greatRedSpot = new THREE.Mesh(spotGeo, spotMat);
+            greatRedSpot.rotation.y = Math.PI / 4;
+            jupiter.add(greatRedSpot);
+            storms.push(greatRedSpot);
+        }
+
+        function createAtmosphere() {
+            atmosphere = new THREE.Mesh(
+                new THREE.SphereGeometry(JUPITER_RADIUS + 8, 64, 64),
+                new THREE.ShaderMaterial({
+                    vertexShader: `varying vec3 vNormal; void main() { vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+                    fragmentShader: `varying vec3 vNormal; void main() { float i = pow(0.6 - dot(vNormal, vec3(0,0,1)), 2.5); gl_FragColor = vec4(0.8, 0.7, 0.5, i * 0.3); }`,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.BackSide,
+                    transparent: true,
+                    depthWrite: false
+                })
+            );
+            scene.add(atmosphere);
+        }
+
+        function createMoons() {
+            Object.values(MOONS).forEach((moonData, index) => {
+                const moonGroup = new THREE.Group();
+
+                // Moon sphere
+                const geo = new THREE.SphereGeometry(moonData.radius, 32, 32);
+                const mat = new THREE.MeshPhongMaterial({
+                    color: moonData.color,
+                    shininess: 10
+                });
+                const moon = new THREE.Mesh(geo, mat);
+
+                // Position moon
+                const angle = (index / Object.keys(MOONS).length) * Math.PI * 2;
+                moon.position.x = Math.cos(angle) * moonData.distance;
+                moon.position.z = Math.sin(angle) * moonData.distance;
+
+                moonGroup.add(moon);
+                moonGroup.userData = { ...moonData, angle, index };
+
+                // Orbit line
+                const orbitGeo = new THREE.BufferGeometry();
+                const orbitPoints = [];
+                for (let i = 0; i <= 64; i++) {
+                    const a = (i / 64) * Math.PI * 2;
+                    orbitPoints.push(
+                        Math.cos(a) * moonData.distance,
+                        0,
+                        Math.sin(a) * moonData.distance
+                    );
+                }
+                orbitGeo.setAttribute('position', new THREE.Float32BufferAttribute(orbitPoints, 3));
+                const orbitLine = new THREE.Line(
+                    orbitGeo,
+                    new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.3 })
+                );
+                scene.add(orbitLine);
+
+                scene.add(moonGroup);
+                moonObjects.push(moonGroup);
+            });
+
+            document.getElementById('loadingProgress').style.width = '60%';
+        }
+
+        function createStorms() {
+            // Additional atmospheric features
+            for (let i = 0; i < 15; i++) {
+                const stormGeo = new THREE.SphereGeometry(2 + Math.random() * 3, 16, 16);
+                const stormMat = new THREE.MeshBasicMaterial({
+                    color: Math.random() > 0.5 ? 0xffffff : 0xcc8866,
+                    transparent: true,
+                    opacity: 0.2,
+                    wireframe: true
+                });
+                const storm = new THREE.Mesh(stormGeo, stormMat);
+
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.PI * 0.3 + Math.random() * Math.PI * 0.4;
+                const r = JUPITER_RADIUS + 0.5;
+
+                storm.position.x = r * Math.sin(phi) * Math.cos(theta);
+                storm.position.y = r * Math.cos(phi);
+                storm.position.z = r * Math.sin(phi) * Math.sin(theta);
+
+                jupiter.add(storm);
+                storms.push(storm);
+            }
+
+            document.getElementById('loadingProgress').style.width = '80%';
+        }
+
+        function createProbes() {
+            // Space probes (Voyager, Galileo, Juno representations)
+            const probeNames = ['Voyager 1', 'Voyager 2', 'Galileo', 'Juno'];
+
+            probeNames.forEach((name, i) => {
+                const probeGroup = new THREE.Group();
+
+                // Simple probe body
+                const bodyGeo = new THREE.BoxGeometry(0.8, 0.8, 1.2);
+                const bodyMat = new THREE.MeshPhongMaterial({ color: 0xcccccc });
+                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                probeGroup.add(body);
+
+                // Solar panels
+                const panelGeo = new THREE.BoxGeometry(2, 0.1, 0.8);
+                const panelMat = new THREE.MeshPhongMaterial({ color: 0x2244aa });
+                const panel = new THREE.Mesh(panelGeo, panelMat);
+                probeGroup.add(panel);
+
+                // Position probe
+                const angle = (i / probeNames.length) * Math.PI * 2;
+                const dist = 160 + Math.random() * 40;
+                probeGroup.position.x = Math.cos(angle) * dist;
+                probeGroup.position.y = (Math.random() - 0.5) * 60;
+                probeGroup.position.z = Math.sin(angle) * dist;
+
+                probeGroup.lookAt(0, 0, 0);
+                probeGroup.userData = { name, orbit: angle, speed: 0.001 + Math.random() * 0.002 };
+
+                scene.add(probeGroup);
+                probes.push(probeGroup);
+            });
+
+            document.getElementById('loadingProgress').style.width = '100%';
+        }
+
+        function buildMoonUI() {
+            const list = document.getElementById('moonList');
+
+            Object.values(MOONS).forEach((moon, i) => {
+                const item = document.createElement('div');
+                item.className = 'moon-item';
+                item.innerHTML = `
+                    <div class="moon-dot" style="background: #${moon.color.toString(16).padStart(6, '0')}"></div>
+                    <span>${moon.name}</span>
+                    <span class="moon-distance">${moon.distance}k</span>
+                `;
+                item.addEventListener('click', () => showMoonInfo(moon));
+                list.appendChild(item);
+            });
+        }
+
+        function updateCounts() {
+            document.getElementById('moonCount').textContent = moonObjects.length;
+            document.getElementById('stormCount').textContent = storms.length;
+            document.getElementById('probeCount').textContent = probes.length;
+        }
+
+        function showMoonInfo(moon) {
+            const panel = document.getElementById('infoPanel');
+            document.getElementById('infoName').textContent = moon.name;
+            document.getElementById('infoDesc').textContent = moon.desc;
+            document.getElementById('infoDiameter').textContent = moon.diameter;
+            document.getElementById('infoDistance').textContent = moon.distance + 'k km';
+            document.getElementById('infoPeriod').textContent = moon.period + ' days';
+            document.getElementById('infoTemp').textContent = moon.temp;
+            panel.classList.add('visible');
+            clearTimeout(window.infoPanelTimeout);
+            window.infoPanelTimeout = setTimeout(() => panel.classList.remove('visible'), 6000);
+        }
+
+        function setupControls() {
+            renderer.domElement.addEventListener('mousedown', e => {
+                isDragging = true;
+                prevMouse = { x: e.clientX, y: e.clientY };
+            });
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+            renderer.domElement.addEventListener('wheel', e => {
+                spherical.radius = Math.max(80, Math.min(400, spherical.radius + e.deltaY * 0.3));
+                updateCamera();
+            });
+
+            renderer.domElement.addEventListener('touchstart', e => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            }, { passive: true });
+
+            renderer.domElement.addEventListener('touchmove', e => {
+                if (!isDragging) return;
+                const dx = e.touches[0].clientX - prevMouse.x;
+                const dy = e.touches[0].clientY - prevMouse.y;
+                spherical.theta -= dx * 0.005;
+                spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, spherical.phi + dy * 0.005));
+                updateCamera();
+                prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }, { passive: true });
+
+            renderer.domElement.addEventListener('touchend', () => isDragging = false);
+
+            document.getElementById('btnRotate').addEventListener('click', () => {
+                autoRotate = !autoRotate;
+                document.getElementById('btnRotate').classList.toggle('active', autoRotate);
+            });
+
+            document.getElementById('btnMoons').addEventListener('click', () => {
+                showMoons = !showMoons;
+                moonObjects.forEach(m => m.visible = showMoons);
+                document.getElementById('btnMoons').classList.toggle('active', showMoons);
+            });
+
+            document.getElementById('btnStorms').addEventListener('click', () => {
+                showStorms = !showStorms;
+                storms.forEach(s => s.visible = showStorms);
+                document.getElementById('btnStorms').classList.toggle('active', showStorms);
+            });
+
+            document.getElementById('btnProbes').addEventListener('click', () => {
+                showProbes = !showProbes;
+                probes.forEach(p => p.visible = showProbes);
+                document.getElementById('btnProbes').classList.toggle('active', showProbes);
+            });
+
+            // Click on moons
+            renderer.domElement.addEventListener('click', onClick);
+        }
+
+        function onClick(e) {
+            if (isDragging) return;
+
+            const mouse = new THREE.Vector2(
+                (e.clientX / window.innerWidth) * 2 - 1,
+                -(e.clientY / window.innerHeight) * 2 + 1
+            );
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(moonObjects.map(m => m.children[0]));
+            if (intersects.length > 0) {
+                const moonObj = intersects[0].object.parent;
+                showMoonInfo(moonObj.userData);
+            }
+        }
+
+        function updateCamera() {
+            camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+            camera.position.y = spherical.radius * Math.cos(spherical.phi);
+            camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            const dx = e.clientX - prevMouse.x;
+            const dy = e.clientY - prevMouse.y;
+            spherical.theta -= dx * 0.005;
+            spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, spherical.phi + dy * 0.005));
+            updateCamera();
+            prevMouse = { x: e.clientX, y: e.clientY };
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.005;
+
+            if (autoRotate && !isDragging) {
+                spherical.theta += 0.0003;
+                updateCamera();
+            }
+
+            // Rotate Jupiter
+            jupiter.rotation.y += 0.001;
+
+            // Orbit moons
+            moonObjects.forEach(moonGroup => {
+                const data = moonGroup.userData;
+                const speed = 0.0005 / data.period;
+                data.angle += speed;
+
+                const moon = moonGroup.children[0];
+                moon.position.x = Math.cos(data.angle) * data.distance;
+                moon.position.z = Math.sin(data.angle) * data.distance;
+                moon.rotation.y += 0.002;
+            });
+
+            // Animate storms
+            storms.forEach((storm, i) => {
+                storm.rotation.y += 0.01 + i * 0.001;
+            });
+
+            // Orbit probes
+            probes.forEach(probe => {
+                probe.userData.orbit += probe.userData.speed;
+                const dist = probe.position.length();
+                probe.position.x = Math.cos(probe.userData.orbit) * dist;
+                probe.position.z = Math.sin(probe.userData.orbit) * dist;
+                probe.lookAt(0, 0, 0);
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>
