@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS — 3D World</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* UI Overlay */
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Logo */
+        .logo {
+            position: fixed;
+            top: 34px;
+            left: 34px;
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            pointer-events: auto;
+            z-index: 101;
+        }
+
+        .logo-mark {
+            width: 44px;
+            height: 44px;
+        }
+
+        .logo-mark svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 20px rgba(255, 29, 108, 0.5));
+        }
+
+        .road-dashes {
+            animation: spin 10s linear infinite;
+            transform-origin: 50px 50px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .logo-text {
+            font-size: 15px;
+            font-weight: 500;
+            color: #fff;
+            letter-spacing: 0.02em;
+        }
+
+        /* Title */
+        .hero-title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            animation: fadeIn 2s ease 1s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .hero-title h1 {
+            font-size: clamp(48px, 12vw, 144px);
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            color: #fff;
+            line-height: 1;
+            margin-bottom: 21px;
+            text-shadow: 0 0 80px rgba(255, 29, 108, 0.5);
+        }
+
+        .hero-title h1 span {
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-title p {
+            font-size: 21px;
+            color: rgba(255, 255, 255, 0.6);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Controls hint */
+        .controls {
+            position: fixed;
+            bottom: 34px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 34px;
+            pointer-events: none;
+            opacity: 0;
+            animation: fadeIn 2s ease 2s forwards;
+        }
+
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .control-key {
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Stats */
+        .stats {
+            position: fixed;
+            top: 34px;
+            right: 34px;
+            text-align: right;
+            pointer-events: none;
+            opacity: 0;
+            animation: fadeIn 2s ease 1.5s forwards;
+        }
+
+        .stat {
+            margin-bottom: 13px;
+        }
+
+        .stat-value {
+            font-size: 34px;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 34px;
+        }
+
+        .loading-logo svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 40px rgba(255, 29, 108, 0.6));
+        }
+
+        .loading-bar {
+            width: 200px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #F5A623, #FF1D6C, #9C27B0, #2979FF);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .loading-text {
+            margin-top: 21px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="loading-logo">
+            <svg viewBox="0 0 100 100" fill="none">
+                <circle cx="50" cy="50" r="44" stroke="#FF1D6C" stroke-width="6"/>
+                <g class="road-dashes">
+                    <rect x="47" y="4" width="6" height="12" fill="#000" rx="2"/>
+                    <rect x="47" y="84" width="6" height="12" fill="#000" rx="2"/>
+                    <rect x="84" y="47" width="12" height="6" fill="#000" rx="2"/>
+                    <rect x="4" y="47" width="12" height="6" fill="#000" rx="2"/>
+                    <rect x="75" y="18" width="6" height="10" fill="#000" rx="2" transform="rotate(45 78 23)"/>
+                    <rect x="19" y="72" width="6" height="10" fill="#000" rx="2" transform="rotate(45 22 77)"/>
+                    <rect x="72" y="72" width="6" height="10" fill="#000" rx="2" transform="rotate(-45 75 77)"/>
+                    <rect x="22" y="18" width="6" height="10" fill="#000" rx="2" transform="rotate(-45 25 23)"/>
+                </g>
+                <path d="M50 10C27.9 10 10 27.9 10 50H90C90 27.9 72.1 10 50 10Z" fill="#F5A623"/>
+                <path d="M10 50C10 72.1 27.9 90 50 90C72.1 90 90 72.1 90 50H10Z" fill="#2979FF"/>
+                <circle cx="50" cy="50" r="14" fill="#000"/>
+            </svg>
+        </div>
+        <div class="loading-bar">
+            <div class="loading-progress" id="loadingProgress"></div>
+        </div>
+        <div class="loading-text">Entering the road</div>
+    </div>
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div class="ui-overlay">
+        <!-- Logo -->
+        <div class="logo">
+            <div class="logo-mark">
+                <svg viewBox="0 0 100 100" fill="none">
+                    <circle cx="50" cy="50" r="44" stroke="#FF1D6C" stroke-width="6"/>
+                    <g class="road-dashes">
+                        <rect x="47" y="4" width="6" height="12" fill="#000" rx="2"/>
+                        <rect x="47" y="84" width="6" height="12" fill="#000" rx="2"/>
+                        <rect x="84" y="47" width="12" height="6" fill="#000" rx="2"/>
+                        <rect x="4" y="47" width="12" height="6" fill="#000" rx="2"/>
+                        <rect x="75" y="18" width="6" height="10" fill="#000" rx="2" transform="rotate(45 78 23)"/>
+                        <rect x="19" y="72" width="6" height="10" fill="#000" rx="2" transform="rotate(45 22 77)"/>
+                        <rect x="72" y="72" width="6" height="10" fill="#000" rx="2" transform="rotate(-45 75 77)"/>
+                        <rect x="22" y="18" width="6" height="10" fill="#000" rx="2" transform="rotate(-45 25 23)"/>
+                    </g>
+                    <path d="M50 10C27.9 10 10 27.9 10 50H90C90 27.9 72.1 10 50 10Z" fill="#F5A623"/>
+                    <path d="M10 50C10 72.1 27.9 90 50 90C72.1 90 90 72.1 90 50H10Z" fill="#2979FF"/>
+                    <circle cx="50" cy="50" r="14" fill="#000"/>
+                </svg>
+            </div>
+            <span class="logo-text">BlackRoad OS</span>
+        </div>
+
+        <!-- Title -->
+        <div class="hero-title">
+            <h1>Enter the <span>Road</span></h1>
+            <p>Navigate the infinite highway of possibility</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="speedStat">0</div>
+                <div class="stat-label">Speed</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="distanceStat">0</div>
+                <div class="stat-label">Distance</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-item">
+                <span class="control-key">W/↑</span>
+                <span>Accelerate</span>
+            </div>
+            <div class="control-item">
+                <span class="control-key">S/↓</span>
+                <span>Brake</span>
+            </div>
+            <div class="control-item">
+                <span class="control-key">A/D</span>
+                <span>Steer</span>
+            </div>
+            <div class="control-item">
+                <span class="control-key">Mouse</span>
+                <span>Look</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        // Brand Colors
+        const COLORS = {
+            black: 0x000000,
+            white: 0xffffff,
+            amber: 0xF5A623,
+            orange: 0xF26522,
+            hotPink: 0xFF1D6C,
+            magenta: 0xE91E63,
+            electricBlue: 0x2979FF,
+            skyBlue: 0x448AFF,
+            violet: 0x9C27B0,
+            deepPurple: 0x5E35B1
+        };
+
+        // Scene Setup
+        let scene, camera, renderer;
+        let road, roadLines = [];
+        let buildings = [];
+        let particles = [];
+        let floatingOrbs = [];
+        let centralLogo;
+        let speed = 0;
+        let distance = 0;
+        let targetSpeed = 2;
+        let steerAngle = 0;
+        let time = 0;
+
+        // Mouse
+        let mouseX = 0, mouseY = 0;
+        let targetMouseX = 0, targetMouseY = 0;
+
+        // Keys
+        const keys = {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false
+        };
+
+        // Initialize
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(COLORS.black);
+            scene.fog = new THREE.FogExp2(COLORS.black, 0.015);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 3, 10);
+            camera.lookAt(0, 2, -100);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Lights
+            createLights();
+
+            // Create World
+            createRoad();
+            createBuildings();
+            createParticles();
+            createFloatingOrbs();
+            createCentralLogo();
+            createStars();
+
+            // Events
+            window.addEventListener('resize', onResize);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('keydown', onKeyDown);
+            window.addEventListener('keyup', onKeyUp);
+
+            // Start
+            simulateLoading();
+        }
+
+        function createLights() {
+            // Ambient
+            const ambient = new THREE.AmbientLight(0x111111);
+            scene.add(ambient);
+
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            mainLight.position.set(0, 50, 50);
+            mainLight.castShadow = true;
+            scene.add(mainLight);
+
+            // Pink accent light
+            const pinkLight = new THREE.PointLight(COLORS.hotPink, 2, 100);
+            pinkLight.position.set(-20, 10, -30);
+            scene.add(pinkLight);
+
+            // Blue accent light
+            const blueLight = new THREE.PointLight(COLORS.electricBlue, 2, 100);
+            blueLight.position.set(20, 10, -50);
+            scene.add(blueLight);
+
+            // Amber accent light
+            const amberLight = new THREE.PointLight(COLORS.amber, 1.5, 80);
+            amberLight.position.set(0, 20, -20);
+            scene.add(amberLight);
+        }
+
+        function createRoad() {
+            // Main road surface
+            const roadGeometry = new THREE.PlaneGeometry(20, 2000, 1, 100);
+            const roadMaterial = new THREE.MeshStandardMaterial({
+                color: 0x111111,
+                roughness: 0.9,
+                metalness: 0.1
+            });
+            road = new THREE.Mesh(roadGeometry, roadMaterial);
+            road.rotation.x = -Math.PI / 2;
+            road.position.y = 0;
+            road.position.z = -900;
+            road.receiveShadow = true;
+            scene.add(road);
+
+            // Road lines (dashes)
+            const lineMaterial = new THREE.MeshBasicMaterial({ color: COLORS.hotPink });
+            
+            for (let i = 0; i < 200; i++) {
+                const lineGeometry = new THREE.BoxGeometry(0.3, 0.05, 4);
+                const line = new THREE.Mesh(lineGeometry, lineMaterial);
+                line.position.set(0, 0.03, -i * 10);
+                roadLines.push(line);
+                scene.add(line);
+            }
+
+            // Side lines
+            const sideLineMaterial = new THREE.MeshBasicMaterial({ color: COLORS.amber });
+            for (let side of [-1, 1]) {
+                for (let i = 0; i < 200; i++) {
+                    const sideLineGeometry = new THREE.BoxGeometry(0.2, 0.05, 8);
+                    const sideLine = new THREE.Mesh(sideLineGeometry, sideLineMaterial);
+                    sideLine.position.set(side * 9, 0.03, -i * 10);
+                    roadLines.push(sideLine);
+                    scene.add(sideLine);
+                }
+            }
+        }
+
+        function createBuildings() {
+            const buildingColors = [COLORS.hotPink, COLORS.electricBlue, COLORS.violet, COLORS.amber, COLORS.deepPurple];
+            
+            for (let side of [-1, 1]) {
+                for (let i = 0; i < 50; i++) {
+                    const width = 5 + Math.random() * 15;
+                    const height = 20 + Math.random() * 80;
+                    const depth = 5 + Math.random() * 15;
+                    
+                    const geometry = new THREE.BoxGeometry(width, height, depth);
+                    
+                    // Wireframe style building
+                    const edges = new THREE.EdgesGeometry(geometry);
+                    const color = buildingColors[Math.floor(Math.random() * buildingColors.length)];
+                    const lineMaterial = new THREE.LineBasicMaterial({ 
+                        color: color,
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+                    
+                    wireframe.position.set(
+                        side * (15 + Math.random() * 30),
+                        height / 2,
+                        -i * 40 - Math.random() * 20
+                    );
+                    
+                    buildings.push({
+                        mesh: wireframe,
+                        originalZ: wireframe.position.z,
+                        speed: 0.5 + Math.random() * 0.5
+                    });
+                    
+                    scene.add(wireframe);
+
+                    // Add glowing windows
+                    if (Math.random() > 0.5) {
+                        const windowGeometry = new THREE.PlaneGeometry(width * 0.8, height * 0.8);
+                        const windowMaterial = new THREE.MeshBasicMaterial({
+                            color: color,
+                            transparent: true,
+                            opacity: 0.1,
+                            side: THREE.DoubleSide
+                        });
+                        const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+                        windowMesh.position.copy(wireframe.position);
+                        windowMesh.position.x += side * (width / 2 + 0.1);
+                        windowMesh.rotation.y = Math.PI / 2;
+                        scene.add(windowMesh);
+                    }
+                }
+            }
+        }
+
+        function createParticles() {
+            const particleColors = [COLORS.hotPink, COLORS.amber, COLORS.electricBlue, COLORS.violet];
+            
+            for (let i = 0; i < 500; i++) {
+                const geometry = new THREE.SphereGeometry(0.05 + Math.random() * 0.1, 8, 8);
+                const material = new THREE.MeshBasicMaterial({
+                    color: particleColors[Math.floor(Math.random() * particleColors.length)],
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const particle = new THREE.Mesh(geometry, material);
+                
+                particle.position.set(
+                    (Math.random() - 0.5) * 100,
+                    Math.random() * 50,
+                    (Math.random() - 0.5) * 200 - 100
+                );
+                
+                particles.push({
+                    mesh: particle,
+                    originalY: particle.position.y,
+                    speed: 0.5 + Math.random() * 2,
+                    phase: Math.random() * Math.PI * 2
+                });
+                
+                scene.add(particle);
+            }
+        }
+
+        function createFloatingOrbs() {
+            const orbColors = [
+                { color: COLORS.hotPink, emissive: COLORS.hotPink },
+                { color: COLORS.electricBlue, emissive: COLORS.electricBlue },
+                { color: COLORS.amber, emissive: COLORS.amber },
+                { color: COLORS.violet, emissive: COLORS.violet }
+            ];
+
+            for (let i = 0; i < 20; i++) {
+                const size = 1 + Math.random() * 3;
+                const geometry = new THREE.SphereGeometry(size, 32, 32);
+                const colorSet = orbColors[Math.floor(Math.random() * orbColors.length)];
+                const material = new THREE.MeshStandardMaterial({
+                    color: colorSet.color,
+                    emissive: colorSet.emissive,
+                    emissiveIntensity: 0.5,
+                    transparent: true,
+                    opacity: 0.6,
+                    roughness: 0.2,
+                    metalness: 0.8
+                });
+                const orb = new THREE.Mesh(geometry, material);
+                
+                orb.position.set(
+                    (Math.random() - 0.5) * 80,
+                    5 + Math.random() * 30,
+                    -50 - Math.random() * 150
+                );
+                
+                floatingOrbs.push({
+                    mesh: orb,
+                    originalPos: orb.position.clone(),
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 0.3 + Math.random() * 0.7,
+                    amplitude: 2 + Math.random() * 5
+                });
+                
+                scene.add(orb);
+            }
+        }
+
+        function createCentralLogo() {
+            // Create the BlackRoad logo as a 3D object
+            const group = new THREE.Group();
+
+            // Outer ring (the road)
+            const ringGeometry = new THREE.TorusGeometry(5, 0.5, 16, 100);
+            const ringMaterial = new THREE.MeshStandardMaterial({
+                color: COLORS.hotPink,
+                emissive: COLORS.hotPink,
+                emissiveIntensity: 0.5,
+                roughness: 0.3,
+                metalness: 0.7
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            group.add(ring);
+
+            // Road dashes on the ring
+            for (let i = 0; i < 16; i++) {
+                const angle = (i / 16) * Math.PI * 2;
+                const dashGeometry = new THREE.BoxGeometry(0.3, 0.8, 0.3);
+                const dashMaterial = new THREE.MeshBasicMaterial({ color: COLORS.black });
+                const dash = new THREE.Mesh(dashGeometry, dashMaterial);
+                dash.position.set(
+                    Math.cos(angle) * 5,
+                    Math.sin(angle) * 5,
+                    0.3
+                );
+                dash.rotation.z = angle;
+                group.add(dash);
+            }
+
+            // Top half (amber)
+            const topGeometry = new THREE.SphereGeometry(4, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+            const topMaterial = new THREE.MeshStandardMaterial({
+                color: COLORS.amber,
+                emissive: COLORS.amber,
+                emissiveIntensity: 0.3,
+                roughness: 0.4,
+                metalness: 0.6,
+                side: THREE.DoubleSide
+            });
+            const topHalf = new THREE.Mesh(topGeometry, topMaterial);
+            topHalf.rotation.x = Math.PI / 2;
+            group.add(topHalf);
+
+            // Bottom half (blue)
+            const bottomGeometry = new THREE.SphereGeometry(4, 32, 32, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+            const bottomMaterial = new THREE.MeshStandardMaterial({
+                color: COLORS.electricBlue,
+                emissive: COLORS.electricBlue,
+                emissiveIntensity: 0.3,
+                roughness: 0.4,
+                metalness: 0.6,
+                side: THREE.DoubleSide
+            });
+            const bottomHalf = new THREE.Mesh(bottomGeometry, bottomMaterial);
+            bottomHalf.rotation.x = Math.PI / 2;
+            group.add(bottomHalf);
+
+            // Pupil
+            const pupilGeometry = new THREE.SphereGeometry(1.5, 32, 32);
+            const pupilMaterial = new THREE.MeshStandardMaterial({
+                color: COLORS.black,
+                roughness: 0.1,
+                metalness: 0.9
+            });
+            const pupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            pupil.position.z = 2;
+            group.add(pupil);
+
+            // Highlight
+            const highlightGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const highlightMaterial = new THREE.MeshBasicMaterial({ color: COLORS.white });
+            const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+            highlight.position.set(-0.5, 0.5, 3);
+            group.add(highlight);
+
+            group.position.set(0, 15, -80);
+            group.scale.set(2, 2, 2);
+            
+            centralLogo = group;
+            scene.add(group);
+        }
+
+        function createStars() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 2000;
+            const positions = new Float32Array(starCount * 3);
+            const colors = new Float32Array(starCount * 3);
+            
+            const starColors = [
+                new THREE.Color(COLORS.white),
+                new THREE.Color(COLORS.hotPink),
+                new THREE.Color(COLORS.electricBlue),
+                new THREE.Color(COLORS.amber)
+            ];
+
+            for (let i = 0; i < starCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 500;
+                positions[i * 3 + 1] = 50 + Math.random() * 200;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 500 - 200;
+                
+                const color = starColors[Math.floor(Math.random() * starColors.length)];
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const starMaterial = new THREE.PointsMaterial({
+                size: 0.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+        }
+
+        function simulateLoading() {
+            let progress = 0;
+            const progressBar = document.getElementById('loadingProgress');
+            const loadingScreen = document.getElementById('loading');
+
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        loadingScreen.classList.add('hidden');
+                        animate();
+                    }, 500);
+                }
+                progressBar.style.width = progress + '%';
+            }, 100);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(e) {
+            targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+        }
+
+        function onKeyDown(e) {
+            switch(e.key.toLowerCase()) {
+                case 'w':
+                case 'arrowup':
+                    keys.forward = true;
+                    break;
+                case 's':
+                case 'arrowdown':
+                    keys.backward = true;
+                    break;
+                case 'a':
+                case 'arrowleft':
+                    keys.left = true;
+                    break;
+                case 'd':
+                case 'arrowright':
+                    keys.right = true;
+                    break;
+            }
+        }
+
+        function onKeyUp(e) {
+            switch(e.key.toLowerCase()) {
+                case 'w':
+                case 'arrowup':
+                    keys.forward = false;
+                    break;
+                case 's':
+                case 'arrowdown':
+                    keys.backward = false;
+                    break;
+                case 'a':
+                case 'arrowleft':
+                    keys.left = false;
+                    break;
+                case 'd':
+                case 'arrowright':
+                    keys.right = false;
+                    break;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            // Update speed based on input
+            if (keys.forward) targetSpeed = Math.min(targetSpeed + 0.1, 8);
+            if (keys.backward) targetSpeed = Math.max(targetSpeed - 0.15, 0.5);
+            if (!keys.forward && !keys.backward) {
+                targetSpeed = Math.max(targetSpeed - 0.02, 2);
+            }
+
+            speed += (targetSpeed - speed) * 0.05;
+            distance += speed * 0.1;
+
+            // Steering
+            if (keys.left) steerAngle = Math.min(steerAngle + 0.02, 0.3);
+            if (keys.right) steerAngle = Math.max(steerAngle - 0.02, -0.3);
+            if (!keys.left && !keys.right) steerAngle *= 0.95;
+
+            // Mouse smoothing
+            mouseX += (targetMouseX - mouseX) * 0.05;
+            mouseY += (targetMouseY - mouseY) * 0.05;
+
+            // Camera movement
+            camera.position.x = steerAngle * 10 + mouseX * 3;
+            camera.position.y = 3 + mouseY * 2;
+            camera.rotation.y = steerAngle * 0.5 + mouseX * 0.1;
+            camera.rotation.x = mouseY * 0.1;
+
+            // Move road lines
+            roadLines.forEach(line => {
+                line.position.z += speed;
+                if (line.position.z > 20) {
+                    line.position.z -= 2000;
+                }
+            });
+
+            // Move buildings
+            buildings.forEach(building => {
+                building.mesh.position.z += speed * building.speed;
+                if (building.mesh.position.z > 50) {
+                    building.mesh.position.z -= 2000;
+                }
+            });
+
+            // Animate particles
+            particles.forEach(p => {
+                p.mesh.position.z += speed * 0.5;
+                p.mesh.position.y = p.originalY + Math.sin(time * p.speed + p.phase) * 2;
+                if (p.mesh.position.z > 50) {
+                    p.mesh.position.z -= 300;
+                }
+            });
+
+            // Animate floating orbs
+            floatingOrbs.forEach(orb => {
+                orb.mesh.position.y = orb.originalPos.y + Math.sin(time * orb.speed + orb.phase) * orb.amplitude;
+                orb.mesh.position.x = orb.originalPos.x + Math.cos(time * orb.speed * 0.5 + orb.phase) * orb.amplitude * 0.5;
+                orb.mesh.rotation.y += 0.01;
+                orb.mesh.position.z += speed * 0.3;
+                if (orb.mesh.position.z > 50) {
+                    orb.mesh.position.z -= 250;
+                }
+            });
+
+            // Animate central logo
+            if (centralLogo) {
+                centralLogo.rotation.y += 0.005;
+                centralLogo.rotation.x = Math.sin(time * 0.5) * 0.1;
+                centralLogo.position.y = 15 + Math.sin(time * 0.3) * 2;
+                
+                // Keep logo in view
+                centralLogo.position.z += speed * 0.1;
+                if (centralLogo.position.z > -30) {
+                    centralLogo.position.z = -150;
+                }
+            }
+
+            // Update UI
+            document.getElementById('speedStat').textContent = Math.floor(speed * 50);
+            document.getElementById('distanceStat').textContent = Math.floor(distance);
+
+            renderer.render(scene, camera);
+        }
+
+        // Start
+        init();
+    </script>
+
+</body>
+</html>
