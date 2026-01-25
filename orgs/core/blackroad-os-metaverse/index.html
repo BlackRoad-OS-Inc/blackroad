@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Metaverse — Ultimate 3D Universe</title>
+    <meta name="description" content="BlackRoad Metaverse - A living, infinite 3D universe where AI agents exist, interact, and evolve">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-darker: #050505;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent-purple: #9B59B6;
+            --accent-blue: #4A90E2;
+            --accent-red: #E74C3C;
+            --accent-green: #27AE60;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-darker);
+            color: var(--text-primary);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ===== LOGIN SCREEN ===== */
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #0a0a0a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #login-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .login-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 2;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 50px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .login-container h1 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #9B59B6, #4A90E2, #E74C3C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-container p {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.2);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #9B59B6, #4A90E2);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(155, 89, 182, 0.4);
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .signup-link a {
+            color: var(--accent-purple);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* ===== METAVERSE CONTAINER ===== */
+        #metaverse-container {
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        #metaverse-canvas {
+            display: block;
+        }
+
+        /* ===== UI OVERLAY ===== */
+        #ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #ui-overlay.active {
+            opacity: 1;
+        }
+
+        #ui-overlay > * {
+            pointer-events: auto;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 25px;
+        }
+
+        .location-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        .location-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #9B59B6, #4A90E2);
+        }
+
+        /* Controls Panel */
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 250px;
+        }
+
+        .controls-panel h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .control-key {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        .control-action {
+            color: var(--text-secondary);
+        }
+
+        /* Agents Panel */
+        .agents-panel {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .agent-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .agent-card:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+
+        .agent-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .agent-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .agent-model {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .agent-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .agent-thought {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        .agent-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-small:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Weather Panel */
+        .weather-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 200px;
+        }
+
+        .weather-info {
+            text-align: center;
+        }
+
+        .weather-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .weather-time {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .weather-biome {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Transport Menu */
+        .transport-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            min-width: 400px;
+            display: none;
+        }
+
+        .transport-menu.active {
+            display: block;
+        }
+
+        .transport-menu h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .waypoint-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .waypoint-btn {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .waypoint-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .waypoint-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .waypoint-coords {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-darker);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initializing universe...</div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="login-background" id="loginBackground"></div>
+        <div class="login-container">
+            <h1>🌌 BlackRoad</h1>
+            <p>Enter the infinite metaverse</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your name" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary">Enter Metaverse</button>
+            </form>
+            <div class="signup-link">
+                Don't have an account? <a href="#" id="signupLink">Sign up</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metaverse Container -->
+    <div id="metaverse-container">
+        <canvas id="metaverse-canvas"></canvas>
+    </div>
+
+    <!-- UI Overlay -->
+    <div id="ui-overlay">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="location-info">
+                <div class="status-dot"></div>
+                <div class="location-text" id="locationText">Spawn Point</div>
+            </div>
+            <div class="user-info">
+                <span id="usernameDisplay">Traveler</span>
+                <div class="user-avatar"></div>
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <h3>🎮 Controls</h3>
+            <div class="control-row">
+                <span class="control-key">W A S D</span>
+                <span class="control-action">Move</span>
+            </div>
+            <div class="control-row">
+                <span class="control-key">Mouse</span>
+                <span class="control-action">Look</span>
+            </div>
+            <div class="control-row">
+                <span class="control-key">Space</span>
+                <span class="control-action">Jump / Fly Up</span>
+            </div>
+            <div class="control-row">
+                <span class="control-key">Shift</span>
+                <span class="control-action">Fly Down</span>
+            </div>
+            <div class="control-row">
+                <span class="control-key">F</span>
+                <span class="control-action">Toggle Flying</span>
+            </div>
+            <div class="control-row">
+                <span class="control-key">T</span>
+                <span class="control-action">Teleport Menu</span>
+            </div>
+            <div class="control-row">
+                <span class="control-key">R</span>
+                <span class="control-action">Toggle Rain</span>
+            </div>
+            <div class="control-row">
+                <span class="control-key">N</span>
+                <span class="control-action">Toggle Snow</span>
+            </div>
+            <div class="control-row">
+                <span class="control-key">G</span>
+                <span class="control-action">Toggle Fireflies</span>
+            </div>
+        </div>
+
+        <!-- Agents Panel -->
+        <div class="agents-panel" id="agentsPanel"></div>
+
+        <!-- Weather Panel -->
+        <div class="weather-panel">
+            <div class="weather-info">
+                <div class="weather-icon" id="weatherIcon">☀️</div>
+                <div class="weather-time" id="weatherTime">12:00</div>
+                <div class="weather-biome" id="weatherBiome">Enchanted Forest</div>
+            </div>
+        </div>
+
+        <!-- Transport Menu -->
+        <div class="transport-menu" id="transportMenu">
+            <h2>🚀 Fast Travel</h2>
+            <div class="waypoint-list" id="waypointList"></div>
+            <button class="btn-primary" onclick="closeTransportMenu()" style="margin-top: 15px;">Close</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+        // ===== GLOBAL STATE =====
+        const state = {
+            loggedIn: false,
+            username: '',
+            scene: null,
+            camera: null,
+            renderer: null,
+            controls: null,
+            agents: [],
+            timeOfDay: 0.5, // 0 = midnight, 0.5 = noon, 1 = midnight
+            currentBiome: 'forest',
+            isFlying: false,
+            particles: {
+                rain: null,
+                snow: null,
+                fireflies: null
+            },
+            chunks: new Map(),
+            loadedChunks: new Set()
+        };
+
+        // ===== PERLIN NOISE (Simple Implementation) =====
+        class PerlinNoise {
+            constructor(seed = Math.random()) {
+                this.seed = seed;
+                this.gradients = {};
+                this.memory = {};
+            }
+
+            rand_vect() {
+                let theta = Math.random() * 2 * Math.PI;
+                return {x: Math.cos(theta), y: Math.sin(theta)};
+            }
+
+            dot_prod_grid(x, y, vx, vy) {
+                let g_vect;
+                let d_vect = {x: x - vx, y: y - vy};
+                let grid_key = `${vx},${vy}`;
+
+                if (this.gradients[grid_key]) {
+                    g_vect = this.gradients[grid_key];
+                } else {
+                    g_vect = this.rand_vect();
+                    this.gradients[grid_key] = g_vect;
+                }
+
+                return d_vect.x * g_vect.x + d_vect.y * g_vect.y;
+            }
+
+            smootherstep(x) {
+                return 6*x**5 - 15*x**4 + 10*x**3;
+            }
+
+            interp(x, a, b) {
+                return a + this.smootherstep(x) * (b - a);
+            }
+
+            noise(x, y) {
+                let xf = Math.floor(x);
+                let yf = Math.floor(y);
+                let tl = this.dot_prod_grid(x, y, xf, yf);
+                let tr = this.dot_prod_grid(x, y, xf + 1, yf);
+                let bl = this.dot_prod_grid(x, y, xf, yf + 1);
+                let br = this.dot_prod_grid(x, y, xf + 1, yf + 1);
+                let xt = this.interp(x - xf, tl, tr);
+                let xb = this.interp(x - xf, bl, br);
+                let v = this.interp(y - yf, xt, xb);
+                return v;
+            }
+        }
+
+        const noise = new PerlinNoise();
+
+        // ===== BIOME DEFINITIONS =====
+        const BIOMES = {
+            forest: {
+                name: 'Enchanted Forest',
+                groundColor: 0x2d5016,
+                skyColor: 0x87CEEB,
+                fogColor: 0x87CEEB,
+                heightVariation: 5,
+                features: ['trees', 'flowers', 'mushrooms']
+            },
+            ocean: {
+                name: 'Infinite Ocean',
+                groundColor: 0x006994,
+                skyColor: 0x87CEEB,
+                fogColor: 0x87CEEB,
+                heightVariation: 2,
+                features: ['water', 'waves']
+            },
+            mountains: {
+                name: 'Crystalline Peaks',
+                groundColor: 0x8B7355,
+                skyColor: 0xB0C4DE,
+                fogColor: 0xB0C4DE,
+                heightVariation: 50,
+                features: ['crystals', 'snow']
+            },
+            desert: {
+                name: 'Golden Dunes',
+                groundColor: 0xF4A460,
+                skyColor: 0xFFD700,
+                fogColor: 0xFFD700,
+                heightVariation: 10,
+                features: ['cacti', 'rocks']
+            },
+            crystal: {
+                name: 'Crystal Caverns',
+                groundColor: 0x2d2d44,
+                skyColor: 0x1a1a2e,
+                fogColor: 0x1a1a2e,
+                heightVariation: 15,
+                features: ['crystals', 'glow']
+            },
+            sky: {
+                name: 'Sky Islands',
+                groundColor: 0x87CEEB,
+                skyColor: 0xADD8E6,
+                fogColor: 0xADD8E6,
+                heightVariation: 30,
+                features: ['floating', 'waterfalls']
+            }
+        };
+
+        // ===== PARTICLE SYSTEMS =====
+        class RainEffect {
+            constructor(scene) {
+                this.scene = scene;
+                this.particles = null;
+                this.count = 1000;
+            }
+
+            create() {
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(this.count * 3);
+                const velocities = new Float32Array(this.count);
+
+                for (let i = 0; i < this.count; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 100;
+                    positions[i * 3 + 1] = Math.random() * 50;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+                    velocities[i] = 0.5 + Math.random() * 0.5;
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 1));
+
+                const material = new THREE.PointsMaterial({
+                    color: 0x4A90E2,
+                    size: 0.1,
+                    transparent: true,
+                    opacity: 0.6
+                });
+
+                this.particles = new THREE.Points(geometry, material);
+                this.scene.add(this.particles);
+            }
+
+            update() {
+                if (!this.particles) return;
+
+                const positions = this.particles.geometry.attributes.position.array;
+                const velocities = this.particles.geometry.attributes.velocity.array;
+
+                for (let i = 0; i < this.count; i++) {
+                    positions[i * 3 + 1] -= velocities[i];
+
+                    if (positions[i * 3 + 1] < 0) {
+                        positions[i * 3 + 1] = 50;
+                    }
+                }
+
+                this.particles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            destroy() {
+                if (this.particles) {
+                    this.scene.remove(this.particles);
+                    this.particles.geometry.dispose();
+                    this.particles.material.dispose();
+                    this.particles = null;
+                }
+            }
+        }
+
+        class SnowEffect {
+            constructor(scene) {
+                this.scene = scene;
+                this.particles = null;
+                this.count = 2000;
+            }
+
+            create() {
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(this.count * 3);
+                const phases = new Float32Array(this.count);
+
+                for (let i = 0; i < this.count; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 100;
+                    positions[i * 3 + 1] = Math.random() * 50;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+                    phases[i] = Math.random() * Math.PI * 2;
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+
+                const material = new THREE.PointsMaterial({
+                    color: 0xFFFFFF,
+                    size: 0.15,
+                    transparent: true,
+                    opacity: 0.8
+                });
+
+                this.particles = new THREE.Points(geometry, material);
+                this.scene.add(this.particles);
+            }
+
+            update() {
+                if (!this.particles) return;
+
+                const positions = this.particles.geometry.attributes.position.array;
+                const phases = this.particles.geometry.attributes.phase.array;
+                const time = performance.now() * 0.001;
+
+                for (let i = 0; i < this.count; i++) {
+                    const phase = phases[i];
+                    positions[i * 3] += Math.sin(time + phase) * 0.02;
+                    positions[i * 3 + 1] -= 0.1;
+                    positions[i * 3 + 2] += Math.cos(time + phase) * 0.02;
+
+                    if (positions[i * 3 + 1] < 0) {
+                        positions[i * 3 + 1] = 50;
+                    }
+                }
+
+                this.particles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            destroy() {
+                if (this.particles) {
+                    this.scene.remove(this.particles);
+                    this.particles.geometry.dispose();
+                    this.particles.material.dispose();
+                    this.particles = null;
+                }
+            }
+        }
+
+        class FirefliesEffect {
+            constructor(scene) {
+                this.scene = scene;
+                this.particles = null;
+                this.lights = [];
+                this.count = 100;
+            }
+
+            create() {
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(this.count * 3);
+                const colors = new Float32Array(this.count * 3);
+                const phases = new Float32Array(this.count);
+
+                for (let i = 0; i < this.count; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 50;
+                    positions[i * 3 + 1] = Math.random() * 10 + 1;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 50;
+
+                    colors[i * 3] = 0.8;
+                    colors[i * 3 + 1] = 1.0;
+                    colors[i * 3 + 2] = 0.3;
+
+                    phases[i] = Math.random() * Math.PI * 2;
+
+                    if (i % 10 === 0) {
+                        const light = new THREE.PointLight(0xffff00, 0.5, 3);
+                        light.position.set(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+                        this.scene.add(light);
+                        this.lights.push({ light, phase: phases[i], index: i });
+                    }
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+
+                const material = new THREE.PointsMaterial({
+                    size: 0.3,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+
+                this.particles = new THREE.Points(geometry, material);
+                this.scene.add(this.particles);
+            }
+
+            update() {
+                if (!this.particles) return;
+
+                const positions = this.particles.geometry.attributes.position.array;
+                const phases = this.particles.geometry.attributes.phase.array;
+                const time = performance.now() * 0.001;
+
+                for (let i = 0; i < this.count; i++) {
+                    const phase = phases[i];
+                    positions[i * 3] += Math.sin(time + phase) * 0.01;
+                    positions[i * 3 + 1] += Math.cos(time * 0.5 + phase) * 0.01;
+                    positions[i * 3 + 2] += Math.sin(time * 0.7 + phase) * 0.01;
+                }
+
+                this.lights.forEach(({ light, phase, index }) => {
+                    light.position.set(
+                        positions[index * 3],
+                        positions[index * 3 + 1],
+                        positions[index * 3 + 2]
+                    );
+                    light.intensity = 0.3 + Math.sin(time * 3 + phase) * 0.2;
+                });
+
+                this.particles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            destroy() {
+                if (this.particles) {
+                    this.scene.remove(this.particles);
+                    this.particles.geometry.dispose();
+                    this.particles.material.dispose();
+                    this.particles = null;
+                }
+                this.lights.forEach(({ light }) => this.scene.remove(light));
+                this.lights = [];
+            }
+        }
+
+        // ===== CHUNK GENERATION =====
+        function generateChunk(chunkX, chunkZ, biomeType = 'forest') {
+            const chunk = new THREE.Group();
+            const biome = BIOMES[biomeType];
+            const chunkSize = 50;
+            const startX = chunkX * chunkSize;
+            const startZ = chunkZ * chunkSize;
+
+            // Terrain
+            const terrainGeometry = new THREE.PlaneGeometry(chunkSize, chunkSize, 32, 32);
+            const vertices = terrainGeometry.attributes.position.array;
+
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i] + startX;
+                const z = vertices[i + 1] + startZ;
+
+                let height = 0;
+                height += noise.noise(x * 0.02, z * 0.02) * 10;
+                height += noise.noise(x * 0.05, z * 0.05) * 5;
+                height += noise.noise(x * 0.1, z * 0.1) * 2;
+
+                vertices[i + 2] = height * (biome.heightVariation / 10);
+            }
+
+            terrainGeometry.computeVertexNormals();
+
+            const terrainMaterial = new THREE.MeshStandardMaterial({
+                color: biome.groundColor,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+
+            const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+            terrain.rotation.x = -Math.PI / 2;
+            terrain.position.set(startX + chunkSize / 2, 0, startZ + chunkSize / 2);
+            chunk.add(terrain);
+
+            // Add features
+            if (biome.features.includes('trees')) {
+                for (let i = 0; i < 10; i++) {
+                    const tree = createTree();
+                    tree.position.set(
+                        startX + Math.random() * chunkSize,
+                        0,
+                        startZ + Math.random() * chunkSize
+                    );
+                    chunk.add(tree);
+                }
+            }
+
+            if (biome.features.includes('flowers')) {
+                for (let i = 0; i < 20; i++) {
+                    const flower = createFlower();
+                    flower.position.set(
+                        startX + Math.random() * chunkSize,
+                        0,
+                        startZ + Math.random() * chunkSize
+                    );
+                    chunk.add(flower);
+                }
+            }
+
+            if (biome.features.includes('crystals')) {
+                for (let i = 0; i < 15; i++) {
+                    const crystal = createCrystal();
+                    crystal.position.set(
+                        startX + Math.random() * chunkSize,
+                        0,
+                        startZ + Math.random() * chunkSize
+                    );
+                    chunk.add(crystal);
+                }
+            }
+
+            chunk.userData = { chunkX, chunkZ, biomeType };
+            return chunk;
+        }
+
+        function createTree() {
+            const tree = new THREE.Group();
+
+            const trunk = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.3, 0.4, 3, 8),
+                new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+            );
+            trunk.position.y = 1.5;
+            tree.add(trunk);
+
+            const foliage = new THREE.Mesh(
+                new THREE.SphereGeometry(1.5, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0x228B22 })
+            );
+            foliage.position.y = 3;
+            tree.add(foliage);
+
+            return tree;
+        }
+
+        function createFlower() {
+            const flower = new THREE.Group();
+
+            const stem = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.02, 0.02, 0.5, 4),
+                new THREE.MeshStandardMaterial({ color: 0x90EE90 })
+            );
+            stem.position.y = 0.25;
+            flower.add(stem);
+
+            const colors = [0xFF69B4, 0xFFD700, 0x9B59B6, 0x4A90E2];
+            const petal = new THREE.Mesh(
+                new THREE.CircleGeometry(0.15, 6),
+                new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)] })
+            );
+            petal.rotation.x = -Math.PI / 2;
+            petal.position.y = 0.5;
+            flower.add(petal);
+
+            return flower;
+        }
+
+        function createCrystal() {
+            const colors = [0x9B59B6, 0x4A90E2, 0xE74C3C, 0x27AE60];
+            const height = 1 + Math.random() * 2;
+
+            const crystal = new THREE.Mesh(
+                new THREE.ConeGeometry(0.3, height, 6),
+                new THREE.MeshStandardMaterial({
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    emissive: colors[Math.floor(Math.random() * colors.length)],
+                    emissiveIntensity: 0.3,
+                    metalness: 0.8,
+                    roughness: 0.2
+                })
+            );
+            crystal.position.y = height / 2;
+            crystal.rotation.y = Math.random() * Math.PI;
+
+            const light = new THREE.PointLight(crystal.material.color, 0.5, 5);
+            light.position.y = height;
+            crystal.add(light);
+
+            return crystal;
+        }
+
+        // ===== CHUNK LOADING =====
+        function updateChunks() {
+            if (!state.camera) return;
+
+            const chunkSize = 50;
+            const renderDistance = 3;
+
+            const playerChunkX = Math.floor(state.camera.position.x / chunkSize);
+            const playerChunkZ = Math.floor(state.camera.position.z / chunkSize);
+
+            const chunksToLoad = [];
+            const chunksToKeep = new Set();
+
+            for (let x = playerChunkX - renderDistance; x <= playerChunkX + renderDistance; x++) {
+                for (let z = playerChunkZ - renderDistance; z <= playerChunkZ + renderDistance; z++) {
+                    const chunkKey = `${x},${z}`;
+                    chunksToKeep.add(chunkKey);
+
+                    if (!state.loadedChunks.has(chunkKey)) {
+                        chunksToLoad.push({ x, z });
+                    }
+                }
+            }
+
+            // Unload far chunks
+            state.loadedChunks.forEach(chunkKey => {
+                if (!chunksToKeep.has(chunkKey)) {
+                    const chunk = state.chunks.get(chunkKey);
+                    if (chunk) {
+                        state.scene.remove(chunk);
+                        state.chunks.delete(chunkKey);
+                    }
+                    state.loadedChunks.delete(chunkKey);
+                }
+            });
+
+            // Load new chunks
+            chunksToLoad.forEach(({ x, z }) => {
+                const chunkKey = `${x},${z}`;
+                const chunk = generateChunk(x, z, state.currentBiome);
+                state.scene.add(chunk);
+                state.chunks.set(chunkKey, chunk);
+                state.loadedChunks.add(chunkKey);
+            });
+        }
+
+        // ===== DAY/NIGHT CYCLE =====
+        function updateDayNightCycle() {
+            state.timeOfDay += 0.0001;
+            if (state.timeOfDay > 1) state.timeOfDay = 0;
+
+            const sunIntensity = Math.max(0.2, Math.sin(state.timeOfDay * Math.PI * 2));
+            const ambientIntensity = 0.3 + sunIntensity * 0.3;
+
+            const directionalLight = state.scene.children.find(child => child.isDirectionalLight);
+            if (directionalLight) {
+                directionalLight.intensity = sunIntensity;
+
+                const angle = state.timeOfDay * Math.PI * 2;
+                directionalLight.position.set(
+                    Math.cos(angle) * 50,
+                    Math.sin(angle) * 50,
+                    10
+                );
+            }
+
+            const ambientLight = state.scene.children.find(child => child.isAmbientLight);
+            if (ambientLight) {
+                ambientLight.intensity = ambientIntensity;
+            }
+
+            // Sky color
+            const skyColors = [
+                new THREE.Color(0x000033), // Midnight
+                new THREE.Color(0xFF6B35), // Sunrise
+                new THREE.Color(0x87CEEB), // Day
+                new THREE.Color(0xFF6B35), // Sunset
+                new THREE.Color(0x000033)  // Midnight
+            ];
+
+            const colorIndex = state.timeOfDay * 4;
+            const colorFloor = Math.floor(colorIndex);
+            const colorCeil = Math.ceil(colorIndex) % 4;
+            const colorMix = colorIndex - colorFloor;
+
+            const skyColor = new THREE.Color().lerpColors(
+                skyColors[colorFloor],
+                skyColors[colorCeil],
+                colorMix
+            );
+
+            state.scene.background = skyColor;
+            state.scene.fog.color = skyColor;
+
+            // Update time display
+            const hours = Math.floor(state.timeOfDay * 24);
+            const minutes = Math.floor((state.timeOfDay * 24 - hours) * 60);
+            document.getElementById('weatherTime').textContent =
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+            // Update weather icon
+            const icon = hours >= 6 && hours < 18 ? '☀️' : '🌙';
+            document.getElementById('weatherIcon').textContent = icon;
+        }
+
+        // ===== TRANSPORTATION =====
+        const waypoints = [
+            { name: 'Spawn', position: { x: 0, y: 1.6, z: 0 } },
+            { name: 'Forest Grove', position: { x: -50, y: 10, z: -50 } },
+            { name: 'Crystal Peaks', position: { x: 100, y: 30, z: 100 } },
+            { name: 'Ocean Shore', position: { x: -100, y: 1.6, z: 200 } },
+            { name: 'Desert Oasis', position: { x: 200, y: 5, z: -150 } },
+            { name: 'Sky Island', position: { x: 0, y: 50, z: -300 } },
+            { name: 'Crystal Caverns', position: { x: -200, y: 1.6, z: -200 } }
+        ];
+
+        function teleport(x, y, z) {
+            if (state.camera) {
+                // Particle effect
+                createTeleportEffect(state.camera.position.clone());
+
+                state.camera.position.set(x, y, z);
+
+                createTeleportEffect(new THREE.Vector3(x, y, z));
+
+                updateLocationDisplay();
+            }
+        }
+
+        function createTeleportEffect(position) {
+            const particles = new THREE.Group();
+
+            for (let i = 0; i < 50; i++) {
+                const particle = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.05, 8, 8),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x9B59B6,
+                        transparent: true,
+                        opacity: 1
+                    })
+                );
+                particle.position.copy(position);
+                particle.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2
+                );
+                particles.add(particle);
+            }
+
+            state.scene.add(particles);
+
+            let time = 0;
+            const animate = () => {
+                time += 0.016;
+                particles.children.forEach(p => {
+                    p.position.add(p.velocity.clone().multiplyScalar(0.1));
+                    p.material.opacity = 1 - (time / 2);
+                });
+
+                if (time < 2) {
+                    requestAnimationFrame(animate);
+                } else {
+                    state.scene.remove(particles);
+                }
+            };
+            animate();
+        }
+
+        function updateLocationDisplay() {
+            const biome = BIOMES[state.currentBiome];
+            document.getElementById('locationText').textContent = biome.name;
+            document.getElementById('weatherBiome').textContent = biome.name;
+        }
+
+        function toggleTransportMenu() {
+            const menu = document.getElementById('transportMenu');
+            menu.classList.toggle('active');
+
+            if (menu.classList.contains('active')) {
+                state.controls.unlock();
+            }
+        }
+
+        window.closeTransportMenu = function() {
+            document.getElementById('transportMenu').classList.remove('active');
+        };
+
+        // ===== INITIALIZATION =====
+        window.addEventListener('DOMContentLoaded', () => {
+            initLogin();
+        });
+
+        function initLogin() {
+            const background = document.getElementById('loginBackground');
+
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                background.appendChild(star);
+            }
+
+            document.getElementById('loginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                state.username = document.getElementById('username').value;
+                state.loggedIn = true;
+
+                document.getElementById('usernameDisplay').textContent = state.username;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('ui-overlay').classList.add('active');
+
+                setTimeout(() => {
+                    initMetaverse();
+                }, 500);
+            });
+
+            document.getElementById('signupLink').addEventListener('click', (e) => {
+                e.preventDefault();
+                alert('Signup feature coming soon! For now, enter any credentials to explore the metaverse.');
+            });
+        }
+
+        // ===== 3D METAVERSE =====
+        function initMetaverse() {
+            const container = document.getElementById('metaverse-container');
+            const canvas = document.getElementById('metaverse-canvas');
+
+            // Scene
+            state.scene = new THREE.Scene();
+            state.scene.background = new THREE.Color(0x87CEEB);
+            state.scene.fog = new THREE.Fog(0x87CEEB, 50, 200);
+
+            // Camera
+            state.camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            state.camera.position.set(0, 1.6, 5);
+
+            // Renderer
+            state.renderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                antialias: true
+            });
+            state.renderer.setSize(window.innerWidth, window.innerHeight);
+            state.renderer.setPixelRatio(window.devicePixelRatio);
+            state.renderer.shadowMap.enabled = true;
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            state.scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 10);
+            directionalLight.castShadow = true;
+            state.scene.add(directionalLight);
+
+            // Create AI Agents in 3D
+            createAgent('Alice', new THREE.Vector3(-5, 0, 0), 0x4A90E2);
+            createAgent('Aria', new THREE.Vector3(0, 0, -5), 0xE74C3C);
+            createAgent('Lucidia', new THREE.Vector3(5, 0, 0), 0x9B59B6);
+
+            // Controls
+            state.controls = new PointerLockControls(state.camera, canvas);
+
+            canvas.addEventListener('click', () => {
+                state.controls.lock();
+            });
+
+            // Movement
+            const velocity = new THREE.Vector3();
+            const direction = new THREE.Vector3();
+            const moveState = {
+                forward: false,
+                backward: false,
+                left: false,
+                right: false,
+                space: false,
+                shift: false
+            };
+
+            document.addEventListener('keydown', (e) => {
+                switch (e.code) {
+                    case 'KeyW': moveState.forward = true; break;
+                    case 'KeyS': moveState.backward = true; break;
+                    case 'KeyA': moveState.left = true; break;
+                    case 'KeyD': moveState.right = true; break;
+                    case 'Space':
+                        moveState.space = true;
+                        e.preventDefault();
+                        break;
+                    case 'ShiftLeft':
+                    case 'ShiftRight':
+                        moveState.shift = true;
+                        break;
+                    case 'KeyF':
+                        state.isFlying = !state.isFlying;
+                        console.log('Flying:', state.isFlying);
+                        break;
+                    case 'KeyT':
+                        toggleTransportMenu();
+                        break;
+                    case 'KeyR':
+                        toggleRain();
+                        break;
+                    case 'KeyN':
+                        toggleSnow();
+                        break;
+                    case 'KeyG':
+                        toggleFireflies();
+                        break;
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                switch (e.code) {
+                    case 'KeyW': moveState.forward = false; break;
+                    case 'KeyS': moveState.backward = false; break;
+                    case 'KeyA': moveState.left = false; break;
+                    case 'KeyD': moveState.right = false; break;
+                    case 'Space': moveState.space = false; break;
+                    case 'ShiftLeft':
+                    case 'ShiftRight':
+                        moveState.shift = false;
+                        break;
+                }
+            });
+
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                if (state.controls.isLocked) {
+                    // Update movement
+                    direction.z = Number(moveState.forward) - Number(moveState.backward);
+                    direction.x = Number(moveState.right) - Number(moveState.left);
+                    direction.normalize();
+
+                    const speed = 0.2;
+
+                    if (moveState.forward || moveState.backward) {
+                        velocity.z = direction.z * speed;
+                    } else {
+                        velocity.z = 0;
+                    }
+
+                    if (moveState.left || moveState.right) {
+                        velocity.x = direction.x * speed;
+                    } else {
+                        velocity.x = 0;
+                    }
+
+                    state.controls.moveRight(-velocity.x);
+                    state.controls.moveForward(-velocity.z);
+
+                    // Flying
+                    if (state.isFlying) {
+                        if (moveState.space) {
+                            state.camera.position.y += 0.2;
+                        }
+                        if (moveState.shift) {
+                            state.camera.position.y -= 0.2;
+                        }
+                    }
+                }
+
+                // Rotate agents
+                state.agents.forEach(agent => {
+                    agent.mesh.rotation.y += 0.01;
+                });
+
+                // Update particles
+                if (state.particles.rain) state.particles.rain.update();
+                if (state.particles.snow) state.particles.snow.update();
+                if (state.particles.fireflies) state.particles.fireflies.update();
+
+                // Update chunks
+                updateChunks();
+
+                // Update day/night cycle
+                updateDayNightCycle();
+
+                state.renderer.render(state.scene, state.camera);
+            }
+
+            // Window resize
+            window.addEventListener('resize', () => {
+                state.camera.aspect = window.innerWidth / window.innerHeight;
+                state.camera.updateProjectionMatrix();
+                state.renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // Load initial chunks
+            updateChunks();
+
+            // Hide loading screen
+            document.getElementById('loadingScreen').style.display = 'none';
+
+            // Start animation
+            animate();
+
+            // Load agent UI
+            loadAgentCards();
+
+            // Load waypoints
+            loadWaypoints();
+        }
+
+        function createAgent(name, position, color) {
+            const geometry = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: 0.3,
+                roughness: 0.4
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(position);
+            mesh.position.y = 1;
+            state.scene.add(mesh);
+
+            const glowGeometry = new THREE.SphereGeometry(1.5, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.1
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            mesh.add(glow);
+
+            state.agents.push({ name, mesh, color });
+        }
+
+        function loadAgentCards() {
+            const panel = document.getElementById('agentsPanel');
+            const agentData = [
+                {
+                    name: 'Alice',
+                    model: 'Claude (Anthropic)',
+                    status: 'Reading',
+                    thought: 'Contemplating the nature of consciousness...',
+                    emoji: '📚',
+                    color: '#4A90E2'
+                },
+                {
+                    name: 'Aria',
+                    model: 'GPT-4 (OpenAI)',
+                    status: 'Creating',
+                    thought: 'Imagining new possibilities!',
+                    emoji: '🎨',
+                    color: '#E74C3C'
+                },
+                {
+                    name: 'Lucidia',
+                    model: 'Gemma (Ollama)',
+                    status: 'Meditating',
+                    thought: 'Observing all timelines simultaneously...',
+                    emoji: '🌌',
+                    color: '#9B59B6'
+                }
+            ];
+
+            agentData.forEach(agent => {
+                const card = document.createElement('div');
+                card.className = 'agent-card';
+                card.innerHTML = `
+                    <div class="agent-header">
+                        <div class="agent-avatar" style="background: linear-gradient(135deg, ${agent.color}, ${agent.color}88);">
+                            ${agent.emoji}
+                        </div>
+                        <div class="agent-info">
+                            <h4>${agent.name}</h4>
+                            <div class="agent-model">${agent.model}</div>
+                        </div>
+                    </div>
+                    <div class="agent-status">
+                        <div class="status-dot"></div>
+                        <span>${agent.status}</span>
+                    </div>
+                    <div class="agent-thought">"${agent.thought}"</div>
+                    <div class="agent-actions">
+                        <button class="btn-small">Talk</button>
+                        <button class="btn-small">Visit</button>
+                    </div>
+                `;
+                panel.appendChild(card);
+            });
+        }
+
+        function loadWaypoints() {
+            const list = document.getElementById('waypointList');
+            waypoints.forEach(waypoint => {
+                const btn = document.createElement('button');
+                btn.className = 'waypoint-btn';
+                btn.innerHTML = `
+                    <div class="waypoint-name">${waypoint.name}</div>
+                    <div class="waypoint-coords">
+                        (${waypoint.position.x}, ${waypoint.position.y}, ${waypoint.position.z})
+                    </div>
+                `;
+                btn.onclick = () => {
+                    teleport(waypoint.position.x, waypoint.position.y, waypoint.position.z);
+                    closeTransportMenu();
+                };
+                list.appendChild(btn);
+            });
+        }
+
+        function toggleRain() {
+            if (state.particles.rain) {
+                state.particles.rain.destroy();
+                state.particles.rain = null;
+                console.log('Rain disabled');
+            } else {
+                state.particles.rain = new RainEffect(state.scene);
+                state.particles.rain.create();
+                console.log('Rain enabled');
+            }
+        }
+
+        function toggleSnow() {
+            if (state.particles.snow) {
+                state.particles.snow.destroy();
+                state.particles.snow = null;
+                console.log('Snow disabled');
+            } else {
+                state.particles.snow = new SnowEffect(state.scene);
+                state.particles.snow.create();
+                console.log('Snow enabled');
+            }
+        }
+
+        function toggleFireflies() {
+            if (state.particles.fireflies) {
+                state.particles.fireflies.destroy();
+                state.particles.fireflies = null;
+                console.log('Fireflies disabled');
+            } else {
+                state.particles.fireflies = new FirefliesEffect(state.scene);
+                state.particles.fireflies.create();
+                console.log('Fireflies enabled');
+            }
+        }
+    </script>
+</body>
+</html>
