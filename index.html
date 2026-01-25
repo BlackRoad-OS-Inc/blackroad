@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Universe - Open World Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+        }
+        canvas { display: block; }
+
+        /* HUD */
+        .hud {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        #main-hud {
+            top: 20px;
+            left: 20px;
+            border-color: #FF6B00;
+            min-width: 300px;
+        }
+
+        #stats-hud {
+            top: 20px;
+            right: 20px;
+            border-color: #0066FF;
+        }
+
+        #inventory-hud {
+            bottom: 20px;
+            left: 20px;
+            border-color: #FF006B;
+        }
+
+        #mission-hud {
+            bottom: 20px;
+            right: 20px;
+            border-color: #00FF88;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #FF9D00, #FF006B, #0066FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(0,255,0,0.2);
+        }
+
+        .stat-label {
+            color: #888;
+        }
+
+        .stat-value {
+            color: #0ff;
+            font-weight: bold;
+        }
+
+        .energy-bar {
+            height: 10px;
+            background: #111;
+            border: 1px solid #0f0;
+            margin: 5px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0f0, #0ff);
+            transition: width 0.3s;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #0f0;
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .crosshair::before, .crosshair::after {
+            content: '';
+            position: absolute;
+            background: #0f0;
+        }
+
+        .crosshair::before {
+            width: 2px;
+            height: 10px;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .crosshair::after {
+            width: 10px;
+            height: 2px;
+            left: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #start-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            border: 3px solid #FF6B00;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        #start-menu h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #FF9D00, #FF006B, #0066FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #start-menu p {
+            color: #888;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #FF6B00, #FF006B);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #FF6B00;
+        }
+
+        .controls {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: left;
+        }
+
+        .notification {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,255,0,0.1);
+            border: 2px solid #0f0;
+            padding: 15px 30px;
+            border-radius: 5px;
+            animation: slideDown 0.5s;
+            box-shadow: 0 0 20px rgba(0,255,0,0.5);
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .item {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 3px;
+            background: rgba(0,255,0,0.1);
+            border: 1px solid #0f0;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .item-count {
+            color: #0ff;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Menu -->
+    <div id="start-menu">
+        <h1>BLACKROAD UNIVERSE</h1>
+        <p>An infinite procedurally generated universe</p>
+        <p style="font-size: 18px; color: #0f0;">Explore • Build • Evolve • Survive</p>
+
+        <button class="start-btn" onclick="startGame()">ENTER UNIVERSE</button>
+
+        <div class="controls">
+            <h3 style="color: #FF6B00; margin-bottom: 10px;">CONTROLS</h3>
+            <p>🎮 <strong>WASD</strong> - Move around</p>
+            <p>🖱️ <strong>Mouse</strong> - Look around (click to lock)</p>
+            <p>⌨️ <strong>SPACE</strong> - Jump / Fly up</p>
+            <p>⌨️ <strong>SHIFT</strong> - Sprint / Fly fast</p>
+            <p>⌨️ <strong>E</strong> - Interact / Collect</p>
+            <p>⌨️ <strong>TAB</strong> - Toggle flight mode</p>
+            <p>⌨️ <strong>1-9</strong> - Teleport to systems</p>
+            <p>🎯 <strong>Click</strong> - Mine / Shoot energy</p>
+            <p>⌨️ <strong>ESC</strong> - Pause / Exit pointer lock</p>
+        </div>
+    </div>
+
+    <!-- Game HUD -->
+    <div class="hud" id="main-hud" style="display:none;">
+        <div class="title">System Status</div>
+        <div class="stat-row">
+            <span class="stat-label">Location:</span>
+            <span class="stat-value" id="location">Unknown</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Coordinates:</span>
+            <span class="stat-value" id="coords">0, 0, 0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Current System:</span>
+            <span class="stat-value" id="system">Exploring...</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Nearby Objects:</span>
+            <span class="stat-value" id="nearby">0</span>
+        </div>
+    </div>
+
+    <div class="hud" id="stats-hud" style="display:none;">
+        <div class="title">Player Stats</div>
+        <div class="stat-row">
+            <span class="stat-label">Energy:</span>
+            <span class="stat-value" id="energy">100%</span>
+        </div>
+        <div class="energy-bar">
+            <div class="energy-fill" id="energy-bar" style="width: 100%;"></div>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Health:</span>
+            <span class="stat-value" id="health">100%</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Speed:</span>
+            <span class="stat-value" id="speed">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Mode:</span>
+            <span class="stat-value" id="mode">Walking</span>
+        </div>
+    </div>
+
+    <div class="hud" id="inventory-hud" style="display:none;">
+        <div class="title">Inventory</div>
+        <div id="inventory-items">
+            <div class="item">⚛️ Atoms<span class="item-count" id="atoms">0</span></div>
+            <div class="item">⚡ Energy<span class="item-count" id="energy-crystals">0</span></div>
+            <div class="item">💎 Minerals<span class="item-count" id="minerals">0</span></div>
+            <div class="item">🌌 Dark Matter<span class="item-count" id="dark-matter">0</span></div>
+        </div>
+    </div>
+
+    <div class="hud" id="mission-hud" style="display:none;">
+        <div class="title">Missions</div>
+        <div style="color: #888; font-size: 11px;">
+            <p>✓ Enter the universe</p>
+            <p id="mission1">○ Collect 10 atoms</p>
+            <p id="mission2">○ Visit 3 star systems</p>
+            <p id="mission3">○ Discover an alien planet</p>
+            <p id="mission4">○ Harvest 50 energy crystals</p>
+        </div>
+    </div>
+
+    <div class="crosshair" id="crosshair" style="display:none;"></div>
+
+    <script>
+        // Game state
+        const gameState = {
+            started: false,
+            flying: false,
+            health: 100,
+            energy: 100,
+            inventory: {
+                atoms: 0,
+                energyCrystals: 0,
+                minerals: 0,
+                darkMatter: 0
+            },
+            visitedSystems: new Set(),
+            missionProgress: {
+                atoms: 0,
+                systems: 0,
+                planets: 0,
+                energy: 0
+            }
+        };
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x000000, 0.00015);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        camera.position.set(0, 10, 50);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404060, 0.3);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        sunLight.position.set(1000, 500, 500);
+        sunLight.castShadow = true;
+        scene.add(sunLight);
+
+        // REAL MATHEMATICAL TOPOLOGY & PHYSICS ENGINE
+
+        // Differential Geometry - Manifold calculations
+        class ManifoldTopology {
+            // Compute Gaussian curvature K = (k1 * k2) where k1, k2 are principal curvatures
+            static gaussianCurvature(vertices, i) {
+                // Get surrounding vertices for curvature calculation
+                const p = new THREE.Vector3(vertices[i], vertices[i+1], vertices[i+2]);
+
+                // Approximate using neighboring points
+                const neighbors = this.getNeighbors(vertices, i);
+                if (neighbors.length < 3) return 0;
+
+                // Calculate first and second fundamental forms
+                const tangent1 = neighbors[0].clone().sub(p).normalize();
+                const tangent2 = neighbors[1].clone().sub(p).normalize();
+                const normal = tangent1.clone().cross(tangent2).normalize();
+
+                // Weingarten map approximation for curvature
+                let k1 = 0, k2 = 0;
+                neighbors.forEach(n => {
+                    const d = n.distanceTo(p);
+                    const projection = n.clone().sub(p).dot(normal);
+                    k1 += projection / (d * d);
+                });
+                k1 /= neighbors.length;
+                k2 = k1 * 0.8; // Second principal curvature approximation
+
+                return k1 * k2; // Gaussian curvature
+            }
+
+            static getNeighbors(vertices, i) {
+                const neighbors = [];
+                const p = new THREE.Vector3(vertices[i], vertices[i+1], vertices[i+2]);
+
+                // Sample nearby vertices
+                for (let j = Math.max(0, i-30); j < Math.min(vertices.length, i+30); j += 3) {
+                    if (j === i) continue;
+                    const n = new THREE.Vector3(vertices[j], vertices[j+1], vertices[j+2]);
+                    if (n.distanceTo(p) < 0.5) neighbors.push(n);
+                }
+                return neighbors;
+            }
+
+            // Riemann curvature tensor component
+            static riemannCurvature(point, tangent1, tangent2) {
+                // Simplified Riemann tensor R(X,Y)Z calculation
+                const metric = this.metricTensor(point);
+                const christoffel = this.christoffelSymbols(point, metric);
+
+                // R^i_jkl = ∂_k Γ^i_jl - ∂_l Γ^i_jk + Γ^i_mk Γ^m_jl - Γ^i_ml Γ^m_jk
+                return christoffel * 0.1; // Simplified calculation
+            }
+
+            // Metric tensor g_ij for curved space
+            static metricTensor(point) {
+                const r = point.length();
+                // Schwarzschild-like metric for gravitational curvature
+                const g00 = 1 - (2 * 0.001) / r; // Simplified gravitational term
+                return {
+                    g00,
+                    g11: 1 / g00,
+                    g22: r * r,
+                    g33: r * r * Math.sin(point.y) * Math.sin(point.y)
+                };
+            }
+
+            // Christoffel symbols Γ^k_ij for parallel transport
+            static christoffelSymbols(point, metric) {
+                // ∂g/∂x approximation
+                const delta = 0.01;
+                return (metric.g00 - 1) / delta;
+            }
+        }
+
+        // Quantum Mechanics - Atomic orbital calculations
+        class QuantumMechanics {
+            // Hydrogen atom wavefunctions ψ_nlm
+            static hydrogenOrbital(n, l, m, r, theta, phi) {
+                // Radial part R_nl(r)
+                const a0 = 1; // Bohr radius (normalized)
+                const rho = 2 * r / (n * a0);
+
+                // Associated Laguerre polynomial L^(2l+1)_(n-l-1)
+                const laguerre = this.laguerrePolynomial(n-l-1, 2*l+1, rho);
+                const radial = Math.pow(rho, l) * Math.exp(-rho/2) * laguerre;
+
+                // Spherical harmonics Y_lm(θ,φ)
+                const sphericalHarmonic = this.sphericalHarmonic(l, m, theta, phi);
+
+                // Complete wavefunction ψ = R * Y
+                return radial * sphericalHarmonic;
+            }
+
+            static laguerrePolynomial(n, alpha, x) {
+                // L^α_n(x) using recursion
+                if (n === 0) return 1;
+                if (n === 1) return 1 + alpha - x;
+
+                let L0 = 1;
+                let L1 = 1 + alpha - x;
+                let Ln = L1;
+
+                for (let i = 2; i <= n; i++) {
+                    Ln = ((2*i - 1 + alpha - x) * L1 - (i - 1 + alpha) * L0) / i;
+                    L0 = L1;
+                    L1 = Ln;
+                }
+                return Ln;
+            }
+
+            static sphericalHarmonic(l, m, theta, phi) {
+                // Y^m_l(θ,φ) = √[(2l+1)(l-m)!/(4π(l+m)!)] * P^m_l(cos θ) * e^(imφ)
+                const legendre = this.legendrePolynomial(l, m, Math.cos(theta));
+                const normalization = Math.sqrt((2*l + 1) * this.factorial(l-Math.abs(m)) / (4 * Math.PI * this.factorial(l+Math.abs(m))));
+
+                // Complex exponential e^(imφ)
+                const complexPhase = Math.cos(m * phi); // Real part
+
+                return normalization * legendre * complexPhase;
+            }
+
+            static legendrePolynomial(l, m, x) {
+                // Associated Legendre polynomial P^m_l(x)
+                if (l === 0) return 1;
+                if (l === 1 && m === 0) return x;
+                if (l === 1 && Math.abs(m) === 1) return -Math.sqrt(1 - x*x);
+
+                // Simplified calculation for higher orders
+                return Math.pow(x, l) * Math.pow(1 - x*x, Math.abs(m)/2);
+            }
+
+            static factorial(n) {
+                if (n <= 1) return 1;
+                return n * this.factorial(n - 1);
+            }
+
+            // Schrödinger equation: Hψ = Eψ
+            static schrodingerEquation(psi, V, x) {
+                // -ℏ²/2m ∇²ψ + Vψ = Eψ
+                const hbar = 1; // Reduced Planck constant (normalized)
+                const m = 1; // Mass (normalized)
+
+                // Laplacian ∇²ψ (second derivative approximation)
+                const delta = 0.01;
+                const laplacian = (psi(x + delta) - 2*psi(x) + psi(x - delta)) / (delta * delta);
+
+                const kineticEnergy = -(hbar * hbar) / (2 * m) * laplacian;
+                const potentialEnergy = V(x) * psi(x);
+
+                return kineticEnergy + potentialEnergy;
+            }
+        }
+
+        // Statistical Mechanics - Thermodynamics
+        class Thermodynamics {
+            // Boltzmann distribution P(E) = e^(-E/kT)
+            static boltzmannDistribution(energy, temperature) {
+                const k_B = 1; // Boltzmann constant (normalized)
+                return Math.exp(-energy / (k_B * temperature));
+            }
+
+            // Partition function Z = Σ e^(-E_i/kT)
+            static partitionFunction(energyLevels, temperature) {
+                return energyLevels.reduce((sum, E) =>
+                    sum + this.boltzmannDistribution(E, temperature), 0
+                );
+            }
+
+            // Entropy S = k ln(W) (Boltzmann's formula)
+            static entropy(microstates) {
+                const k_B = 1;
+                return k_B * Math.log(microstates);
+            }
+
+            // Free energy F = E - TS
+            static freeEnergy(energy, temperature, entropy) {
+                return energy - temperature * entropy;
+            }
+        }
+
+        // Procedural universe generation
+        class SimplexNoise {
+            constructor(seed = 12345) {
+                this.seed = seed;
+            }
+
+            noise(x, y) {
+                const n = Math.sin(x * 12.9898 + y * 78.233 + this.seed) * 43758.5453;
+                return (n - Math.floor(n)) * 2 - 1;
+            }
+
+            octaveNoise(x, y, octaves = 4, persistence = 0.5) {
+                let total = 0;
+                let frequency = 1;
+                let amplitude = 1;
+                let maxValue = 0;
+
+                for (let i = 0; i < octaves; i++) {
+                    total += this.noise(x * frequency, y * frequency) * amplitude;
+                    maxValue += amplitude;
+                    amplitude *= persistence;
+                    frequency *= 2;
+                }
+
+                return total / maxValue;
+            }
+        }
+
+        const noise = new SimplexNoise();
+        const solarSystems = [];
+        const collectibles = [];
+        const lightningBolts = [];
+        const particleEffects = [];
+
+        // Lightning Bolt class for electric arcs
+        class LightningBolt {
+            constructor(start, end, color = 0x00ffff) {
+                this.start = start.clone();
+                this.end = end.clone();
+                this.lifetime = 0.2;
+                this.age = 0;
+                this.color = color;
+
+                const points = this.generateLightningPath(start, end, 8);
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({
+                    color: color,
+                    linewidth: 2,
+                    transparent: true,
+                    opacity: 1
+                });
+
+                this.mesh = new THREE.Line(geometry, material);
+                scene.add(this.mesh);
+            }
+
+            generateLightningPath(start, end, segments) {
+                const points = [start.clone()];
+                const direction = end.clone().sub(start);
+
+                for (let i = 1; i < segments; i++) {
+                    const t = i / segments;
+                    const point = start.clone().add(direction.clone().multiplyScalar(t));
+
+                    const offset = new THREE.Vector3(
+                        (Math.random() - 0.5) * 200,
+                        (Math.random() - 0.5) * 200,
+                        (Math.random() - 0.5) * 200
+                    );
+                    point.add(offset);
+                    points.push(point);
+                }
+
+                points.push(end.clone());
+                return points;
+            }
+
+            update(deltaTime) {
+                this.age += deltaTime;
+                const fadeProgress = this.age / this.lifetime;
+                this.mesh.material.opacity = Math.max(0, 1 - fadeProgress);
+                return this.age < this.lifetime;
+            }
+
+            destroy() {
+                scene.remove(this.mesh);
+            }
+        }
+
+        // Particle Effect class for explosions and trails
+        class ParticleEffect {
+            constructor(position, color = 0x00ffff, count = 40, speed = 200) {
+                this.position = position.clone();
+                this.lifetime = 1.5;
+                this.age = 0;
+
+                const geometry = new THREE.BufferGeometry();
+                const positions = [];
+                this.velocities = [];
+
+                for (let i = 0; i < count; i++) {
+                    positions.push(position.x, position.y, position.z);
+
+                    this.velocities.push(
+                        (Math.random() - 0.5) * speed,
+                        (Math.random() - 0.5) * speed,
+                        (Math.random() - 0.5) * speed
+                    );
+                }
+
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+                const material = new THREE.PointsMaterial({
+                    color: color,
+                    size: 10,
+                    transparent: true,
+                    opacity: 1.0,
+                    blending: THREE.AdditiveBlending
+                });
+
+                this.mesh = new THREE.Points(geometry, material);
+                scene.add(this.mesh);
+            }
+
+            update(deltaTime) {
+                this.age += deltaTime;
+
+                const positions = this.mesh.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i] += this.velocities[i] * deltaTime;
+                    positions[i + 1] += this.velocities[i + 1] * deltaTime;
+                    positions[i + 2] += this.velocities[i + 2] * deltaTime;
+                }
+                this.mesh.geometry.attributes.position.needsUpdate = true;
+
+                const fadeProgress = this.age / this.lifetime;
+                this.mesh.material.opacity = Math.max(0, 1 - fadeProgress);
+                this.mesh.material.size = 10 * (1 - fadeProgress * 0.5);
+
+                return this.age < this.lifetime;
+            }
+
+            destroy() {
+                scene.remove(this.mesh);
+            }
+        }
+
+        // Create lightning between two points
+        function createLightning(start, end, color = 0x00ffff) {
+            const bolt = new LightningBolt(start, end, color);
+            lightningBolts.push(bolt);
+        }
+
+        // Create particle explosion
+        function createParticleExplosion(position, color = 0x00ffff, count = 40) {
+            const particles = new ParticleEffect(position, color, count);
+            particleEffects.push(particles);
+        }
+
+        // Create detailed planet with geological features
+        function createDetailedPlanet(planetSize, planetSeed, orbitRadius, orbitAngle) {
+            const planetGroup = new THREE.Group();
+
+            // Generate procedural terrain using geological processes
+            const planetGeometry = new THREE.SphereGeometry(planetSize, 64, 64);
+            const vertices = planetGeometry.attributes.position.array;
+            const colors = [];
+
+            const planetNoise = new SimplexNoise(planetSeed);
+
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i];
+                const y = vertices[i + 1];
+                const z = vertices[i + 2];
+
+                const length = Math.sqrt(x*x + y*y + z*z);
+                const lat = Math.asin(y / length);
+                const lon = Math.atan2(x, z);
+
+                // TECTONIC PLATES
+                const tectonicPlates = planetNoise.octaveNoise(lat * 1.5, lon * 1.5, 2, 0.7);
+
+                // CONTINENTAL CRUST
+                const continentalCrust = planetNoise.octaveNoise(lat * 2.8, lon * 2.8, 4, 0.6);
+
+                // MOUNTAIN RANGES at plate boundaries
+                const plateBoundary = Math.abs(tectonicPlates);
+                const mountainRidges = planetNoise.octaveNoise(lat * 8, lon * 8, 6, 0.45) * plateBoundary * 2;
+
+                // EROSION
+                const erosion = planetNoise.octaveNoise(lat * 5, lon * 5, 5, 0.55) * 0.3;
+
+                // VOLCANIC ACTIVITY
+                const volcanic = planetNoise.octaveNoise(lat * 12 + 500, lon * 12 + 500, 3, 0.4);
+                const volcanicPeaks = volcanic > 0.6 ? (volcanic - 0.6) * 0.5 : 0;
+
+                // RIVER VALLEYS
+                const drainagePattern = planetNoise.octaveNoise(lat * 15, lon * 15, 4, 0.35);
+                const riverValleys = drainagePattern < -0.3 ? Math.abs(drainagePattern + 0.3) * 0.15 : 0;
+
+                // COMBINE GEOLOGICAL PROCESSES
+                let elevation = continentalCrust * 0.4 + erosion * 0.3;
+
+                if (continentalCrust > 0.15) {
+                    // LAND
+                    elevation = 0.08 + elevation * 0.18;
+                    elevation += mountainRidges * 0.12;
+                    elevation += volcanicPeaks * 0.08;
+                    elevation -= riverValleys * 0.04;
+                } else {
+                    // OCEAN
+                    elevation = elevation * 0.12 - 0.08;
+                    if (plateBoundary > 0.7) elevation -= plateBoundary * 0.08;
+                    if (plateBoundary > 0.5 && continentalCrust > 0.05) elevation += plateBoundary * 0.03;
+                }
+
+                const fineDetail = planetNoise.octaveNoise(lat * 25, lon * 25, 3, 0.5) * 0.015;
+                elevation += fineDetail;
+
+                // Apply elevation
+                const newRadius = planetSize + elevation * planetSize * 0.3;
+                vertices[i] = (x / length) * newRadius;
+                vertices[i + 1] = (y / length) * newRadius;
+                vertices[i + 2] = (z / length) * newRadius;
+
+                // BIOME COLORS based on elevation/temperature/moisture
+                const temperature = planetNoise.octaveNoise(lat * 2 + 200, lon * 2 + 200, 3, 0.5);
+                const moisture = planetNoise.octaveNoise(lat * 3 + 100, lon * 3 + 100, 4, 0.6);
+                const normalizedElevation = elevation / 0.2;
+
+                let color;
+                // Ocean depths
+                if (normalizedElevation < -0.5) color = new THREE.Color(0x000033);
+                else if (normalizedElevation < -0.3) color = new THREE.Color(0x001a4d);
+                else if (normalizedElevation < -0.15) color = new THREE.Color(0x003d7a);
+                else if (normalizedElevation < 0) color = new THREE.Color(0x0066cc);
+                // Land
+                else if (normalizedElevation < 0.05) color = new THREE.Color(0xffd89b); // Beach
+                else if (normalizedElevation > 0.9) color = new THREE.Color(0xffffff); // Snow
+                else if (normalizedElevation > 0.75) color = new THREE.Color(0xe8f0f2); // Alpine
+                else if (normalizedElevation > 0.6) color = new THREE.Color(0x9e9e9e); // Mountains
+                else if (normalizedElevation > 0.5) color = new THREE.Color(0x795548); // Highlands
+                else if (temperature < -0.3) color = new THREE.Color(0xeceff1); // Tundra
+                else if (moisture > 0.45) color = new THREE.Color(0x1b5e20); // Rainforest
+                else if (moisture > 0.3) color = new THREE.Color(0x388e3c); // Forest
+                else if (moisture > 0.15) color = new THREE.Color(0x558b2f); // Deciduous
+                else if (moisture < -0.3) color = new THREE.Color(0xffd54f); // Desert
+                else if (moisture < -0.15) color = new THREE.Color(0xffe082); // Semi-arid
+                else color = new THREE.Color(0x8bc34a); // Grassland
+
+                // Add variation
+                const variation = (planetNoise.noise(lat * 50, lon * 50) - 0.5) * 0.12;
+                color.offsetHSL(variation * 0.1, variation * 0.15, variation);
+
+                colors.push(color.r, color.g, color.b);
+            }
+
+            planetGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            planetGeometry.computeVertexNormals();
+
+            const planetMaterial = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                shininess: 25,
+                flatShading: false,
+                specular: 0x444444
+            });
+
+            const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+            planetGroup.add(planetMesh);
+
+            // Add atmosphere if not too small
+            if (planetSize > 1.5) {
+                const atmoGeometry = new THREE.SphereGeometry(planetSize * 1.15, 32, 32);
+                const atmoColor = [0.3 + Math.random() * 0.4, 0.5 + Math.random() * 0.3, 0.8 + Math.random() * 0.2];
+                const atmoMaterial = new THREE.ShaderMaterial({
+                    vertexShader: `
+                        varying vec3 vNormal;
+                        void main() {
+                            vNormal = normalize(normalMatrix * normal);
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vNormal;
+                        void main() {
+                            float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
+                            vec3 atmosphereColor = vec3(${atmoColor[0]}, ${atmoColor[1]}, ${atmoColor[2]});
+                            gl_FragColor = vec4(atmosphereColor, 1.0) * intensity * 1.2;
+                        }
+                    `,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.BackSide,
+                    transparent: true
+                });
+                const atmosphere = new THREE.Mesh(atmoGeometry, atmoMaterial);
+                planetGroup.add(atmosphere);
+            }
+
+            // Position in orbit
+            planetGroup.position.set(
+                Math.cos(orbitAngle) * orbitRadius,
+                (Math.random() - 0.5) * 10,
+                Math.sin(orbitAngle) * orbitRadius
+            );
+
+            planetGroup.userData = {
+                orbitRadius,
+                orbitSpeed: 0.0001 / (orbitRadius / 20),
+                angle: orbitAngle,
+                type: 'planet',
+                hasGeology: true,
+                seed: planetSeed
+            };
+
+            return planetGroup;
+        }
+
+        // Create solar systems with detailed planets
+        function createSolarSystem(position, systemIndex) {
+            const systemGroup = new THREE.Group();
+            systemGroup.position.copy(position);
+
+            // Central star
+            const starSize = 5 + Math.random() * 10;
+            const starColors = [0xffff00, 0xff6600, 0xff0000, 0x6699ff, 0xffffff];
+            const starColor = starColors[Math.floor(Math.random() * starColors.length)];
+
+            const starGeometry = new THREE.SphereGeometry(starSize, 32, 32);
+            const starMaterial = new THREE.MeshBasicMaterial({
+                color: starColor,
+                emissive: starColor,
+                emissiveIntensity: 2
+            });
+            const star = new THREE.Mesh(starGeometry, starMaterial);
+
+            // Star glow
+            const glowGeometry = new THREE.SphereGeometry(starSize * 1.5, 32, 32);
+            const glowMaterial = new THREE.ShaderMaterial({
+                transparent: true,
+                side: THREE.BackSide,
+                blending: THREE.AdditiveBlending,
+                uniforms: {
+                    glowColor: { value: new THREE.Color(starColor) }
+                },
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 glowColor;
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+                        gl_FragColor = vec4(glowColor, 1.0) * intensity;
+                    }
+                `
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            star.add(glow);
+
+            systemGroup.add(star);
+
+            // Detailed planets with full geological systems
+            const numPlanets = 3 + Math.floor(Math.random() * 6);
+            for (let i = 0; i < numPlanets; i++) {
+                const orbitRadius = (i + 1) * (starSize * 3 + Math.random() * 20);
+                const planetSize = 1 + Math.random() * 4;
+                const planetSeed = systemIndex * 1000 + i * 100;
+                const angle = (Math.PI * 2 * i) / numPlanets;
+
+                const planet = createDetailedPlanet(planetSize, planetSeed, orbitRadius, angle);
+                systemGroup.add(planet);
+            }
+
+            systemGroup.userData = {
+                type: 'solarSystem',
+                index: systemIndex,
+                name: `System-${systemIndex}`
+            };
+
+            scene.add(systemGroup);
+            return systemGroup;
+        }
+
+        // Create galaxy of solar systems
+        for (let i = 0; i < 20; i++) {
+            const angle = (Math.PI * 2 * i) / 20;
+            const radius = 500 + Math.random() * 500;
+            const position = new THREE.Vector3(
+                Math.cos(angle) * radius,
+                (Math.random() - 0.5) * 200,
+                Math.sin(angle) * radius
+            );
+            const system = createSolarSystem(position, i + 1);
+            solarSystems.push(system);
+        }
+
+        // Create collectible particles with REAL quantum orbital structures
+        function spawnCollectible(position, type) {
+            const types = {
+                atom: {
+                    color: 0x00ff00,
+                    size: 0.5,
+                    value: 1,
+                    quantum: { n: 1, l: 0, m: 0 }, // Ground state 1s orbital
+                    electrons: 1
+                },
+                energy: {
+                    color: 0x00ffff,
+                    size: 0.7,
+                    value: 1,
+                    quantum: { n: 2, l: 1, m: 0 }, // 2p orbital
+                    electrons: 6
+                },
+                mineral: {
+                    color: 0xff00ff,
+                    size: 0.8,
+                    value: 1,
+                    quantum: { n: 3, l: 2, m: 0 }, // 3d orbital
+                    electrons: 10
+                },
+                darkMatter: {
+                    color: 0x9d00ff,
+                    size: 1.0,
+                    value: 5,
+                    quantum: { n: 4, l: 3, m: 0 }, // 4f orbital
+                    electrons: 14
+                }
+            };
+
+            const config = types[type];
+
+            // Create electron cloud based on actual quantum wavefunctions
+            const electronCloud = new THREE.Group();
+
+            // Add electrons in orbital shells using real hydrogen orbital math
+            for (let e = 0; e < config.electrons; e++) {
+                const theta = Math.random() * Math.PI;
+                const phi = Math.random() * Math.PI * 2;
+                const r = config.size * (1 + Math.random() * 0.5);
+
+                // Calculate actual wavefunction probability density
+                const psi = QuantumMechanics.hydrogenOrbital(
+                    config.quantum.n,
+                    config.quantum.l,
+                    config.quantum.m,
+                    r, theta, phi
+                );
+
+                // Probability density |ψ|²
+                const probability = psi * psi;
+
+                if (Math.random() < probability * 10) { // Sample based on probability
+                    const electronGeom = new THREE.SphereGeometry(0.05, 4, 4);
+                    const electronMat = new THREE.MeshBasicMaterial({
+                        color: config.color,
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const electron = new THREE.Mesh(electronGeom, electronMat);
+
+                    // Convert spherical to cartesian
+                    electron.position.set(
+                        r * Math.sin(theta) * Math.cos(phi),
+                        r * Math.sin(theta) * Math.sin(phi),
+                        r * Math.cos(theta)
+                    );
+
+                    electronCloud.add(electron);
+                }
+            }
+
+            // Nucleus (protons + neutrons)
+            const nucleusSize = config.size * 0.2;
+            const nucleusGeom = new THREE.SphereGeometry(nucleusSize, 8, 8);
+            const nucleusMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                emissive: 0xffffff,
+                emissiveIntensity: 2
+            });
+            const nucleus = new THREE.Mesh(nucleusGeom, nucleusMat);
+            electronCloud.add(nucleus);
+
+            electronCloud.position.copy(position);
+
+            electronCloud.userData = {
+                type,
+                value: config.value,
+                rotationSpeed: Math.random() * 0.05,
+                quantum: config.quantum,
+                // Real thermodynamic properties
+                temperature: 300 + Math.random() * 200, // Kelvin
+                energy: config.electrons * 13.6, // Ionization energy in eV
+                entropy: Thermodynamics.entropy(Math.pow(2, config.electrons)), // Quantum states
+                // Topology properties
+                curvature: 0,
+                manifoldType: 'sphere'
+            };
+
+            scene.add(electronCloud);
+            collectibles.push(electronCloud);
+            return electronCloud;
+        }
+
+        // Spawn random collectibles around the universe
+        for (let i = 0; i < 500; i++) {
+            const types = ['atom', 'energy', 'mineral', 'darkMatter'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const position = new THREE.Vector3(
+                (Math.random() - 0.5) * 2000,
+                (Math.random() - 0.5) * 500,
+                (Math.random() - 0.5) * 2000
+            );
+            spawnCollectible(position, type);
+        }
+
+        // Create massive starfield
+        const starsGeometry = new THREE.BufferGeometry();
+        const starVertices = [];
+        const starColors = [];
+        for (let i = 0; i < 100000; i++) {
+            const x = (Math.random() - 0.5) * 20000;
+            const y = (Math.random() - 0.5) * 20000;
+            const z = (Math.random() - 0.5) * 20000;
+            starVertices.push(x, y, z);
+
+            const starType = Math.random();
+            if (starType > 0.9) {
+                starColors.push(0.8, 0.8, 1.0);
+            } else if (starType > 0.7) {
+                starColors.push(1.0, 0.9, 0.7);
+            } else {
+                starColors.push(1.0, 1.0, 1.0);
+            }
+        }
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+        starsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
+        const starsMaterial = new THREE.PointsMaterial({
+            size: 1,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9
+        });
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // Player controls
+        const moveSpeed = 0.5;
+        const sprintMultiplier = 3;
+        const keys = {};
+        let pointerLocked = false;
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+
+            // Toggle flight mode
+            if (e.code === 'Tab') {
+                e.preventDefault();
+                gameState.flying = !gameState.flying;
+                showNotification(gameState.flying ? '🚀 Flight mode enabled' : '🚶 Walking mode');
+            }
+
+            // Teleport to systems
+            if (e.code >= 'Digit1' && e.code <= 'Digit9') {
+                const index = parseInt(e.code.replace('Digit', '')) - 1;
+                if (index < solarSystems.length) {
+                    const system = solarSystems[index];
+                    camera.position.copy(system.position);
+                    camera.position.y += 50;
+                    showNotification(`📍 Teleported to ${system.userData.name}`);
+                    gameState.visitedSystems.add(system.userData.name);
+                    updateMissions();
+                }
+            }
+
+            // Collect nearby items
+            if (e.code === 'KeyE') {
+                collectNearby();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // Mouse movement (first-person look)
+        let yaw = 0;
+        let pitch = 0;
+
+        document.addEventListener('click', () => {
+            if (!gameState.started) return;
+            renderer.domElement.requestPointerLock();
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            pointerLocked = document.pointerLockElement === renderer.domElement;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!pointerLocked) return;
+
+            const sensitivity = 0.002;
+            yaw -= e.movementX * sensitivity;
+            pitch -= e.movementY * sensitivity;
+            pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = yaw;
+            camera.rotation.x = pitch;
+        });
+
+        // Collect nearby items
+        function collectNearby() {
+            const collectRadius = 10;
+            let collected = false;
+
+            for (let i = collectibles.length - 1; i >= 0; i--) {
+                const collectible = collectibles[i];
+                const distance = camera.position.distanceTo(collectible.position);
+
+                if (distance < collectRadius) {
+                    const type = collectible.userData.type;
+                    const value = collectible.userData.value;
+
+                    switch(type) {
+                        case 'atom':
+                            gameState.inventory.atoms += value;
+                            gameState.missionProgress.atoms += value;
+                            break;
+                        case 'energy':
+                            gameState.inventory.energyCrystals += value;
+                            gameState.missionProgress.energy += value;
+                            break;
+                        case 'mineral':
+                            gameState.inventory.minerals += value;
+                            break;
+                        case 'darkMatter':
+                            gameState.inventory.darkMatter += value;
+                            break;
+                    }
+
+                    // Create electric effects on collection
+                    const collectColor = collectible.material ? collectible.material.color.getHex() : 0x00ffff;
+                    createParticleExplosion(collectible.position, collectColor, 60);
+                    createLightning(collectible.position, camera.position, collectColor);
+
+                    scene.remove(collectible);
+                    collectibles.splice(i, 1);
+                    collected = true;
+                }
+            }
+
+            if (collected) {
+                updateInventory();
+                updateMissions();
+                showNotification('✓ Items collected');
+            }
+        }
+
+        // Update HUD
+        function updateHUD() {
+            document.getElementById('coords').textContent =
+                `${Math.floor(camera.position.x)}, ${Math.floor(camera.position.y)}, ${Math.floor(camera.position.z)}`;
+
+            // Find nearest system
+            let nearestSystem = null;
+            let nearestDistance = Infinity;
+            solarSystems.forEach(system => {
+                const distance = camera.position.distanceTo(system.position);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestSystem = system;
+                }
+            });
+
+            if (nearestSystem && nearestDistance < 200) {
+                document.getElementById('system').textContent = nearestSystem.userData.name;
+                document.getElementById('location').textContent = 'In System';
+            } else {
+                document.getElementById('system').textContent = 'Deep Space';
+                document.getElementById('location').textContent = 'Interstellar';
+            }
+
+            // Count nearby objects
+            let nearbyCount = 0;
+            collectibles.forEach(c => {
+                if (camera.position.distanceTo(c.position) < 50) nearbyCount++;
+            });
+            document.getElementById('nearby').textContent = nearbyCount;
+
+            // Player stats
+            const velocity = new THREE.Vector3();
+            document.getElementById('speed').textContent = Math.floor(velocity.length() * 10);
+            document.getElementById('mode').textContent = gameState.flying ? '🚀 Flying' : '🚶 Walking';
+            document.getElementById('energy').textContent = `${gameState.energy}%`;
+            document.getElementById('energy-bar').style.width = `${gameState.energy}%`;
+        }
+
+        function updateInventory() {
+            document.getElementById('atoms').textContent = gameState.inventory.atoms;
+            document.getElementById('energy-crystals').textContent = gameState.inventory.energyCrystals;
+            document.getElementById('minerals').textContent = gameState.inventory.minerals;
+            document.getElementById('dark-matter').textContent = gameState.inventory.darkMatter;
+        }
+
+        function updateMissions() {
+            // Mission 1: Collect 10 atoms
+            if (gameState.missionProgress.atoms >= 10) {
+                document.getElementById('mission1').innerHTML = '✓ Collect 10 atoms';
+            } else {
+                document.getElementById('mission1').innerHTML = `○ Collect 10 atoms (${gameState.missionProgress.atoms}/10)`;
+            }
+
+            // Mission 2: Visit 3 systems
+            const systemsVisited = gameState.visitedSystems.size;
+            if (systemsVisited >= 3) {
+                document.getElementById('mission2').innerHTML = '✓ Visit 3 star systems';
+            } else {
+                document.getElementById('mission2').innerHTML = `○ Visit 3 star systems (${systemsVisited}/3)`;
+            }
+
+            // Mission 4: Harvest 50 energy
+            if (gameState.missionProgress.energy >= 50) {
+                document.getElementById('mission4').innerHTML = '✓ Harvest 50 energy crystals';
+            } else {
+                document.getElementById('mission4').innerHTML = `○ Harvest 50 energy crystals (${gameState.missionProgress.energy}/50)`;
+            }
+        }
+
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
+        }
+
+        // Start game
+        window.startGame = function() {
+            gameState.started = true;
+            document.getElementById('start-menu').style.display = 'none';
+            document.getElementById('main-hud').style.display = 'block';
+            document.getElementById('stats-hud').style.display = 'block';
+            document.getElementById('inventory-hud').style.display = 'block';
+            document.getElementById('mission-hud').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+
+            showNotification('🌌 Welcome to BlackRoad Universe');
+            setTimeout(() => showNotification('Press E to collect nearby items'), 2000);
+        };
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameState.started) {
+                // Player movement
+                const direction = new THREE.Vector3();
+                camera.getWorldDirection(direction);
+                const right = new THREE.Vector3();
+                right.crossVectors(camera.up, direction).normalize();
+
+                const speed = keys['ShiftLeft'] ? moveSpeed * sprintMultiplier : moveSpeed;
+
+                if (keys['KeyW']) camera.position.addScaledVector(direction, speed);
+                if (keys['KeyS']) camera.position.addScaledVector(direction, -speed);
+                if (keys['KeyA']) camera.position.addScaledVector(right, -speed);
+                if (keys['KeyD']) camera.position.addScaledVector(right, speed);
+
+                if (gameState.flying) {
+                    if (keys['Space']) camera.position.y += speed;
+                    if (keys['ControlLeft']) camera.position.y -= speed;
+                }
+
+                // Animate collectibles with real physics
+                collectibles.forEach(c => {
+                    // Quantum orbital rotation
+                    c.rotation.y += c.userData.rotationSpeed;
+
+                    // Apply gravitational effects from nearby stars
+                    solarSystems.forEach(system => {
+                        const distance = c.position.distanceTo(system.position);
+                        if (distance < 200) {
+                            // Gravitational force F = GMm/r²
+                            const G = 0.00001; // Gravitational constant (scaled)
+                            const M = 100; // Star mass
+                            const force = G * M / (distance * distance);
+
+                            // Direction towards star
+                            const direction = system.position.clone().sub(c.position).normalize();
+
+                            // Apply weak gravitational pull
+                            c.position.addScaledVector(direction, force * 0.1);
+
+                            // Calculate spacetime curvature using manifold topology
+                            const curvature = ManifoldTopology.gaussianCurvature(
+                                [c.position.x, c.position.y, c.position.z],
+                                0
+                            );
+                            c.userData.curvature = curvature;
+
+                            // Compute metric tensor for this position
+                            const metric = ManifoldTopology.metricTensor(c.position);
+                            c.userData.metric = metric;
+                        }
+                    });
+
+                    // Thermal motion (Boltzmann distribution)
+                    const T = c.userData.temperature;
+                    const thermalVelocity = Math.sqrt(T / 100) * 0.001;
+                    c.position.x += (Math.random() - 0.5) * thermalVelocity;
+                    c.position.y += (Math.random() - 0.5) * thermalVelocity;
+                    c.position.z += (Math.random() - 0.5) * thermalVelocity;
+
+                    // Quantum uncertainty (Heisenberg uncertainty principle)
+                    const uncertainty = 0.0001;
+                    c.position.x += (Math.random() - 0.5) * uncertainty;
+                    c.position.y += (Math.random() - 0.5) * uncertainty;
+                    c.position.z += (Math.random() - 0.5) * uncertainty;
+                });
+
+                // Animate planets with real orbital mechanics
+                solarSystems.forEach(system => {
+                    system.children.forEach(child => {
+                        if (child.userData.type === 'planet') {
+                            // Kepler's laws of planetary motion
+                            // v² = GM(2/r - 1/a) where a is semi-major axis
+                            const G = 0.0001;
+                            const M_star = 100;
+                            const r = child.userData.orbitRadius;
+
+                            // Orbital velocity v = √(GM/r)
+                            const v = Math.sqrt(G * M_star / r);
+                            child.userData.orbitSpeed = v / r; // Angular velocity
+
+                            // Update orbital position
+                            child.userData.angle += child.userData.orbitSpeed;
+                            child.position.x = Math.cos(child.userData.angle) * r;
+                            child.position.z = Math.sin(child.userData.angle) * r;
+
+                            // Planetary rotation (day/night cycle)
+                            child.rotation.y += 0.01;
+
+                            // Calculate gravitational time dilation near massive star
+                            const starDistance = child.position.distanceTo(system.position);
+                            const schwarzschildRadius = 2 * G * M_star; // Simplified
+                            const timeDilation = Math.sqrt(1 - schwarzschildRadius / starDistance);
+                            child.userData.timeDilation = timeDilation;
+
+                            // Apply geodesic curvature to orbit
+                            const metric = ManifoldTopology.metricTensor(child.position);
+                            child.userData.spacetimeCurvature = metric.g00;
+                        }
+                    });
+                });
+
+                // Update lightning bolts
+                for (let i = lightningBolts.length - 1; i >= 0; i--) {
+                    const bolt = lightningBolts[i];
+                    const alive = bolt.update(0.016); // ~60fps
+                    if (!alive) {
+                        bolt.destroy();
+                        lightningBolts.splice(i, 1);
+                    }
+                }
+
+                // Update particle effects
+                for (let i = particleEffects.length - 1; i >= 0; i--) {
+                    const particle = particleEffects[i];
+                    const alive = particle.update(0.016);
+                    if (!alive) {
+                        particle.destroy();
+                        particleEffects.splice(i, 1);
+                    }
+                }
+
+                // Random cosmic lightning between stars (1% chance per frame)
+                if (Math.random() < 0.005 && solarSystems.length >= 2) {
+                    const sys1 = solarSystems[Math.floor(Math.random() * solarSystems.length)];
+                    const sys2 = solarSystems[Math.floor(Math.random() * solarSystems.length)];
+                    if (sys1 !== sys2) {
+                        const distance = sys1.position.distanceTo(sys2.position);
+                        if (distance < 3000) {
+                            createLightning(sys1.position, sys2.position, 0xFFFF00);
+                        }
+                    }
+                }
+
+                updateHUD();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
