@@ -1,0 +1,93 @@
+# ============================================================================
+# BlackRoad OS - Documentation Pipeline
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Builds and deploys documentation to GitHub Pages.
+# Triggered on push to main when docs/ changes.
+# ============================================================================
+
+name: Docs
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Build site
+        run: |
+          mkdir -p _site
+
+          # Copy README as index
+          if [ -f README.md ]; then
+            cp README.md _site/index.md
+          fi
+
+          # Copy docs
+          if [ -d docs ]; then
+            cp -r docs/* _site/
+          fi
+
+          # Create simple index.html if no README
+          if [ ! -f _site/index.md ] && [ ! -f _site/index.html ]; then
+            cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>BlackRoad OS Documentation</title>
+            <style>
+              body { font-family: system-ui; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+              h1 { color: #333; }
+              a { color: #0066cc; }
+            </style>
+          </head>
+          <body>
+            <h1>BlackRoad OS Documentation</h1>
+            <p>Welcome to the BlackRoad OS documentation.</p>
+          </body>
+          </html>
+          EOF
+          fi
+
+          echo "Site contents:"
+          ls -la _site/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    name: Deploy to Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

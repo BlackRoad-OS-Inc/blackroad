@@ -1,0 +1,77 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "blackroad-cli"
+version = "0.1.0"
+description = "AI Agent Orchestration CLI with consent management, policy enforcement, and audit trails"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "BlackRoad OS", email = "hello@blackroad.io" }
+]
+keywords = [
+    "ai",
+    "agents",
+    "orchestration",
+    "cli",
+    "consent",
+    "policy",
+    "audit"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = [
+    "typer>=0.9.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+blackroad = "cli.console:app"
+br = "cli.console:app"
+
+[project.urls]
+Homepage = "https://blackroad.io"
+Documentation = "https://docs.blackroad.io/cli"
+Repository = "https://github.com/BlackRoad-OS/blackroad-cli"
+Issues = "https://github.com/BlackRoad-OS/blackroad-cli/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["cli", "orchestrator", "bots", "config"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
