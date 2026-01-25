@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Universe - Open World Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+        }
+        canvas { display: block; }
+
+        /* HUD */
+        .hud {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        #main-hud {
+            top: 20px;
+            left: 20px;
+            border-color: #FF6B00;
+            min-width: 300px;
+        }
+
+        #stats-hud {
+            top: 20px;
+            right: 20px;
+            border-color: #0066FF;
+        }
+
+        #inventory-hud {
+            bottom: 20px;
+            left: 20px;
+            border-color: #FF006B;
+        }
+
+        #mission-hud {
+            bottom: 20px;
+            right: 20px;
+            border-color: #00FF88;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #FF9D00, #FF006B, #0066FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(0,255,0,0.2);
+        }
+
+        .stat-label {
+            color: #888;
+        }
+
+        .stat-value {
+            color: #0ff;
+            font-weight: bold;
+        }
+
+        .energy-bar {
+            height: 10px;
+            background: #111;
+            border: 1px solid #0f0;
+            margin: 5px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0f0, #0ff);
+            transition: width 0.3s;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #0f0;
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .crosshair::before, .crosshair::after {
+            content: '';
+            position: absolute;
+            background: #0f0;
+        }
+
+        .crosshair::before {
+            width: 2px;
+            height: 10px;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .crosshair::after {
+            width: 10px;
+            height: 2px;
+            left: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #start-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            border: 3px solid #FF6B00;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        #start-menu h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #FF9D00, #FF006B, #0066FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #start-menu p {
+            color: #888;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #FF6B00, #FF006B);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #FF6B00;
+        }
+
+        .controls {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: left;
+        }
+
+        .notification {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,255,0,0.1);
+            border: 2px solid #0f0;
+            padding: 15px 30px;
+            border-radius: 5px;
+            animation: slideDown 0.5s;
+            box-shadow: 0 0 20px rgba(0,255,0,0.5);
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .item {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 3px;
+            background: rgba(0,255,0,0.1);
+            border: 1px solid #0f0;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .item-count {
+            color: #0ff;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Menu -->
+    <div id="start-menu">
+        <h1>BLACKROAD UNIVERSE</h1>
+        <p>An infinite procedurally generated universe</p>
+        <p style="font-size: 18px; color: #0f0;">Explore • Build • Evolve • Survive</p>
+
+        <button class="start-btn" onclick="startGame()">ENTER UNIVERSE</button>
+
+        <div class="controls">
+            <h3 style="color: #FF6B00; margin-bottom: 10px;">CONTROLS</h3>
+            <p>🎮 <strong>WASD</strong> - Move around</p>
+            <p>🖱️ <strong>Mouse</strong> - Look around (click to lock)</p>
+            <p>⌨️ <strong>SPACE</strong> - Jump / Fly up</p>
+            <p>⌨️ <strong>SHIFT</strong> - Sprint / Fly fast</p>
+            <p>⌨️ <strong>E</strong> - Interact / Collect</p>
+            <p>⌨️ <strong>TAB</strong> - Toggle flight mode</p>
+            <p>⌨️ <strong>1-9</strong> - Teleport to systems</p>
+            <p>🎯 <strong>Click</strong> - Mine / Shoot energy</p>
+            <p>⌨️ <strong>ESC</strong> - Pause / Exit pointer lock</p>
+        </div>
+    </div>
+
+    <!-- Game HUD -->
+    <div class="hud" id="main-hud" style="display:none;">
+        <div class="title">System Status</div>
+        <div class="stat-row">
+            <span class="stat-label">Location:</span>
+            <span class="stat-value" id="location">Unknown</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Coordinates:</span>
+            <span class="stat-value" id="coords">0, 0, 0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Current System:</span>
+            <span class="stat-value" id="system">Exploring...</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Nearby Objects:</span>
+            <span class="stat-value" id="nearby">0</span>
+        </div>
+    </div>
+
+    <div class="hud" id="stats-hud" style="display:none;">
+        <div class="title">Player Stats</div>
+        <div class="stat-row">
+            <span class="stat-label">Energy:</span>
+            <span class="stat-value" id="energy">100%</span>
+        </div>
+        <div class="energy-bar">
+            <div class="energy-fill" id="energy-bar" style="width: 100%;"></div>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Health:</span>
+            <span class="stat-value" id="health">100%</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Speed:</span>
+            <span class="stat-value" id="speed">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Mode:</span>
+            <span class="stat-value" id="mode">Walking</span>
+        </div>
+    </div>
+
+    <div class="hud" id="inventory-hud" style="display:none;">
+        <div class="title">Inventory</div>
+        <div id="inventory-items">
+            <div class="item">⚛️ Atoms<span class="item-count" id="atoms">0</span></div>
+            <div class="item">⚡ Energy<span class="item-count" id="energy-crystals">0</span></div>
+            <div class="item">💎 Minerals<span class="item-count" id="minerals">0</span></div>
+            <div class="item">🌌 Dark Matter<span class="item-count" id="dark-matter">0</span></div>
+        </div>
+    </div>
+
+    <div class="hud" id="mission-hud" style="display:none;">
+        <div class="title">Missions</div>
+        <div style="color: #888; font-size: 11px;">
+            <p>✓ Enter the universe</p>
+            <p id="mission1">○ Collect 10 atoms</p>
+            <p id="mission2">○ Visit 3 star systems</p>
+            <p id="mission3">○ Discover an alien planet</p>
+            <p id="mission4">○ Harvest 50 energy crystals</p>
+        </div>
+    </div>
+
+    <div class="crosshair" id="crosshair" style="display:none;"></div>
+
+    <script>
+        // Game state
+        const gameState = {
+            started: false,
+            flying: false,
+            health: 100,
+            energy: 100,
+            inventory: {
+                atoms: 0,
+                energyCrystals: 0,
+                minerals: 0,
+                darkMatter: 0
+            },
+            visitedSystems: new Set(),
+            missionProgress: {
+                atoms: 0,
+                systems: 0,
+                planets: 0,
+                energy: 0
+            }
+        };
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x000000, 0.00015);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        camera.position.set(0, 10, 50);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404060, 0.3);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        sunLight.position.set(1000, 500, 500);
+        sunLight.castShadow = true;
+        scene.add(sunLight);
+
+        // Procedural universe generation
+        class SimplexNoise {
+            constructor(seed = 12345) {
+                this.seed = seed;
+            }
+
+            noise(x, y) {
+                const n = Math.sin(x * 12.9898 + y * 78.233 + this.seed) * 43758.5453;
+                return (n - Math.floor(n)) * 2 - 1;
+            }
+
+            octaveNoise(x, y, octaves = 4, persistence = 0.5) {
+                let total = 0;
+                let frequency = 1;
+                let amplitude = 1;
+                let maxValue = 0;
+
+                for (let i = 0; i < octaves; i++) {
+                    total += this.noise(x * frequency, y * frequency) * amplitude;
+                    maxValue += amplitude;
+                    amplitude *= persistence;
+                    frequency *= 2;
+                }
+
+                return total / maxValue;
+            }
+        }
+
+        const noise = new SimplexNoise();
+        const solarSystems = [];
+        const collectibles = [];
+
+        // Create solar systems
+        function createSolarSystem(position, systemIndex) {
+            const systemGroup = new THREE.Group();
+            systemGroup.position.copy(position);
+
+            // Central star
+            const starSize = 5 + Math.random() * 10;
+            const starColors = [0xffff00, 0xff6600, 0xff0000, 0x6699ff, 0xffffff];
+            const starColor = starColors[Math.floor(Math.random() * starColors.length)];
+
+            const starGeometry = new THREE.SphereGeometry(starSize, 32, 32);
+            const starMaterial = new THREE.MeshBasicMaterial({
+                color: starColor,
+                emissive: starColor,
+                emissiveIntensity: 2
+            });
+            const star = new THREE.Mesh(starGeometry, starMaterial);
+
+            // Star glow
+            const glowGeometry = new THREE.SphereGeometry(starSize * 1.5, 32, 32);
+            const glowMaterial = new THREE.ShaderMaterial({
+                transparent: true,
+                side: THREE.BackSide,
+                blending: THREE.AdditiveBlending,
+                uniforms: {
+                    glowColor: { value: new THREE.Color(starColor) }
+                },
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 glowColor;
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+                        gl_FragColor = vec4(glowColor, 1.0) * intensity;
+                    }
+                `
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            star.add(glow);
+
+            systemGroup.add(star);
+
+            // Planets orbiting the star
+            const numPlanets = 3 + Math.floor(Math.random() * 6);
+            for (let i = 0; i < numPlanets; i++) {
+                const orbitRadius = (i + 1) * (starSize * 3 + Math.random() * 20);
+                const planetSize = 1 + Math.random() * 4;
+                const planetColor = new THREE.Color().setHSL(Math.random(), 0.7, 0.5);
+
+                const planetGeometry = new THREE.SphereGeometry(planetSize, 16, 16);
+                const planetMaterial = new THREE.MeshPhongMaterial({
+                    color: planetColor,
+                    shininess: 30
+                });
+                const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+
+                const angle = (Math.PI * 2 * i) / numPlanets;
+                planet.position.set(
+                    Math.cos(angle) * orbitRadius,
+                    (Math.random() - 0.5) * 10,
+                    Math.sin(angle) * orbitRadius
+                );
+
+                planet.userData = {
+                    orbitRadius,
+                    orbitSpeed: 0.0001 / (i + 1),
+                    angle,
+                    type: 'planet'
+                };
+
+                systemGroup.add(planet);
+            }
+
+            systemGroup.userData = {
+                type: 'solarSystem',
+                index: systemIndex,
+                name: `System-${systemIndex}`
+            };
+
+            scene.add(systemGroup);
+            return systemGroup;
+        }
+
+        // Create galaxy of solar systems
+        for (let i = 0; i < 20; i++) {
+            const angle = (Math.PI * 2 * i) / 20;
+            const radius = 500 + Math.random() * 500;
+            const position = new THREE.Vector3(
+                Math.cos(angle) * radius,
+                (Math.random() - 0.5) * 200,
+                Math.sin(angle) * radius
+            );
+            const system = createSolarSystem(position, i + 1);
+            solarSystems.push(system);
+        }
+
+        // Create collectible particles (atoms, energy, etc.)
+        function spawnCollectible(position, type) {
+            const types = {
+                atom: { color: 0x00ff00, size: 0.5, value: 1 },
+                energy: { color: 0x00ffff, size: 0.7, value: 1 },
+                mineral: { color: 0xff00ff, size: 0.8, value: 1 },
+                darkMatter: { color: 0x9d00ff, size: 1.0, value: 5 }
+            };
+
+            const config = types[type];
+            const geometry = new THREE.SphereGeometry(config.size, 8, 8);
+            const material = new THREE.MeshBasicMaterial({
+                color: config.color,
+                emissive: config.color,
+                transparent: true,
+                opacity: 0.8
+            });
+            const collectible = new THREE.Mesh(geometry, material);
+            collectible.position.copy(position);
+
+            collectible.userData = {
+                type,
+                value: config.value,
+                rotationSpeed: Math.random() * 0.05
+            };
+
+            scene.add(collectible);
+            collectibles.push(collectible);
+            return collectible;
+        }
+
+        // Spawn random collectibles around the universe
+        for (let i = 0; i < 500; i++) {
+            const types = ['atom', 'energy', 'mineral', 'darkMatter'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const position = new THREE.Vector3(
+                (Math.random() - 0.5) * 2000,
+                (Math.random() - 0.5) * 500,
+                (Math.random() - 0.5) * 2000
+            );
+            spawnCollectible(position, type);
+        }
+
+        // Create massive starfield
+        const starsGeometry = new THREE.BufferGeometry();
+        const starVertices = [];
+        const starColors = [];
+        for (let i = 0; i < 100000; i++) {
+            const x = (Math.random() - 0.5) * 20000;
+            const y = (Math.random() - 0.5) * 20000;
+            const z = (Math.random() - 0.5) * 20000;
+            starVertices.push(x, y, z);
+
+            const starType = Math.random();
+            if (starType > 0.9) {
+                starColors.push(0.8, 0.8, 1.0);
+            } else if (starType > 0.7) {
+                starColors.push(1.0, 0.9, 0.7);
+            } else {
+                starColors.push(1.0, 1.0, 1.0);
+            }
+        }
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+        starsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
+        const starsMaterial = new THREE.PointsMaterial({
+            size: 1,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9
+        });
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // Player controls
+        const moveSpeed = 0.5;
+        const sprintMultiplier = 3;
+        const keys = {};
+        let pointerLocked = false;
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+
+            // Toggle flight mode
+            if (e.code === 'Tab') {
+                e.preventDefault();
+                gameState.flying = !gameState.flying;
+                showNotification(gameState.flying ? '🚀 Flight mode enabled' : '🚶 Walking mode');
+            }
+
+            // Teleport to systems
+            if (e.code >= 'Digit1' && e.code <= 'Digit9') {
+                const index = parseInt(e.code.replace('Digit', '')) - 1;
+                if (index < solarSystems.length) {
+                    const system = solarSystems[index];
+                    camera.position.copy(system.position);
+                    camera.position.y += 50;
+                    showNotification(`📍 Teleported to ${system.userData.name}`);
+                    gameState.visitedSystems.add(system.userData.name);
+                    updateMissions();
+                }
+            }
+
+            // Collect nearby items
+            if (e.code === 'KeyE') {
+                collectNearby();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // Mouse movement (first-person look)
+        let yaw = 0;
+        let pitch = 0;
+
+        document.addEventListener('click', () => {
+            if (!gameState.started) return;
+            renderer.domElement.requestPointerLock();
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            pointerLocked = document.pointerLockElement === renderer.domElement;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!pointerLocked) return;
+
+            const sensitivity = 0.002;
+            yaw -= e.movementX * sensitivity;
+            pitch -= e.movementY * sensitivity;
+            pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = yaw;
+            camera.rotation.x = pitch;
+        });
+
+        // Collect nearby items
+        function collectNearby() {
+            const collectRadius = 10;
+            let collected = false;
+
+            for (let i = collectibles.length - 1; i >= 0; i--) {
+                const collectible = collectibles[i];
+                const distance = camera.position.distanceTo(collectible.position);
+
+                if (distance < collectRadius) {
+                    const type = collectible.userData.type;
+                    const value = collectible.userData.value;
+
+                    switch(type) {
+                        case 'atom':
+                            gameState.inventory.atoms += value;
+                            gameState.missionProgress.atoms += value;
+                            break;
+                        case 'energy':
+                            gameState.inventory.energyCrystals += value;
+                            gameState.missionProgress.energy += value;
+                            break;
+                        case 'mineral':
+                            gameState.inventory.minerals += value;
+                            break;
+                        case 'darkMatter':
+                            gameState.inventory.darkMatter += value;
+                            break;
+                    }
+
+                    scene.remove(collectible);
+                    collectibles.splice(i, 1);
+                    collected = true;
+                }
+            }
+
+            if (collected) {
+                updateInventory();
+                updateMissions();
+                showNotification('✓ Items collected');
+            }
+        }
+
+        // Update HUD
+        function updateHUD() {
+            document.getElementById('coords').textContent =
+                `${Math.floor(camera.position.x)}, ${Math.floor(camera.position.y)}, ${Math.floor(camera.position.z)}`;
+
+            // Find nearest system
+            let nearestSystem = null;
+            let nearestDistance = Infinity;
+            solarSystems.forEach(system => {
+                const distance = camera.position.distanceTo(system.position);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestSystem = system;
+                }
+            });
+
+            if (nearestSystem && nearestDistance < 200) {
+                document.getElementById('system').textContent = nearestSystem.userData.name;
+                document.getElementById('location').textContent = 'In System';
+            } else {
+                document.getElementById('system').textContent = 'Deep Space';
+                document.getElementById('location').textContent = 'Interstellar';
+            }
+
+            // Count nearby objects
+            let nearbyCount = 0;
+            collectibles.forEach(c => {
+                if (camera.position.distanceTo(c.position) < 50) nearbyCount++;
+            });
+            document.getElementById('nearby').textContent = nearbyCount;
+
+            // Player stats
+            const velocity = new THREE.Vector3();
+            document.getElementById('speed').textContent = Math.floor(velocity.length() * 10);
+            document.getElementById('mode').textContent = gameState.flying ? '🚀 Flying' : '🚶 Walking';
+            document.getElementById('energy').textContent = `${gameState.energy}%`;
+            document.getElementById('energy-bar').style.width = `${gameState.energy}%`;
+        }
+
+        function updateInventory() {
+            document.getElementById('atoms').textContent = gameState.inventory.atoms;
+            document.getElementById('energy-crystals').textContent = gameState.inventory.energyCrystals;
+            document.getElementById('minerals').textContent = gameState.inventory.minerals;
+            document.getElementById('dark-matter').textContent = gameState.inventory.darkMatter;
+        }
+
+        function updateMissions() {
+            // Mission 1: Collect 10 atoms
+            if (gameState.missionProgress.atoms >= 10) {
+                document.getElementById('mission1').innerHTML = '✓ Collect 10 atoms';
+            } else {
+                document.getElementById('mission1').innerHTML = `○ Collect 10 atoms (${gameState.missionProgress.atoms}/10)`;
+            }
+
+            // Mission 2: Visit 3 systems
+            const systemsVisited = gameState.visitedSystems.size;
+            if (systemsVisited >= 3) {
+                document.getElementById('mission2').innerHTML = '✓ Visit 3 star systems';
+            } else {
+                document.getElementById('mission2').innerHTML = `○ Visit 3 star systems (${systemsVisited}/3)`;
+            }
+
+            // Mission 4: Harvest 50 energy
+            if (gameState.missionProgress.energy >= 50) {
+                document.getElementById('mission4').innerHTML = '✓ Harvest 50 energy crystals';
+            } else {
+                document.getElementById('mission4').innerHTML = `○ Harvest 50 energy crystals (${gameState.missionProgress.energy}/50)`;
+            }
+        }
+
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
+        }
+
+        // Start game
+        window.startGame = function() {
+            gameState.started = true;
+            document.getElementById('start-menu').style.display = 'none';
+            document.getElementById('main-hud').style.display = 'block';
+            document.getElementById('stats-hud').style.display = 'block';
+            document.getElementById('inventory-hud').style.display = 'block';
+            document.getElementById('mission-hud').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+
+            showNotification('🌌 Welcome to BlackRoad Universe');
+            setTimeout(() => showNotification('Press E to collect nearby items'), 2000);
+        };
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameState.started) {
+                // Player movement
+                const direction = new THREE.Vector3();
+                camera.getWorldDirection(direction);
+                const right = new THREE.Vector3();
+                right.crossVectors(camera.up, direction).normalize();
+
+                const speed = keys['ShiftLeft'] ? moveSpeed * sprintMultiplier : moveSpeed;
+
+                if (keys['KeyW']) camera.position.addScaledVector(direction, speed);
+                if (keys['KeyS']) camera.position.addScaledVector(direction, -speed);
+                if (keys['KeyA']) camera.position.addScaledVector(right, -speed);
+                if (keys['KeyD']) camera.position.addScaledVector(right, speed);
+
+                if (gameState.flying) {
+                    if (keys['Space']) camera.position.y += speed;
+                    if (keys['ControlLeft']) camera.position.y -= speed;
+                }
+
+                // Animate collectibles
+                collectibles.forEach(c => {
+                    c.rotation.y += c.userData.rotationSpeed;
+                    c.position.y += Math.sin(Date.now() * 0.001 + c.position.x) * 0.01;
+                });
+
+                // Animate planets
+                solarSystems.forEach(system => {
+                    system.children.forEach(child => {
+                        if (child.userData.type === 'planet') {
+                            child.userData.angle += child.userData.orbitSpeed;
+                            child.position.x = Math.cos(child.userData.angle) * child.userData.orbitRadius;
+                            child.position.z = Math.sin(child.userData.angle) * child.userData.orbitRadius;
+                            child.rotation.y += 0.01;
+                        }
+                    });
+                });
+
+                updateHUD();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

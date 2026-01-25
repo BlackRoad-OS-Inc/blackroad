@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Site Architecture — Visual Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface-2: #1a1a1a;
+            --border: #2a2a2a;
+            --text: #e5e5e5;
+            --text-muted: #888;
+            --accent: #ff3d00;
+            --accent-dim: rgba(255, 61, 0, 0.2);
+            --teal: #00bfa5;
+            --purple: #8b5cf6;
+            --gold: #f59e0b;
+            --blue: #3b82f6;
+            --pink: #ec4899;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        h1 span {
+            color: var(--accent);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        .tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Domain Cards */
+        .domain-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .domain-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .domain-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .domain-card.tier-1 { border-left: 3px solid var(--accent); }
+        .domain-card.tier-2 { border-left: 3px solid var(--teal); }
+        .domain-card.tier-3 { border-left: 3px solid var(--purple); }
+        .domain-card.tier-4 { border-left: 3px solid var(--gold); }
+        .domain-card.tier-5 { border-left: 3px solid var(--blue); }
+        .domain-card.tier-6 { border-left: 3px solid var(--pink); }
+
+        .domain-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .domain-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .domain-tier {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .tier-1 .domain-tier { background: var(--accent-dim); color: var(--accent); }
+        .tier-2 .domain-tier { background: rgba(0, 191, 165, 0.2); color: var(--teal); }
+        .tier-3 .domain-tier { background: rgba(139, 92, 246, 0.2); color: var(--purple); }
+        .tier-4 .domain-tier { background: rgba(245, 158, 11, 0.2); color: var(--gold); }
+        .tier-5 .domain-tier { background: rgba(59, 130, 246, 0.2); color: var(--blue); }
+        .tier-6 .domain-tier { background: rgba(236, 72, 153, 0.2); color: var(--pink); }
+
+        .domain-purpose {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .domain-pages {
+            list-style: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .domain-pages li {
+            padding: 0.4rem 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .domain-pages li:last-child {
+            border-bottom: none;
+        }
+
+        .domain-pages li::before {
+            content: '→';
+            color: var(--accent);
+        }
+
+        .domain-user {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .domain-user strong {
+            color: var(--text);
+        }
+
+        /* Flow Diagrams */
+        .flow-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .flow-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .flow-description {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .flow-steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .flow-step {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .flow-step.highlight {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .flow-arrow {
+            color: var(--accent);
+            font-size: 1.25rem;
+        }
+
+        .flow-action {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-style: italic;
+        }
+
+        /* Org/Repo Mapping */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .mapping-table th {
+            text-align: left;
+            padding: 1rem;
+            background: var(--surface-2);
+            border-bottom: 2px solid var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .mapping-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .mapping-table tr:hover {
+            background: var(--surface);
+        }
+
+        .mapping-table code {
+            background: var(--surface-2);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        /* Priority Section */
+        .priority-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .priority-phase {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .priority-phase h3 {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .priority-phase h4 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        .priority-list {
+            list-style: none;
+        }
+
+        .priority-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .priority-list li:last-child {
+            border-bottom: none;
+        }
+
+        .priority-num {
+            background: var(--accent);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-dot.t1 { background: var(--accent); }
+        .legend-dot.t2 { background: var(--teal); }
+        .legend-dot.t3 { background: var(--purple); }
+        .legend-dot.t4 { background: var(--gold); }
+        .legend-dot.t5 { background: var(--blue); }
+        .legend-dot.t6 { background: var(--pink); }
+
+        @media (max-width: 1024px) {
+            .priority-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .domain-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .priority-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .flow-steps {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Black<span>Road</span> Site Architecture</h1>
+    <p class="subtitle">Complete page-by-page flow mapping for @blackboxprogramming's ecosystem</p>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="domains">Domains</button>
+        <button class="tab" data-tab="flows">User Flows</button>
+        <button class="tab" data-tab="orgs">GitHub Orgs</button>
+        <button class="tab" data-tab="repos">Repos</button>
+        <button class="tab" data-tab="priority">Priority</button>
+    </div>
+
+    <!-- DOMAINS TAB -->
+    <div class="content-section active" id="domains">
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot t1"></div> Tier 1: Consumer Hub</div>
+            <div class="legend-item"><div class="legend-dot t2"></div> Tier 2: B2B Services</div>
+            <div class="legend-item"><div class="legend-dot t3"></div> Tier 3: Developer Portal</div>
+            <div class="legend-item"><div class="legend-dot t4"></div> Tier 4: Blockchain</div>
+            <div class="legend-item"><div class="legend-dot t5"></div> Tier 5: AI Ecosystem</div>
+            <div class="legend-item"><div class="legend-dot t6"></div> Tier 6: Personal Brand</div>
+        </div>
+
+        <div class="domain-grid">
+            <!-- Tier 1 -->
+            <div class="domain-card tier-1">
+                <div class="domain-header">
+                    <span class="domain-name">blackroad.io</span>
+                    <span class="domain-tier">Main Hub</span>
+                </div>
+                <p class="domain-purpose">The single entry point. "If you don't know where to start, start here."</p>
+                <ul class="domain-pages">
+                    <li>/ — Homepage (pain points, solution, CTA)</li>
+                    <li>/create — Creator Portal entry</li>
+                    <li>/create/video — RoadView Studio</li>
+                    <li>/create/code — Lucidia IDE</li>
+                    <li>/create/games — RoadEngine</li>
+                    <li>/build — Business Portal</li>
+                    <li>/learn — Education Portal</li>
+                    <li>/learn/research — Research Hub</li>
+                    <li>/tools/prism — Prism Console</li>
+                    <li>/pricing — All products</li>
+                </ul>
+                <div class="domain-user"><strong>Users:</strong> Everyone — creators, developers, learners, businesses</div>
+            </div>
+
+            <!-- Tier 2 -->
+            <div class="domain-card tier-2">
+                <div class="domain-header">
+                    <span class="domain-name">blackroadinc.us</span>
+                    <span class="domain-tier">B2B</span>
+                </div>
+                <p class="domain-purpose">Professional services, consulting, and the Ops Starter productized service.</p>
+                <ul class="domain-pages">
+                    <li>/ — B2B landing page</li>
+                    <li>/services — Service overview</li>
+                    <li>/services/ops-starter — $500 productized service</li>
+                    <li>/services/consulting — Custom consulting</li>
+                    <li>/services/enterprise — Enterprise partnerships</li>
+                    <li>/case-studies — Client work</li>
+                    <li>/book — Calendly embed</li>
+                </ul>
+                <div class="domain-user"><strong>Users:</strong> Businesses, enterprises, developers with messy repos</div>
+            </div>
+
+            <!-- Tier 3 -->
+            <div class="domain-card tier-3">
+                <div class="domain-header">
+                    <span class="domain-name">blackroad.systems</span>
+                    <span class="domain-tier">Developer</span>
+                </div>
+                <p class="domain-purpose">Documentation, API reference, SDK guides, OS architecture.</p>
+                <ul class="domain-pages">
+                    <li>/ — Developer landing</li>
+                    <li>/docs — Documentation root</li>
+                    <li>/docs/getting-started — Quick start</li>
+                    <li>/docs/architecture — System design</li>
+                    <li>/docs/agents — Agent documentation</li>
+                    <li>/docs/packs — Pack system</li>
+                    <li>/api — Interactive API explorer</li>
+                    <li>/sdk — SDK downloads</li>
+                    <li>/changelog — Release notes</li>
+                    <li>/status — System status</li>
+                </ul>
+                <div class="domain-user"><strong>Users:</strong> Developers, integrators, contributors</div>
+            </div>
+
+            <!-- Tier 4 -->
+            <div class="domain-card tier-4">
+                <div class="domain-header">
+                    <span class="domain-name">blackroad.network</span>
+                    <span class="domain-tier">Blockchain</span>
+                </div>
+                <p class="domain-purpose">RoadChain infrastructure, RoadCoin, validator nodes.</p>
+                <ul class="domain-pages">
+                    <li>/ — Web3 landing</li>
+                    <li>/roadchain — Chain documentation</li>
+                    <li>/roadcoin — Token info</li>
+                    <li>/validators — Run a node</li>
+                    <li>/wallet — Wallet connection</li>
+                    <li>/explorer — Block explorer</li>
+                </ul>
+                <div class="domain-user"><strong>Users:</strong> Web3 users, validators, crypto enthusiasts</div>
+            </div>
+
+            <!-- Tier 5 -->
+            <div class="domain-card tier-5">
+                <div class="domain-header">
+                    <span class="domain-name">lucidia.earth</span>
+                    <span class="domain-tier">AI Ecosystem</span>
+                </div>
+                <p class="domain-purpose">The Lucidia AI system — 1,000 unique agents project.</p>
+                <ul class="domain-pages">
+                    <li>/ — Agent ecosystem landing</li>
+                    <li>/agents — Agent directory</li>
+                    <li>/architecture — Technical deep dive</li>
+                    <li>/community — Community hub</li>
+                    <li>/contribute — Contribution guide</li>
+                </ul>
+                <div class="domain-user"><strong>Users:</strong> AI researchers, agent developers, enthusiasts</div>
+            </div>
+
+            <div class="domain-card tier-5">
+                <div class="domain-header">
+                    <span class="domain-name">lucidia.studio</span>
+                    <span class="domain-tier">Creative AI</span>
+                </div>
+                <p class="domain-purpose">Creative tools powered by Lucidia agents.</p>
+                <ul class="domain-pages">
+                    <li>/ — Studio landing</li>
+                    <li>/tools — Available creative tools</li>
+                    <li>/gallery — Created works</li>
+                </ul>
+                <div class="domain-user"><strong>Users:</strong> AI artists, creative technologists</div>
+            </div>
+
+            <!-- Tier 6 -->
+            <div class="domain-card tier-6">
+                <div class="domain-header">
+                    <span class="domain-name">blackroad.me</span>
+                    <span class="domain-tier">Personal</span>
+                </div>
+                <p class="domain-purpose">Alexa's personal thought leadership and media page.</p>
+                <ul class="domain-pages">
+                    <li>/ — Personal landing</li>
+                    <li>/about — Bio & background</li>
+                    <li>/writing — Blog posts, papers</li>
+                    <li>/speaking — Speaking topics</li>
+                    <li>/press — Media coverage</li>
+                    <li>/contact — Get in touch</li>
+                </ul>
+                <div class="domain-user"><strong>Users:</strong> Media, investors, collaborators</div>
+            </div>
+
+            <!-- Quantum domains -->
+            <div class="domain-card tier-3">
+                <div class="domain-header">
+                    <span class="domain-name">blackroadquantum.com</span>
+                    <span class="domain-tier">Research</span>
+                </div>
+                <p class="domain-purpose">Quantum computing research, theoretical frameworks.</p>
+                <ul class="domain-pages">
+                    <li>/ — Research landing</li>
+                    <li>/papers — Published research</li>
+                    <li>/frameworks — Mathematical frameworks</li>
+                    <li>/simulations — Quantum sims</li>
+                </ul>
+                <div class="domain-user"><strong>Users:</strong> Researchers, academics, quantum enthusiasts</div>
+            </div>
+
+            <div class="domain-card tier-5">
+                <div class="domain-header">
+                    <span class="domain-name">aliceqi.com</span>
+                    <span class="domain-tier">Edge AI</span>
+                </div>
+                <p class="domain-purpose">Alice (Pi 400) agent interface for edge AI.</p>
+                <ul class="domain-pages">
+                    <li>/ — Alice landing</li>
+                    <li>/setup — Hardware setup guide</li>
+                    <li>/api — Local API docs</li>
+                </ul>
+                <div class="domain-user"><strong>Users:</strong> Hardware hackers, edge AI developers</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOWS TAB -->
+    <div class="content-section" id="flows">
+        <div class="flow-container">
+            <h3 class="flow-title">Flow 1: New Visitor → Creator</h3>
+            <p class="flow-description">A creator discovers BlackRoad and starts making content</p>
+            <div class="flow-steps">
+                <div class="flow-step highlight">blackroad.io/</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">clicks "Start Creating"</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/create</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">selects "Video"</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/create/video</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">clicks "Try Free"</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/login</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step highlight">/studio/video (app)</div>
+            </div>
+        </div>
+
+        <div class="flow-container">
+            <h3 class="flow-title">Flow 2: Developer → Ops Starter Client</h3>
+            <p class="flow-description">A developer with messy repos finds the productized service</p>
+            <div class="flow-steps">
+                <div class="flow-step highlight">blackroad.io/</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">sees "Ops Starter"</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">blackroadinc.us/</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/services/ops-starter</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">sends email</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step highlight">Intake → Sprint → Delivery</div>
+            </div>
+        </div>
+
+        <div class="flow-container">
+            <h3 class="flow-title">Flow 3: Researcher → Research Hub</h3>
+            <p class="flow-description">Someone interested in the theoretical work and frameworks</p>
+            <div class="flow-steps">
+                <div class="flow-step highlight">blackroad.io/</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">clicks "Learn"</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/learn</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/learn/research</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">downloads report</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step highlight">API access request</div>
+            </div>
+        </div>
+
+        <div class="flow-container">
+            <h3 class="flow-title">Flow 4: Developer → OS Documentation</h3>
+            <p class="flow-description">A developer wants to understand and contribute to the OS</p>
+            <div class="flow-steps">
+                <div class="flow-step">blackroad.io/</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">clicks "Docs"</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step highlight">blackroad.systems/</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/docs/architecture</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/docs/agents</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step highlight">github.com/BlackRoad-OS</div>
+            </div>
+        </div>
+
+        <div class="flow-container">
+            <h3 class="flow-title">Flow 5: Enterprise → Consulting</h3>
+            <p class="flow-description">Enterprise discovers BlackRoad and books a call</p>
+            <div class="flow-steps">
+                <div class="flow-step highlight">blackroadinc.us/</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/services</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">clicks "Book a Call"</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/book</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step highlight">Discovery call → Proposal</div>
+            </div>
+        </div>
+
+        <div class="flow-container">
+            <h3 class="flow-title">Flow 6: AI Enthusiast → Lucidia Ecosystem</h3>
+            <p class="flow-description">Someone interested in the 1,000 agents project</p>
+            <div class="flow-steps">
+                <div class="flow-step">blackroad.io/create/code</div>
+                <span class="flow-arrow">→</span>
+                <span class="flow-action">sees Lucidia</span>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step highlight">lucidia.earth/</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/agents</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">/architecture</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step highlight">/contribute</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORGS TAB -->
+    <div class="content-section" id="orgs">
+        <table class="mapping-table">
+            <thead>
+                <tr>
+                    <th>GitHub Org</th>
+                    <th>Primary Domain</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>BlackRoad-AI</code></td>
+                    <td>blackroad.io</td>
+                    <td>Main consumer product repos</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-OS</code></td>
+                    <td>blackroad.systems</td>
+                    <td>Core OS infrastructure & documentation</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Ventures</code></td>
+                    <td>blackroadinc.us</td>
+                    <td>Business services & consulting</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Cloud</code></td>
+                    <td>blackroad.network</td>
+                    <td>Blockchain infrastructure</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Education</code></td>
+                    <td>blackroad.io/learn</td>
+                    <td>Education products & content</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Media</code></td>
+                    <td>blackroad.io/create/video</td>
+                    <td>Video tools & RoadView</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Interactive</code></td>
+                    <td>blackroad.io/create/games</td>
+                    <td>Game engine & RoadEngine</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Studio</code></td>
+                    <td>lucidia.studio</td>
+                    <td>Creative tools</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Labs</code></td>
+                    <td>blackroadquantum.com</td>
+                    <td>Quantum & research</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Foundation</code></td>
+                    <td>blackroad.io/learn/research</td>
+                    <td>Research publishing</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Security</code></td>
+                    <td>blackroad.network</td>
+                    <td>Security infrastructure</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Hardware</code></td>
+                    <td>lucidia.earth, aliceqi.com</td>
+                    <td>Edge & hardware AI</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Gov</code></td>
+                    <td>(future)</td>
+                    <td>Government contracts</td>
+                </tr>
+                <tr>
+                    <td><code>BlackRoad-Archive</code></td>
+                    <td>(internal)</td>
+                    <td>Historical preservation</td>
+                </tr>
+                <tr>
+                    <td><code>Blackbox-Enterprises</code></td>
+                    <td>(holding)</td>
+                    <td>Parent entity</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- REPOS TAB -->
+    <div class="content-section" id="repos">
+        <table class="mapping-table">
+            <thead>
+                <tr>
+                    <th>Repo</th>
+                    <th>Powers Feature</th>
+                    <th>On Domain</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>blackroad-os-web</code></td>
+                    <td>Frontend application</td>
+                    <td>blackroad.io</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-api-gateway</code></td>
+                    <td>All API calls</td>
+                    <td>blackroad.systems/api</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-prism-console</code></td>
+                    <td>Prism dashboard</td>
+                    <td>blackroad.io/tools/prism</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-agents</code></td>
+                    <td>Agent runtime</td>
+                    <td>All agent features</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-core</code></td>
+                    <td>Core logic</td>
+                    <td>Everything</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-brand</code></td>
+                    <td>Design system</td>
+                    <td>All domains</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-docs</code></td>
+                    <td>Documentation</td>
+                    <td>blackroad.systems/docs</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-infra</code></td>
+                    <td>Deployment config</td>
+                    <td>Internal</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-operator</code></td>
+                    <td>Ops playbooks</td>
+                    <td>blackroadinc.us</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-pack-research-lab</code></td>
+                    <td>Research tools</td>
+                    <td>blackroad.io/learn/research</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-pack-education</code></td>
+                    <td>Learning features</td>
+                    <td>blackroad.io/learn</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-pack-creator-studio</code></td>
+                    <td>Creator tools</td>
+                    <td>blackroad.io/create</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-pack-finance</code></td>
+                    <td>Financial tools</td>
+                    <td>blackroadinc.us</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-pack-legal</code></td>
+                    <td>Legal automation</td>
+                    <td>blackroad.io/build/legal</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-pack-infra-devops</code></td>
+                    <td>DevOps tools</td>
+                    <td>blackroad.systems</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-beacon</code></td>
+                    <td>Monitoring</td>
+                    <td>Status pages</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-home</code></td>
+                    <td>Landing pages</td>
+                    <td>blackroad.io</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-demo</code></td>
+                    <td>Demo instances</td>
+                    <td>Demos</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-research</code></td>
+                    <td>Research code</td>
+                    <td>blackroad.io/learn/research</td>
+                </tr>
+                <tr>
+                    <td><code>blackroad-os-api</code></td>
+                    <td>API definitions</td>
+                    <td>blackroad.systems/api</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PRIORITY TAB -->
+    <div class="content-section" id="priority">
+        <div class="priority-grid">
+            <div class="priority-phase">
+                <h3>Phase 1</h3>
+                <h4>Revenue Generation (Now)</h4>
+                <ul class="priority-list">
+                    <li><span class="priority-num">1</span> blackroad.io/ — Main landing ✓</li>
+                    <li><span class="priority-num">2</span> blackroadinc.us/ops-starter</li>
+                    <li><span class="priority-num">3</span> blackroad.io/create</li>
+                </ul>
+            </div>
+
+            <div class="priority-phase">
+                <h3>Phase 2</h3>
+                <h4>Developer Credibility (Week 2-3)</h4>
+                <ul class="priority-list">
+                    <li><span class="priority-num">4</span> blackroad.systems/</li>
+                    <li><span class="priority-num">5</span> blackroad.systems/docs</li>
+                    <li><span class="priority-num">6</span> blackroad.io/tools/prism</li>
+                </ul>
+            </div>
+
+            <div class="priority-phase">
+                <h3>Phase 3</h3>
+                <h4>Full Product Suite (Week 4-6)</h4>
+                <ul class="priority-list">
+                    <li><span class="priority-num">7</span> /create/video — RoadView</li>
+                    <li><span class="priority-num">8</span> /create/code — Lucidia</li>
+                    <li><span class="priority-num">9</span> /learn — Education</li>
+                    <li><span class="priority-num">10</span> /learn/research</li>
+                </ul>
+            </div>
+
+            <div class="priority-phase">
+                <h3>Phase 4</h3>
+                <h4>Ecosystem Expansion (Month 2)</h4>
+                <ul class="priority-list">
+                    <li><span class="priority-num">11</span> lucidia.earth/</li>
+                    <li><span class="priority-num">12</span> blackroad.network/</li>
+                    <li><span class="priority-num">13</span> blackroad.me/</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active from all tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                
+                // Add active to clicked tab
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
