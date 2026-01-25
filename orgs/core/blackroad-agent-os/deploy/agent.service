@@ -1,0 +1,32 @@
+[Unit]
+Description=BlackRoad Agent Daemon
+Documentation=https://github.com/BlackRoad-OS/blackroad-agent-os
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/blackroad-agent-os/agent
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/etc/blackroad/agent.env
+
+# Execution
+ExecStart=/home/pi/blackroad-agent-os/agent/venv/bin/python main.py
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Resource limits for Pi
+MemoryMax=256M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

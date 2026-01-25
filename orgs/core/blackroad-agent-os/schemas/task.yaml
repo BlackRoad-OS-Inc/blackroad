@@ -1,0 +1,258 @@
+# Task Schema
+# Defines structure of tasks submitted to the system
+
+Task:
+  type: object
+  required:
+    - id
+    - status
+    - created_at
+  properties:
+    id:
+      type: string
+      description: Unique task identifier
+      example: "task-2024-1129-abc123"
+
+    status:
+      type: string
+      enum: [pending, planning, awaiting_approval, queued, running, completed, failed, cancelled]
+
+    # User input
+    request:
+      type: string
+      description: Original natural language request from user
+      example: "Deploy the latest web service to blackroad-pi"
+
+    # Target selection
+    target_mode:
+      type: string
+      enum: [specific, any, all, role]
+      description: How agent was selected
+      default: "specific"
+
+    target_agent_id:
+      type: string
+      nullable: true
+      description: Specific agent to run on (if target_mode=specific)
+
+    target_role:
+      type: string
+      nullable: true
+      description: Role filter (if target_mode=role)
+
+    # AI-generated plan
+    plan:
+      $ref: '#/TaskPlan'
+      nullable: true
+
+    # Execution
+    assigned_agent_id:
+      type: string
+      nullable: true
+      description: Agent actually executing the task
+
+    workspace_id:
+      type: string
+      nullable: true
+
+    # Results
+    exit_code:
+      type: integer
+      nullable: true
+
+    output:
+      type: string
+      nullable: true
+      description: Combined stdout/stderr
+
+    error:
+      type: string
+      nullable: true
+      description: Error message if failed
+
+    # Timestamps
+    created_at:
+      type: string
+      format: date-time
+
+    planned_at:
+      type: string
+      format: date-time
+      nullable: true
+
+    approved_at:
+      type: string
+      format: date-time
+      nullable: true
+
+    started_at:
+      type: string
+      format: date-time
+      nullable: true
+
+    completed_at:
+      type: string
+      format: date-time
+      nullable: true
+
+    # Metadata
+    created_by:
+      type: string
+      description: User who created the task
+      default: "user"
+
+    requires_approval:
+      type: boolean
+      default: true
+
+    priority:
+      type: integer
+      default: 5
+      minimum: 1
+      maximum: 10
+
+TaskPlan:
+  type: object
+  description: AI-generated execution plan
+  required:
+    - steps
+    - commands
+  properties:
+    target_agent:
+      type: string
+      description: Recommended agent ID
+
+    workspace:
+      type: string
+      description: Workspace to use or create
+
+    workspace_type:
+      type: string
+      enum: [docker, venv, bare]
+      default: "bare"
+
+    steps:
+      type: array
+      description: Human-readable plan steps
+      items:
+        type: string
+      example:
+        - "Pull latest code from GitHub"
+        - "Build the application"
+        - "Deploy and verify"
+
+    commands:
+      type: array
+      items:
+        $ref: '#/Command'
+
+    reasoning:
+      type: string
+      description: LLM's explanation of why this plan
+
+    estimated_duration_seconds:
+      type: integer
+      nullable: true
+
+    risk_level:
+      type: string
+      enum: [low, medium, high]
+      description: Assessed risk of the operation
+
+    requires_approval:
+      type: boolean
+      description: LLM recommendation on whether to require approval
+
+Command:
+  type: object
+  required:
+    - run
+  properties:
+    dir:
+      type: string
+      description: Working directory for command
+      default: "~"
+      example: "/home/pi/blackroad/blackroad-os-web"
+
+    run:
+      type: string
+      description: Shell command to execute
+      example: "git pull origin main"
+
+    env:
+      type: object
+      additionalProperties:
+        type: string
+      description: Environment variables to set
+
+    timeout_seconds:
+      type: integer
+      default: 300
+      description: Command timeout
+
+    continue_on_error:
+      type: boolean
+      default: false
+      description: Continue to next command if this fails
+
+    approval_required:
+      type: boolean
+      default: false
+      description: Pause for approval before this specific command
+
+TaskRequest:
+  type: object
+  description: API request to create a new task
+  required:
+    - request
+  properties:
+    request:
+      type: string
+      description: Natural language task description
+      example: "Update all repos on blackroad-pi"
+
+    target_agent_id:
+      type: string
+      nullable: true
+      description: Specific agent (null = let system choose)
+
+    target_role:
+      type: string
+      nullable: true
+      description: Filter by role
+
+    workspace:
+      type: string
+      nullable: true
+      description: Specific workspace to use
+
+    skip_approval:
+      type: boolean
+      default: false
+      description: Skip approval gate (for trusted operations)
+
+    priority:
+      type: integer
+      default: 5
+
+TaskApproval:
+  type: object
+  description: User approval/rejection of a task plan
+  required:
+    - task_id
+    - approved
+  properties:
+    task_id:
+      type: string
+    approved:
+      type: boolean
+    modified_commands:
+      type: array
+      items:
+        $ref: '#/Command'
+      nullable: true
+      description: Optionally modify commands before approval
+    reason:
+      type: string
+      nullable: true
+      description: Reason for rejection

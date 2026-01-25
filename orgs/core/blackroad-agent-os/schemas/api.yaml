@@ -1,0 +1,437 @@
+# BlackRoad Agent OS - REST API Specification
+openapi: 3.0.3
+info:
+  title: BlackRoad Agent OS API
+  version: 1.0.0
+  description: Central controller API for the BlackRoad Agent OS
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+
+paths:
+  # ============ AGENTS ============
+  /api/agents:
+    get:
+      summary: List all registered agents
+      tags: [Agents]
+      responses:
+        '200':
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: 'agent.yaml#/Agent'
+
+  /api/agents/{agent_id}:
+    get:
+      summary: Get specific agent details
+      tags: [Agents]
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: 'agent.yaml#/Agent'
+        '404':
+          description: Agent not found
+
+  /api/agents/{agent_id}/ping:
+    post:
+      summary: Manually ping an agent
+      tags: [Agents]
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ping result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  latency_ms:
+                    type: number
+                  status:
+                    type: string
+
+  /api/agents/{agent_id}/workspaces:
+    get:
+      summary: List workspaces on an agent
+      tags: [Agents]
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: 'agent.yaml#/Workspace'
+
+  # ============ TASKS ============
+  /api/tasks:
+    get:
+      summary: List tasks
+      tags: [Tasks]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, planning, awaiting_approval, queued, running, completed, failed, cancelled]
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: 'task.yaml#/Task'
+                  total:
+                    type: integer
+
+    post:
+      summary: Submit a new task
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'task.yaml#/TaskRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: 'task.yaml#/Task'
+        '400':
+          description: Invalid request
+
+  /api/tasks/{task_id}:
+    get:
+      summary: Get task details
+      tags: [Tasks]
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: 'task.yaml#/Task'
+        '404':
+          description: Task not found
+
+    delete:
+      summary: Cancel a task
+      tags: [Tasks]
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task cancelled
+        '400':
+          description: Task cannot be cancelled (already completed/running)
+
+  /api/tasks/{task_id}/approve:
+    post:
+      summary: Approve or reject a task plan
+      tags: [Tasks]
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'task.yaml#/TaskApproval'
+      responses:
+        '200':
+          description: Approval processed
+          content:
+            application/json:
+              schema:
+                $ref: 'task.yaml#/Task'
+        '400':
+          description: Task not awaiting approval
+
+  /api/tasks/{task_id}/logs:
+    get:
+      summary: Get task logs
+      tags: [Tasks]
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: follow
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Stream logs (Server-Sent Events)
+      responses:
+        '200':
+          description: Task logs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LogEntry'
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/tasks/{task_id}/retry:
+    post:
+      summary: Retry a failed task
+      tags: [Tasks]
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: New task created
+          content:
+            application/json:
+              schema:
+                $ref: 'task.yaml#/Task'
+
+  # ============ QUICK COMMANDS ============
+  /api/exec:
+    post:
+      summary: Execute a command directly (bypasses LLM planning)
+      tags: [Execution]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - agent_id
+                - command
+              properties:
+                agent_id:
+                  type: string
+                command:
+                  type: string
+                dir:
+                  type: string
+                  default: "~"
+                timeout_seconds:
+                  type: integer
+                  default: 60
+      responses:
+        '200':
+          description: Command result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exit_code:
+                    type: integer
+                  stdout:
+                    type: string
+                  stderr:
+                    type: string
+                  duration_ms:
+                    type: number
+
+  # ============ AUDIT ============
+  /api/audit:
+    get:
+      summary: Get audit log entries
+      tags: [Audit]
+      parameters:
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: until
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+        - name: task_id
+          in: query
+          schema:
+            type: string
+        - name: event_type
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Audit entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditEntry'
+
+  # ============ HEALTH ============
+  /api/health:
+    get:
+      summary: Controller health check
+      tags: [Health]
+      responses:
+        '200':
+          description: Controller is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+                  agents_online:
+                    type: integer
+                  agents_total:
+                    type: integer
+                  tasks_running:
+                    type: integer
+                  uptime_seconds:
+                    type: number
+
+components:
+  schemas:
+    LogEntry:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        stream:
+          type: string
+          enum: [stdout, stderr, system]
+        content:
+          type: string
+        command_index:
+          type: integer
+          nullable: true
+
+    AuditEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        event_type:
+          type: string
+          enum:
+            - agent.connected
+            - agent.disconnected
+            - agent.heartbeat
+            - task.created
+            - task.planned
+            - task.approved
+            - task.rejected
+            - task.started
+            - task.completed
+            - task.failed
+            - command.executed
+            - command.blocked
+            - workspace.created
+            - workspace.destroyed
+        agent_id:
+          type: string
+          nullable: true
+        task_id:
+          type: string
+          nullable: true
+        user:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        command:
+          type: string
+          nullable: true
+        exit_code:
+          type: integer
+          nullable: true
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+security:
+  - bearerAuth: []

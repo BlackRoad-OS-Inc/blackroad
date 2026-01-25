@@ -1,0 +1,197 @@
+# Agent Inventory Schema
+# Defines the structure of agent machines in the system
+
+Agent:
+  type: object
+  required:
+    - id
+    - hostname
+    - status
+  properties:
+    id:
+      type: string
+      description: Unique identifier (e.g., "blackroad-pi", "alice-pi")
+      example: "blackroad-pi"
+
+    hostname:
+      type: string
+      description: Network hostname or IP
+      example: "lucidia.local"
+
+    display_name:
+      type: string
+      description: Human-friendly name for UI
+      example: "BlackRoad Pi (Main)"
+
+    status:
+      type: string
+      enum: [online, offline, busy, error]
+      description: Current agent status
+
+    roles:
+      type: array
+      items:
+        type: string
+      description: Functional roles this agent can perform
+      example: ["web", "worker", "build"]
+
+    tags:
+      type: array
+      items:
+        type: string
+      description: Custom labels for filtering
+      example: ["production", "arm64", "docker"]
+
+    capabilities:
+      type: object
+      properties:
+        docker:
+          type: boolean
+          description: Can run Docker containers
+        python:
+          type: string
+          description: Python version available
+        node:
+          type: string
+          description: Node.js version available
+        git:
+          type: boolean
+          description: Git available
+        disk_gb:
+          type: number
+          description: Available disk space in GB
+        memory_mb:
+          type: number
+          description: Available RAM in MB
+
+    workspaces:
+      type: array
+      items:
+        $ref: '#/Workspace'
+      description: Active workspaces on this agent
+
+    telemetry:
+      type: object
+      properties:
+        cpu_percent:
+          type: number
+        memory_percent:
+          type: number
+        disk_percent:
+          type: number
+        uptime_seconds:
+          type: number
+        load_average:
+          type: array
+          items:
+            type: number
+
+    last_seen:
+      type: string
+      format: date-time
+      description: Last heartbeat timestamp
+
+    registered_at:
+      type: string
+      format: date-time
+      description: When agent first connected
+
+    current_task_id:
+      type: string
+      nullable: true
+      description: ID of currently executing task
+
+Workspace:
+  type: object
+  required:
+    - id
+    - name
+    - type
+  properties:
+    id:
+      type: string
+      description: Unique workspace identifier
+      example: "ws-blackroad-os-web-abc123"
+
+    name:
+      type: string
+      description: Workspace name (usually matches repo/project)
+      example: "blackroad-os-web"
+
+    type:
+      type: string
+      enum: [docker, venv, bare]
+      description: Isolation type
+
+    path:
+      type: string
+      description: Local filesystem path
+      example: "/home/pi/workspaces/blackroad-os-web"
+
+    container_id:
+      type: string
+      nullable: true
+      description: Docker container ID if type=docker
+
+    status:
+      type: string
+      enum: [ready, building, running, stopped, error]
+
+    created_at:
+      type: string
+      format: date-time
+
+    last_used:
+      type: string
+      format: date-time
+
+AgentRegistration:
+  type: object
+  description: Sent by agent on initial connection
+  required:
+    - id
+    - hostname
+    - capabilities
+  properties:
+    id:
+      type: string
+    hostname:
+      type: string
+    display_name:
+      type: string
+    roles:
+      type: array
+      items:
+        type: string
+    tags:
+      type: array
+      items:
+        type: string
+    capabilities:
+      $ref: '#/Agent/properties/capabilities'
+    secret:
+      type: string
+      description: Pre-shared secret for authentication
+
+AgentHeartbeat:
+  type: object
+  description: Sent by agent every 30 seconds
+  required:
+    - agent_id
+    - timestamp
+    - telemetry
+  properties:
+    agent_id:
+      type: string
+    timestamp:
+      type: string
+      format: date-time
+    telemetry:
+      $ref: '#/Agent/properties/telemetry'
+    current_task_id:
+      type: string
+      nullable: true
+    workspaces:
+      type: array
+      items:
+        $ref: '#/Workspace'
