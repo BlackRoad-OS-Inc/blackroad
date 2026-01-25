@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  blackroad-vllm:
+    image: # TODO: Add appropriate image
+    container_name: blackroad-blackroad-vllm
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+    # volumes:
+    #   - ./data:/data
+    # ports:
+    #   - "8080:8080"
+    networks:
+      - blackroad-mesh
+
+networks:
+  blackroad-mesh:
+    external: true
+    name: blackroad-mesh
+
+# BlackRoad deployment configuration
+# Integrated with: Keycloak, Headscale, Prometheus, PostgreSQL, MinIO
