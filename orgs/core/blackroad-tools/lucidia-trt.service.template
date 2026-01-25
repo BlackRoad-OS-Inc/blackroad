@@ -1,0 +1,18 @@
+[Unit]
+Description=Lucidia (TensorRT-LLM, OpenAI-compatible)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment="PYTHONUNBUFFERED=1"
+Environment="PORT=8000"
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/blackroad-prism-console
+ExecStart=/home/ubuntu/.venvs/lucidia/bin/trtllm-serve /home/ubuntu/blackroad-prism-console/models/merged/lucidia-neox-1.4b --port ${PORT} --host 0.0.0.0
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

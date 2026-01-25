@@ -1,0 +1,31 @@
+name: Autotest all services
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [staging, prod]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install --requirement tools/lucidia-autotester/dev_requirements.txt
+      - name: Collect services
+        id: collect
+        run: |
+          export SERVICES_BLOB="$(python tools/lucidia-autotester/bin/collect_services.py --env ${{matrix.environment}})"
+          echo "services=$SERVICES_BLOB" >> $GITHUB_OUTPUT
+      - name: Run tests
+        env:
+          SERVICES_BLOB: ${{ steps.collect.outputs.services }}
+        run: |
+          cd tools/lucidia-autotester && pytest -q

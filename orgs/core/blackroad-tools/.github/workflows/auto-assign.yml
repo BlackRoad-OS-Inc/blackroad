@@ -1,0 +1,103 @@
+# ============================================================================
+# BlackRoad OS - Auto-Assign Reviewers
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Automatically assigns reviewers to pull requests based on files changed.
+# ============================================================================
+
+name: Auto Assign
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  auto-assign:
+    name: Auto Assign Reviewers
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        id: changed
+        uses: tj-actions/changed-files@v41
+        with:
+          files_yaml: |
+            quantum:
+              - 'blackroad-quantum*.py'
+              - 'quantum-ml/**'
+            operator:
+              - 'operator_http.py'
+              - 'ledger_*.py'
+              - 'promotion_engine.py'
+            agents:
+              - 'agents/**'
+              - 'agent-*.sh'
+            infrastructure:
+              - 'blackroad-docker.sh'
+              - 'blackroad-k8s.sh'
+              - 'blackroad-railway.sh'
+              - 'pi-setup/**'
+            docs:
+              - '**/*.md'
+              - 'docs/**'
+            ci:
+              - '.github/**'
+
+      - name: Add labels based on changed files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [];
+
+            if ('${{ steps.changed.outputs.quantum_any_changed }}' === 'true') {
+              labels.push('quantum');
+            }
+            if ('${{ steps.changed.outputs.operator_any_changed }}' === 'true') {
+              labels.push('operator');
+            }
+            if ('${{ steps.changed.outputs.agents_any_changed }}' === 'true') {
+              labels.push('agents');
+            }
+            if ('${{ steps.changed.outputs.infrastructure_any_changed }}' === 'true') {
+              labels.push('infrastructure');
+            }
+            if ('${{ steps.changed.outputs.docs_any_changed }}' === 'true') {
+              labels.push('documentation');
+            }
+            if ('${{ steps.changed.outputs.ci_any_changed }}' === 'true') {
+              labels.push('ci');
+            }
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+              console.log(`Added labels: ${labels.join(', ')}`);
+            }
+
+      - name: Auto-assign author
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            // Assign the PR author
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              assignees: [pr.user.login]
+            });
+
+            console.log(`Assigned ${pr.user.login} to PR #${pr.number}`);

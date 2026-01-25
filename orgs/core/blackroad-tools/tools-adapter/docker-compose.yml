@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  tools-adapter:
+    image: node:20-alpine
+    container_name: bbx-tools-adapter
+    working_dir: /app
+    command: ["node", "server.js"]
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+    environment:
+      TOOLS_PORT: ${TOOLS_PORT:-8787}
+      TOOLS_TOKEN: ${TOOLS_TOKEN}
+      CHANNEL_DEV_PRS: ${CHANNEL_DEV_PRS}
+      CHANNEL_DEV_CI: ${CHANNEL_DEV_CI}
+      CHANNEL_RELEASES: ${CHANNEL_RELEASES}
+      CHANNEL_SECURITY: ${CHANNEL_SECURITY}
+      ASANA_PROJECT_ID_MAIN: ${ASANA_PROJECT_ID_MAIN}
+      ASANA_PROJECT_ID_OPS: ${ASANA_PROJECT_ID_OPS}
+      AIRTABLE_BASE_ID_MAIN: ${AIRTABLE_BASE_ID_MAIN}
+      AIRTABLE_TABLE_BACKLOG: ${AIRTABLE_TABLE_BACKLOG}
+      GITLAB_GROUP: ${GITLAB_GROUP}
+      GITHUB_ORG: ${GITHUB_ORG}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+      ASANA_PAT: ${ASANA_PAT}
+      AIRTABLE_API_KEY: ${AIRTABLE_API_KEY}
+      GITLAB_REPO_SSH: ${GITLAB_REPO_SSH}
+      GITLAB_SSH_PRIVATE_KEY: ${GITLAB_SSH_PRIVATE_KEY}
+      PI_CORE_HOST: ${PI_CORE_HOST:-pi-core}
+    volumes:
+      - ./server.js:/app/server.js:ro
+      - ./openapi.yaml:/app/openapi.yaml:ro
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/tools/invoke", "--header=Content-Type: application/json", "--header=X-Tools-Token: ${TOOLS_TOKEN}", "--post-data={\"tool\":\"ask_cloud\",\"id\":\"hc\",\"args\":{}}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
