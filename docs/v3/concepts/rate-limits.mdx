@@ -1,0 +1,53 @@
+---
+title: Rate limits and data retention
+keywords: [rate limits, data retention, prefect cloud, api rate limits]
+---
+
+## API rate limits
+
+<Note>
+**Rate limits are subject to change.**
+
+Contact Prefect support at [help@prefect.io](mailto:help@prefect.io) with questions about rate limits.
+</Note>
+
+Prefect Cloud applies rate limits to API endpoints to ensure system stability. When limits are exceeded, endpoints return a `429` response with a `Retry-After` header.
+
+### Request limits by plan
+
+The `flow_runs`, `task_runs`, and `flows` endpoints and their subroutes:
+
+- **Hobby**: 250 requests per minute
+- **Starter**: 500 requests per minute
+- **Team**: 1,000 requests per minute
+- **Pro**: 2,000 requests per minute
+- **Enterprise**: Custom limits
+
+The `logs` endpoint:
+
+- **Hobby**: 500 logs per minute
+- **Starter**: 1,600 logs per minute
+- **Team**: 2,000 logs per minute
+- **Pro**: 10,000 logs per minute
+- **Enterprise**: Custom limits
+
+The Prefect SDK automatically retries rate-limited requests up to 5 times, using the delay specified in the `Retry-After` header. You can customize this behavior through [client settings](/v3/develop/settings-ref#clientsettings).
+
+## Query limits
+
+Event queries are limited to a 14-day window per request. You can query any 14-day period within your retention period, but each individual query cannot span more than 14 days. If your plan's retention period is shorter than 14 days, the query window is limited to your retention period.
+
+## Metadata retention
+
+Prefect Cloud retains flow run, task run, and artifact metadata for a limited time based on your plan. This applies to all workspaces in your account.
+
+### Retention periods by plan
+
+- **Hobby and Starter**: 7 days
+- **Team**: 14 days  
+- **Pro**: 30 days
+- **Enterprise**: Custom retention periods
+
+Metadata is retained from creation until the specified period expires. For flow and task runs, retention is calculated from when the run reaches a [terminal state](/v3/develop/manage-states/#state-types). Subflow runs are retained independently from their parent flows.
+
+For custom retention periods, [contact Prefect's sales team](https://www.prefect.io/pricing).
