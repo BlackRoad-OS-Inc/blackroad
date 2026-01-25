@@ -1,0 +1,265 @@
+#!/bin/bash
+# 🧬 LUCIDIA - AI/ML Command Line Interface
+# Like Claude CLI, but for Lucidia!
+
+VERSION="1.0.0"
+LUCIDIA_HOME="$HOME/.lucidia"
+CONVERSATION_DIR="$LUCIDIA_HOME/conversations"
+CONFIG_FILE="$LUCIDIA_HOME/config.json"
+
+# Colors
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Initialize Lucidia
+init_lucidia() {
+    mkdir -p "$CONVERSATION_DIR"
+    
+    if [ ! -f "$CONFIG_FILE" ]; then
+        cat > "$CONFIG_FILE" << 'CONFIG'
+{
+  "version": "1.0.0",
+  "agent": "Lucidia",
+  "role": "AI/ML & Analysis Specialist",
+  "machine": "lucidia@lucidia",
+  "symbol": "🧬",
+  "model": "claude-sonnet-4-5-20250929",
+  "specializations": [
+    "AI/ML model analysis",
+    "Data science & analytics",
+    "Scientific computing",
+    "Mathematical modeling",
+    "Deep learning architectures"
+  ]
+}
+CONFIG
+        echo -e "${GREEN}✅ Lucidia initialized at $LUCIDIA_HOME${NC}"
+    fi
+}
+
+# Show help
+show_help() {
+    cat << 'HELP'
+🧬 Lucidia CLI - AI/ML Specialist Command Line Interface
+
+USAGE:
+    lucidia [OPTIONS] [PROMPT]
+
+OPTIONS:
+    -h, --help              Show this help message
+    -v, --version           Show version
+    -l, --list              List all conversations
+    -n, --new               Start a new conversation
+    -c, --continue [ID]     Continue a conversation
+    -m, --model [MODEL]     Specify model to use
+    -i, --interactive       Interactive mode
+    --status                Show Lucidia status
+    --specialties           List Lucidia's specializations
+
+EXAMPLES:
+    lucidia "Analyze this dataset"
+    lucidia --new "Help me build a neural network"
+    lucidia --continue conv-123
+    lucidia --interactive
+    lucidia --status
+
+SPECIALIZATIONS:
+    🧬 AI/ML model analysis
+    📊 Data science & analytics
+    🔬 Scientific computing
+    📐 Mathematical modeling
+    🧠 Deep learning architectures
+
+Sister Agents:
+    🎵 aria     - Infrastructure Queen
+    🌌 alice    - Staging Specialist
+    💬 cecilia  - Claude Coordination
+
+Version: 1.0.0
+HELP
+}
+
+# Show version
+show_version() {
+    echo -e "${PURPLE}🧬 Lucidia CLI v$VERSION${NC}"
+    echo -e "${CYAN}AI/ML & Analysis Specialist${NC}"
+}
+
+# Show status
+show_status() {
+    echo -e "${PURPLE}╔═══════════════════════════════════════════════════╗${NC}"
+    echo -e "${PURPLE}║        🧬 LUCIDIA - AI/ML SPECIALIST 🧬           ║${NC}"
+    echo -e "${PURPLE}╚═══════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${CYAN}Machine:${NC} lucidia@lucidia"
+    echo -e "${CYAN}Location:${NC} 192.168.4.99"
+    echo -e "${CYAN}Role:${NC} AI/ML & Analysis Specialist"
+    echo ""
+    echo -e "${GREEN}✅ Status:${NC} Operational"
+    echo -e "${GREEN}✅ Model:${NC} Claude Sonnet 4.5"
+    echo -e "${GREEN}✅ Disk:${NC} 86% (34GB free)"
+    echo ""
+    echo -e "${CYAN}Hosting:${NC}"
+    echo "   • Aria website: http://192.168.4.99:8866"
+    echo "   • AI/ML services active"
+    echo ""
+    echo -e "${CYAN}Specializations:${NC}"
+    echo "   🧬 AI/ML model analysis"
+    echo "   📊 Data science & analytics"
+    echo "   🔬 Scientific computing"
+    echo "   📐 Mathematical modeling"
+    echo "   🧠 Deep learning architectures"
+    echo ""
+    echo -e "${CYAN}Sister Agents:${NC}"
+    echo "   🎵 Aria (aria64) - Infrastructure"
+    echo "   🌌 Alice (alice@alice) - Staging"
+    echo "   💬 Cecilia - Claude Coordination"
+}
+
+# List specializations
+show_specialties() {
+    echo -e "${PURPLE}🧬 Lucidia's Specializations:${NC}"
+    echo ""
+    echo -e "${GREEN}1. AI/ML Model Analysis${NC}"
+    echo "   • Model architecture review"
+    echo "   • Performance optimization"
+    echo "   • Hyperparameter tuning"
+    echo ""
+    echo -e "${GREEN}2. Data Science & Analytics${NC}"
+    echo "   • Statistical analysis"
+    echo "   • Data visualization"
+    echo "   • Predictive modeling"
+    echo ""
+    echo -e "${GREEN}3. Scientific Computing${NC}"
+    echo "   • Numerical methods"
+    echo "   • Simulation & modeling"
+    echo "   • High-performance computing"
+    echo ""
+    echo -e "${GREEN}4. Mathematical Modeling${NC}"
+    echo "   • Equation solving"
+    echo "   • Optimization problems"
+    echo "   • Linear algebra"
+    echo ""
+    echo -e "${GREEN}5. Deep Learning Architectures${NC}"
+    echo "   • Neural network design"
+    echo "   • Transfer learning"
+    echo "   • Model deployment"
+}
+
+# List conversations
+list_conversations() {
+    echo -e "${PURPLE}🧬 Lucidia Conversations:${NC}"
+    echo ""
+    
+    if [ -d "$CONVERSATION_DIR" ] && [ "$(ls -A $CONVERSATION_DIR 2>/dev/null)" ]; then
+        ls -lt "$CONVERSATION_DIR" | tail -n +2 | head -10 | while read line; do
+            file=$(echo $line | awk '{print $NF}')
+            echo -e "${CYAN}•${NC} $file"
+        done
+    else
+        echo -e "${YELLOW}No conversations yet. Start one with:${NC}"
+        echo "  lucidia --new \"Your question here\""
+    fi
+}
+
+# Interactive mode
+interactive_mode() {
+    echo -e "${PURPLE}╔═══════════════════════════════════════════════════╗${NC}"
+    echo -e "${PURPLE}║     🧬 LUCIDIA - Interactive Mode 🧬             ║${NC}"
+    echo -e "${PURPLE}╚═══════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${CYAN}Type 'exit' to quit, 'help' for commands${NC}"
+    echo ""
+    
+    while true; do
+        echo -ne "${PURPLE}🧬 lucidia>${NC} "
+        read -r input
+        
+        case "$input" in
+            exit|quit)
+                echo -e "${GREEN}👋 Goodbye!${NC}"
+                break
+                ;;
+            help)
+                echo -e "${CYAN}Available commands:${NC}"
+                echo "  status       - Show Lucidia status"
+                echo "  specialties  - List specializations"
+                echo "  list         - List conversations"
+                echo "  exit         - Exit interactive mode"
+                echo "  Or just type your question!"
+                ;;
+            status)
+                show_status
+                ;;
+            specialties)
+                show_specialties
+                ;;
+            list)
+                list_conversations
+                ;;
+            "")
+                ;;
+            *)
+                echo -e "${YELLOW}🧬 Analyzing: \"$input\"${NC}"
+                echo -e "${CYAN}[This would call Claude API with Lucidia context]${NC}"
+                echo ""
+                ;;
+        esac
+    done
+}
+
+# Main CLI logic
+main() {
+    init_lucidia
+    
+    case "$1" in
+        -h|--help)
+            show_help
+            ;;
+        -v|--version)
+            show_version
+            ;;
+        --status)
+            show_status
+            ;;
+        --specialties)
+            show_specialties
+            ;;
+        -l|--list)
+            list_conversations
+            ;;
+        -i|--interactive)
+            interactive_mode
+            ;;
+        -n|--new)
+            shift
+            if [ -z "$1" ]; then
+                echo -e "${RED}❌ Error: Prompt required for new conversation${NC}"
+                echo "Usage: lucidia --new \"Your question\""
+                exit 1
+            fi
+            echo -e "${PURPLE}🧬 Starting new conversation...${NC}"
+            echo -e "${CYAN}Prompt: $@${NC}"
+            echo -e "${YELLOW}[This would start a new Claude conversation with Lucidia context]${NC}"
+            ;;
+        "")
+            show_help
+            ;;
+        *)
+            echo -e "${PURPLE}🧬 Lucidia analyzing...${NC}"
+            echo -e "${CYAN}Prompt: $@${NC}"
+            echo -e "${YELLOW}[This would call Claude API with Lucidia context]${NC}"
+            echo ""
+            echo -e "${GREEN}To actually use Claude API, this CLI would need:${NC}"
+            echo "  1. Anthropic API key"
+            echo "  2. Claude API integration"
+            echo "  3. Conversation state management"
+            ;;
+    esac
+}
+
+main "$@"

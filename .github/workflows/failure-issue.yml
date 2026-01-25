@@ -1,0 +1,20 @@
+name: CI Failure Tracker
+
+on:
+  workflow_run:
+    workflows: ["CORE CI", ".github/workflows/core-ci.yml"]
+    types: [completed]
+
+jobs:
+  report:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              ...context.repo,
+              title: "CI failed: " + context.payload.workflow_run.name,
+              body: context.payload.workflow_run.html_url
+            })
