@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PANGEA ULTIMATE — Living Prehistoric World</title>
+    <meta name="description" content="Explore a fully living Pangea with animated creatures, dynamic weather, day/night cycles, and volcanic activity">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --pangea-brown: #8b7355;
+            --pangea-green: #2d5016;
+            --ocean-blue: #001f3f;
+            --desert-sand: #d4a574;
+            --text-light: #f5f5dc;
+            --volcanic-red: #ff4500;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0a 100%);
+            color: var(--text-light);
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Status HUD */
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(139, 115, 85, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 300px;
+            pointer-events: all;
+        }
+
+        .hud h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            color: var(--pangea-brown);
+            margin-bottom: 15px;
+        }
+
+        .hud-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .hud-item {
+            background: rgba(139, 115, 85, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(139, 115, 85, 0.3);
+        }
+
+        .hud-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .hud-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--pangea-brown);
+        }
+
+        /* Weather indicator */
+        .weather-hud {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(74, 144, 226, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 250px;
+            pointer-events: all;
+        }
+
+        .weather-hud h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            color: #4A90E2;
+            margin-bottom: 10px;
+        }
+
+        .weather-type {
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .weather-details {
+            font-size: 12px;
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        /* Creature counter */
+        .creature-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(45, 80, 22, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            pointer-events: all;
+        }
+
+        .creature-counter h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            color: var(--pangea-green);
+            margin-bottom: 10px;
+        }
+
+        .creature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .creature-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            padding: 4px 8px;
+            background: rgba(45, 80, 22, 0.2);
+            border-radius: 6px;
+        }
+
+        .creature-name {
+            color: var(--text-light);
+        }
+
+        .creature-count {
+            color: var(--pangea-green);
+            font-weight: 700;
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(139, 115, 85, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            pointer-events: all;
+        }
+
+        .controls h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: var(--pangea-brown);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        .control-key {
+            background: rgba(139, 115, 85, 0.3);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        /* Loading screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-title {
+            font-family: 'Cinzel', serif;
+            font-size: 56px;
+            font-weight: 700;
+            color: var(--pangea-brown);
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(139, 115, 85, 0.6);
+        }
+
+        .loading-subtitle {
+            font-size: 20px;
+            color: #888;
+            margin-bottom: 40px;
+        }
+
+        .loading-features {
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .feature-tag {
+            display: inline-block;
+            background: rgba(139, 115, 85, 0.2);
+            border: 1px solid rgba(139, 115, 85, 0.4);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 4px;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(139, 115, 85, 0.2);
+            border-top-color: var(--pangea-brown);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Time display */
+        .time-display {
+            font-size: 12px;
+            color: #888;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(139, 115, 85, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-title">PANGEA ULTIMATE</div>
+        <div class="loading-subtitle">The Living Prehistoric World</div>
+        <div class="loading-features">
+            <span class="feature-tag">50+ Animated Creatures</span>
+            <span class="feature-tag">Dynamic Weather</span>
+            <span class="feature-tag">Day/Night Cycle</span>
+            <span class="feature-tag">Volcanic Activity</span>
+            <span class="feature-tag">9 Biomes</span>
+            <span class="feature-tag">AI Behaviors</span>
+        </div>
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div class="ui-overlay">
+        <!-- Main HUD -->
+        <div class="hud">
+            <h2>LOCATION</h2>
+            <div class="hud-grid">
+                <div class="hud-item">
+                    <div class="hud-label">Biome</div>
+                    <div class="hud-value" id="hud-biome">Unknown</div>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-label">Elevation</div>
+                    <div class="hud-value" id="hud-elevation">0m</div>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-label">Temperature</div>
+                    <div class="hud-value" id="hud-temp">25°C</div>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-label">Latitude</div>
+                    <div class="hud-value" id="hud-lat">0°N</div>
+                </div>
+            </div>
+            <div class="time-display" id="time-display">
+                Time: Dawn | Period: Late Permian (252 Ma)
+            </div>
+        </div>
+
+        <!-- Weather HUD -->
+        <div class="weather-hud">
+            <h3>WEATHER</h3>
+            <div class="weather-type" id="weather-type">Clear Skies</div>
+            <div class="weather-details" id="weather-details">
+                Wind: 2 km/h<br>
+                Visibility: Excellent
+            </div>
+        </div>
+
+        <!-- Creature Counter -->
+        <div class="creature-counter">
+            <h3>NEARBY CREATURES</h3>
+            <div class="creature-list" id="creature-list">
+                <div class="creature-item">
+                    <span class="creature-name">Lystrosaurus</span>
+                    <span class="creature-count">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <h3>Controls</h3>
+            <div class="control-item">
+                <span>Move</span>
+                <span class="control-key">WASD</span>
+            </div>
+            <div class="control-item">
+                <span>Look</span>
+                <span class="control-key">MOUSE</span>
+            </div>
+            <div class="control-item">
+                <span>Fly Up/Down</span>
+                <span class="control-key">SPACE/SHIFT</span>
+            </div>
+            <div class="control-item">
+                <span>Speed Time</span>
+                <span class="control-key">T</span>
+            </div>
+            <div class="control-item">
+                <span>Change Weather</span>
+                <span class="control-key">W</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+        import { PangeaTerrainGenerator, PANGEA_BIOMES } from './pangea-earth.js';
+        import { CreatureManager, CREATURE_TYPES } from './pangea-creatures.js';
+        import { DayNightCycle, WeatherSystem, WEATHER_TYPES } from './pangea-weather.js';
+
+        // ===== SCENE SETUP =====
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.Fog(0x87ceeb, 50, 400);
+
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.set(0, 50, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // ===== PANGEA TERRAIN =====
+        console.log('Initializing Pangea terrain...');
+        const pangeaTerrain = new PangeaTerrainGenerator(scene);
+
+        // ===== DAY/NIGHT CYCLE =====
+        console.log('Creating day/night cycle...');
+        const dayNight = new DayNightCycle(scene);
+
+        // ===== WEATHER SYSTEM =====
+        console.log('Initializing weather system...');
+        const weatherSystem = new WeatherSystem(scene, pangeaTerrain);
+
+        // ===== CREATURE MANAGER =====
+        console.log('Spawning creatures...');
+        const creatureManager = new CreatureManager(scene, pangeaTerrain);
+
+        // Spawn initial creatures
+        creatureManager.spawnRandomCreatures(20);
+
+        // ===== CONTROLS =====
+        const controls = new PointerLockControls(camera, renderer.domElement);
+
+        renderer.domElement.addEventListener('click', () => {
+            controls.lock();
+        });
+
+        // Movement
+        const movement = {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            sprint: false
+        };
+
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'KeyW': movement.forward = true; break;
+                case 'KeyS': movement.backward = true; break;
+                case 'KeyA': movement.left = true; break;
+                case 'KeyD': movement.right = true; break;
+                case 'Space': movement.up = true; e.preventDefault(); break;
+                case 'ShiftLeft': movement.down = true; movement.sprint = true; break;
+                case 'KeyT':
+                    dayNight.setSpeed(dayNight.speed === 1 ? 10 : 1);
+                    break;
+                case 'KeyV':
+                    const weatherTypes = Object.values(WEATHER_TYPES);
+                    const randomWeather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
+                    weatherSystem.forceWeather(randomWeather);
+                    break;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            switch(e.code) {
+                case 'KeyW': movement.forward = false; break;
+                case 'KeyS': movement.backward = false; break;
+                case 'KeyA': movement.left = false; break;
+                case 'KeyD': movement.right = false; break;
+                case 'Space': movement.up = false; break;
+                case 'ShiftLeft': movement.down = false; movement.sprint = false; break;
+            }
+        });
+
+        // ===== UPDATE HUD =====
+        let currentBiome = null;
+
+        function updateHUD() {
+            const x = camera.position.x;
+            const z = camera.position.z;
+            const y = pangeaTerrain.getElevation(x, z);
+            const biome = pangeaTerrain.getBiomeAt(x, z, y);
+
+            // Biome
+            if (biome !== currentBiome) {
+                currentBiome = biome;
+                document.getElementById('hud-biome').textContent = biome.name.split(' ').slice(0, 2).join(' ');
+            }
+
+            // Elevation
+            document.getElementById('hud-elevation').textContent = Math.round(y * 100) + 'm';
+
+            // Temperature
+            const temp = biome.climate?.temp || 20;
+            document.getElementById('hud-temp').textContent = temp + '°C';
+
+            // Latitude
+            const latitude = Math.abs(z).toFixed(0);
+            const hemisphere = z >= 0 ? 'N' : 'S';
+            document.getElementById('hud-lat').textContent = latitude + '°' + hemisphere;
+
+            // Time
+            const timeOfDay = dayNight.getTimeOfDay();
+            const timeStr = timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1);
+            const speedIndicator = dayNight.speed > 1 ? ` (${dayNight.speed}x)` : '';
+            document.getElementById('time-display').textContent =
+                `Time: ${timeStr}${speedIndicator} | Period: Late Permian (252 Ma)`;
+
+            // Weather
+            const weather = weatherSystem.getWeatherInfo();
+            const weatherName = weather.type.split('_').map(w =>
+                w.charAt(0).toUpperCase() + w.slice(1)
+            ).join(' ');
+            document.getElementById('weather-type').textContent = weatherName;
+
+            const windSpeed = Math.round(weather.windSpeed);
+            const visibility = weather.type.includes('storm') || weather.type.includes('ash')
+                ? 'Poor' : 'Excellent';
+            document.getElementById('weather-details').innerHTML =
+                `Wind: ${windSpeed} km/h<br>Visibility: ${visibility}`;
+
+            // Creatures
+            const creatureCounts = {};
+            creatureManager.creatures.forEach(creature => {
+                const name = creature.type.name;
+                creatureCounts[name] = (creatureCounts[name] || 0) + 1;
+            });
+
+            const creatureListEl = document.getElementById('creature-list');
+            creatureListEl.innerHTML = '';
+            Object.entries(creatureCounts).forEach(([name, count]) => {
+                const item = document.createElement('div');
+                item.className = 'creature-item';
+                item.innerHTML = `
+                    <span class="creature-name">${name}</span>
+                    <span class="creature-count">${count}</span>
+                `;
+                creatureListEl.appendChild(item);
+            });
+
+            if (Object.keys(creatureCounts).length === 0) {
+                creatureListEl.innerHTML = '<div class="creature-item"><span class="creature-name">None nearby</span><span class="creature-count">0</span></div>';
+            }
+        }
+
+        // ===== ANIMATION LOOP =====
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const speed = movement.sprint ? 50 : 25;
+
+            if (controls.isLocked) {
+                // Apply movement
+                direction.z = Number(movement.forward) - Number(movement.backward);
+                direction.x = Number(movement.right) - Number(movement.left);
+                direction.y = Number(movement.up) - Number(movement.down);
+                direction.normalize();
+
+                velocity.x = direction.x * speed * delta;
+                velocity.z = direction.z * speed * delta;
+                velocity.y = direction.y * speed * delta;
+
+                controls.moveRight(velocity.x);
+                controls.moveForward(-velocity.z);
+                camera.position.y += velocity.y;
+
+                // Prevent going below terrain
+                const terrainHeight = pangeaTerrain.getElevation(
+                    camera.position.x,
+                    camera.position.z
+                );
+                if (camera.position.y < terrainHeight + 2) {
+                    camera.position.y = terrainHeight + 2;
+                }
+
+                // Update terrain chunks
+                pangeaTerrain.update(camera.position.x, camera.position.z);
+
+                // Update HUD
+                updateHUD();
+            }
+
+            // Update day/night cycle
+            dayNight.update(delta);
+
+            // Update weather
+            weatherSystem.update(delta, camera.position, currentBiome);
+
+            // Update creatures
+            creatureManager.update(delta);
+
+            renderer.render(scene, camera);
+        }
+
+        // ===== WINDOW RESIZE =====
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ===== START =====
+        console.log('Pangea Ultimate ready!');
+        setTimeout(() => {
+            document.getElementById('loading-screen').classList.add('hidden');
+        }, 2500);
+
+        animate();
+    </script>
+</body>
+</html>
