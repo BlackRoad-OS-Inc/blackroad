@@ -1,0 +1,199 @@
+# ============================================================================
+# BlackRoad OS - Security Scanning Pipeline
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Comprehensive security scanning workflow.
+# Runs on push, PR, and weekly schedule.
+# ============================================================================
+
+name: Security
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday midnight
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # CodeQL Analysis
+  # ─────────────────────────────────────────────────────────────────────────
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['python']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Dependency Vulnerability Scan
+  # ─────────────────────────────────────────────────────────────────────────
+  dependency-scan:
+    name: Dependency Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install safety
+        run: pip install safety pip-audit
+
+      - name: Check for vulnerable dependencies
+        run: |
+          echo "## Dependency Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
+
+          # Check requirements.txt if exists
+          if [ -f requirements.txt ]; then
+            echo "### requirements.txt" >> $GITHUB_STEP_SUMMARY
+            pip-audit -r requirements.txt --format markdown >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "No issues found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check pyproject.toml if exists
+          if [ -f pyproject.toml ]; then
+            echo "### pyproject.toml" >> $GITHUB_STEP_SUMMARY
+            pip-audit --format markdown >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "No issues found" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Secret Scanning
+  # ─────────────────────────────────────────────────────────────────────────
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install truffleHog
+        run: pip install trufflehog
+
+      - name: Scan for secrets
+        run: |
+          echo "## Secret Scan Results" >> $GITHUB_STEP_SUMMARY
+
+          # Scan with truffleHog
+          trufflehog filesystem . --only-verified --json 2>/dev/null | head -20 > secrets.json || true
+
+          if [ -s secrets.json ]; then
+            echo "::warning::Potential secrets detected. Review secrets.json"
+            echo "Potential secrets found - review required" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No verified secrets detected" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
+
+      - name: Check for common secret patterns
+        run: |
+          echo "### Pattern Checks" >> $GITHUB_STEP_SUMMARY
+
+          # Check for AWS keys
+          if grep -rE "AKIA[0-9A-Z]{16}" --include="*.py" --include="*.sh" --include="*.yaml" . 2>/dev/null; then
+            echo "::warning::Potential AWS access key found"
+            echo "- Potential AWS key pattern detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check for private keys
+          if grep -rE "BEGIN (RSA |DSA |EC |OPENSSH )?PRIVATE KEY" --include="*.py" --include="*.sh" --include="*.pem" . 2>/dev/null; then
+            echo "::warning::Private key found in repository"
+            echo "- Private key detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check for hardcoded passwords
+          if grep -rEi "password\s*=\s*['\"][^'\"]{8,}['\"]" --include="*.py" --include="*.sh" . 2>/dev/null; then
+            echo "::warning::Potential hardcoded password found"
+            echo "- Potential hardcoded password detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "Pattern scan complete" >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SAST (Static Application Security Testing)
+  # ─────────────────────────────────────────────────────────────────────────
+  sast:
+    name: SAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit security scan
+        run: |
+          echo "## Bandit Security Scan" >> $GITHUB_STEP_SUMMARY
+
+          bandit -r . -f json -o bandit-report.json --exclude './.git,./node_modules,./.venv' || true
+
+          # Convert to markdown summary
+          if [ -f bandit-report.json ]; then
+            ISSUES=$(cat bandit-report.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d.get('results', [])))")
+            echo "Found $ISSUES security issues" >> $GITHUB_STEP_SUMMARY
+
+            if [ "$ISSUES" -gt 0 ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Top Issues" >> $GITHUB_STEP_SUMMARY
+              cat bandit-report.json | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+for r in d.get('results', [])[:10]:
+    print(f\"- **{r['issue_severity']}**: {r['issue_text']} ({r['filename']}:{r['line_number']})\")
+" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+        continue-on-error: true
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30

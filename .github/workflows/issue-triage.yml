@@ -1,0 +1,103 @@
+# ============================================================================
+# BlackRoad OS - Issue Triage Automation
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Automatically triages and organizes new issues.
+# ============================================================================
+
+name: Issue Triage
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  triage:
+    name: Triage New Issues
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add triage label to new issues
+        if: github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            // Check if issue has any labels
+            if (issue.labels.length === 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['triage']
+              });
+              console.log('Added triage label to issue #' + issue.number);
+            }
+
+      - name: Remove triage label when other labels added
+        if: github.event.action == 'labeled' && github.event.label.name != 'triage'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const hasTriageLabel = issue.labels.some(l => l.name === 'triage');
+
+            if (hasTriageLabel) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  name: 'triage'
+                });
+                console.log('Removed triage label from issue #' + issue.number);
+              } catch (e) {
+                console.log('Could not remove triage label:', e.message);
+              }
+            }
+
+      - name: Add priority based on title
+        if: github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+
+            // Check for priority indicators
+            if (title.includes('critical') || title.includes('urgent') || title.includes('security')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['priority/high']
+              });
+            }
+
+            // Check for component mentions
+            const components = {
+              'quantum': ['quantum', 'ψ', 'brq-', 'pennylane'],
+              'operator': ['operator', 'ledger', 'promotion'],
+              'teacher': ['teacher', 'σ', 'lesson', 'quiz'],
+              'cli': ['br-', 'cli', 'terminal', 'command'],
+              'web': ['console', 'dashboard', 'ui', 'web'],
+              'agents': ['agent', 'lucidia', 'cece', 'roadie']
+            };
+
+            for (const [label, keywords] of Object.entries(components)) {
+              if (keywords.some(k => title.includes(k) || body.includes(k))) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: [label]
+                });
+                break;
+              }
+            }

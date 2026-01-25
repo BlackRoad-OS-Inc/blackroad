@@ -1,0 +1,87 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lucidia-core"
+version = "0.1.0"
+description = "Lucidia: AI reasoning engines - physicist, mathematician, chemist, geologist, and specialized domain agents"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "BlackRoad OS", email = "hello@blackroad.io" }
+]
+keywords = [
+    "ai",
+    "reasoning",
+    "agents",
+    "physics",
+    "mathematics",
+    "chemistry",
+    "geology",
+    "analysis"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "sympy>=1.12",
+    "mpmath>=1.3.0",
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "httpx>=0.24.0",
+]
+flask = [
+    "flask>=2.3.0",
+    "werkzeug>=3.0.0",
+]
+
+[project.scripts]
+lucidia = "lucidia_core.cli:main"
+lucidia-api = "lucidia_core.api:run"
+
+[project.urls]
+Homepage = "https://blackroad.io"
+Documentation = "https://docs.blackroad.io/lucidia"
+Repository = "https://github.com/BlackRoad-OS/lucidia-core"
+Issues = "https://github.com/BlackRoad-OS/lucidia-core/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["lucidia_core"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
