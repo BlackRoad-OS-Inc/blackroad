@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Agent OS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="logo">BlackRoad</h1>
+                <span class="subtitle">Agent OS</span>
+            </div>
+            <div class="header-right">
+                <span id="connection-status" class="status-badge offline">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Sidebar - Agent List -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Agents</h2>
+                    <span id="agent-count" class="count-badge">0</span>
+                </div>
+                <div id="agent-list" class="agent-list">
+                    <!-- Agents populated by JS -->
+                </div>
+            </aside>
+
+            <!-- Center - Task Input & Active Tasks -->
+            <section class="content">
+                <!-- Task Input -->
+                <div class="task-input-container">
+                    <h2>New Task</h2>
+                    <form id="task-form">
+                        <textarea
+                            id="task-request"
+                            placeholder="Describe what you want to do... e.g., 'Update all repos and restart services'"
+                            rows="3"
+                        ></textarea>
+                        <div class="task-options">
+                            <select id="target-agent">
+                                <option value="">Any Agent</option>
+                            </select>
+                            <select id="target-role">
+                                <option value="">Any Role</option>
+                                <option value="web">Web</option>
+                                <option value="worker">Worker</option>
+                                <option value="build">Build</option>
+                            </select>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="skip-approval">
+                                Skip Approval
+                            </label>
+                            <button type="submit" class="btn btn-primary">Create Task</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Approval Queue -->
+                <div id="approval-section" class="section">
+                    <h2>Awaiting Approval</h2>
+                    <div id="approval-queue" class="task-list">
+                        <!-- Approval cards populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Running Tasks -->
+                <div class="section">
+                    <h2>Running Tasks</h2>
+                    <div id="running-tasks" class="task-list">
+                        <!-- Running task cards populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Task History -->
+                <div class="section">
+                    <h2>Recent Tasks</h2>
+                    <div id="task-history" class="task-list">
+                        <!-- Task history populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel - Task Details -->
+            <aside class="detail-panel" id="detail-panel">
+                <div class="detail-header">
+                    <h2>Task Details</h2>
+                    <button class="btn-close" onclick="closeDetailPanel()">&times;</button>
+                </div>
+                <div id="detail-content">
+                    <p class="placeholder">Select a task to view details</p>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Approval Modal -->
+    <div id="approval-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Review Task Plan</h2>
+                <button class="btn-close" onclick="closeApprovalModal()">&times;</button>
+            </div>
+            <div id="approval-modal-body">
+                <!-- Plan details populated by JS -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="rejectTask()">Reject</button>
+                <button class="btn btn-success" onclick="approveTask()">Approve</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

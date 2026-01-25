@@ -1,0 +1,34 @@
+[Unit]
+Description=BlackRoad Agent OS Controller
+Documentation=https://github.com/BlackRoad-OS/blackroad-agent-os
+After=network.target
+
+[Service]
+Type=simple
+User=blackroad
+Group=blackroad
+WorkingDirectory=/opt/blackroad-agent-os/controller
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/etc/blackroad/controller.env
+
+# Execution
+ExecStart=/opt/blackroad-agent-os/controller/venv/bin/python main.py
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/blackroad-agent-os/controller/logs
+
+[Install]
+WantedBy=multi-user.target
