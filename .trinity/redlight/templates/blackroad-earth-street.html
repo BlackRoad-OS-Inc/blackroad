@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Earth | Street Level</title>
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Exo 2', sans-serif;
+            color: #fff;
+        }
+        
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .maplibregl-ctrl-attrib {
+            display: none !important;
+        }
+        
+        .ui-overlay {
+            position: fixed;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .ui-overlay > * { pointer-events: auto; }
+        
+        .header {
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+        }
+        
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, #00d4ff 0%, #7b2ff7 50%, #ff6b35 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .logo-sub {
+            font-size: 9px;
+            letter-spacing: 2px;
+            opacity: 0.5;
+            margin-top: 2px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        
+        .stat-value.highlight {
+            color: #ff6b35;
+        }
+        
+        .stat-label {
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-top: 2px;
+        }
+        
+        .search-container {
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+        
+        .search-input {
+            width: 350px;
+            padding: 14px 24px;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 30px;
+            color: #fff;
+            font-family: 'Exo 2', sans-serif;
+            font-size: 14px;
+            outline: none;
+            backdrop-filter: blur(10px);
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+        
+        .search-input:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+        
+        .search-btn {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            border: none;
+            border-radius: 30px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .search-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+        
+        .info-panel {
+            top: 140px;
+            right: 20px;
+            width: 280px;
+            padding: 20px;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .info-section {
+            margin-bottom: 16px;
+        }
+        
+        .info-section:last-child { margin-bottom: 0; }
+        
+        .info-label {
+            font-size: 9px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-bottom: 6px;
+        }
+        
+        .info-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            color: #00d4ff;
+        }
+        
+        .info-value.large {
+            font-size: 18px;
+        }
+        
+        .zoom-panel {
+            top: 140px;
+            left: 20px;
+            width: 220px;
+            padding: 20px;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .zoom-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            opacity: 0.6;
+            margin-bottom: 16px;
+        }
+        
+        .zoom-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .zoom-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7, #ff6b35);
+            border-radius: 4px;
+            transition: width 0.2s;
+        }
+        
+        .zoom-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            opacity: 0.4;
+            margin-bottom: 16px;
+        }
+        
+        .scale-list {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 16px;
+        }
+        
+        .scale-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0;
+            font-size: 11px;
+            opacity: 0.4;
+            transition: all 0.2s;
+        }
+        
+        .scale-item.active {
+            opacity: 1;
+            color: #00d4ff;
+        }
+        
+        .scale-icon {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .layer-panel {
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            padding: 6px;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 25px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .layer-btn {
+            padding: 10px 18px;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            font-family: 'Exo 2', sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+        
+        .layer-btn:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .layer-btn.active {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: #fff;
+        }
+        
+        .controls {
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            padding: 10px 18px;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 30px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .ctrl-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        
+        .ctrl-btn:hover {
+            background: rgba(0, 212, 255, 0.3);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .ctrl-btn.active {
+            background: #00d4ff;
+            color: #000;
+        }
+        
+        .divider {
+            width: 1px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 8px;
+        }
+        
+        .quick-locations {
+            bottom: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .quick-btn {
+            padding: 10px 16px;
+            background: rgba(10, 15, 30, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            color: rgba(255,255,255,0.7);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .quick-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #fff;
+        }
+        
+        .quick-btn span {
+            opacity: 0.5;
+            font-size: 9px;
+            margin-left: 8px;
+        }
+        
+        .instructions {
+            bottom: 30px;
+            left: 20px;
+            font-size: 10px;
+            opacity: 0.35;
+            line-height: 2;
+        }
+        
+        .instructions kbd {
+            padding: 3px 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+        }
+        
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        
+        .crosshair::before,
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            background: #00d4ff;
+        }
+        
+        .crosshair::before {
+            width: 20px;
+            height: 2px;
+            left: -10px;
+            top: -1px;
+        }
+        
+        .crosshair::after {
+            width: 2px;
+            height: 20px;
+            left: -1px;
+            top: -10px;
+        }
+        
+        .globe-mode-indicator {
+            position: fixed;
+            top: 75px;
+            left: 20px;
+            padding: 8px 16px;
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            border-radius: 20px;
+            font-size: 10px;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .mode-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00d4ff;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="crosshair"></div>
+    
+    <!-- Header -->
+    <div class="ui-overlay header">
+        <div>
+            <div class="logo">BLACKROAD EARTH</div>
+            <div class="logo-sub">STREET-LEVEL EXPLORATION</div>
+        </div>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value highlight" id="zoom-level">1.0</div>
+                <div class="stat-label">Zoom Level</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="altitude">10,000 km</div>
+                <div class="stat-label">Altitude</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="resolution">10 km/px</div>
+                <div class="stat-label">Resolution</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="coordinates">0°, 0°</div>
+                <div class="stat-label">Center</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="globe-mode-indicator">
+        <div class="mode-dot"></div>
+        <span id="view-mode">GLOBE VIEW</span>
+    </div>
+    
+    <!-- Search -->
+    <div class="ui-overlay search-container">
+        <input type="text" class="search-input" id="search" placeholder="Search any location... (Times Square, Eiffel Tower, 123 Main St)">
+        <button class="search-btn" id="search-btn">FLY TO</button>
+    </div>
+    
+    <!-- Zoom Panel -->
+    <div class="ui-overlay zoom-panel">
+        <div class="zoom-title">DETAIL LEVEL</div>
+        <div class="zoom-bar">
+            <div class="zoom-fill" id="zoom-fill" style="width: 5%"></div>
+        </div>
+        <div class="zoom-labels">
+            <span>Space</span>
+            <span>Street</span>
+        </div>
+        <div class="scale-list">
+            <div class="scale-item active" data-min="0" data-max="3">
+                <span class="scale-icon">🌍</span>
+                <span>Planet View</span>
+            </div>
+            <div class="scale-item" data-min="3" data-max="6">
+                <span class="scale-icon">🗺️</span>
+                <span>Continent</span>
+            </div>
+            <div class="scale-item" data-min="6" data-max="10">
+                <span class="scale-icon">🏔️</span>
+                <span>Region / Country</span>
+            </div>
+            <div class="scale-item" data-min="10" data-max="14">
+                <span class="scale-icon">🏙️</span>
+                <span>City</span>
+            </div>
+            <div class="scale-item" data-min="14" data-max="17">
+                <span class="scale-icon">🏘️</span>
+                <span>Neighborhood</span>
+            </div>
+            <div class="scale-item" data-min="17" data-max="20">
+                <span class="scale-icon">🏠</span>
+                <span>Street Level</span>
+            </div>
+            <div class="scale-item" data-min="20" data-max="24">
+                <span class="scale-icon">🚶</span>
+                <span>Building Detail</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Info Panel -->
+    <div class="ui-overlay info-panel">
+        <div class="info-section">
+            <div class="info-label">Location</div>
+            <div class="info-value large" id="location-name">Earth</div>
+        </div>
+        <div class="info-section">
+            <div class="info-label">Latitude</div>
+            <div class="info-value" id="lat">0.000000°</div>
+        </div>
+        <div class="info-section">
+            <div class="info-label">Longitude</div>
+            <div class="info-value" id="lng">0.000000°</div>
+        </div>
+        <div class="info-section">
+            <div class="info-label">Tile Coordinates</div>
+            <div class="info-value" id="tile-coords">z0 / x0 / y0</div>
+        </div>
+    </div>
+    
+    <!-- Layer Selection -->
+    <div class="ui-overlay layer-panel">
+        <button class="layer-btn active" data-style="satellite">🛰️ Satellite</button>
+        <button class="layer-btn" data-style="streets">🗺️ Streets</button>
+        <button class="layer-btn" data-style="dark">🌙 Dark</button>
+        <button class="layer-btn" data-style="terrain">🏔️ Terrain</button>
+        <button class="layer-btn" data-style="hybrid">🔀 Hybrid</button>
+    </div>
+    
+    <!-- Quick Locations -->
+    <div class="ui-overlay quick-locations">
+        <button class="quick-btn" data-lat="40.7580" data-lng="-73.9855" data-zoom="18">Times Square <span>NYC</span></button>
+        <button class="quick-btn" data-lat="48.8584" data-lng="2.2945" data-zoom="18">Eiffel Tower <span>Paris</span></button>
+        <button class="quick-btn" data-lat="35.6595" data-lng="139.7004" data-zoom="18">Shibuya Crossing <span>Tokyo</span></button>
+        <button class="quick-btn" data-lat="51.5007" data-lng="-0.1246" data-zoom="18">Big Ben <span>London</span></button>
+        <button class="quick-btn" data-lat="40.6892" data-lng="-74.0445" data-zoom="17">Statue of Liberty <span>NYC</span></button>
+        <button class="quick-btn" data-lat="37.8199" data-lng="-122.4783" data-zoom="16">Golden Gate <span>SF</span></button>
+    </div>
+    
+    <!-- Controls -->
+    <div class="ui-overlay controls">
+        <button class="ctrl-btn" id="btn-home" title="Home">🏠</button>
+        <button class="ctrl-btn" id="btn-north" title="Reset North">🧭</button>
+        <div class="divider"></div>
+        <button class="ctrl-btn" id="btn-zoom-in" title="Zoom In">+</button>
+        <button class="ctrl-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+        <div class="divider"></div>
+        <button class="ctrl-btn" id="btn-3d" title="3D Buildings">🏢</button>
+        <button class="ctrl-btn" id="btn-globe" title="Globe View">🌐</button>
+        <div class="divider"></div>
+        <button class="ctrl-btn" id="btn-locate" title="My Location">📍</button>
+    </div>
+    
+    <!-- Instructions -->
+    <div class="ui-overlay instructions">
+        <div><kbd>DRAG</kbd> Pan / Rotate</div>
+        <div><kbd>SCROLL</kbd> Zoom</div>
+        <div><kbd>CTRL+DRAG</kbd> Tilt</div>
+        <div><kbd>RIGHT-CLICK</kbd> Rotate</div>
+    </div>
+
+    <script>
+        // Map styles - using free tile providers
+        const STYLES = {
+            satellite: {
+                version: 8,
+                name: 'Satellite',
+                sources: {
+                    'satellite': {
+                        type: 'raster',
+                        tiles: [
+                            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                        ],
+                        tileSize: 256,
+                        maxzoom: 19,
+                        attribution: '© Esri'
+                    }
+                },
+                layers: [{
+                    id: 'satellite-layer',
+                    type: 'raster',
+                    source: 'satellite',
+                    minzoom: 0,
+                    maxzoom: 22
+                }],
+                glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'
+            },
+            streets: {
+                version: 8,
+                name: 'Streets',
+                sources: {
+                    'osm': {
+                        type: 'raster',
+                        tiles: [
+                            'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                        ],
+                        tileSize: 256,
+                        maxzoom: 19,
+                        attribution: '© OpenStreetMap'
+                    }
+                },
+                layers: [{
+                    id: 'osm-layer',
+                    type: 'raster',
+                    source: 'osm'
+                }],
+                glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'
+            },
+            dark: {
+                version: 8,
+                name: 'Dark',
+                sources: {
+                    'carto-dark': {
+                        type: 'raster',
+                        tiles: [
+                            'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                            'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                            'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+                        ],
+                        tileSize: 256,
+                        maxzoom: 20,
+                        attribution: '© CARTO'
+                    }
+                },
+                layers: [{
+                    id: 'carto-layer',
+                    type: 'raster',
+                    source: 'carto-dark'
+                }],
+                glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'
+            },
+            terrain: {
+                version: 8,
+                name: 'Terrain',
+                sources: {
+                    'stamen': {
+                        type: 'raster',
+                        tiles: [
+                            'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.jpg'
+                        ],
+                        tileSize: 256,
+                        maxzoom: 18,
+                        attribution: '© Stadia Maps'
+                    }
+                },
+                layers: [{
+                    id: 'stamen-layer',
+                    type: 'raster',
+                    source: 'stamen'
+                }],
+                glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'
+            },
+            hybrid: {
+                version: 8,
+                name: 'Hybrid',
+                sources: {
+                    'hybrid': {
+                        type: 'raster',
+                        tiles: [
+                            'https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                            'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+                        ],
+                        tileSize: 256,
+                        maxzoom: 21,
+                        attribution: '© Google'
+                    }
+                },
+                layers: [{
+                    id: 'hybrid-layer',
+                    type: 'raster',
+                    source: 'hybrid'
+                }],
+                glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'
+            }
+        };
+
+        let map;
+        let currentStyle = 'satellite';
+        let show3DBuildings = false;
+
+        function init() {
+            map = new maplibregl.Map({
+                container: 'map',
+                style: STYLES.satellite,
+                center: [0, 20],
+                zoom: 1.5,
+                minZoom: 0,
+                maxZoom: 22,
+                projection: 'globe',
+                antialias: true
+            });
+
+            // Set atmosphere/fog for globe view
+            map.on('style.load', () => {
+                map.setFog({
+                    color: 'rgb(186, 210, 235)',
+                    'high-color': 'rgb(36, 92, 223)',
+                    'horizon-blend': 0.02,
+                    'space-color': 'rgb(5, 5, 15)',
+                    'star-intensity': 0.6
+                });
+            });
+
+            map.on('move', updateUI);
+            map.on('zoom', updateUI);
+            map.on('moveend', updateUI);
+
+            setupControls();
+            setupSearch();
+            setupLayers();
+            setupQuickLocations();
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            const zoom = map.getZoom();
+            const center = map.getCenter();
+            
+            // Update zoom display
+            document.getElementById('zoom-level').textContent = zoom.toFixed(1);
+            
+            // Update zoom bar
+            const zoomPercent = Math.min(100, (zoom / 22) * 100);
+            document.getElementById('zoom-fill').style.width = zoomPercent + '%';
+            
+            // Update altitude estimate
+            const altitude = getAltitudeFromZoom(zoom);
+            document.getElementById('altitude').textContent = formatAltitude(altitude);
+            
+            // Update resolution
+            const resolution = getResolutionFromZoom(zoom);
+            document.getElementById('resolution').textContent = resolution;
+            
+            // Update coordinates
+            document.getElementById('coordinates').textContent = 
+                `${center.lat.toFixed(2)}°, ${center.lng.toFixed(2)}°`;
+            document.getElementById('lat').textContent = 
+                `${Math.abs(center.lat).toFixed(6)}° ${center.lat >= 0 ? 'N' : 'S'}`;
+            document.getElementById('lng').textContent = 
+                `${Math.abs(center.lng).toFixed(6)}° ${center.lng >= 0 ? 'E' : 'W'}`;
+            
+            // Update tile coords
+            const tileX = Math.floor((center.lng + 180) / 360 * Math.pow(2, Math.floor(zoom)));
+            const tileY = Math.floor((1 - Math.log(Math.tan(center.lat * Math.PI / 180) + 
+                1 / Math.cos(center.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, Math.floor(zoom)));
+            document.getElementById('tile-coords').textContent = 
+                `z${Math.floor(zoom)} / x${tileX} / y${tileY}`;
+            
+            // Update scale indicators
+            document.querySelectorAll('.scale-item').forEach(item => {
+                const min = parseFloat(item.dataset.min);
+                const max = parseFloat(item.dataset.max);
+                item.classList.toggle('active', zoom >= min && zoom < max);
+            });
+            
+            // Update view mode
+            document.getElementById('view-mode').textContent = 
+                zoom < 5 ? 'GLOBE VIEW' : zoom < 14 ? 'MAP VIEW' : 'STREET VIEW';
+        }
+
+        function getAltitudeFromZoom(zoom) {
+            // Approximate altitude in meters based on zoom level
+            return 40075000 / Math.pow(2, zoom);
+        }
+
+        function formatAltitude(meters) {
+            if (meters > 1000000) return (meters / 1000000).toFixed(1) + ' Mm';
+            if (meters > 1000) return (meters / 1000).toFixed(1) + ' km';
+            if (meters > 1) return meters.toFixed(0) + ' m';
+            return (meters * 100).toFixed(0) + ' cm';
+        }
+
+        function getResolutionFromZoom(zoom) {
+            const metersPerPixel = 40075000 * Math.cos(map.getCenter().lat * Math.PI / 180) / 
+                (Math.pow(2, zoom) * 256);
+            
+            if (metersPerPixel > 1000) return `~${(metersPerPixel/1000).toFixed(0)} km/px`;
+            if (metersPerPixel > 1) return `~${metersPerPixel.toFixed(1)} m/px`;
+            return `~${(metersPerPixel * 100).toFixed(0)} cm/px`;
+        }
+
+        function setupControls() {
+            document.getElementById('btn-home').addEventListener('click', () => {
+                map.flyTo({ center: [0, 20], zoom: 1.5, pitch: 0, bearing: 0, duration: 2000 });
+            });
+
+            document.getElementById('btn-north').addEventListener('click', () => {
+                map.easeTo({ bearing: 0, pitch: 0, duration: 500 });
+            });
+
+            document.getElementById('btn-zoom-in').addEventListener('click', () => {
+                map.zoomIn({ duration: 300 });
+            });
+
+            document.getElementById('btn-zoom-out').addEventListener('click', () => {
+                map.zoomOut({ duration: 300 });
+            });
+
+            document.getElementById('btn-3d').addEventListener('click', function() {
+                this.classList.toggle('active');
+                if (this.classList.contains('active')) {
+                    map.easeTo({ pitch: 60, duration: 500 });
+                } else {
+                    map.easeTo({ pitch: 0, duration: 500 });
+                }
+            });
+
+            document.getElementById('btn-globe').addEventListener('click', function() {
+                map.flyTo({ center: [0, 20], zoom: 1.5, pitch: 0, bearing: 0, duration: 2000 });
+            });
+
+            document.getElementById('btn-locate').addEventListener('click', () => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        map.flyTo({
+                            center: [pos.coords.longitude, pos.coords.latitude],
+                            zoom: 17,
+                            duration: 2000
+                        });
+                        document.getElementById('location-name').textContent = 'Your Location';
+                    });
+                }
+            });
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('search');
+            const searchBtn = document.getElementById('search-btn');
+
+            const doSearch = async () => {
+                const query = searchInput.value.trim();
+                if (!query) return;
+
+                try {
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
+                    );
+                    const data = await response.json();
+
+                    if (data && data.length > 0) {
+                        const result = data[0];
+                        const lat = parseFloat(result.lat);
+                        const lon = parseFloat(result.lon);
+                        
+                        // Determine zoom based on type
+                        let zoom = 17;
+                        if (result.type === 'country') zoom = 5;
+                        else if (result.type === 'state') zoom = 7;
+                        else if (result.type === 'city' || result.type === 'town') zoom = 12;
+                        else if (result.type === 'suburb' || result.type === 'neighbourhood') zoom = 15;
+                        
+                        map.flyTo({
+                            center: [lon, lat],
+                            zoom: zoom,
+                            pitch: zoom > 15 ? 45 : 0,
+                            duration: 2500
+                        });
+                        
+                        document.getElementById('location-name').textContent = 
+                            result.display_name.split(',')[0];
+                    } else {
+                        document.getElementById('location-name').textContent = 'Not found';
+                    }
+                } catch (err) {
+                    console.error('Search error:', err);
+                }
+            };
+
+            searchBtn.addEventListener('click', doSearch);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') doSearch();
+            });
+        }
+
+        function setupLayers() {
+            document.querySelectorAll('.layer-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const styleName = btn.dataset.style;
+                    if (STYLES[styleName]) {
+                        // Save current position
+                        const center = map.getCenter();
+                        const zoom = map.getZoom();
+                        const pitch = map.getPitch();
+                        const bearing = map.getBearing();
+                        
+                        map.setStyle(STYLES[styleName]);
+                        
+                        // Restore position after style loads
+                        map.once('style.load', () => {
+                            map.jumpTo({ center, zoom, pitch, bearing });
+                            map.setFog({
+                                color: styleName === 'dark' ? 'rgb(20, 20, 30)' : 'rgb(186, 210, 235)',
+                                'high-color': styleName === 'dark' ? 'rgb(10, 20, 50)' : 'rgb(36, 92, 223)',
+                                'horizon-blend': 0.02,
+                                'space-color': 'rgb(5, 5, 15)',
+                                'star-intensity': 0.6
+                            });
+                        });
+                        
+                        document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentStyle = styleName;
+                    }
+                });
+            });
+        }
+
+        function setupQuickLocations() {
+            document.querySelectorAll('.quick-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const lat = parseFloat(btn.dataset.lat);
+                    const lng = parseFloat(btn.dataset.lng);
+                    const zoom = parseFloat(btn.dataset.zoom);
+                    
+                    map.flyTo({
+                        center: [lng, lat],
+                        zoom: zoom,
+                        pitch: 60,
+                        bearing: Math.random() * 60 - 30,
+                        duration: 3000
+                    });
+                    
+                    document.getElementById('location-name').textContent = 
+                        btn.textContent.split(' ')[0] + ' ' + (btn.textContent.split(' ')[1] || '');
+                });
+            });
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
