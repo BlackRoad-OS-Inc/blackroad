@@ -1,0 +1,35 @@
+# Python Dockerfile for BlackRoad Deploy
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy dependency files
+COPY requirements.txt* pyproject.toml* poetry.lock* Pipfile* ./
+
+# Install dependencies
+RUN if [ -f requirements.txt ]; then \
+        pip install --no-cache-dir -r requirements.txt; \
+    elif [ -f pyproject.toml ]; then \
+        pip install --no-cache-dir poetry && poetry install --no-dev; \
+    elif [ -f Pipfile ]; then \
+        pip install --no-cache-dir pipenv && pipenv install --system --deploy; \
+    fi
+
+# Copy application files
+COPY . .
+
+# Expose port
+EXPOSE ${PORT:-8000}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-8000}/health')" || exit 1
+
+# Start application (auto-detect framework)
+CMD if [ -f "manage.py" ]; then \
+        python manage.py runserver 0.0.0.0:${PORT:-8000}; \
+    elif [ -f "app.py" ] || [ -f "main.py" ]; then \
+        python -m uvicorn ${APP_MODULE:-app:app} --host 0.0.0.0 --port ${PORT:-8000}; \
+    else \
+        python -m gunicorn ${APP_MODULE:-app:app} -b 0.0.0.0:${PORT:-8000}; \
+    fi

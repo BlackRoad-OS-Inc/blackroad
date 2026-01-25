@@ -1,0 +1,25 @@
+# BlackRoad Deploy - Caddy Configuration
+# Reverse proxy for deployed applications
+
+{
+    # Disable automatic HTTPS (handled by Cloudflare)
+    auto_https off
+    admin off
+}
+
+# Default catch-all for deployed apps
+:8080 {
+    # Extract app name from Host header
+    # Format: app-name.blackroad.systems
+
+    @api host deploy-api.blackroad.systems
+    handle @api {
+        reverse_proxy api:3000
+    }
+
+    # Route to deployed containers
+    # This will be dynamically configured by the API
+    handle {
+        respond "BlackRoad Deploy - No deployment found" 404
+    }
+}

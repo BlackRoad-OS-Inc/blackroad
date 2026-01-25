@@ -1,0 +1,39 @@
+# Rust Dockerfile for BlackRoad Deploy
+FROM rust:1.75-slim AS builder
+
+WORKDIR /app
+
+# Copy manifests
+COPY Cargo.toml Cargo.lock ./
+
+# Build dependencies (cached layer)
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
+
+# Copy source code
+COPY . .
+
+# Build application
+RUN cargo build --release
+
+# Final stage
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/target/release/* ./
+
+# Expose port
+EXPOSE ${PORT:-8080}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
+
+# Run application
+CMD ["./main"]

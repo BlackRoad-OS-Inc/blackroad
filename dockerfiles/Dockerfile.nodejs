@@ -1,0 +1,23 @@
+# Node.js Dockerfile for BlackRoad Deploy
+FROM node:20-slim
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install --production
+
+# Copy application files
+COPY . .
+
+# Expose port
+EXPOSE ${PORT:-3000}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD node -e "require('http').get('http://localhost:${PORT:-3000}/health', (r) => {if (r.statusCode !== 200) throw new Error()})" || exit 1
+
+# Start application
+CMD ["npm", "start"]
