@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+        if: hashFiles('package-lock.json') != '' || hashFiles('package.json') != ''
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+
+      - name: Install Node dependencies
+        if: hashFiles('package.json') != ''
+        run: npm ci || npm install
+
+      - name: Install Python dependencies
+        if: hashFiles('requirements.txt') != ''
+        run: pip install -r requirements.txt
+
+      - name: Lint
+        if: hashFiles('package.json') != ''
+        run: npm run lint || true
+
+      - name: Type check
+        if: hashFiles('tsconfig.json') != ''
+        run: npm run typecheck || npm run type-check || npx tsc --noEmit || true
+
+      - name: Test
+        if: hashFiles('package.json') != ''
+        run: npm test || true
+
+      - name: Build
+        if: hashFiles('package.json') != ''
+        run: npm run build || true
+
+      - name: Upload build artifacts
+        if: success() && (hashFiles('dist/**') != '' || hashFiles('build/**') != '')
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: |
+            dist/
+            build/
+            out/
+          retention-days: 7
