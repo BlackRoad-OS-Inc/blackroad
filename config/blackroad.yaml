@@ -1,0 +1,86 @@
+# 🌌 BlackRoad AI - Qwen2.5 Configuration
+
+# Model Settings
+model:
+  name: "Qwen/Qwen2.5-7B"
+  license: "Apache 2.0"
+  quantization: "8bit"  # Options: none, 8bit, 4bit
+  device: "auto"  # auto, cuda, cpu
+  max_memory: "8GB"
+
+# Server Settings
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  reload: false
+
+# Memory Integration
+memory:
+  enabled: true
+  script_path: "/Users/alexa/memory-system.sh"
+  collaboration_enabled: true
+  auto_broadcast: true
+  context_window: 10  # Number of recent interactions to include
+
+# Features
+features:
+  emoji_support: true
+  action_execution: true
+  streaming: true
+  batch_processing: false
+
+# Actions
+actions:
+  enabled: true
+  whitelist:
+    - "memory_log"
+    - "memory_check"
+    - "collaboration_status"
+  blacklist:
+    - "rm"
+    - "shutdown"
+    - "reboot"
+
+# API Settings
+api:
+  cors_enabled: true
+  rate_limit: 100  # requests per minute
+  max_tokens: 2048
+  default_temperature: 0.7
+
+# Deployment
+deployment:
+  cluster_mode: true
+  nodes:
+    - name: "lucidia"
+      ip: "192.168.4.38"
+      port: 8000
+    - name: "aria"
+      ip: "192.168.4.64"
+      port: 8000
+    - name: "alice"
+      ip: "192.168.4.49"
+      port: 8000
+    - name: "octavia"
+      ip: "192.168.4.74"
+      port: 8000
+    - name: "shellfish"
+      ip: "174.138.44.45"
+      port: 8000
+
+# Monitoring
+monitoring:
+  health_check_interval: 30  # seconds
+  metrics_enabled: true
+  prometheus_port: 9090
+
+# BlackRoad Brand
+brand:
+  colors:
+    hot_pink: "#FF1D6C"
+    amber: "#F5A623"
+    electric_blue: "#2979FF"
+    violet: "#9C27B0"
+  emoji_prefix: "🖤🛣️"
+  signature: "Built with BlackRoad Vision"

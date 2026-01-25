@@ -1,0 +1,53 @@
+# 🌌 BlackRoad AI - Qwen2.5 Docker Compose
+version: '3.8'
+
+services:
+  qwen-model:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blackroad-ai-qwen
+    image: blackroad-ai-qwen:latest
+    ports:
+      - "8000:8000"
+      - "9090:9090"  # Prometheus metrics
+    volumes:
+      - ./models:/app/models  # Model cache
+      - ./config:/app/config  # Configuration
+      - ./logs:/app/logs  # Logs
+      - /Users/alexa:/host-home:ro  # Read-only access to home for memory scripts
+    environment:
+      - MODEL_NAME=Qwen/Qwen2.5-7B
+      - BLACKROAD_MEMORY_ENABLED=true
+      - ENABLE_EMOJI_SUPPORT=true
+      - ENABLE_ACTION_EXECUTION=true
+      - MEMORY_SCRIPT_PATH=/host-home/memory-system.sh
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.blackroad.service=ai-model"
+      - "com.blackroad.model=qwen2.5"
+      - "com.blackroad.license=apache-2.0"
+
+  # Optional: Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: blackroad-ai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+
+networks:
+  default:
+    name: blackroad-ai-network
