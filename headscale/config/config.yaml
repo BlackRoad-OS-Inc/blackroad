@@ -1,0 +1,73 @@
+# Headscale Configuration for BlackRoad OS
+# https://github.com/juanfont/headscale
+
+server_url: https://mesh.blackroad.io
+
+listen_addr: 0.0.0.0:8080
+metrics_listen_addr: 0.0.0.0:9090
+grpc_listen_addr: 0.0.0.0:50443
+
+# Allow connection without TLS verification (behind Cloudflare Tunnel)
+grpc_allow_insecure: false
+
+# Private key for machine registration
+private_key_path: /var/lib/headscale/private.key
+
+# Noise protocol for encrypted channels
+noise:
+  private_key_path: /var/lib/headscale/noise_private.key
+
+# IP allocation
+ip_prefixes:
+  - fd7a:115c:a1e0::/48  # IPv6 ULA
+  - 100.64.0.0/10        # IPv4 CGNAT space (same as Tailscale)
+
+# Regions for DERP relay servers
+derp:
+  server:
+    enabled: false
+
+  urls:
+    - https://controlplane.tailscale.com/derpmap/default
+
+  auto_update_enabled: true
+  update_frequency: 24h
+
+# Database
+database:
+  type: sqlite3
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
+
+# DNS configuration
+dns_config:
+  override_local_dns: true
+  nameservers:
+    - 1.1.1.1
+    - 1.0.0.1
+  domains: []
+  magic_dns: true
+  base_domain: blackroad.local
+
+# ACLs (Access Control Lists)
+acl_policy_path: ""
+
+# Logging
+log:
+  format: text
+  level: info
+
+# OIDC (for Keycloak integration later)
+oidc:
+  issuer: ""
+  client_id: ""
+  client_secret: ""
+
+# Ephemeral nodes
+ephemeral_node_inactivity_timeout: 30m
+
+# Node update check
+node_update_check_interval: 10s
+
+# Disable Tailscale branding
+disable_check_updates: false

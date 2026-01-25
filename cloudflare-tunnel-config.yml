@@ -1,0 +1,58 @@
+# Cloudflare Tunnel Configuration for BlackRoad Priority Stack
+# This file configures public access to all four priority forks
+
+# Tunnel credentials will be at: ~/.cloudflared/<tunnel-id>.json
+# Set this after creating the tunnel
+tunnel: 8ae67ab0-71fb-4461-befc-a91302369a7e
+credentials-file: /Users/alexa/.cloudflared/8ae67ab0-71fb-4461-befc-a91302369a7e.json
+
+# Ingress rules - maps public hostnames to local services
+ingress:
+  # Headscale - Mesh VPN Control Plane
+  - hostname: mesh.blackroad.io
+    service: http://localhost:8080
+    originRequest:
+      noTLSVerify: true
+      connectTimeout: 30s
+
+  # Headscale UI
+  - hostname: mesh-ui.blackroad.io
+    service: http://localhost:8081
+    originRequest:
+      noTLSVerify: true
+
+  # Keycloak - Identity Provider
+  - hostname: identity.blackroad.io
+    service: http://localhost:8082
+    originRequest:
+      noTLSVerify: true
+      connectTimeout: 60s
+
+  # vLLM - AI Inference (GPU)
+  - hostname: ai.blackroad.io
+    service: http://localhost:8083
+    originRequest:
+      noTLSVerify: true
+      connectTimeout: 120s
+
+  # vLLM - AI Inference (CPU fallback)
+  - hostname: ai-cpu.blackroad.io
+    service: http://localhost:8084
+    originRequest:
+      noTLSVerify: true
+      connectTimeout: 120s
+
+  # EspoCRM - Customer Relationship Management
+  - hostname: crm.blackroad.io
+    service: http://localhost:8085
+    originRequest:
+      noTLSVerify: true
+
+  # Catch-all - return 404 for unknown hosts
+  - service: http_status:404
+
+# Logging
+loglevel: info
+
+# Metrics
+metrics: localhost:9091
