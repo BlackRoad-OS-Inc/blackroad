@@ -1,0 +1,322 @@
+# API Overview
+
+The BlackRoad OS API provides programmatic access to all platform features.
+
+## Base URL
+
+```
+https://api.blackroad.io/v1
+```
+
+For self-hosted instances, use your own domain:
+
+```
+https://your-instance.com/api/v1
+```
+
+## Authentication
+
+All API requests require authentication via API key:
+
+```bash
+curl https://api.blackroad.io/v1/conversations \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+See [Authentication](/api/authentication) for details.
+
+## REST Principles
+
+The BlackRoad OS API follows REST conventions:
+
+- **GET** — Retrieve resources
+- **POST** — Create resources
+- **PATCH** — Update resources
+- **DELETE** — Delete resources
+
+## Response Format
+
+All responses are JSON:
+
+```json
+{
+  "data": {
+    "id": "conv_abc123",
+    "agent": "lucidia",
+    "created_at": "2025-12-22T23:50:00Z"
+  }
+}
+```
+
+### Error Responses
+
+Errors include a `code` and `message`:
+
+```json
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "Missing required parameter: agent",
+    "param": "agent"
+  }
+}
+```
+
+See [Error Codes](/api/errors) for full list.
+
+## Pagination
+
+List endpoints support pagination:
+
+```bash
+GET /v1/conversations?limit=10&offset=20
+```
+
+Response includes pagination metadata:
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "total": 150,
+    "limit": 10,
+    "offset": 20,
+    "hasMore": true
+  }
+}
+```
+
+## Versioning
+
+The API is versioned via URL path (`/v1`).
+
+**Current version**: `v1`
+
+Breaking changes will increment the version number. We'll maintain old versions for at least 12 months.
+
+## Rate Limits
+
+Default rate limits:
+
+| Plan | Rate Limit |
+|------|------------|
+| **Free** | 60 requests/minute |
+| **Pro** | 600 requests/minute |
+| **Enterprise** | Custom |
+
+Headers include rate limit info:
+
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1640198400
+```
+
+See [Rate Limits](/api/rate-limits) for details.
+
+## SDKs
+
+Official SDKs available:
+
+- [JavaScript/TypeScript](/sdk/javascript)
+- [Python](/sdk/python)
+
+Community SDKs:
+
+- Go (community-maintained)
+- Rust (coming soon)
+
+## Core Resources
+
+### Conversations
+
+Create and manage conversations with agents.
+
+```typescript
+POST   /v1/conversations
+GET    /v1/conversations/:id
+PATCH  /v1/conversations/:id
+DELETE /v1/conversations/:id
+GET    /v1/conversations
+```
+
+[Full Documentation](/api/conversations)
+
+### Agents
+
+Manage custom agents.
+
+```typescript
+POST   /v1/agents
+GET    /v1/agents/:id
+PATCH  /v1/agents/:id
+DELETE /v1/agents/:id
+GET    /v1/agents
+```
+
+[Full Documentation](/api/agents)
+
+### Intents
+
+Submit and track intents.
+
+```typescript
+POST   /v1/intents
+GET    /v1/intents/:id
+GET    /v1/intents
+```
+
+[Full Documentation](/api/intents)
+
+### Governance
+
+Manage delegations and policies.
+
+```typescript
+POST   /v1/delegations
+GET    /v1/delegations/:id
+DELETE /v1/delegations/:id
+GET    /v1/delegations
+
+POST   /v1/policies
+GET    /v1/policies/:id
+PATCH  /v1/policies/:id
+DELETE /v1/policies/:id
+GET    /v1/policies
+```
+
+[Full Documentation](/api/governance)
+
+### Ledger
+
+Query audit trail.
+
+```typescript
+GET /v1/ledger
+GET /v1/ledger/:id
+```
+
+[Full Documentation](/api/ledger)
+
+## Quick Example
+
+Create a conversation and send a message:
+
+```typescript
+// 1. Create conversation
+const response = await fetch('https://api.blackroad.io/v1/conversations', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    agent: 'lucidia',
+    context: {
+      user: 'user_123'
+    }
+  })
+});
+
+const { data: conversation } = await response.json();
+
+// 2. Send message
+const messageResponse = await fetch(
+  `https://api.blackroad.io/v1/conversations/${conversation.id}/messages`,
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      content: 'Hello, Lucidia!'
+    })
+  }
+);
+
+const { data: message } = await messageResponse.json();
+console.log(message.response);
+```
+
+## Webhooks
+
+Receive real-time notifications:
+
+```typescript
+POST /v1/webhooks
+```
+
+Configure webhooks to get notified when:
+- Intents are created
+- Actions are completed
+- Approvals are needed
+- Errors occur
+
+[Webhook Guide](/guides/webhooks)
+
+## Security Best Practices
+
+### API Key Management
+
+- ✅ Store keys in environment variables
+- ✅ Rotate keys regularly
+- ✅ Use different keys for dev/staging/prod
+- ❌ Never commit keys to version control
+- ❌ Never expose keys in client-side code
+
+### HTTPS Only
+
+All API requests **must** use HTTPS. HTTP requests will be rejected.
+
+### Request Signing (Optional)
+
+For high-security environments, sign requests with HMAC:
+
+```bash
+X-Signature: sha256=abc123...
+```
+
+[Request Signing Guide](/api/authentication#request-signing)
+
+## Testing
+
+### Sandbox Environment
+
+Test API without affecting production:
+
+```
+https://api-sandbox.blackroad.io/v1
+```
+
+Sandbox features:
+- Separate API keys
+- No rate limits
+- Mock external services
+- Reset data anytime
+
+### Example Requests
+
+We provide ready-to-run examples:
+
+```bash
+# Install the CLI
+npm install -g @blackroad/cli
+
+# Run example
+blackroad example create-conversation
+```
+
+## Support
+
+- **API Status**: [status.blackroad.io](https://status.blackroad.io)
+- **Changelog**: [/reference/changelog](/reference/changelog)
+- **Discord**: Community support
+- **Email**: api-support@blackroad.io
+
+## Next Steps
+
+- [Authentication Setup](/api/authentication)
+- [Create Your First Request](/quickstart/first-conversation)
+- [Explore SDKs](/sdk/javascript)
+- [Webhook Integration](/guides/webhooks)
