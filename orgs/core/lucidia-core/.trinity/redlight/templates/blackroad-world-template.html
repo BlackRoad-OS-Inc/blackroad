@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad World</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000; 
+            overflow: hidden; 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        #info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        #info h1 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #FF1D6C, #F5A623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        #info p {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        #stats {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            font-size: 13px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 4px 0;
+        }
+        .stat-label { opacity: 0.6; }
+        .stat-value { font-weight: 600; }
+        
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+        .btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #FF1D6C; transform: scale(1.1); }
+        .btn.active { background: #FF1D6C; }
+        
+        #biome-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 16px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            max-width: 280px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+        }
+        #biome-info.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #biome-info h2 {
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+        #biome-info p {
+            font-size: 12px;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1>🌍 BlackRoad World</h1>
+        <p>Drag to rotate • Scroll to zoom • Click regions</p>
+    </div>
+    
+    <div id="stats">
+        <div class="stat-row">
+            <span class="stat-label">Biomes</span>
+            <span class="stat-value">10</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Regions</span>
+            <span class="stat-value">50</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Trees</span>
+            <span class="stat-value" id="treeCount">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">FPS</span>
+            <span class="stat-value" id="fps">60</span>
+        </div>
+    </div>
+    
+    <div id="controls">
+        <button class="btn active" id="btnRotate">🔄</button>
+        <button class="btn active" id="btnClouds">☁️</button>
+        <button class="btn" id="btnNight">🌙</button>
+    </div>
+    
+    <div id="biome-info">
+        <h2 id="biomeName">🌴 Tropical Rainforest</h2>
+        <p id="biomeDesc">The Amazon Basin - world's largest rainforest</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    (function() {
+        // === CONFIG ===
+        const RADIUS = 100;
+        
+        // === BIOMES ===
+        const BIOMES = [
+            // Rainforests
+            { name: "Amazon Rainforest", lat: -3, lng: -60, r: 15, type: "🌴 Tropical Rainforest", color: 0x0d5c0d, desc: "World's largest rainforest, containing 10% of all species on Earth" },
+            { name: "Congo Basin", lat: 0, lng: 22, r: 12, type: "🌴 Tropical Rainforest", color: 0x0d5c0d, desc: "Africa's largest rainforest and the second largest in the world" },
+            { name: "Borneo Rainforest", lat: 1, lng: 115, r: 8, type: "🌴 Tropical Rainforest", color: 0x0d5c0d, desc: "Ancient rainforest home to orangutans and pygmy elephants" },
+            
+            // Temperate Forests
+            { name: "Pacific Northwest", lat: 47, lng: -122, r: 8, type: "🌲 Temperate Forest", color: 0x228b22, desc: "Misty forests of giant redwoods and Douglas firs" },
+            { name: "European Forest", lat: 50, lng: 10, r: 10, type: "🌲 Temperate Forest", color: 0x228b22, desc: "Ancient woodlands spanning Germany, France and Poland" },
+            { name: "East Asian Forest", lat: 35, lng: 138, r: 7, type: "🌲 Temperate Forest", color: 0x228b22, desc: "Japanese forests famous for cherry blossoms and maples" },
+            { name: "Appalachian Forest", lat: 37, lng: -80, r: 8, type: "🌲 Temperate Forest", color: 0x228b22, desc: "Ancient mountains with stunning fall foliage" },
+            
+            // Boreal/Taiga
+            { name: "Canadian Boreal", lat: 58, lng: -100, r: 20, type: "🌲 Boreal Taiga", color: 0x1a4a1a, desc: "World's largest intact forest ecosystem" },
+            { name: "Siberian Taiga", lat: 62, lng: 100, r: 25, type: "🌲 Boreal Taiga", color: 0x1a4a1a, desc: "Largest terrestrial biome, spanning Russia" },
+            { name: "Scandinavian Taiga", lat: 64, lng: 20, r: 10, type: "🌲 Boreal Taiga", color: 0x1a4a1a, desc: "Northern forests of Norway, Sweden, Finland" },
+            
+            // Tundra
+            { name: "Arctic Tundra", lat: 72, lng: -100, r: 18, type: "❄️ Tundra", color: 0x8fbc8f, desc: "Frozen treeless plains with permafrost" },
+            { name: "Siberian Tundra", lat: 72, lng: 140, r: 16, type: "❄️ Tundra", color: 0x8fbc8f, desc: "Vast frozen expanse of northern Russia" },
+            
+            // Deserts
+            { name: "Sahara Desert", lat: 24, lng: 10, r: 22, type: "🏜️ Hot Desert", color: 0xc2b280, desc: "World's largest hot desert, size of the USA" },
+            { name: "Arabian Desert", lat: 23, lng: 50, r: 12, type: "🏜️ Hot Desert", color: 0xc2b280, desc: "Sandy deserts of the Arabian Peninsula" },
+            { name: "Australian Outback", lat: -24, lng: 135, r: 18, type: "🏜️ Hot Desert", color: 0xc2b280, desc: "Red desert heart of Australia" },
+            { name: "Gobi Desert", lat: 43, lng: 105, r: 12, type: "🏔️ Cold Desert", color: 0xa09070, desc: "Cold desert spanning Mongolia and China" },
+            { name: "Atacama Desert", lat: -24, lng: -69, r: 6, type: "🏜️ Hot Desert", color: 0xc2b280, desc: "Driest place on Earth" },
+            { name: "Sonoran Desert", lat: 32, lng: -112, r: 7, type: "🏜️ Hot Desert", color: 0xc2b280, desc: "Home to the iconic saguaro cactus" },
+            
+            // Savanna
+            { name: "Serengeti", lat: -3, lng: 35, r: 10, type: "🦁 Savanna", color: 0xbdb76b, desc: "Famous for the great wildebeest migration" },
+            { name: "Brazilian Cerrado", lat: -15, lng: -48, r: 12, type: "🦁 Savanna", color: 0xbdb76b, desc: "World's most biodiverse savanna" },
+            { name: "Australian Savanna", lat: -16, lng: 135, r: 12, type: "🦁 Savanna", color: 0xbdb76b, desc: "Tropical woodlands of northern Australia" },
+            
+            // Grasslands
+            { name: "Great Plains", lat: 42, lng: -100, r: 14, type: "🌾 Grassland", color: 0x9acd32, desc: "North American prairie, once home to millions of bison" },
+            { name: "Eurasian Steppe", lat: 48, lng: 65, r: 18, type: "🌾 Grassland", color: 0x9acd32, desc: "Vast grasslands from Ukraine to Mongolia" },
+            { name: "Pampas", lat: -35, lng: -62, r: 10, type: "🌾 Grassland", color: 0x9acd32, desc: "Fertile grasslands of Argentina" },
+            
+            // Mountains
+            { name: "Himalayas", lat: 28, lng: 85, r: 12, type: "⛰️ Mountain", color: 0x696969, desc: "World's highest peaks including Mount Everest" },
+            { name: "Rocky Mountains", lat: 45, lng: -110, r: 10, type: "⛰️ Mountain", color: 0x696969, desc: "North America's great mountain spine" },
+            { name: "Andes Mountains", lat: -20, lng: -68, r: 12, type: "⛰️ Mountain", color: 0x696969, desc: "World's longest continental mountain range" },
+            { name: "European Alps", lat: 46, lng: 10, r: 6, type: "⛰️ Mountain", color: 0x696969, desc: "Iconic peaks of central Europe" },
+            { name: "Tibetan Plateau", lat: 33, lng: 90, r: 14, type: "⛰️ Mountain", color: 0x696969, desc: "World's highest and largest plateau" },
+            
+            // Polar
+            { name: "Antarctica", lat: -82, lng: 0, r: 28, type: "🧊 Polar Ice", color: 0xf0f8ff, desc: "Coldest, driest, windiest continent on Earth" },
+            { name: "Greenland", lat: 72, lng: -40, r: 14, type: "🧊 Polar Ice", color: 0xf0f8ff, desc: "World's largest island, mostly covered in ice" },
+            { name: "Arctic Ice", lat: 85, lng: 0, r: 18, type: "🧊 Polar Ice", color: 0xf0f8ff, desc: "Frozen Arctic Ocean, home to polar bears" },
+            
+            // Wetlands
+            { name: "Pantanal", lat: -18, lng: -57, r: 8, type: "🐊 Wetland", color: 0x2f4f4f, desc: "World's largest tropical wetland" },
+            { name: "Everglades", lat: 26, lng: -81, r: 5, type: "🐊 Wetland", color: 0x2f4f4f, desc: "River of grass, home to alligators" },
+            { name: "Okavango Delta", lat: -19, lng: 23, r: 6, type: "🐊 Wetland", color: 0x2f4f4f, desc: "Africa's last Eden, an inland delta" },
+            
+            // Mediterranean
+            { name: "Mediterranean Basin", lat: 38, lng: 15, r: 10, type: "🫒 Mediterranean", color: 0x6b8e23, desc: "Olive groves and vineyards around the Med" },
+            { name: "California", lat: 36, lng: -120, r: 6, type: "🫒 Mediterranean", color: 0x6b8e23, desc: "Chaparral shrublands of the Golden State" },
+            
+            // Extra regions
+            { name: "Madagascar", lat: -20, lng: 47, r: 7, type: "🌴 Tropical Rainforest", color: 0x0d5c0d, desc: "Island with 90% endemic species" },
+            { name: "New Zealand", lat: -42, lng: 172, r: 5, type: "🌲 Temperate Forest", color: 0x228b22, desc: "Ancient forests with giant ferns" },
+            { name: "Patagonia", lat: -48, lng: -72, r: 8, type: "⛰️ Mountain", color: 0x696969, desc: "Dramatic peaks and glaciers of South America" },
+            { name: "Alaska", lat: 64, lng: -150, r: 12, type: "🌲 Boreal Taiga", color: 0x1a4a1a, desc: "Last great wilderness of North America" },
+            { name: "Iceland", lat: 65, lng: -18, r: 4, type: "❄️ Tundra", color: 0x8fbc8f, desc: "Land of fire and ice" },
+            { name: "Kalahari", lat: -24, lng: 22, r: 10, type: "🏜️ Hot Desert", color: 0xc2b280, desc: "Southern African semi-arid savanna" },
+            { name: "Mekong Delta", lat: 10, lng: 106, r: 4, type: "🐊 Wetland", color: 0x2f4f4f, desc: "Rice paddies and river systems of Vietnam" },
+            { name: "Scottish Highlands", lat: 57, lng: -5, r: 4, type: "🌾 Grassland", color: 0x9acd32, desc: "Rugged moorlands and lochs" },
+            { name: "Namib Desert", lat: -24, lng: 15, r: 6, type: "🏜️ Hot Desert", color: 0xc2b280, desc: "Oldest desert in the world with giant dunes" },
+            { name: "Great Barrier Reef", lat: -18, lng: 147, r: 8, type: "🌊 Ocean", color: 0x0077be, desc: "World's largest coral reef system" },
+        ];
+        
+        // === SCENE ===
+        let scene, camera, renderer;
+        let earth, clouds, nightLayer;
+        let markers = [];
+        let treeCount = 0;
+        
+        let autoRotate = true;
+        let isNight = false;
+        let showClouds = true;
+        
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        let camTheta = 0, camPhi = Math.PI / 3, camDist = 280;
+        
+        let frameCount = 0, lastTime = performance.now();
+        
+        // === INIT ===
+        function init() {
+            scene = new THREE.Scene();
+            
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+            updateCamera();
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
+            
+            // Lights
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(300, 200, 300);
+            scene.add(sun);
+            scene.add(new THREE.AmbientLight(0x404060, 0.4));
+            window.sunLight = sun;
+            
+            // Stars
+            createStars();
+            
+            // Load textures then build
+            loadTextures();
+            
+            // Events
+            window.addEventListener('resize', onResize);
+            renderer.domElement.addEventListener('mousedown', e => { isDragging = true; prevMouse = {x: e.clientX, y: e.clientY}; });
+            renderer.domElement.addEventListener('mousemove', onDrag);
+            renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+            renderer.domElement.addEventListener('wheel', e => { camDist = Math.max(150, Math.min(500, camDist + e.deltaY * 0.2)); updateCamera(); });
+            renderer.domElement.addEventListener('click', onClick);
+            
+            // Touch
+            renderer.domElement.addEventListener('touchstart', e => { isDragging = true; prevMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY}; }, {passive: true});
+            renderer.domElement.addEventListener('touchmove', e => {
+                if (!isDragging) return;
+                const dx = e.touches[0].clientX - prevMouse.x;
+                const dy = e.touches[0].clientY - prevMouse.y;
+                camTheta -= dx * 0.005;
+                camPhi = Math.max(0.3, Math.min(2.8, camPhi + dy * 0.005));
+                updateCamera();
+                prevMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+            }, {passive: true});
+            renderer.domElement.addEventListener('touchend', () => isDragging = false);
+            
+            // Buttons
+            document.getElementById('btnRotate').onclick = () => {
+                autoRotate = !autoRotate;
+                document.getElementById('btnRotate').classList.toggle('active', autoRotate);
+            };
+            document.getElementById('btnClouds').onclick = () => {
+                showClouds = !showClouds;
+                if (clouds) clouds.visible = showClouds;
+                document.getElementById('btnClouds').classList.toggle('active', showClouds);
+            };
+            document.getElementById('btnNight').onclick = () => {
+                isNight = !isNight;
+                if (nightLayer) nightLayer.material.opacity = isNight ? 0.8 : 0;
+                window.sunLight.intensity = isNight ? 0.15 : 1.2;
+                document.getElementById('btnNight').classList.toggle('active', isNight);
+            };
+        }
+        
+        function createStars() {
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(5000 * 3);
+            for (let i = 0; i < 5000; i++) {
+                const r = 800 + Math.random() * 500;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                pos[i*3+2] = r * Math.cos(phi);
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 1 })));
+        }
+        
+        function loadTextures() {
+            const loader = new THREE.TextureLoader();
+            const textures = {};
+            let loaded = 0;
+            
+            const urls = {
+                earth: 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+                clouds: 'https://unpkg.com/three-globe/example/img/earth-clouds.png',
+                night: 'https://unpkg.com/three-globe/example/img/earth-night.jpg',
+                bump: 'https://unpkg.com/three-globe/example/img/earth-topology.png'
+            };
+            
+            Object.entries(urls).forEach(([key, url]) => {
+                loader.load(url, tex => {
+                    textures[key] = tex;
+                    loaded++;
+                    if (loaded === 4) buildWorld(textures);
+                }, undefined, () => {
+                    loaded++;
+                    if (loaded === 4) buildWorld(textures);
+                });
+            });
+        }
+        
+        function buildWorld(tex) {
+            // Earth
+            const earthGeo = new THREE.SphereGeometry(RADIUS, 64, 64);
+            earth = new THREE.Mesh(earthGeo, new THREE.MeshPhongMaterial({
+                map: tex.earth,
+                bumpMap: tex.bump,
+                bumpScale: 0.5
+            }));
+            scene.add(earth);
+            
+            // Night lights
+            nightLayer = new THREE.Mesh(earthGeo.clone(), new THREE.MeshBasicMaterial({
+                map: tex.night,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0
+            }));
+            nightLayer.scale.setScalar(1.002);
+            scene.add(nightLayer);
+            
+            // Clouds
+            clouds = new THREE.Mesh(
+                new THREE.SphereGeometry(RADIUS + 1, 48, 48),
+                new THREE.MeshPhongMaterial({
+                    map: tex.clouds,
+                    transparent: true,
+                    opacity: 0.3,
+                    depthWrite: false
+                })
+            );
+            scene.add(clouds);
+            
+            // Atmosphere glow
+            const atmoMat = new THREE.ShaderMaterial({
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.6 - dot(vNormal, vec3(0, 0, 1)), 2.0);
+                        gl_FragColor = vec4(0.3, 0.6, 1.0, intensity * 0.4);
+                    }
+                `,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                transparent: true
+            });
+            scene.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS + 10, 32, 32), atmoMat));
+            
+            // Add biome markers and trees
+            createBiomes();
+            
+            document.getElementById('treeCount').textContent = treeCount;
+            
+            // Start animation
+            animate();
+        }
+        
+        function createBiomes() {
+            BIOMES.forEach(biome => {
+                // Marker sphere
+                const markerGeo = new THREE.SphereGeometry(biome.r * 0.15, 8, 8);
+                const markerMat = new THREE.MeshBasicMaterial({ 
+                    color: biome.color, 
+                    transparent: true, 
+                    opacity: 0.8 
+                });
+                const marker = new THREE.Mesh(markerGeo, markerMat);
+                
+                const pos = latLngToXYZ(biome.lat, biome.lng, RADIUS + 0.5);
+                marker.position.copy(pos);
+                marker.userData = biome;
+                markers.push(marker);
+                scene.add(marker);
+                
+                // Add some trees/vegetation
+                const numTrees = Math.floor(biome.r * 0.8);
+                for (let i = 0; i < numTrees; i++) {
+                    const tree = createTree(biome);
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = Math.random() * biome.r * 0.8;
+                    const tLat = biome.lat + Math.cos(angle) * dist * 0.5;
+                    const tLng = biome.lng + Math.sin(angle) * dist * 0.7;
+                    
+                    const tPos = latLngToXYZ(tLat, tLng, RADIUS + 0.3);
+                    tree.position.copy(tPos);
+                    
+                    // Orient to surface
+                    const normal = tPos.clone().normalize();
+                    tree.lookAt(tPos.clone().add(normal));
+                    tree.rotateX(Math.PI / 2);
+                    tree.rotateY(Math.random() * Math.PI * 2);
+                    
+                    scene.add(tree);
+                    treeCount++;
+                }
+            });
+        }
+        
+        function createTree(biome) {
+            const group = new THREE.Group();
+            const type = biome.type;
+            
+            if (type.includes('Desert')) {
+                // Cactus
+                const cactus = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.1, 0.15, 0.8, 6),
+                    new THREE.MeshLambertMaterial({ color: 0x2d5a27 })
+                );
+                cactus.position.y = 0.4;
+                group.add(cactus);
+            } else if (type.includes('Polar') || type.includes('Tundra')) {
+                // Small shrub
+                const shrub = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.2, 6, 6),
+                    new THREE.MeshLambertMaterial({ color: 0x556b2f })
+                );
+                shrub.position.y = 0.15;
+                shrub.scale.y = 0.6;
+                group.add(shrub);
+            } else if (type.includes('Savanna')) {
+                // Acacia
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.05, 0.08, 1, 5),
+                    new THREE.MeshLambertMaterial({ color: 0x4a3728 })
+                );
+                trunk.position.y = 0.5;
+                group.add(trunk);
+                
+                const canopy = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.6, 0.6, 0.12, 8),
+                    new THREE.MeshLambertMaterial({ color: 0x6b8e23 })
+                );
+                canopy.position.y = 1.1;
+                group.add(canopy);
+            } else if (type.includes('Boreal') || type.includes('Mountain')) {
+                // Pine tree
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.05, 0.08, 0.5, 5),
+                    new THREE.MeshLambertMaterial({ color: 0x4a3728 })
+                );
+                trunk.position.y = 0.25;
+                group.add(trunk);
+                
+                const leaves = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.4, 1, 6),
+                    new THREE.MeshLambertMaterial({ color: 0x1a4a1a })
+                );
+                leaves.position.y = 0.9;
+                group.add(leaves);
+            } else if (type.includes('Tropical')) {
+                // Palm tree
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.06, 0.1, 1.2, 6),
+                    new THREE.MeshLambertMaterial({ color: 0x8b7355 })
+                );
+                trunk.position.y = 0.6;
+                group.add(trunk);
+                
+                for (let i = 0; i < 6; i++) {
+                    const frond = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.08, 0.8, 3),
+                        new THREE.MeshLambertMaterial({ color: 0x228b22 })
+                    );
+                    frond.position.y = 1.3;
+                    frond.rotation.z = Math.PI / 4;
+                    frond.rotation.y = (i / 6) * Math.PI * 2;
+                    group.add(frond);
+                }
+            } else {
+                // Regular deciduous tree
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.06, 0.1, 0.6, 5),
+                    new THREE.MeshLambertMaterial({ color: 0x4a3728 })
+                );
+                trunk.position.y = 0.3;
+                group.add(trunk);
+                
+                const leaves = new THREE.Mesh(
+                    new THREE.IcosahedronGeometry(0.5, 0),
+                    new THREE.MeshLambertMaterial({ color: biome.color })
+                );
+                leaves.position.y = 0.8;
+                group.add(leaves);
+            }
+            
+            group.scale.setScalar(0.3 + Math.random() * 0.2);
+            return group;
+        }
+        
+        function latLngToXYZ(lat, lng, r) {
+            const phi = (90 - lat) * Math.PI / 180;
+            const theta = (lng + 180) * Math.PI / 180;
+            return new THREE.Vector3(
+                r * Math.sin(phi) * Math.cos(theta),
+                r * Math.cos(phi),
+                r * Math.sin(phi) * Math.sin(theta)
+            );
+        }
+        
+        function updateCamera() {
+            camera.position.x = camDist * Math.sin(camPhi) * Math.sin(camTheta);
+            camera.position.y = camDist * Math.cos(camPhi);
+            camera.position.z = camDist * Math.sin(camPhi) * Math.cos(camTheta);
+            camera.lookAt(0, 0, 0);
+        }
+        
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function onDrag(e) {
+            if (!isDragging) return;
+            const dx = e.clientX - prevMouse.x;
+            const dy = e.clientY - prevMouse.y;
+            camTheta -= dx * 0.005;
+            camPhi = Math.max(0.3, Math.min(2.8, camPhi + dy * 0.005));
+            updateCamera();
+            prevMouse = { x: e.clientX, y: e.clientY };
+        }
+        
+        function onClick(e) {
+            const mouse = new THREE.Vector2(
+                (e.clientX / window.innerWidth) * 2 - 1,
+                -(e.clientY / window.innerHeight) * 2 + 1
+            );
+            
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(mouse, camera);
+            
+            const hits = ray.intersectObjects(markers);
+            if (hits.length > 0) {
+                const biome = hits[0].object.userData;
+                document.getElementById('biomeName').textContent = biome.type;
+                document.getElementById('biomeDesc').textContent = biome.name + ' — ' + biome.desc;
+                document.getElementById('biome-info').classList.add('visible');
+                
+                clearTimeout(window.hideTimeout);
+                window.hideTimeout = setTimeout(() => {
+                    document.getElementById('biome-info').classList.remove('visible');
+                }, 4000);
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // FPS
+            frameCount++;
+            if (frameCount % 30 === 0) {
+                const now = performance.now();
+                const fps = Math.round(30000 / (now - lastTime));
+                document.getElementById('fps').textContent = fps;
+                lastTime = now;
+            }
+            
+            // Rotate
+            if (earth) {
+                earth.rotation.y += 0.0002;
+                if (nightLayer) nightLayer.rotation.y = earth.rotation.y;
+                if (clouds) clouds.rotation.y += 0.00025;
+            }
+            
+            if (autoRotate && !isDragging) {
+                camTheta += 0.001;
+                updateCamera();
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        init();
+    })();
+    </script>
+</body>
+</html>

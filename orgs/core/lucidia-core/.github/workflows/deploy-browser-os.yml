@@ -1,0 +1,97 @@
+name: Deploy BlackRoad Browser OS
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'blackroad-browser-os.py'
+      - 'blackroad-dashboard-server.py'
+      - '.github/workflows/deploy-browser-os.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-cloudflare:
+    name: Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install flask flask-cors pyyaml
+
+      - name: Build static site
+        run: |
+          mkdir -p dist
+          python3 blackroad-browser-os.py --export-static dist/
+          cp blackroad-dashboard-server.py dist/
+          echo "Browser OS built successfully"
+
+      - name: Deploy to Cloudflare Pages (blackroad.io)
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: blackroad-os
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to Cloudflare Pages (blackroad.network)
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: blackroad-network
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to Cloudflare Pages (blackroad.systems)
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: blackroad-systems
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-railway:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+          railway up -d
+
+  notify:
+    name: Notify deployment
+    needs: [deploy-cloudflare, deploy-railway]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification
+        run: |
+          echo "Deployment complete!"
+          echo "Browser OS deployed to:"
+          echo "  - https://blackroad.io"
+          echo "  - https://blackroad.network"
+          echo "  - https://blackroad.systems"
+          echo "  - Railway services"

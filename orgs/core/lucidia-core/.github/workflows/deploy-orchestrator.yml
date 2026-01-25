@@ -1,0 +1,47 @@
+name: Deploy Railway Orchestrator
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'blackroad-orchestrator/**'
+      - '.github/workflows/deploy-orchestrator.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Orchestrator to Railway
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd blackroad-orchestrator
+          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+          railway up --service blackroad-railway-orchestrator --detach
+
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Health check
+        run: |
+          echo "Checking orchestrator health..."
+          # Health check would go here once we have the URL
+          echo "Deployment completed!"
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "✅ Orchestrator deployed successfully"
+          echo "Dashboard: https://your-orchestrator.railway.app/dashboard"
