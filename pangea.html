@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pangea Earth — Realistic Prehistoric Metaverse</title>
+    <meta name="description" content="Explore a geologically accurate recreation of Earth's Pangea supercontinent with period-appropriate flora, fauna, and climate zones">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --pangea-brown: #8b7355;
+            --pangea-green: #2d5016;
+            --ocean-blue: #001f3f;
+            --desert-sand: #d4a574;
+            --text-light: #f5f5dc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0a 100%);
+            color: var(--text-light);
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        /* ===== UI OVERLAY ===== */
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .title-card {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(139, 115, 85, 0.5);
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 400px;
+            pointer-events: all;
+        }
+
+        .title-card h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--pangea-brown);
+            text-shadow: 0 0 20px rgba(139, 115, 85, 0.5);
+        }
+
+        .title-card .period {
+            font-size: 14px;
+            color: #a0a0a0;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .title-card .description {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: rgba(139, 115, 85, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(139, 115, 85, 0.3);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--pangea-brown);
+        }
+
+        /* Biome indicator */
+        .biome-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(139, 115, 85, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 300px;
+            pointer-events: all;
+        }
+
+        .biome-name {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--pangea-brown);
+        }
+
+        .biome-description {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #ccc;
+            margin-bottom: 12px;
+        }
+
+        .biome-climate {
+            display: flex;
+            gap: 15px;
+            font-size: 11px;
+        }
+
+        .climate-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .climate-label {
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .climate-value {
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        /* Flora/Fauna lists */
+        .species-list {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(45, 80, 22, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            pointer-events: all;
+        }
+
+        .species-list h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: var(--pangea-green);
+        }
+
+        .species-category {
+            margin-bottom: 15px;
+        }
+
+        .species-category h4 {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .species-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .species-tag {
+            background: rgba(45, 80, 22, 0.3);
+            border: 1px solid rgba(45, 80, 22, 0.5);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            color: var(--text-light);
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(139, 115, 85, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            pointer-events: all;
+        }
+
+        .controls h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: var(--pangea-brown);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .control-key {
+            background: rgba(139, 115, 85, 0.3);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        /* Loading screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-title {
+            font-family: 'Cinzel', serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--pangea-brown);
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(139, 115, 85, 0.6);
+        }
+
+        .loading-subtitle {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 40px;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(139, 115, 85, 0.2);
+            border-top-color: var(--pangea-brown);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar styling */
+        .species-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .species-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        .species-list::-webkit-scrollbar-thumb {
+            background: rgba(139, 115, 85, 0.5);
+            border-radius: 3px;
+        }
+
+        .species-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 115, 85, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-title">PANGEA</div>
+        <div class="loading-subtitle">Assembling the Supercontinent...</div>
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div class="ui-overlay">
+        <!-- Title Card -->
+        <div class="title-card">
+            <h1>PANGEA</h1>
+            <div class="period">Late Permian Period • ~252 Million Years Ago</div>
+            <div class="description">
+                Explore Earth's last supercontinent before it began to fragment.
+                A geologically accurate reconstruction featuring period-appropriate
+                climate zones, flora, and fauna.
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Landmass</div>
+                    <div class="stat-value">29%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Ocean Coverage</div>
+                    <div class="stat-value">71%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Major Biomes</div>
+                    <div class="stat-value">9</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Species</div>
+                    <div class="stat-value">50+</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Biome -->
+        <div class="biome-indicator">
+            <div class="biome-name" id="biome-name">Tropical Rainforest</div>
+            <div class="biome-description" id="biome-description">
+                Dense forests along the Tethys coastline
+            </div>
+            <div class="biome-climate">
+                <div class="climate-item">
+                    <div class="climate-label">Temp</div>
+                    <div class="climate-value" id="climate-temp">28°C</div>
+                </div>
+                <div class="climate-item">
+                    <div class="climate-label">Humidity</div>
+                    <div class="climate-value" id="climate-humidity">95%</div>
+                </div>
+                <div class="climate-item">
+                    <div class="climate-label">Rainfall</div>
+                    <div class="climate-value" id="climate-rainfall">3000mm</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Species List -->
+        <div class="species-list">
+            <h3>Local Species</h3>
+
+            <div class="species-category">
+                <h4>Flora</h4>
+                <div class="species-tags" id="flora-list">
+                    <div class="species-tag">Glossopteris</div>
+                    <div class="species-tag">Tree Ferns</div>
+                    <div class="species-tag">Cycads</div>
+                    <div class="species-tag">Conifers</div>
+                </div>
+            </div>
+
+            <div class="species-category">
+                <h4>Fauna</h4>
+                <div class="species-tags" id="fauna-list">
+                    <div class="species-tag">Lystrosaurus</div>
+                    <div class="species-tag">Dimetrodon</div>
+                    <div class="species-tag">Coelophysis</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <h3>Controls</h3>
+            <div class="control-item">
+                <span>Move</span>
+                <span class="control-key">WASD</span>
+            </div>
+            <div class="control-item">
+                <span>Look Around</span>
+                <span class="control-key">MOUSE</span>
+            </div>
+            <div class="control-item">
+                <span>Fly Up/Down</span>
+                <span class="control-key">SPACE/SHIFT</span>
+            </div>
+            <div class="control-item">
+                <span>Sprint</span>
+                <span class="control-key">SHIFT</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+        import { PangeaTerrainGenerator, PANGEA_BIOMES } from './pangea-earth.js';
+
+        // ===== SCENE SETUP =====
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.Fog(0x87ceeb, 50, 400);
+
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.set(0, 50, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // ===== LIGHTING =====
+        // Sun (Permian sun slightly dimmer than modern)
+        const sun = new THREE.DirectionalLight(0xfff5e6, 1.2);
+        sun.position.set(100, 150, 50);
+        sun.castShadow = true;
+        sun.shadow.camera.left = -100;
+        sun.shadow.camera.right = 100;
+        sun.shadow.camera.top = 100;
+        sun.shadow.camera.bottom = -100;
+        sun.shadow.camera.far = 500;
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
+        scene.add(sun);
+
+        // Ambient light (atmospheric scattering)
+        const ambient = new THREE.AmbientLight(0x404040, 0.6);
+        scene.add(ambient);
+
+        // Hemisphere light (sky/ground color)
+        const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x8b7355, 0.5);
+        scene.add(hemiLight);
+
+        // ===== PANGEA TERRAIN =====
+        const pangeaTerrain = new PangeaTerrainGenerator(scene);
+
+        // ===== CONTROLS =====
+        const controls = new PointerLockControls(camera, renderer.domElement);
+
+        // Click to start
+        renderer.domElement.addEventListener('click', () => {
+            controls.lock();
+        });
+
+        // Movement
+        const movement = {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            sprint: false
+        };
+
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'KeyW': movement.forward = true; break;
+                case 'KeyS': movement.backward = true; break;
+                case 'KeyA': movement.left = true; break;
+                case 'KeyD': movement.right = true; break;
+                case 'Space': movement.up = true; e.preventDefault(); break;
+                case 'ShiftLeft': movement.down = true; movement.sprint = true; break;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            switch(e.code) {
+                case 'KeyW': movement.forward = false; break;
+                case 'KeyS': movement.backward = false; break;
+                case 'KeyA': movement.left = false; break;
+                case 'KeyD': movement.right = false; break;
+                case 'Space': movement.up = false; break;
+                case 'ShiftLeft': movement.down = false; movement.sprint = false; break;
+            }
+        });
+
+        // ===== UPDATE BIOME UI =====
+        let currentBiome = null;
+
+        function updateBiomeUI() {
+            const x = camera.position.x;
+            const z = camera.position.z;
+            const y = pangeaTerrain.getElevation(x, z);
+            const biome = pangeaTerrain.getBiomeAt(x, z, y);
+
+            if (biome !== currentBiome) {
+                currentBiome = biome;
+
+                // Update UI
+                document.getElementById('biome-name').textContent = biome.name;
+                document.getElementById('biome-description').textContent = biome.description;
+
+                if (biome.climate) {
+                    const climate = biome.climate;
+                    document.getElementById('climate-temp').textContent =
+                        climate.temp ? `${climate.temp}°C` : 'N/A';
+                    document.getElementById('climate-humidity').textContent =
+                        climate.humidity ? `${climate.humidity}%` : 'N/A';
+                    document.getElementById('climate-rainfall').textContent =
+                        climate.rainfall ? `${climate.rainfall}mm` : 'N/A';
+                }
+
+                // Update species lists
+                const floraList = document.getElementById('flora-list');
+                floraList.innerHTML = '';
+                if (biome.flora) {
+                    biome.flora.forEach(species => {
+                        const tag = document.createElement('div');
+                        tag.className = 'species-tag';
+                        tag.textContent = species.replace(/_/g, ' ');
+                        floraList.appendChild(tag);
+                    });
+                }
+
+                const faunaList = document.getElementById('fauna-list');
+                faunaList.innerHTML = '';
+                if (biome.fauna) {
+                    biome.fauna.forEach(species => {
+                        const tag = document.createElement('div');
+                        tag.className = 'species-tag';
+                        tag.textContent = species.replace(/_/g, ' ');
+                        faunaList.appendChild(tag);
+                    });
+                }
+
+                // Update sky color based on biome
+                if (biome.colors && biome.colors.sky) {
+                    scene.background.setHex(biome.colors.sky);
+                    scene.fog.color.setHex(biome.colors.sky);
+                }
+            }
+        }
+
+        // ===== ANIMATION LOOP =====
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const speed = movement.sprint ? 50 : 25;
+
+            if (controls.isLocked) {
+                // Apply movement
+                direction.z = Number(movement.forward) - Number(movement.backward);
+                direction.x = Number(movement.right) - Number(movement.left);
+                direction.y = Number(movement.up) - Number(movement.down);
+                direction.normalize();
+
+                velocity.x = direction.x * speed * delta;
+                velocity.z = direction.z * speed * delta;
+                velocity.y = direction.y * speed * delta;
+
+                controls.moveRight(velocity.x);
+                controls.moveForward(-velocity.z);
+                camera.position.y += velocity.y;
+
+                // Prevent going below terrain
+                const terrainHeight = pangeaTerrain.getElevation(
+                    camera.position.x,
+                    camera.position.z
+                );
+                if (camera.position.y < terrainHeight + 2) {
+                    camera.position.y = terrainHeight + 2;
+                }
+
+                // Update chunks
+                pangeaTerrain.update(camera.position.x, camera.position.z);
+
+                // Update biome UI
+                updateBiomeUI();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // ===== WINDOW RESIZE =====
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ===== START =====
+        setTimeout(() => {
+            document.getElementById('loading-screen').classList.add('hidden');
+        }, 2000);
+
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PANGEA MAXIMUM — Complete Prehistoric Experience</title>
+    <meta name="description" content="The ULTIMATE Pangea experience with volcanoes, time travel, animated creatures, dynamic weather, and day/night cycles">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-purple: #bf00ff;
+            --neon-red: #ff006b;
+            --volcanic-orange: #ff4500;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        /* TIME TRAVEL HUD */
+        .time-hud {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--neon-blue);
+            border-radius: 15px;
+            padding: 20px 30px;
+            box-shadow: 0 0 20px var(--neon-blue);
+            pointer-events: all;
+            text-align: center;
+        }
+
+        .time-hud h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 32px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+            margin-bottom: 10px;
+        }
+
+        .time-period {
+            font-size: 16px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .time-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .time-btn {
+            background: linear-gradient(135deg, rgba(0,243,255,0.2), rgba(191,0,255,0.2));
+            border: 1px solid var(--neon-blue);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .time-btn:hover {
+            background: linear-gradient(135deg, rgba(0,243,255,0.4), rgba(191,0,255,0.4));
+            box-shadow: 0 0 15px var(--neon-blue);
+            transform: translateY(-2px);
+        }
+
+        /* VOLCANO ALERT */
+        .volcano-alert {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,69,0,0.95);
+            border: 2px solid var(--volcanic-orange);
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-weight: 700;
+            font-size: 18px;
+            display: none;
+            animation: pulse 1s infinite;
+            pointer-events: none;
+            box-shadow: 0 0 30px var(--volcanic-orange);
+        }
+
+        .volcano-alert.active {
+            display: block;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            border: 2px solid var(--neon-purple);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 250px;
+            pointer-events: all;
+            box-shadow: 0 0 20px var(--neon-purple);
+        }
+
+        .stats-panel h3 {
+            color: var(--neon-purple);
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px var(--neon-purple);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .stat-label {
+            color: #888;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #1a0033, #000);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 1s;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-title {
+            font-family: 'Cinzel', serif;
+            font-size: 72px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple), var(--neon-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 20px var(--neon-blue)); }
+            50% { filter: drop-shadow(0 0 40px var(--neon-purple)); }
+        }
+
+        .loading-features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .feature-box {
+            background: rgba(0,243,255,0.1);
+            border: 1px solid var(--neon-blue);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .feature-box h4 {
+            color: var(--neon-blue);
+            margin-bottom: 5px;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            border: 2px solid var(--neon-blue);
+            border-radius: 12px;
+            padding: 15px;
+            pointer-events: all;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        .control-key {
+            background: rgba(0,243,255,0.2);
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="loading-title">PANGEA MAXIMUM</div>
+        <div class="loading-subtitle" style="font-size: 24px; color: #888; margin-bottom: 40px;">
+            The Ultimate Prehistoric Experience
+        </div>
+        <div class="loading-features">
+            <div class="feature-box"><h4>🌋</h4>Volcanic Eruptions</div>
+            <div class="feature-box"><h4>⏰</h4>Time Travel</div>
+            <div class="feature-box"><h4>🦕</h4>50+ Creatures</div>
+            <div class="feature-box"><h4>🌦️</h4>8 Weather Types</div>
+            <div class="feature-box"><h4>☀️</h4>Day/Night Cycle</div>
+            <div class="feature-box"><h4>🗺️</h4>9 Biomes</div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Time Travel HUD -->
+    <div class="time-hud">
+        <h1 id="period-name">LATE PERMIAN</h1>
+        <div class="time-period" id="period-age">252 Million Years Ago</div>
+        <div class="time-controls">
+            <button class="time-btn" id="btn-backward">◄ OLDER</button>
+            <button class="time-btn" id="btn-forward">YOUNGER ►</button>
+        </div>
+    </div>
+
+    <!-- Volcano Alert -->
+    <div class="volcano-alert" id="volcano-alert">
+        🌋 VOLCANIC ERUPTION IN PROGRESS! 🌋
+    </div>
+
+    <!-- Stats Panel -->
+    <div class="stats-panel">
+        <h3>WORLD STATUS</h3>
+        <div class="stat-row">
+            <span class="stat-label">Time:</span>
+            <span class="stat-value" id="stat-time">Day</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Weather:</span>
+            <span class="stat-value" id="stat-weather">Clear</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Creatures:</span>
+            <span class="stat-value" id="stat-creatures">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Active Volcanoes:</span>
+            <span class="stat-value" id="stat-volcanoes">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">CO₂:</span>
+            <span class="stat-value" id="stat-co2">1000 ppm</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Temperature:</span>
+            <span class="stat-value" id="stat-temp">+18°C</span>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <div class="control-row"><span>Move</span><span class="control-key">WASD</span></div>
+        <div class="control-row"><span>Fly</span><span class="control-key">SPACE/SHIFT</span></div>
+        <div class="control-row"><span>Sprint</span><span class="control-key">SHIFT</span></div>
+        <div class="control-row"><span>Time Speed</span><span class="control-key">T</span></div>
+        <div class="control-row"><span>Trigger Volcano</span><span class="control-key">E</span></div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+        import { PangeaTerrainGenerator } from './pangea-earth.js';
+        import { CreatureManager } from './pangea-creatures.js';
+        import { DayNightCycle, WeatherSystem } from './pangea-weather.js';
+        import { VolcanicSystem } from './pangea-volcanoes.js';
+        import { TimeTravelSystem } from './pangea-time-travel.js';
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.Fog(0x87ceeb, 50, 400);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 50, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Initialize systems
+        console.log('🌍 Initializing Pangea MAXIMUM...');
+        const terrain = new PangeaTerrainGenerator(scene);
+        const dayNight = new DayNightCycle(scene);
+        const weather = new WeatherSystem(scene, terrain);
+        const creatures = new CreatureManager(scene, terrain);
+        const volcanoes = new VolcanicSystem(scene, terrain);
+        const timeTravel = new TimeTravelSystem(scene, terrain, weather, creatures);
+
+        // Spawn initial creatures
+        creatures.spawnRandomCreatures(30);
+
+        // Controls
+        const controls = new PointerLockControls(camera, renderer.domElement);
+        renderer.domElement.addEventListener('click', () => controls.lock());
+
+        const movement = { forward: false, backward: false, left: false, right: false, up: false, down: false, sprint: false };
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'KeyW': movement.forward = true; break;
+                case 'KeyS': movement.backward = true; break;
+                case 'KeyA': movement.left = true; break;
+                case 'KeyD': movement.right = true; break;
+                case 'Space': movement.up = true; e.preventDefault(); break;
+                case 'ShiftLeft': movement.down = true; movement.sprint = true; break;
+                case 'KeyT': dayNight.setSpeed(dayNight.speed === 1 ? 10 : 1); break;
+                case 'KeyE': volcanoes.triggerEruption(0); break;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            switch(e.code) {
+                case 'KeyW': movement.forward = false; break;
+                case 'KeyS': movement.backward = false; break;
+                case 'KeyA': movement.left = false; break;
+                case 'KeyD': movement.right = false; break;
+                case 'Space': movement.up = false; break;
+                case 'ShiftLeft': movement.down = false; movement.sprint = false; break;
+            }
+        });
+
+        // Time travel buttons
+        document.getElementById('btn-forward').addEventListener('click', () => {
+            timeTravel.jumpForward();
+            updateTimeTravelUI();
+        });
+
+        document.getElementById('btn-backward').addEventListener('click', () => {
+            timeTravel.jumpBackward();
+            updateTimeTravelUI();
+        });
+
+        function updateTimeTravelUI() {
+            const period = timeTravel.getCurrentPeriod();
+            document.getElementById('period-name').textContent = period.name.toUpperCase();
+            document.getElementById('period-age').textContent = `${period.age} Million Years Ago`;
+        }
+
+        // Update stats
+        function updateStats() {
+            const period = timeTravel.getCurrentPeriod();
+            const timeOfDay = dayNight.getTimeOfDay();
+            const weatherInfo = weather.getWeatherInfo();
+            const activeVolcanoes = volcanoes.getActiveEruptions().length;
+
+            document.getElementById('stat-time').textContent = timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1);
+            document.getElementById('stat-weather').textContent = weatherInfo.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            document.getElementById('stat-creatures').textContent = creatures.creatures.length;
+            document.getElementById('stat-volcanoes').textContent = activeVolcanoes;
+            document.getElementById('stat-co2').textContent = period.climate.co2 + ' ppm';
+            document.getElementById('stat-temp').textContent = '+' + period.climate.globalTemp + '°C';
+
+            // Show volcano alert
+            const alert = document.getElementById('volcano-alert');
+            if (activeVolcanoes > 0) {
+                alert.classList.add('active');
+            } else {
+                alert.classList.remove('active');
+            }
+        }
+
+        // Animation loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const speed = movement.sprint ? 60 : 30;
+
+            if (controls.isLocked) {
+                direction.z = Number(movement.forward) - Number(movement.backward);
+                direction.x = Number(movement.right) - Number(movement.left);
+                direction.y = Number(movement.up) - Number(movement.down);
+                direction.normalize();
+
+                velocity.x = direction.x * speed * delta;
+                velocity.z = direction.z * speed * delta;
+                velocity.y = direction.y * speed * delta;
+
+                controls.moveRight(velocity.x);
+                controls.moveForward(-velocity.z);
+                camera.position.y += velocity.y;
+
+                const terrainHeight = terrain.getElevation(camera.position.x, camera.position.z);
+                if (camera.position.y < terrainHeight + 2) {
+                    camera.position.y = terrainHeight + 2;
+                }
+
+                terrain.update(camera.position.x, camera.position.z);
+            }
+
+            dayNight.update(delta);
+            weather.update(delta, camera.position, null);
+            creatures.update(delta);
+            volcanoes.update(delta);
+            timeTravel.update(delta);
+            updateStats();
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        updateTimeTravelUI();
+        setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 3000);
+        animate();
+    </script>
+</body>
+</html>
