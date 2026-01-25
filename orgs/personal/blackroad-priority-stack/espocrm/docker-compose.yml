@@ -1,0 +1,85 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: blackroad-espocrm-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootPass123!}
+      MYSQL_DATABASE: espocrm
+      MYSQL_USER: espocrm
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-espoPass123!}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - espocrm-net
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  espocrm:
+    image: espocrm/espocrm:latest
+    container_name: blackroad-espocrm
+    restart: unless-stopped
+    environment:
+      # Database
+      ESPOCRM_DATABASE_HOST: mysql
+      ESPOCRM_DATABASE_NAME: espocrm
+      ESPOCRM_DATABASE_USER: espocrm
+      ESPOCRM_DATABASE_PASSWORD: ${MYSQL_PASSWORD:-espoPass123!}
+
+      # Admin user (created on first run)
+      ESPOCRM_ADMIN_USERNAME: admin
+      ESPOCRM_ADMIN_PASSWORD: ${ESPOCRM_ADMIN_PASSWORD:-blackroad123!}
+
+      # Site URL
+      ESPOCRM_SITE_URL: https://crm.blackroad.io
+
+      # Email (configure SMTP later)
+      # ESPOCRM_SMTP_HOST: smtp.gmail.com
+      # ESPOCRM_SMTP_PORT: 587
+      # ESPOCRM_SMTP_USERNAME: your-email@gmail.com
+      # ESPOCRM_SMTP_PASSWORD: your-app-password
+      # ESPOCRM_SMTP_SECURITY: TLS
+
+      # Timezone
+      TZ: America/Los_Angeles
+    ports:
+      - "8085:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - espocrm_data:/var/www/html
+    networks:
+      - espocrm-net
+
+  # Optional: phpMyAdmin for database management
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: blackroad-espocrm-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: espocrm
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-espoPass123!}
+    ports:
+      - "8086:80"
+    depends_on:
+      - mysql
+    networks:
+      - espocrm-net
+    profiles:
+      - admin-tools
+
+networks:
+  espocrm-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  espocrm_data:
