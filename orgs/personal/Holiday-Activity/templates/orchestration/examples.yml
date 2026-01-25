@@ -1,0 +1,66 @@
+---
+# Example Orchestration Usage
+# This file demonstrates how to use the traffic light orchestration system
+
+examples:
+  - name: "Holiday Code Freeze"
+    scenario: "Managing holiday deployment freeze period"
+    current_signal: redlight
+    reason: "Code freeze in effect for holiday period"
+    actions:
+      - "Block all production deployments"
+      - "Alert team about freeze period"
+      - "Document freeze schedule"
+      - "Set up monitoring for critical issues only"
+    
+  - name: "Post-Holiday Review"
+    scenario: "Reviewing accumulated changes after holiday"
+    current_signal: yellowlight
+    reason: "Multiple PRs pending review after holiday break"
+    actions:
+      - "Assess backlog of changes"
+      - "Prioritize critical reviews"
+      - "Monitor for conflicts"
+      - "Schedule code review sessions"
+    
+  - name: "Routine Feature Deployment"
+    scenario: "Standard feature ready for production"
+    current_signal: greenlight
+    reason: "All tests pass, reviews approved, no blockers"
+    actions:
+      - "Deploy to production"
+      - "Monitor metrics post-deployment"
+      - "Notify stakeholders of completion"
+      - "Update documentation"
+
+workflow_simulation:
+  day_1:
+    signal: redlight
+    event: "Critical bug discovered in production"
+    actions: ["Stop deployments", "Create incident", "Alert team"]
+    
+  day_2:
+    signal: yellowlight
+    event: "Bug fix deployed, monitoring for issues"
+    actions: ["Monitor metrics", "Review logs", "Document fix"]
+    
+  day_3:
+    signal: greenlight
+    event: "No issues detected, system stable"
+    actions: ["Resume normal operations", "Close incident", "Schedule retrospective"]
+
+holiday_specific_rules:
+  thanksgiving:
+    default_signal: yellowlight
+    duration: "4 days"
+    reason: "Reduced team availability"
+    
+  christmas:
+    default_signal: redlight
+    duration: "7 days"
+    reason: "Extended holiday break, minimal support"
+    
+  new_year:
+    default_signal: yellowlight
+    duration: "3 days"
+    reason: "Team ramping back up"

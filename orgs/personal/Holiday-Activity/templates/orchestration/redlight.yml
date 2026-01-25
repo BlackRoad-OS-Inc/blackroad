@@ -1,0 +1,44 @@
+---
+# RedLight Template - Stop/Critical Actions
+# Use this template for critical issues, blockers, or actions that require immediate attention
+
+name: RedLight
+status: critical
+priority: high
+color: "#FF0000"
+
+triggers:
+  - type: critical_error
+  - type: security_issue
+  - type: blocker
+  - type: emergency
+
+actions:
+  - name: "Stop Activity"
+    description: "Halt current operations and assess the situation"
+    required: true
+    
+  - name: "Alert Team"
+    description: "Notify all stakeholders immediately"
+    required: true
+    channels:
+      - email
+      - slack
+      - pager
+    
+  - name: "Create Incident Report"
+    description: "Document the critical issue"
+    required: true
+    
+  - name: "Escalate"
+    description: "Escalate to senior management if needed"
+    required: false
+
+notification:
+  template: "🔴 REDLIGHT: Critical issue detected - {{issue_title}}"
+  urgency: immediate
+  
+metadata:
+  icon: "🔴"
+  emoji: ":red_circle:"
+  signal: "STOP"
