@@ -1,0 +1,107 @@
+# ============================================================================
+# BlackRoad OS - Nightly Health Check
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Scheduled workflow that runs nightly to check system health.
+# Validates all Python/Shell scripts, checks for stale branches, etc.
+# ============================================================================
+
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 6 AM UTC daily
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate all Python files
+        id: python-check
+        run: |
+          echo "## Python Validation" >> $GITHUB_STEP_SUMMARY
+          ERRORS=0
+          TOTAL=0
+
+          for f in $(find . -name "*.py" -type f); do
+            TOTAL=$((TOTAL + 1))
+            if python3 -m py_compile "$f" 2>/dev/null; then
+              echo "✓ $f"
+            else
+              echo "✗ $f" >&2
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Total Python files: $TOTAL" >> $GITHUB_STEP_SUMMARY
+          echo "- Errors: $ERRORS" >> $GITHUB_STEP_SUMMARY
+
+          if [ $ERRORS -gt 0 ]; then
+            echo "::warning::$ERRORS Python files have syntax errors"
+          fi
+
+      - name: Check for stale branches
+        run: |
+          echo "## Branch Analysis" >> $GITHUB_STEP_SUMMARY
+
+          # List branches merged into main
+          echo "### Merged branches (candidates for cleanup)" >> $GITHUB_STEP_SUMMARY
+          git branch -r --merged origin/main 2>/dev/null | grep -v main | head -10 >> $GITHUB_STEP_SUMMARY || echo "None" >> $GITHUB_STEP_SUMMARY
+
+          # List branches older than 30 days
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Branches with no recent activity (30+ days)" >> $GITHUB_STEP_SUMMARY
+          CUTOFF=$(date -d '30 days ago' +%s 2>/dev/null || date -v-30d +%s)
+          git for-each-ref --sort=-committerdate refs/remotes/ --format='%(refname:short) %(committerdate:unix)' 2>/dev/null | \
+            while read branch date; do
+              if [ "$date" -lt "$CUTOFF" ] 2>/dev/null; then
+                echo "- $branch"
+              fi
+            done | head -10 >> $GITHUB_STEP_SUMMARY || echo "None" >> $GITHUB_STEP_SUMMARY
+
+      - name: Count files by type
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Repository Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Python (.py) | $(find . -name '*.py' | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Shell (.sh) | $(find . -name '*.sh' | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| YAML (.yaml/.yml) | $(find . -name '*.yaml' -o -name '*.yml' | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Markdown (.md) | $(find . -name '*.md' | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| HTML (.html) | $(find . -name '*.html' | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total files | $(find . -type f | wc -l) |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## TODO/FIXME Items" >> $GITHUB_STEP_SUMMARY
+
+          TODO_COUNT=$(grep -rn "TODO\|FIXME\|XXX\|HACK" --include="*.py" --include="*.sh" . 2>/dev/null | wc -l)
+          echo "Found $TODO_COUNT TODO/FIXME comments" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$TODO_COUNT" -gt 0 ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>Show items</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep -rn "TODO\|FIXME\|XXX\|HACK" --include="*.py" --include="*.sh" . 2>/dev/null | head -20 >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          fi
