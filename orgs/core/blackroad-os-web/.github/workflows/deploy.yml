@@ -1,0 +1,63 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    name: Deploy to Cloudflare Pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Brand Compliance Check
+        run: |
+          echo "🎨 Checking brand compliance..."
+
+          # Check for forbidden colors
+          if grep -r "#FF9D00\|#FF6B00\|#FF0066\|#FF006B\|#D600AA\|#7700FF\|#0066FF" . --include="*.html" --include="*.css"; then
+            echo "❌ Forbidden colors found! Please use official brand colors."
+            exit 1
+          fi
+
+          # Check for official colors
+          if grep -r "#F5A623\|#FF1D6C\|#2979FF\|#9C27B0" . --include="*.html" --include="*.css"; then
+            echo "✅ Official brand colors detected!"
+          fi
+
+          echo "✅ Brand compliance check passed!"
+
+      - name: Deploy to Cloudflare Pages
+        id: cloudflare_deploy
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: blackroad-os-web
+          directory: .
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add deployment comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `### 🚀 Deployment Preview\n\n✅ Build completed successfully!\n\n**Preview URL:** ${{ steps.cloudflare_deploy.outputs.url }}\n\n🎨 Brand compliance: **Passed**`
+            })
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "🌐 URL: ${{ steps.cloudflare_deploy.outputs.url }}"
