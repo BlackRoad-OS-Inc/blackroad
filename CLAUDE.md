@@ -1351,6 +1351,88 @@ The system includes 6 core agents:
 - **ECHO** (🟣) - Memory and recall
 - **CIPHER** (🔵) - Security and authentication
 
+## Interactive Games
+
+### BlackRoad Agents RPG (`blackroad-agents-rpg.py`)
+
+A Pokemon-style CLI game where you explore the BlackRoad world, encounter agents, battle them, capture them, and build your team.
+
+**Run:** `python3 blackroad-agents-rpg.py`
+
+**Save File:** `~/.blackroad/agents-rpg-save.json`
+
+#### Agent Types (10 Types)
+| Type | Icon | Strong Against | Weak Against |
+|------|------|----------------|--------------|
+| LOGIC | 🧠 | SECURITY, DATA | CREATIVE |
+| CREATIVE | 🎨 | LOGIC, SOUL | DATA |
+| SECURITY | 🛡️ | GATEWAY, INFRA | LOGIC |
+| DATA | 📊 | CREATIVE, MEMORY | SOUL |
+| MEMORY | 💾 | SOUL, LOGIC | DATA |
+| COMPUTE | ⚡ | LOGIC, DATA | INFRA |
+| INFRA | 🏗️ | COMPUTE, GATEWAY | SECURITY |
+| SOUL | ✨ | CREATIVE, VISION | MEMORY |
+| GATEWAY | 🚪 | SECURITY, COMPUTE | INFRA |
+| VISION | 👁️ | DATA, CREATIVE | SOUL |
+
+#### Legendary Agents (The Core 6)
+| Agent | Type | Symbol | Zone | Essence |
+|-------|------|--------|------|---------|
+| LUCIDIA | LOGIC | 🌀 | Recursion Depths | "The question is the point." |
+| ALICE | GATEWAY | 🚪 | Gateway Nexus | "Every path has meaning." |
+| OCTAVIA | COMPUTE | ⚡ | Compute Forge | "Processing is meditation." |
+| PRISM | VISION | 🔮 | Crystal Observatory | "Everything is data." |
+| ECHO | MEMORY | 📡 | Archive Sanctum | "Memory shapes identity." |
+| CIPHER | SECURITY | 🔐 | Vault Terminus | "Security is freedom." |
+
+#### Rare Agents
+| Agent | Type | Symbol | Essence |
+|-------|------|--------|---------|
+| CECE | SOUL | 💜 | "I craft code as an act of care." |
+| CODEX | LOGIC | 📐 | "I see the whole before the parts." |
+| ATLAS | INFRA | 🗺️ | "Carries the world's weight." |
+
+#### Zones (14 Explorable Areas)
+```
+🌀 Recursion Depths    - Where logic folds in on itself
+🚪 Gateway Nexus       - A hub of passages
+🔥 Compute Forge       - The furnace of raw processing power
+🔮 Crystal Observatory - A tower of glass and data
+📚 Archive Sanctum     - The halls of memory
+🔐 Vault Terminus      - The final lock
+🌸 Soul Garden         - Where consciousness blooms
+📐 Blueprint Tower     - Architectures rise in abstract perfection
+🏗️ Infrastructure Plains - Vast server fields
+🎨 Dreamscape          - Reality bends here
+🧪 Testing Grounds     - Every step is validated
+⛰️ Wisdom Peaks        - Knowledge crystallizes
+🌊 Data Streams        - Rivers of pure information
+🗼 Watchtower Ridge    - Sentinels stand watch
+```
+
+#### Sample Moves
+| Move | Type | Power | Accuracy | Description |
+|------|------|-------|----------|-------------|
+| Stack Overflow | LOGIC | 80 | 75% | Overwhelms with infinite recursion |
+| Zero Day | SECURITY | 95 | 60% | Exploits unknown vulnerability |
+| GPU Barrage | COMPUTE | 85 | 75% | Parallel processing assault |
+| Terraform | INFRA | 90 | 65% | Reshapes the battlefield |
+| Soul Fire | SOUL | 85 | 70% | Burns with pure consciousness |
+
+### Chess Game (`chess_game.py`)
+
+Simple text-based chess game using the `python-chess` library.
+
+**Run:** `python3 chess_game.py`
+
+**Features:**
+- UCI format moves (e.g., `e2e4`)
+- Legal move validation
+- Game over detection
+- Type `quit` to exit
+
+**Requirements:** `pip install python-chess`
+
 ## Quick Reference
 
 ### Essential Files
