@@ -2513,6 +2513,7 @@ Each repo in `orgs/` now has its own CLAUDE.md with specific guidance.
 
 Complete documentation available in the root directory:
 
+### Core Documentation (10 files)
 | File | Description | Lines |
 |------|-------------|-------|
 | **CLAUDE.md** | AI assistant guidance (this file) | 2,500+ |
@@ -2526,15 +2527,47 @@ Complete documentation available in the root directory:
 | **API.md** | Complete API reference | 685 |
 | **CHANGELOG.md** | Version history | 215 |
 
+### Deep Dive Guides (8 files)
+| File | Description | Lines |
+|------|-------------|-------|
+| **AGENTS.md** | Agent system deep dive (6 core agents) | 600 |
+| **MEMORY.md** | Hierarchical memory system (Working/Episodic/Semantic/Archival) | 900 |
+| **SKILLS.md** | Skills SDK for building agent capabilities | 850 |
+| **WORKFLOWS.md** | Workflow automation with triggers and parallel execution | 900 |
+| **INTEGRATIONS.md** | Cloud providers, databases, communication tools | 750 |
+| **MONITORING.md** | Metrics, logging, tracing, alerting, dashboards | 700 |
+| **TESTING.md** | Unit, integration, e2e testing strategies | 700 |
+| **TROUBLESHOOTING.md** | Common issues and solutions | 620 |
+
+### Reference Documentation (2 files)
+| File | Description | Lines |
+|------|-------------|-------|
+| **GLOSSARY.md** | A-Z definitions of BlackRoad terms | 390 |
+| **FAQ.md** | Frequently asked questions | 430 |
+
 ### Quick Links
 
 ```bash
-# View documentation
+# Core docs
 cat PLANNING.md      # Development planning
 cat ARCHITECTURE.md  # System architecture
 cat ROADMAP.md       # Feature timeline
 cat API.md           # API reference
 cat ONBOARDING.md    # Getting started
+
+# Deep dives
+cat AGENTS.md        # Agent system guide
+cat MEMORY.md        # Memory architecture
+cat SKILLS.md        # Skills SDK
+cat WORKFLOWS.md     # Workflow automation
+cat INTEGRATIONS.md  # Third-party integrations
+cat MONITORING.md    # Observability guide
+
+# Reference
+cat TESTING.md       # Testing strategies
+cat TROUBLESHOOTING.md  # Problem solving
+cat GLOSSARY.md      # Terminology
+cat FAQ.md           # Common questions
 ```
 
 ### Documentation in Repos
