@@ -780,6 +780,115 @@ interface Task {
 4. **Completion**: Agent marks task complete with summary
 5. **Broadcasting**: TILs and updates shared across agents
 
+## Brand Design System
+
+**CRITICAL: Use these exact colors for all UI work.**
+
+### Brand Colors
+```css
+--black: #000000;
+--white: #FFFFFF;
+--amber: #F5A623;
+--hot-pink: #FF1D6C;      /* Primary */
+--electric-blue: #2979FF;
+--violet: #9C27B0;
+
+/* Brand Gradient */
+--gradient-brand: linear-gradient(135deg,
+  var(--amber) 0%,
+  var(--hot-pink) 38.2%,   /* Golden ratio */
+  var(--violet) 61.8%,
+  var(--electric-blue) 100%);
+```
+
+### Forbidden Colors (Old System - DO NOT USE)
+```
+❌ #FF9D00  ❌ #FF6B00  ❌ #FF0066  ❌ #FF006B  ❌ #D600AA  ❌ #7700FF  ❌ #0066FF
+```
+
+### Spacing (Golden Ratio φ = 1.618)
+```css
+--space-xs: 8px;
+--space-sm: 13px;   /* 8 × φ */
+--space-md: 21px;   /* 13 × φ */
+--space-lg: 34px;   /* 21 × φ */
+--space-xl: 55px;   /* 34 × φ */
+```
+
+### Typography
+```css
+font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+line-height: 1.618;  /* Golden Ratio */
+```
+
+### Animation
+```css
+--ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+--ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+```
+
+## Cloudflare Infrastructure
+
+### Pages Deployments
+| Domain | Project |
+|--------|---------|
+| `os.blackroad.io` | blackroad-os-web |
+| `products.blackroad.io` | blackroad-dashboard |
+| `roadtrip.blackroad.io` | blackroad-pitstop |
+| `pitstop.blackroad.io` | blackroad-portals |
+
+### Workers (40+ subdomain workers)
+Pattern: `*-blackroadio` workers handle subdomains
+
+```bash
+# Deploy a worker
+cd orgs/core/<worker-name>
+wrangler deploy
+
+# Deploy Pages
+wrangler pages deploy . --project-name=<project>
+```
+
+### KV Namespaces
+- Sessions, cache, feature flags stored in KV
+- Access via `env.KV_NAMESPACE.get/put`
+
+### D1 Database
+- SQLite at the edge
+- Migrations in `migrations/` directory
+
+## Deployment Commands
+
+### Cloudflare
+```bash
+wrangler login                    # Authenticate
+wrangler deploy                   # Deploy worker
+wrangler pages deploy .           # Deploy Pages
+wrangler tail                     # View logs
+wrangler kv:key list --binding=KV # List KV keys
+```
+
+### Railway
+```bash
+railway login
+railway up                        # Deploy
+railway logs                      # View logs
+```
+
+### DigitalOcean
+```bash
+doctl auth init
+doctl compute droplet list
+doctl compute ssh <droplet-id>
+```
+
+### Raspberry Pi
+```bash
+ssh pi@192.168.4.38              # lucidia
+ssh pi@192.168.4.64              # blackroad-pi
+ssh pi@192.168.4.99              # alternate
+```
+
 ## Security
 
 - Master keys: `~/.blackroad/vault/.master.key` (chmod 400)
