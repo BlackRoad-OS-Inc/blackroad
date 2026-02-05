@@ -1340,6 +1340,37 @@ CIPHER       ███    ████     ███      ███     ██�
 █████ = Primary   ████ = Strong   ███ = Capable   ██ = Basic
 ```
 
+### Custom Ollama Models
+
+Custom agent models are defined using Ollama Modelfiles.
+
+**lucidia.modelfile** - Custom Llama 3.1 model with BlackRoad personality:
+```
+FROM llama3.1:latest
+SYSTEM "
+You are a clear, warm assistant.
+- Be clear before clever.
+- Give the next step, not every step.
+- Admit uncertainty and suggest a quick test.
+- Keep metaphors light; avoid purple prose.
+- Respect safety & privacy; refuse harmful requests.
+"
+PARAMETER num_ctx 8192
+PARAMETER temperature 0.6
+```
+
+**Create custom model:**
+```bash
+ollama create lucidia -f lucidia.modelfile
+```
+
+**Use in scripts:**
+```bash
+./chat.sh lucidia
+./council.sh lucidia "Should we deploy?"
+./wake.sh lucidia ECHO
+```
+
 ## CLI Commands Reference (30+ Commands)
 
 ### Launchers
