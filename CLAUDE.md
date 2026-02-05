@@ -883,7 +883,117 @@ CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
 ```
+
+### GitHub Bot Workflows
+| Bot Workflow | Purpose |
+|--------------|---------|
+| `bot-pr-review.yml` | AI-powered PR code review |
+| `bot-issue-triage.yml` | Auto-label and triage issues |
+| `bot-docs-update.yml` | Auto-update documentation |
+| `bot-security-scan.yml` | Continuous security scanning |
+| `bot-sync.yml` | Cross-repo synchronization |
+
+### AI Agent Workflow (`blackroad-agents.yml`)
+Triggers on: issues, comments, PRs, pushes
+```yaml
+# Mention @blackroad-agents in any issue/PR to invoke
+# Agent API: https://blackroad-agents.amundsonalexa.workers.dev/agent
+
+Features:
+- Auto-responds to @blackroad-agents mentions
+- Calls AI agent API for intelligent responses
+- Auto-fix code issues on PRs
+- Parallel file analysis
+```
+
+### AI/ML Model Deployment (`ai-ml-deploy.yml`)
+Manual trigger with options:
+```bash
+# Trigger via CLI
+gh workflow run "AI/ML Model Deployment" -f action=validate
+gh workflow run "AI/ML Model Deployment" -f action=deploy -f model_name=meta-llama/Llama-3.1-8B
+gh workflow run "AI/ML Model Deployment" -f action=benchmark
+```
+
+### Tunnel Deployment (`tunnel-deploy.yml`)
+Deploy tunnels via GitHub Actions:
+```bash
+# Cloudflare tunnel
+gh workflow run "Tunnel Deployment" -f provider=cloudflare -f service_port=3000
+
+# ngrok tunnel
+gh workflow run "Tunnel Deployment" -f provider=ngrok -f service_port=8080
+
+# Tailscale
+gh workflow run "Tunnel Deployment" -f provider=tailscale -f service_port=3000
+```
+
+### Trinity Compliance Check (`trinity-compliance.yml`)
+Validates `.trinity/` directory structure:
+- RedLight templates (10+ HTML required)
+- YellowLight configurations
+- GreenLight assets
+- Documentation presence
+
+### Scheduled Workflows
+| Workflow | Schedule | Purpose |
+|----------|----------|---------|
+| `nightly.yml` | 6 AM UTC daily | Health check, Python validation |
+| `scheduled-reports.yml` | Monday 9 AM UTC | Weekly activity report |
+| `stale-issues.yml` | Daily | Clean up stale issues |
+| `trinity-compliance.yml` | Sunday midnight | Weekly compliance check |
+
+### GitHub Pages Sites (16+ Sites)
+| Repository | URL |
+|------------|-----|
+| `blackboxprogramming.github.io` | https://blackboxprogramming.github.io |
+| `blackroad-os.github.io` | https://blackroad-os.github.io |
+| `pi-ecosystem-domination` | https://blackroad-os.github.io/pi-ecosystem-domination |
+| `pi-launch-dashboard` | https://blackroad-os.github.io/pi-launch-dashboard |
+| `pi-viral-hub` | https://blackroad-os.github.io/pi-viral-hub |
+| `pi-viral-megapack` | https://blackroad-os.github.io/pi-viral-megapack |
+| `blackroad-prism-console` | GitHub Pages enabled |
+| `blackroad-os-demo` | GitHub Pages enabled |
+| `pi-cost-calculator` | GitHub Pages enabled |
+| `pi-ai-registry` | GitHub Pages enabled |
+| `pi-ai-hub` | GitHub Pages enabled |
+| `pi-mission-control` | GitHub Pages enabled |
+| `dashboard` | GitHub Pages enabled |
+| `lucidia-chat` | GitHub Pages enabled |
+| `portal` | GitHub Pages enabled |
+
+### Workflow Commands
+```bash
+# List all workflows
+gh workflow list --repo BlackRoad-OS/blackroad
+
+# Trigger a workflow manually
+gh workflow run "<workflow-name>" --repo BlackRoad-OS/blackroad
+
+# View workflow runs
+gh api repos/BlackRoad-OS/blackroad/actions/runs -q '.workflow_runs[:10] | .[] | "\(.name) | \(.status)"'
+
+# View workflow run logs
+gh run view <run-id> --log
+
+# Re-run failed workflow
+gh run rerun <run-id>
+
+# Cancel running workflow
+gh run cancel <run-id>
+```
+
+### Automation Endpoints (Cloudflare Workers)
+| Endpoint | Purpose |
+|----------|---------|
+| `blackroad-agents.amundsonalexa.workers.dev/agent` | AI agent API |
+| `blackroad-agents.amundsonalexa.workers.dev/autofix` | Auto-fix code |
+| `blackroad-deploy-dispatcher.amundsonalexa.workers.dev/webhook/github` | Deploy dispatcher |
 
 ## Railway Infrastructure
 
