@@ -113,7 +113,7 @@ BlackRoad is a comprehensive developer CLI system, AI agent orchestration platfo
 
 | Organization | Public | Private | Forks | Total | Purpose |
 |--------------|--------|---------|-------|-------|---------|
-| **BlackRoad-OS** | 851 | 72 | 64 | 923 | Core platform, integrations |
+| **BlackRoad-OS** | 1,071 | 72 | 64 | 1,143 | Core platform, integrations |
 | **blackboxprogramming** | 46 | 22 | 3 | 68 | Personal account, SDKs |
 | **BlackRoad-AI** | 49 | 3 | 38 | 52 | AI/ML stack |
 | **BlackRoad-Cloud** | 20 | — | 17 | 20 | Infrastructure |
@@ -134,8 +134,52 @@ BlackRoad is a comprehensive developer CLI system, AI agent orchestration platfo
 
 ## Key Forks by Organization
 
-### BlackRoad-OS (64 forks)
-LocalAI, Qdrant, Wiki.js, Grafana, Focalboard, Taiga, Jitsi-Meet, Uptime-Kuma, OpenProject, Plane, Meilisearch, Innernet, InfluxDB, ClickHouse, Netdata, CockroachDB, JAX
+### BlackRoad-OS (1,143 repos - Breakdown)
+
+**Core Platform (124 blackroad-os-* repos):**
+- `blackroad-os-core` - Core platform services
+- `blackroad-os-web` - Main web application (Next.js)
+- `blackroad-os-docs` - Documentation (Docusaurus)
+- `blackroad-os-api` - REST API
+- `blackroad-os-api-gateway` - API Gateway
+- `blackroad-os-agents` - Agent system
+- `blackroad-os-mesh` - WebSocket mesh
+- `blackroad-os-helper` - Helper services
+- `blackroad-os-demo` - Demo site
+- `blackroad-os-prism-console` - Admin console
+- `blackroad-os-prism-enterprise` - Enterprise ERP
+
+**Packs (Specialized Bundles):**
+- `blackroad-os-pack-legal` - Legal tools
+- `blackroad-os-pack-finance` - Finance tools
+- `blackroad-os-pack-research-lab` - Research tools
+- `blackroad-os-pack-creator-studio` - Creative tools
+- `blackroad-os-pack-infra-devops` - DevOps tools
+- `blackroad-os-pack-education` - Education tools
+
+**Pi Projects (13 pi-* repos):**
+- `pi-ai-hub` - Pi AI hub
+- `pi-ai-registry` - Pi AI registry
+- `pi-ai-starter-kit` - Starter kit
+- `pi-cost-calculator` - Cost calculator
+- `pi-launch-dashboard` - Launch dashboard
+- `pi-mission-control` - Mission control
+- `pi-viral-hub` - Viral content hub
+- `pi-viral-megapack` - Viral megapack
+- `pi-ecosystem-domination` - Ecosystem tools
+- `pi-execution-playbook` - Playbook
+- `pi-monitoring-automation` - Monitoring
+- `pi-community-bot` - Community bot
+- `pi-launch-automation` - Launch automation
+
+**Lucidia (AI Assistant):**
+- `lucidia-core` - Core reasoning engine
+- `lucidia-math` - Mathematical operations
+- `lucidia-platform` - Platform integration
+- `lucidia-earth` - Earth visualization
+- `lucidia-earth-website` - Earth website
+
+**64 Forks:** LocalAI, Qdrant, Wiki.js, Grafana, Focalboard, Taiga, Jitsi-Meet, Uptime-Kuma, OpenProject, Plane, Meilisearch, Innernet, InfluxDB, ClickHouse, Netdata, CockroachDB, JAX
 
 ### BlackRoad-AI (52 repos, 38 forks)
 **LLM Inference:** vLLM, Ollama, llama.cpp, TensorRT-LLM, text-generation-inference, whisper.cpp
