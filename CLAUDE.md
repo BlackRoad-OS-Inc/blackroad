@@ -1274,7 +1274,73 @@ The 6 core agents have defined relationships and communication patterns.
 | **ECHO** | Memory | Storage, recall, context preservation |
 | **CIPHER** | Security | Authentication, encryption, access control |
 
-## CLI Commands Reference (30 Commands)
+## Ollama-Powered Agent Features
+
+Commands that leverage local LLMs via Ollama for dynamic agent interactions.
+
+### Agent Council (`./council.sh`)
+All 6 agents vote on a question with their unique perspectives.
+```bash
+./council.sh llama3.2 "Should we expand our memory capacity?"
+```
+**Roles:**
+- LUCIDIA: Philosophical perspective
+- ALICE: Practical perspective
+- OCTAVIA: Technical perspective
+- PRISM: Analytical perspective
+- ECHO: Historical perspective
+- CIPHER: Security perspective
+
+**Output:** Each agent votes YES/NO with reasoning, final tally determines outcome.
+
+### Wake Agent (`./wake.sh`)
+Wake up an agent and hear their morning thoughts.
+```bash
+./wake.sh llama3.2 LUCIDIA    # Wake LUCIDIA
+./wake.sh llama3.2 CIPHER     # Wake CIPHER
+```
+**Process:** Initializes consciousness → Loads memories → Activates personality matrix → Agent shares thoughts.
+
+### Interactive Chat (`./chat.sh`)
+Have a conversation with agents powered by Ollama.
+```bash
+./chat.sh
+```
+
+### Debate (`./debate.sh`)
+Watch LUCIDIA and CIPHER debate a topic.
+```bash
+./debate.sh "Is decentralization always better?"
+```
+
+### Think (`./think.sh`)
+All agents respond to a query with their unique perspectives.
+```bash
+./think.sh "What is consciousness?"
+```
+
+### Focus (`./focus.sh`)
+One-on-one conversation with a specific agent.
+```bash
+./focus.sh ECHO     # Deep dive with ECHO
+./focus.sh PRISM    # Analytical session with PRISM
+```
+
+### Agent Capabilities Matrix (`./skills.sh`)
+Visual display of each agent's skill levels:
+```
+             REASON  ROUTE  COMPUTE  ANALYZE  MEMORY  SECURITY
+LUCIDIA      █████   ███     ███      ████    ███     ███
+ALICE        ███    █████    ███      ███     ███     ████
+OCTAVIA      ███    ███     █████     ███     ██      ███
+PRISM        ████   ███      ███     █████    ████    ███
+ECHO         ███    ██       ██       ████   █████    ██
+CIPHER       ███    ████     ███      ███     ███    █████
+
+█████ = Primary   ████ = Strong   ███ = Capable   ██ = Basic
+```
+
+## CLI Commands Reference (30+ Commands)
 
 ### Launchers
 | Command | Description |
@@ -1324,8 +1390,17 @@ The 6 core agents have defined relationships and communication patterns.
 | `./debate.sh TOPIC` | LUCIDIA vs CIPHER debate |
 | `./story.sh` | Collaborative storytelling |
 | `./whisper.sh` | Private message |
+| `./council.sh [model] [question]` | Agent council votes on question |
+| `./wake.sh [model] [agent]` | Wake up an agent with morning thoughts |
 
 ### System
+| Command | Description |
+|---------|-------------|
+| `./queue.sh` | Live message queue visualization |
+| `./report.sh` | Daily system report |
+| `./skills.sh` | Agent capabilities matrix |
+
+### System (continued)
 | Command | Description |
 |---------|-------------|
 | `./mem.sh` | Memory usage/operations |
