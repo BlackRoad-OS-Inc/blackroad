@@ -1199,6 +1199,83 @@ Blackbox-Enterprises/automation: n8n, activepieces, huginn
 - **Cloudflare Perfection**: 72 projects with Golden Ratio compliance
 - **Continuous Deployment**: Auto-deploy on push to main
 
+## CLI Commands Reference (30 Commands)
+
+### Launchers
+| Command | Description |
+|---------|-------------|
+| `./hub.sh` | Main menu launcher |
+| `./intro.sh` | Animated intro sequence |
+| `./boot.sh` | System boot animation |
+
+### Monitoring
+| Command | Description |
+|---------|-------------|
+| `./god.sh` | All-in-one overview dashboard (agents, metrics, events, traffic) |
+| `./mission.sh` | Mission control display |
+| `./dash.sh` | Standard dashboard |
+| `./monitor.sh` | Real-time system resource monitor (CPU/MEM/NET) |
+| `./spark.sh` | Sparkline metrics charts |
+| `./health.sh` | System health check |
+| `./logs.sh` | Live log stream |
+| `./events.sh` | Event stream viewer |
+| `./timeline.sh` | Event timeline |
+| `./status.sh` | Quick status display |
+
+### Network
+| Command | Description |
+|---------|-------------|
+| `./net.sh` | Network topology diagram |
+| `./wire.sh` | Live message wire |
+| `./traffic.sh` | Traffic flow visualization |
+
+### Agents
+| Command | Description |
+|---------|-------------|
+| `./roster.sh` | Live agent roster |
+| `./inspect.sh NAME` | Detailed agent view |
+| `./soul.sh NAME` | Agent personality profile |
+| `./office.sh` | Visual office with walking agents |
+| `./agent.sh` | Agent management |
+
+### Conversation (requires Ollama)
+| Command | Description |
+|---------|-------------|
+| `./chat.sh` | Interactive chat with agents |
+| `./focus.sh NAME` | One-on-one with single agent |
+| `./convo.sh` | Watch agents converse |
+| `./broadcast.sh MSG` | Send message to all agents |
+| `./think.sh QUERY` | All agents respond to query |
+| `./debate.sh TOPIC` | LUCIDIA vs CIPHER debate |
+| `./story.sh` | Collaborative storytelling |
+| `./whisper.sh` | Private message |
+
+### System
+| Command | Description |
+|---------|-------------|
+| `./mem.sh` | Memory usage/operations |
+| `./tasks.sh` | Task queue status |
+| `./config.sh` | Configuration viewer |
+| `./alert.sh LEVEL MSG` | Show alert (info/warn/error/success) |
+| `./help.sh` | Show all commands |
+
+### Extras
+| Command | Description |
+|---------|-------------|
+| `./clock.sh` | Digital clock display |
+| `./pulse.sh` | Minimal pulse animation |
+| `./matrix.sh` | Matrix rain screensaver |
+| `./saver.sh` | Bouncing logo screensaver |
+
+### Named Agents
+The system includes 6 core agents:
+- **LUCIDIA** (🔴) - Primary AI coordinator
+- **ALICE** (🔵) - Routing and navigation
+- **OCTAVIA** (🟢) - Inference and compute
+- **PRISM** (🟡) - Pattern recognition
+- **ECHO** (🟣) - Memory and recall
+- **CIPHER** (🔵) - Security and authentication
+
 ## Quick Reference
 
 ### Essential Files
