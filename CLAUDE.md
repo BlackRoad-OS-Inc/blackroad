@@ -77,6 +77,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [Enterprise Repos](#enterprise-repos-orgsenterprise)
 - [Personal Repos](#personal-repos-orgspersonal)
 
+### Documentation Suite
+- [All Documentation Files](#documentation-suite)
+
 ### Reference
 - [Quick Reference](#quick-reference)
 - [Security](#security)
@@ -2503,6 +2506,42 @@ Each repo in `orgs/` now has its own CLAUDE.md with specific guidance.
 | **blackroad-deploy** | CI/CD automation | GitHub Actions |
 | **blackroad-simple-launch** | Project templates | Multi-framework |
 | **quantum-math-lab** | Quantum research | Python, SymPy |
+
+---
+
+## Documentation Suite
+
+Complete documentation available in the root directory:
+
+| File | Description | Lines |
+|------|-------------|-------|
+| **CLAUDE.md** | AI assistant guidance (this file) | 2,500+ |
+| **PLANNING.md** | Strategic planning, Q1-Q4 2026 | 430 |
+| **ARCHITECTURE.md** | System architecture diagrams | 520 |
+| **ROADMAP.md** | Feature roadmap & releases | 220 |
+| **CONTRIBUTING.md** | Contribution guidelines | 400 |
+| **SECURITY.md** | Security policies & bug bounty | 275 |
+| **DEPLOYMENT.md** | Multi-cloud deployment guides | 605 |
+| **ONBOARDING.md** | New developer quick start | 430 |
+| **API.md** | Complete API reference | 685 |
+| **CHANGELOG.md** | Version history | 215 |
+
+### Quick Links
+
+```bash
+# View documentation
+cat PLANNING.md      # Development planning
+cat ARCHITECTURE.md  # System architecture
+cat ROADMAP.md       # Feature timeline
+cat API.md           # API reference
+cat ONBOARDING.md    # Getting started
+```
+
+### Documentation in Repos
+
+Each repo in `orgs/` contains:
+- `CLAUDE.md` - AI assistant guidance
+- `PLANNING.md` - Development planning (key repos)
 
 ---
 
