@@ -1463,7 +1463,9 @@ bucket_name = "blackroad-assets"
 | lucidiaqi | lucidiaqi | Active |
 | blackroad.quantum | blackroad-quantum | Active |
 
-### Cloudflare Workers
+### Cloudflare Workers (75+ Total)
+
+**Core Workers:**
 | Worker | Purpose |
 |--------|---------|
 | blackroad-os-core | Site builder |
@@ -1476,6 +1478,51 @@ bucket_name = "blackroad-assets"
 | agents-api | Agent coordination API |
 | roadgateway | Payment gateway |
 | command-center | Central command |
+
+**Subdomain Workers (41 *-blackroadio):**
+| Subdomain | Worker | Category |
+|-----------|--------|----------|
+| about.blackroad.io | about-blackroadio | Info |
+| admin.blackroad.io | admin-blackroadio | Admin |
+| agents.blackroad.io | agents-blackroadio | AI |
+| ai.blackroad.io | ai-blackroadio | AI |
+| algorithms.blackroad.io | algorithms-blackroadio | AI |
+| alice.blackroad.io | alice-blackroadio | Agent |
+| analytics.blackroad.io | analytics-blackroadio | Data |
+| api.blackroad.io | api-blackroadio | API |
+| asia.blackroad.io | asia-blackroadio | Region |
+| blockchain.blackroad.io | blockchain-blackroadio | Crypto |
+| blocks.blackroad.io | blocks-blackroadio | Crypto |
+| blog.blackroad.io | blog-blackroadio | Content |
+| cdn.blackroad.io | cdn-blackroadio | Infra |
+| chain.blackroad.io | chain-blackroadio | Crypto |
+| circuits.blackroad.io | circuits-blackroadio | Hardware |
+| cli.blackroad.io | cli-blackroadio | Tools |
+| compliance.blackroad.io | compliance-blackroadio | Security |
+| compute.blackroad.io | compute-blackroadio | Infra |
+| console.blackroad.io | console-blackroadio | Admin |
+| control.blackroad.io | control-blackroadio | Admin |
+| dashboard.blackroad.io | dashboard-blackroadio | UI |
+| data.blackroad.io | data-blackroadio | Data |
+| demo.blackroad.io | demo-blackroadio | Demo |
+| design.blackroad.io | design-blackroadio | UI |
+| dev.blackroad.io | dev-blackroadio | Dev |
+| docs.blackroad.io | docs-blackroadio | Docs |
+| edge.blackroad.io | edge-blackroadio | Infra |
+| editor.blackroad.io | editor-blackroadio | Tools |
+| engineering.blackroad.io | engineering-blackroadio | Team |
+| eu.blackroad.io | eu-blackroadio | Region |
+| events.blackroad.io | events-blackroadio | Events |
+| explorer.blackroad.io | explorer-blackroadio | Tools |
+| features.blackroad.io | features-blackroadio | Product |
+| finance.blackroad.io | finance-blackroadio | Finance |
+| global.blackroad.io | global-blackroadio | Region |
+| guide.blackroad.io | guide-blackroadio | Docs |
+| hardware.blackroad.io | hardware-blackroadio | Hardware |
+| help.blackroad.io | help-blackroadio | Support |
+| hr.blackroad.io | hr-blackroadio | Team |
+| ide.blackroad.io | ide-blackroadio | Tools |
+| network.blackroad.io | network-blackroadio | Infra |
 
 ### Cloudflare Tunnel
 ```yaml
