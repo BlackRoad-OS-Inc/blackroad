@@ -70,6 +70,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [CLI Commands Reference (57 scripts)](#cli-commands-reference-30-commands)
 - [Interactive Games (RPG & Chess)](#interactive-games)
 
+### Repo Documentation
+- [Repo Summaries (with CLAUDE.md)](#repo-summaries-with-claudemd)
+- [Core Repos](#core-repos-orgscore)
+- [AI Repos](#ai-repos-orgsai)
+- [Enterprise Repos](#enterprise-repos-orgsenterprise)
+- [Personal Repos](#personal-repos-orgspersonal)
+
 ### Reference
 - [Quick Reference](#quick-reference)
 - [Security](#security)
@@ -2442,6 +2449,62 @@ Simple text-based chess game using the `python-chess` library.
 - Type `quit` to exit
 
 **Requirements:** `pip install python-chess`
+
+## Repo Summaries (with CLAUDE.md)
+
+Each repo in `orgs/` now has its own CLAUDE.md with specific guidance.
+
+### Core Repos (`orgs/core/`)
+
+| Repo | Description | Stack |
+|------|-------------|-------|
+| **blackroad-os-web** | Main web application | Next.js 16, React 19, Zustand |
+| **blackroad-os-docs** | Documentation hub | Docusaurus 3, React 18 |
+| **blackroad-cli** | Command-line interface | Node.js, Click |
+| **lucidia-core** | AI reasoning engines | Python, FastAPI, SymPy |
+| **blackroad-agents** | Agent API + CeCe planner | Python, FastAPI, Redis |
+| **blackroad-pi-ops** | Raspberry Pi management | Python, Flask, GPIO |
+| **blackroad-tools** | ERP, CRM, DevOps utils | Python, Click, Rich |
+| **blackroad-ecosystem-dashboard** | Real-time ecosystem monitoring | Next.js 14, React 18 |
+| **blackroad-os-roadchain** | Bitcoin lottery dashboard | Node.js, Blessed, WebSocket |
+| **lucidia-earth-website** | 3D landing page | Next.js 16, Three.js |
+
+### AI Repos (`orgs/ai/`)
+
+| Repo | Description | Stack |
+|------|-------------|-------|
+| **blackroad-vllm** | High-throughput LLM inference | Python, PyTorch 2.9, CUDA |
+| **blackroad-ai-ollama** | Docker Ollama deployment | Docker, Ollama |
+| **blackroad-ai-api-gateway** | Unified AI API routing | Docker, OpenAI-compatible |
+| **blackroad-ai-qwen** | Qwen model deployment | Docker, vLLM |
+| **blackroad-ai-deepseek** | DeepSeek code model | Docker, vLLM |
+| **blackroad-ai-memory-bridge** | Persistent agent memory | Vector DB, Redis, R2 |
+| **blackroad-ai-cluster** | GPU cluster orchestration | Railway A100/H100 |
+
+### Enterprise Repos (`orgs/enterprise/`)
+
+| Repo | Description | Stack |
+|------|-------------|-------|
+| **blackbox-n8n** | Workflow automation (fork) | TypeScript, Vue 3, Node.js |
+| **blackbox-prefect** | Workflow orchestration (fork) | Python, FastAPI, SQLAlchemy |
+| **blackbox-temporal** | Durable execution (fork) | Go, gRPC |
+| **blackbox-activepieces** | No-code automation (fork) | TypeScript, Angular |
+| **blackbox-airbyte** | Data integration (fork) | Python, Java |
+| **blackbox-huginn** | Agent automation (fork) | Ruby, Rails |
+
+### Personal Repos (`orgs/personal/`)
+
+| Repo | Description | Stack |
+|------|-------------|-------|
+| **blackroad-metaverse** | 3D AI agent world | Three.js, WebGL |
+| **lucidia** | Lucidia experiments | Various |
+| **blackroad-dashboards** | 100+ monitoring dashboards | Various |
+| **blackroad-domains** | Domain management | Cloudflare DNS |
+| **blackroad-deploy** | CI/CD automation | GitHub Actions |
+| **blackroad-simple-launch** | Project templates | Multi-framework |
+| **quantum-math-lab** | Quantum research | Python, SymPy |
+
+---
 
 ## Quick Reference
 
