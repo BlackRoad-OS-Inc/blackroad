@@ -1,0 +1,95 @@
+name: Bug Report
+description: Report something broken in BlackRoad OS
+title: "[Bug]: "
+labels: ["type:bug", "status:backlog"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please fill out the sections below so we can reproduce and fix the issue.
+
+  - type: dropdown
+    id: team
+    attributes:
+      label: Team
+      description: Which area does this affect?
+      options:
+        - Core Platform
+        - Web / Frontend
+        - Agents
+        - Infrastructure / DevOps
+        - Prism Console
+        - CLI Tools
+        - Documentation
+        - Packs
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How critical is this?
+      options:
+        - P2 - Normal
+        - P1 - High
+        - P0 - Critical (drop everything)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the bug.
+      placeholder: "When I run `br deploy`, the command fails with..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to trigger the bug.
+      placeholder: |
+        1. Run `br ...`
+        2. Open ...
+        3. See error
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where did this happen?
+      multiple: true
+      options:
+        - macOS (Alexandria)
+        - Raspberry Pi (Cecilia/Lucidia/Alice/Aria)
+        - DigitalOcean (Shellfish/Infinity)
+        - Cloudflare Worker
+        - Railway
+        - GitHub Actions
+        - Other
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      description: Paste any relevant logs or error messages.
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, related issues, agent names, etc.

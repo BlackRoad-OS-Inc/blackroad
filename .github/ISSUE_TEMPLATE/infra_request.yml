@@ -1,0 +1,73 @@
+name: Infrastructure Request
+description: Request infrastructure changes (deploy, DNS, workers, Pi, etc.)
+title: "[Infra]: "
+labels: ["type:infra", "status:backlog"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Request changes to BlackRoad infrastructure - deployments, DNS, workers, Pi fleet, etc.
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which infrastructure is affected?
+      multiple: true
+      options:
+        - Cloudflare (Workers/Pages/DNS/KV/R2)
+        - Railway
+        - Vercel
+        - DigitalOcean
+        - Raspberry Pi fleet
+        - GitHub Actions
+        - Tailscale mesh
+        - Cloudflare Tunnel
+    validations:
+      required: true
+
+  - type: dropdown
+    id: action
+    attributes:
+      label: Action type
+      options:
+        - Deploy new service
+        - Update existing service
+        - DNS / domain change
+        - Scale up / down
+        - Security patch
+        - Monitoring / alerting
+        - Decommission
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P2 - Normal
+        - P1 - High
+        - P0 - Critical (outage)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs to happen?
+      description: Describe the infrastructure change in detail.
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact assessment
+      description: What services/users are affected? Any downtime expected?
+
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback plan
+      description: How do we revert if something goes wrong?

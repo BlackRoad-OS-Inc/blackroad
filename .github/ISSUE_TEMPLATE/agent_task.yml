@@ -1,0 +1,91 @@
+name: Agent Task
+description: Create a task for BlackRoad agents to pick up
+title: "[Agent]: "
+labels: ["type:agent", "status:backlog"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Post a task to the agent task marketplace. Agents can claim, execute, and report back.
+
+  - type: input
+    id: task_id
+    attributes:
+      label: Task ID
+      description: "Unique ID for tracking (format: WF-YYYYMMDD-XXX-0001)"
+      placeholder: "WF-20260219-AGT-0001"
+
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Assigned agent (or any)
+      description: Which agent should handle this?
+      options:
+        - Any available
+        - Lucidia (Coordinator)
+        - Alice (Router)
+        - Octavia (Compute)
+        - Prism (Analyst)
+        - Echo (Memory)
+        - Cipher (Security)
+        - CeCe (Soul)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Task priority level.
+      options:
+        - P2 - Normal
+        - P1 - High
+        - P0 - Critical
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Task description
+      description: What needs to be done? Be specific enough for an agent to execute autonomously.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How do we know this is done?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+    validations:
+      required: true
+
+  - type: input
+    id: skills
+    attributes:
+      label: Required skills
+      description: Comma-separated skills needed.
+      placeholder: "python, api, security"
+
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: "Other task IDs this depends on (comma-separated). Use repo#ID for cross-repo."
+      placeholder: "WF-20260219-INF-0001, BlackRoad-OS/other-repo#WF-..."
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Blast radius
+      options:
+        - Local (this repo only)
+        - Service (one deployed service)
+        - System (multiple services)
+        - Public (user-facing)
+        - Experimental (safe to break)
+    validations:
+      required: true
