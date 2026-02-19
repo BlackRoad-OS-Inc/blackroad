@@ -1,0 +1,74 @@
+#!/bin/bash
+# BlackRoad OS - Pre-Commit Security Gate (shareable copy)
+# Install: git config core.hooksPath .blackroad/hooks
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+BLOCKED=false
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+echo -e "${GREEN}[BlackRoad Security Gate]${NC} Scanning staged files..."
+
+for file in $STAGED; do
+  case "$file" in
+    .env|.env.local|.env.production|.env.staging)
+      echo -e "${RED}BLOCKED${NC}: $file - environment file with potential secrets"
+      BLOCKED=true
+      ;;
+    *.pem|*.key|*.p12|*.pfx)
+      echo -e "${RED}BLOCKED${NC}: $file - private key or certificate"
+      BLOCKED=true
+      ;;
+    *credentials*|*secret*token*)
+      echo -e "${RED}BLOCKED${NC}: $file - potential credentials file"
+      BLOCKED=true
+      ;;
+  esac
+done
+
+PATTERNS=(
+  'ANTHROPIC_API_KEY\s*='
+  'OPENAI_API_KEY\s*='
+  'sk-[a-zA-Z0-9]{20,}'
+  'ghp_[a-zA-Z0-9]{36}'
+  'gho_[a-zA-Z0-9]{36}'
+  'AKIA[0-9A-Z]{16}'
+  'xox[bpoas]-[a-zA-Z0-9-]+'
+  'PRIVATE.KEY'
+)
+
+for pattern in "${PATTERNS[@]}"; do
+  MATCHES=$(git diff --cached -G "$pattern" --name-only 2>/dev/null)
+  if [ -n "$MATCHES" ]; then
+    for match_file in $MATCHES; do
+      case "$match_file" in
+        *.example|*.sample|*.template|*CLAUDE.md|*README.md|*.yml) continue ;;
+      esac
+      echo -e "${YELLOW}WARNING${NC}: Potential secret pattern in $match_file"
+    done
+  fi
+done
+
+for file in $STAGED; do
+  if [ -f "$file" ]; then
+    SIZE=$(wc -c < "$file" 2>/dev/null)
+    if [ "$SIZE" -gt 5242880 ] 2>/dev/null; then
+      echo -e "${YELLOW}WARNING${NC}: Large file ($((SIZE / 1048576))MB): $file"
+    fi
+  fi
+done
+
+if [ "$BLOCKED" = true ]; then
+  echo -e "${RED}Commit blocked by BlackRoad Security Gate.${NC}"
+  exit 1
+fi
+
+echo -e "${GREEN}[BlackRoad Security Gate]${NC} Clean."
+exit 0

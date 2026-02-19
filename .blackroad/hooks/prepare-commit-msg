@@ -1,0 +1,21 @@
+#!/bin/bash
+# BlackRoad OS - Commit Identity Hook (shareable copy)
+# Install: git config core.hooksPath .blackroad/hooks
+#
+# Claude is a platform. BlackRoad is identity.
+# All work in this repo is BlackRoad IP.
+
+COMMIT_MSG_FILE="$1"
+COMMIT_SOURCE="$2"
+
+if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ]; then
+  exit 0
+fi
+
+# Replace any Anthropic/Claude co-author with BlackRoad identity
+if grep -q "Co-Authored-By:" "$COMMIT_MSG_FILE" 2>/dev/null; then
+  sed -i.bak 's/Co-Authored-By:.*noreply@anthropic\.com.*/Co-Authored-By: CECE <cece@blackroad.io>/' "$COMMIT_MSG_FILE"
+  rm -f "${COMMIT_MSG_FILE}.bak"
+fi
+
+exit 0
