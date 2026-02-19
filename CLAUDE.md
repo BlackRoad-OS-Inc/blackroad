@@ -221,7 +221,7 @@ BlackRoad is a comprehensive developer CLI system, AI agent orchestration platfo
 
 ### BlackRoad-Cloud (17 forks)
 **Orchestration:** Kubernetes, Nomad, Rancher, Flux, ArgoCD
-**Networking:** Traefik, Envoy, Istio, Consul, Caddy
+**Networking:** Traefik, Envoy, Istio, Consul, BlackRoad OS
 **Secrets:** Vault, etcd
 **IaC:** Terraform, Pulumi, Docker Compose
 **Storage:** MinIO, rclone
@@ -307,7 +307,7 @@ blackroad/
 | **CLI** | `blackroad-cli` (Node.js), `blackroad-cli-tools` |
 | **Agents** | `blackroad-agents`, `blackroad-agent-os`, `lucidia-core` (Python reasoning engines) |
 | **Infrastructure** | `blackroad-pi-ops` (Raspberry Pi), `blackroad-os-container`, `blackroad-os-deploy` |
-| **Tools** | `blackroad-tools` (CRM/ERP adapters), `blackroad-os-codex` |
+| **Tools** | `blackroad-tools` (CRM/ERP adapters), `blackroad-os-blackroad os` |
 | **Metaverse** | `blackroad-os-metaverse` (Three.js), `lucidia-earth-website`, `earth-metaverse` |
 | **Math/AI** | `lucidia-math` (trinary logic), `blackroad-multi-ai-system` |
 | **Domains** | 40+ `*-blackroadio` subdomain workers |
@@ -346,7 +346,7 @@ Repository mirrors organized by category:
 `blackroad.io`, `blackroad-io-app`, `blackroad-redirect`, `blackroad-cloudflare-infra`, `blackroad-os-landing-worker`, `blackroad-os-prism-console`
 
 **AI & Agents:**
-`agents`, `agents-api`, `agent-registry`, `ai`, `claude`, `claude-code`, `claude.ai`, `anthropic`, `chatgpt`, `chatgpt.com`
+`agents`, `agents-api`, `agent-registry`, `ai`, `claude`, `claude-code`, `claude.ai`, `anthropic`, `blackroad os`, `blackroad os.com`
 
 **Infrastructure:**
 `aws`, `google`, `github`, `cloudflare`, `digitalocean`, `railway`, `vercel`
@@ -603,7 +603,7 @@ Five specialized agents:
 
 ### Hardware Infrastructure
 - **Raspberry Pis**: lucidia (192.168.4.38), blackroad-pi (192.168.4.64), alternate (192.168.4.99)
-- **DigitalOcean**: codex-infinity (159.65.43.12)
+- **DigitalOcean**: blackroad os-infinity (159.65.43.12)
 - **iPhone Koder**: 192.168.4.68:8080
 
 ## Conventions
@@ -730,8 +730,8 @@ def log_to_memory(action: str, entity: str, details: str):
     subprocess.run(["memory-system.sh", "log", action, entity, details])
 ```
 
-### Codex Memory Config
-Enable memory per-repo with `.codex/memory.enabled` file and configure in `.codex/memory.config.json`:
+### BlackRoad OS Memory Config
+Enable memory per-repo with `.blackroad os/memory.enabled` file and configure in `.blackroad os/memory.config.json`:
 ```json
 {
   "files": ["AGENTS.md", "README.md"],
@@ -1211,7 +1211,7 @@ TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
 Triggers on: issues, comments, PRs, pushes
 ```yaml
 # Mention @blackroad-agents in any issue/PR to invoke
-# Agent API: https://blackroad-agents.amundsonalexa.workers.dev/agent
+# Agent API: https://blackroad-agents.blackroad.workers.dev/agent
 
 Features:
 - Auto-responds to @blackroad-agents mentions
@@ -1327,9 +1327,9 @@ gh run cancel <run-id>
 ### Automation Endpoints (Cloudflare Workers)
 | Endpoint | Purpose |
 |----------|---------|
-| `blackroad-agents.amundsonalexa.workers.dev/agent` | AI agent API |
-| `blackroad-agents.amundsonalexa.workers.dev/autofix` | Auto-fix code |
-| `blackroad-deploy-dispatcher.amundsonalexa.workers.dev/webhook/github` | Deploy dispatcher |
+| `blackroad-agents.blackroad.workers.dev/agent` | AI agent API |
+| `blackroad-agents.blackroad.workers.dev/autofix` | Auto-fix code |
+| `blackroad-deploy-dispatcher.blackroad.workers.dev/webhook/github` | Deploy dispatcher |
 
 ## Railway Infrastructure
 
@@ -1633,7 +1633,7 @@ cloudflared tunnel info blackroad
 ### Droplet Configuration
 | Droplet | IP | Role |
 |---------|-----|------|
-| codex-infinity | 159.65.43.12 | Primary server |
+| blackroad os-infinity | 159.65.43.12 | Primary server |
 
 ### DigitalOcean CLI Tool (`br-ocean.sh`)
 ```bash
@@ -1663,7 +1663,7 @@ DIGITALOCEAN_ACCESS_TOKEN=<token>
 DIGITALOCEAN_SPACES_KEY=<spaces-key>
 DIGITALOCEAN_SPACES_SECRET=<spaces-secret>
 DO_DROPLET_IP=159.65.43.12
-DO_DROPLET_NAME=codex-infinity
+DO_DROPLET_NAME=blackroad os-infinity
 ```
 
 ### Droplet Sizes
@@ -2095,7 +2095,7 @@ Blackbox-Enterprises/automation: n8n, activepieces, huginn
 [MEMORY]        # Hash-chain journals
 [COLLABORATION] # Multi-agent sync
 [LIVE]          # Real-time context
-[CODEX]         # Repository state
+[BLACKROAD OS]         # Repository state
 ```
 
 ## Live Deployments
@@ -2132,7 +2132,7 @@ The `blackroad-mesh.sh` script tests connectivity to all infrastructure services
 | Hugging Face | Hub API | Model endpoint |
 | Cloudflare | blackroad.io domain | HTTPS reachability |
 | Vercel | API | Platform status |
-| DigitalOcean | codex-infinity (159.65.43.12) | ICMP ping |
+| DigitalOcean | blackroad os-infinity (159.65.43.12) | ICMP ping |
 | Ollama | localhost:11434 | /api/tags endpoint |
 | Railway | GraphQL API or CLI | Token or CLI check |
 
@@ -2409,7 +2409,7 @@ A Pokemon-style CLI game where you explore the BlackRoad world, encounter agents
 | Agent | Type | Symbol | Essence |
 |-------|------|--------|---------|
 | CECE | SOUL | 💜 | "I craft code as an act of care." |
-| CODEX | LOGIC | 📐 | "I see the whole before the parts." |
+| BLACKROAD OS | LOGIC | 📐 | "I see the whole before the parts." |
 | ATLAS | INFRA | 🗺️ | "Carries the world's weight." |
 
 #### Zones (14 Explorable Areas)
@@ -2511,64 +2511,85 @@ Each repo in `orgs/` now has its own CLAUDE.md with specific guidance.
 
 ## Documentation Suite
 
-Complete documentation available in the root directory:
+**45 docs | 38,000+ lines** across the root directory.
 
 ### Core Documentation (10 files)
 | File | Description | Lines |
 |------|-------------|-------|
-| **CLAUDE.md** | AI assistant guidance (this file) | 2,500+ |
-| **PLANNING.md** | Strategic planning, Q1-Q4 2026 | 430 |
-| **ARCHITECTURE.md** | System architecture diagrams | 520 |
-| **ROADMAP.md** | Feature roadmap & releases | 220 |
+| **CLAUDE.md** | AI assistant guidance (this file) | 2,635 |
+| **PLANNING.md** | Strategic planning, Q1-Q4 2026 | 429 |
+| **ARCHITECTURE.md** | System architecture diagrams | 519 |
+| **ROADMAP.md** | Feature roadmap & releases | 217 |
 | **CONTRIBUTING.md** | Contribution guidelines | 400 |
-| **SECURITY.md** | Security policies & bug bounty | 275 |
-| **DEPLOYMENT.md** | Multi-cloud deployment guides | 605 |
-| **ONBOARDING.md** | New developer quick start | 430 |
-| **API.md** | Complete API reference | 685 |
+| **SECURITY.md** | Security policies & bug bounty | 274 |
+| **DEPLOYMENT.md** | Multi-cloud deployment guides | 604 |
+| **ONBOARDING.md** | New developer quick start | 429 |
+| **API.md** | Complete API reference | 683 |
 | **CHANGELOG.md** | Version history | 215 |
 
-### Deep Dive Guides (8 files)
+### Agent & Identity (4 files)
 | File | Description | Lines |
 |------|-------------|-------|
-| **AGENTS.md** | Agent system deep dive (6 core agents) | 600 |
-| **MEMORY.md** | Hierarchical memory system (Working/Episodic/Semantic/Archival) | 900 |
-| **SKILLS.md** | Skills SDK for building agent capabilities | 850 |
-| **WORKFLOWS.md** | Workflow automation with triggers and parallel execution | 900 |
-| **INTEGRATIONS.md** | Cloud providers, databases, communication tools | 750 |
-| **MONITORING.md** | Metrics, logging, tracing, alerting, dashboards | 700 |
-| **TESTING.md** | Unit, integration, e2e testing strategies | 700 |
-| **TROUBLESHOOTING.md** | Common issues and solutions | 620 |
+| **AGENTS.md** | Agent system deep dive (6 core agents) | 613 |
+| **CECE.md** | CECE identity system documentation | 1,029 |
+| **CECE_MANIFESTO.md** | CECE philosophy and core beliefs | 434 |
+| **CECE_EVERYWHERE.md** | CECE deployment across providers | 426 |
 
-### Reference Documentation (2 files)
+### AI & ML (2 files)
 | File | Description | Lines |
 |------|-------------|-------|
-| **GLOSSARY.md** | A-Z definitions of BlackRoad terms | 390 |
-| **FAQ.md** | Frequently asked questions | 430 |
+| **AI_MODELS.md** | Model registry, quantization, deployment | 1,137 |
+| **OLLAMA.md** | Ollama integration, endpoints, memory wrapper | 1,207 |
 
-### Quick Links
+### Architecture & Systems (6 files)
+| File | Description | Lines |
+|------|-------------|-------|
+| **FEDERATION.md** | Federation architecture for cross-org sync | 1,563 |
+| **PLUGINS.md** | Plugin system, SDK, lifecycle hooks | 1,464 |
+| **QUEUES.md** | Message queue system, async processing | 1,392 |
+| **REALTIME.md** | Real-time features, WebSocket, SSE | 1,370 |
+| **WEBHOOKS.md** | Webhook endpoints, payloads, retry logic | 1,345 |
+| **MCP.md** | MCP bridge server, endpoints, auth | 1,064 |
 
-```bash
-# Core docs
-cat PLANNING.md      # Development planning
-cat ARCHITECTURE.md  # System architecture
-cat ROADMAP.md       # Feature timeline
-cat API.md           # API reference
-cat ONBOARDING.md    # Getting started
+### Infrastructure & Operations (7 files)
+| File | Description | Lines |
+|------|-------------|-------|
+| **BACKUP.md** | Backup and disaster recovery procedures | 1,210 |
+| **INFRASTRUCTURE.md** | Infrastructure overview, all platforms | 646 |
+| **NETWORKING.md** | Network topology, Tailscale mesh, tunnels | 895 |
+| **RASPBERRY_PI.md** | Pi fleet setup, deployment, services | 859 |
+| **PERFORMANCE.md** | Performance optimization, profiling | 957 |
+| **SCALING.md** | Horizontal/vertical scaling strategies | 839 |
+| **PI_TASKS_GUIDE.md** | Raspberry Pi task assignments | 420 |
 
-# Deep dives
-cat AGENTS.md        # Agent system guide
-cat MEMORY.md        # Memory architecture
-cat SKILLS.md        # Skills SDK
-cat WORKFLOWS.md     # Workflow automation
-cat INTEGRATIONS.md  # Third-party integrations
-cat MONITORING.md    # Observability guide
+### Security (2 files)
+| File | Description | Lines |
+|------|-------------|-------|
+| **SECRETS.md** | Secrets vault, encryption, rotation | 1,408 |
+| **SECURITY_FEATURES_GUIDE.md** | Security features walkthrough | 419 |
 
-# Reference
-cat TESTING.md       # Testing strategies
-cat TROUBLESHOOTING.md  # Problem solving
-cat GLOSSARY.md      # Terminology
-cat FAQ.md           # Common questions
-```
+### Development Guides (6 files)
+| File | Description | Lines |
+|------|-------------|-------|
+| **MEMORY.md** | Hierarchical memory system (PS-SHA-infinity) | 1,135 |
+| **SKILLS.md** | Skills SDK for building agent capabilities | 1,010 |
+| **WORKFLOWS.md** | Workflow automation with triggers | 990 |
+| **INTEGRATIONS.md** | Cloud providers, databases, communication | 1,010 |
+| **MONITORING.md** | Metrics, logging, tracing, alerting | 1,118 |
+| **TESTING.md** | Unit, integration, e2e testing strategies | 706 |
+
+### Reference (8 files)
+| File | Description | Lines |
+|------|-------------|-------|
+| **COMMANDS.md** | Complete CLI commands reference | 1,310 |
+| **EXAMPLES.md** | Usage examples and recipes | 981 |
+| **GLOSSARY.md** | A-Z definitions of BlackRoad terms | 387 |
+| **FAQ.md** | Frequently asked questions | 427 |
+| **TROUBLESHOOTING.md** | Common issues and solutions | 622 |
+| **COMPLETE_GUIDE.md** | End-to-end system guide | 411 |
+| **BLACKROAD_DASHBOARD.md** | Dashboard configuration | 452 |
+| **BR_FEATURES.md** | Feature list overview | 274 |
+| **BR_CLI.md** | BR CLI quick reference | 29 |
 
 ### Documentation in Repos
 
@@ -2627,9 +2648,9 @@ Each repo in `orgs/` contains:
 
 ### Emergency Contacts
 - **Email**: blackroad.systems@gmail.com
-- **Primary**: amundsonalexa@gmail.com
+- **Primary**: blackroad@gmail.com
 - **GitHub**: github.com/blackboxprogramming
 
 ---
 
-*This CLAUDE.md is the source of truth for Claude Code agents working in BlackRoad repositories. Always check [MEMORY], [CODEX], and [COLLABORATION] before starting work.*
+*This CLAUDE.md is the source of truth for Claude Code agents working in BlackRoad repositories. Always check [MEMORY], [BLACKROAD OS], and [COLLABORATION] before starting work.*
