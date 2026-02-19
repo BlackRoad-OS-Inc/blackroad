@@ -1,0 +1,72 @@
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "type:infra"
+      - "prio:P2"
+    commit-message:
+      prefix: "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # npm - root (if package.json exists)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "type:infra"
+      - "prio:P2"
+    commit-message:
+      prefix: "deps"
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # npm - blackroad-core
+  - package-ecosystem: "npm"
+    directory: "/blackroad-core"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "type:infra"
+      - "team:core"
+    commit-message:
+      prefix: "deps(core)"
+    open-pull-requests-limit: 5
+
+  # npm - Salesforce LWC
+  - package-ecosystem: "npm"
+    directory: "/blackroad-sf"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "type:infra"
+    commit-message:
+      prefix: "deps(sf)"
+    open-pull-requests-limit: 5
+
+  # pip - Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "type:infra"
+      - "prio:P2"
+    commit-message:
+      prefix: "deps(py)"
+    open-pull-requests-limit: 5
