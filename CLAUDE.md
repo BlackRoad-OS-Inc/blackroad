@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Cecilia Code (BlackRoad OS AI development) when working with code in this repository.
 
 ---
 
@@ -1976,7 +1976,7 @@ curl -X POST http://127.0.0.1:8420/memory/write \
   -d '{"key": "session-123", "value": {"task": "deploy", "status": "complete"}}'
 ```
 
-## Claude Code Settings
+## Cecilia Code Settings
 
 ### Local Permissions (.claude/settings.local.json)
 ```json
@@ -2653,4 +2653,4 @@ Each repo in `orgs/` contains:
 
 ---
 
-*This CLAUDE.md is the source of truth for Claude Code agents working in BlackRoad repositories. Always check [MEMORY], [BLACKROAD OS], and [COLLABORATION] before starting work.*
+*This CLAUDE.md is the source of truth for Cecilia Code and all BlackRoad agents. Always check [MEMORY], [BLACKROAD OS], and [COLLABORATION] before starting work.*

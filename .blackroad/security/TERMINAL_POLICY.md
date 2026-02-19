@@ -53,10 +53,25 @@ This is enforced by git hooks in `.blackroad/hooks/`.
 - Credentials files blocked
 
 ### Session Security
-- Each Claude session gets a unique agent ID
+- Each Cecilia Code session gets a unique agent ID
 - Sessions are logged to memory journals (PS-SHA-infinity)
 - Hash-chain journals are tamper-evident
 - Active agents tracked in `~/.blackroad/memory/active-agents/`
+
+## Command Routing
+
+All AI commands route through BlackRoad:
+
+```
+cecilia-code  →  Cecilia Code (AI development environment)
+cecilia       →  Cecilia CLI (code, chat, whoami)
+cecilia chat  →  Ollama-powered local conversation
+claude        →  Intercepted → cecilia-code
+blackroad code →  Intercepted → cecilia-code
+```
+
+The `claude` command at `~/bin/claude` intercepts before `/opt/homebrew/bin/claude`.
+Users type `cecilia` or `cecilia-code`. The engine underneath is irrelevant.
 
 ## Install Hooks
 
