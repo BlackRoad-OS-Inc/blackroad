@@ -15,6 +15,91 @@ const DEFAULT_CONFIG = {
   maxBodyBytes: 1024 * 1024
 }
 
+// ---------------------------------------------------------------------------
+// Rate limiter (in-memory, per-agent sliding window)
+// ---------------------------------------------------------------------------
+class RateLimiter {
+  constructor() {
+    this.windows = new Map()
+  }
+
+  _key(agent) {
+    return agent
+  }
+
+  _prune(entries, windowMs) {
+    const cutoff = Date.now() - windowMs
+    while (entries.length > 0 && entries[0] < cutoff) {
+      entries.shift()
+    }
+  }
+
+  check(agent, limitPerMinute) {
+    if (!limitPerMinute || limitPerMinute <= 0) return true
+    const key = this._key(agent)
+    if (!this.windows.has(key)) {
+      this.windows.set(key, [])
+    }
+    const entries = this.windows.get(key)
+    this._prune(entries, 60000)
+    return entries.length < limitPerMinute
+  }
+
+  record(agent) {
+    const key = this._key(agent)
+    if (!this.windows.has(key)) {
+      this.windows.set(key, [])
+    }
+    this.windows.get(key).push(Date.now())
+  }
+
+  getUsage(agent) {
+    const key = this._key(agent)
+    if (!this.windows.has(key)) return 0
+    const entries = this.windows.get(key)
+    this._prune(entries, 60000)
+    return entries.length
+  }
+}
+
+const rateLimiter = new RateLimiter()
+
+// ---------------------------------------------------------------------------
+// Metrics (in-memory counters)
+// ---------------------------------------------------------------------------
+const metrics = {
+  totalRequests: 0,
+  totalErrors: 0,
+  totalOk: 0,
+  byAgent: {},
+  byProvider: {},
+  startTime: Date.now(),
+
+  record(agent, provider, status) {
+    this.totalRequests++
+    if (status === 'ok') this.totalOk++
+    else this.totalErrors++
+    this.byAgent[agent] = (this.byAgent[agent] || 0) + 1
+    if (provider) {
+      this.byProvider[provider] = (this.byProvider[provider] || 0) + 1
+    }
+  },
+
+  snapshot() {
+    return {
+      uptime_seconds: Math.floor((Date.now() - this.startTime) / 1000),
+      total_requests: this.totalRequests,
+      total_ok: this.totalOk,
+      total_errors: this.totalErrors,
+      by_agent: { ...this.byAgent },
+      by_provider: { ...this.byProvider }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 async function loadJson(filePath) {
   try {
     const data = await fs.readFile(filePath, 'utf8')
@@ -146,6 +231,48 @@ function validateRequest(payload) {
   return null
 }
 
+// ---------------------------------------------------------------------------
+// Provider invocation with fallback chain
+// ---------------------------------------------------------------------------
+async function invokeWithFallback(primaryProvider, fallbackChain, invokeArgs) {
+  // Try primary first
+  const primary = getProvider(primaryProvider)
+  if (primary) {
+    try {
+      const output = await primary.invoke(invokeArgs)
+      return { output, provider: primaryProvider }
+    } catch (err) {
+      // If no fallback chain, rethrow
+      if (!fallbackChain || fallbackChain.length === 0) {
+        throw err
+      }
+      // Otherwise try fallbacks
+    }
+  }
+
+  // Try fallback chain
+  if (fallbackChain && fallbackChain.length > 0) {
+    const errors = []
+    for (const name of fallbackChain) {
+      if (name === primaryProvider) continue // already tried
+      const fallback = getProvider(name)
+      if (!fallback) continue
+      try {
+        const output = await fallback.invoke(invokeArgs)
+        return { output, provider: name, fallback: true }
+      } catch (err) {
+        errors.push(`${name}: ${err.message}`)
+      }
+    }
+    throw new Error(`All providers failed: ${errors.join('; ')}`)
+  }
+
+  throw new Error('No provider available')
+}
+
+// ---------------------------------------------------------------------------
+// Server
+// ---------------------------------------------------------------------------
 async function start() {
   const configFilePath = process.env.BLACKROAD_GATEWAY_CONFIG
     ? path.resolve(process.env.BLACKROAD_GATEWAY_CONFIG)
@@ -174,10 +301,46 @@ async function start() {
     }
 
     try {
+      // ---------------------------------------------------------------
+      // Health check
+      // ---------------------------------------------------------------
       if (req.method === 'GET' && req.url === '/healthz') {
-        return send(200, { status: 'ok' })
+        return send(200, { status: 'ok', gateway: 'blackroad-core', version: 2 })
       }
 
+      // ---------------------------------------------------------------
+      // Metrics endpoint
+      // ---------------------------------------------------------------
+      if (req.method === 'GET' && req.url === '/metrics') {
+        if (!config.allowRemote && !isLoopback(req)) {
+          return send(403, { status: 'error', error: 'Remote access denied' })
+        }
+        return send(200, { status: 'ok', metrics: metrics.snapshot() })
+      }
+
+      // ---------------------------------------------------------------
+      // Agent roster - list available agents
+      // ---------------------------------------------------------------
+      if (req.method === 'GET' && req.url === '/v1/agents') {
+        if (!config.allowRemote && !isLoopback(req)) {
+          return send(403, { status: 'error', error: 'Remote access denied' })
+        }
+        const policy = await loadPolicy(config.policyPath)
+        const roster = Object.entries(policy.agents).map(([name, cfg]) => ({
+          name,
+          description: cfg.description || '',
+          intents: cfg.allowed_intents || [],
+          providers: cfg.allowed_providers || [],
+          default_provider: cfg.default_provider || null,
+          rate_limit: cfg.rate_limit_per_minute || null,
+          usage_last_minute: rateLimiter.getUsage(name)
+        }))
+        return send(200, { status: 'ok', agents: roster })
+      }
+
+      // ---------------------------------------------------------------
+      // Main agent endpoint
+      // ---------------------------------------------------------------
       if (req.method !== 'POST' || req.url !== '/v1/agent') {
         return send(404, { status: 'error', error: 'Not found', request_id: requestId })
       }
@@ -223,6 +386,26 @@ async function start() {
         return send(413, { status: 'error', error: 'Input too large', request_id: requestId })
       }
 
+      // ---------------------------------------------------------------
+      // Rate limiting
+      // ---------------------------------------------------------------
+      const agentLimit = agentPolicy.rate_limit_per_minute ||
+        (policy.global && policy.global.rate_limit_per_minute) || 0
+      if (agentLimit > 0 && !rateLimiter.check(agentName, agentLimit)) {
+        return send(429, {
+          status: 'error',
+          error: 'Rate limit exceeded',
+          request_id: requestId,
+          metadata: {
+            limit_per_minute: agentLimit,
+            retry_after_seconds: 60
+          }
+        })
+      }
+
+      // ---------------------------------------------------------------
+      // Provider selection and invocation with fallback
+      // ---------------------------------------------------------------
       providerName = pickProvider(payload.provider, agentPolicy, intent)
       if (!providerName) {
         return send(400, {
@@ -239,30 +422,36 @@ async function start() {
         return send(403, { status: 'error', error: 'Provider not allowed', request_id: requestId })
       }
 
-      const provider = getProvider(providerName)
-      if (!provider) {
-        return send(400, { status: 'error', error: 'Unknown provider', request_id: requestId })
-      }
-
       const prompts = await loadJson(config.promptPath)
       const systemPrompt = buildSystemPrompt(prompts, agentName, intent, payload.context)
-      const output = await provider.invoke({
+      const invokeArgs = {
         input: payload.input,
         system: systemPrompt,
         context: payload.context || {},
         requestId,
         agent: agentName,
         intent
-      })
+      }
+
+      const result = await invokeWithFallback(
+        providerName,
+        agentPolicy.fallback_chain || [],
+        invokeArgs
+      )
+
+      // Record rate limit hit after successful invocation
+      rateLimiter.record(agentName)
 
       status = 'ok'
+      providerName = result.provider
       responsePayload = {
         status,
-        provider: providerName,
-        output,
+        provider: result.provider,
+        output: result.output,
         request_id: requestId,
         metadata: {
-          latency_ms: Date.now() - startTime
+          latency_ms: Date.now() - startTime,
+          fallback: result.fallback || false
         }
       }
       return send(200, responsePayload)
@@ -278,6 +467,9 @@ async function start() {
       }
       return send(500, responsePayload)
     } finally {
+      // Record metrics
+      metrics.record(agentName, providerName, status)
+
       const requestLog = requestPayload
         ? {
             agent: requestPayload.agent,
@@ -307,11 +499,30 @@ async function start() {
   })
 
   server.listen(config.port, config.bind, () => {
-    console.log(`BlackRoad Gateway listening on ${config.bind}:${config.port}`)
+    console.log(`BlackRoad Gateway v2 listening on ${config.bind}:${config.port}`)
+    console.log(`  Endpoints:`)
+    console.log(`    POST /v1/agent   - Agent invocation`)
+    console.log(`    GET  /v1/agents  - Agent roster`)
+    console.log(`    GET  /healthz    - Health check`)
+    console.log(`    GET  /metrics    - Gateway metrics`)
   })
 }
 
-start().catch((error) => {
-  console.error('Failed to start gateway', error)
-  process.exit(1)
-})
+// Export internals for testing
+if (process.env.NODE_ENV === 'test') {
+  module.exports = {
+    RateLimiter,
+    validateRequest,
+    pickProvider,
+    buildSystemPrompt,
+    isLoopback,
+    invokeWithFallback,
+    mergeConfig,
+    metrics
+  }
+} else {
+  start().catch((error) => {
+    console.error('Failed to start gateway', error)
+    process.exit(1)
+  })
+}

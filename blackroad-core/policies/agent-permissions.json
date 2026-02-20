@@ -1,22 +1,117 @@
 {
-  "version": 1,
+  "version": 2,
+  "global": {
+    "rate_limit_per_minute": 120,
+    "max_concurrent_requests": 20,
+    "cost_tracking": true,
+    "log_level": "info"
+  },
   "agents": {
     "planner": {
-      "allowed_intents": [
-        "analyze",
-        "plan"
-      ],
-      "allowed_providers": [
-        "ollama",
-        "claude",
-        "openai"
-      ],
+      "description": "Strategic planning and analysis agent",
+      "allowed_intents": ["analyze", "plan"],
+      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
       "default_provider": "ollama",
+      "fallback_chain": ["ollama", "claude", "openai"],
       "intent_routes": {
         "analyze": "ollama",
-        "plan": "ollama"
+        "plan": "claude"
       },
-      "max_input_bytes": 20000
+      "max_input_bytes": 20000,
+      "rate_limit_per_minute": 30,
+      "cost_tier": "standard"
+    },
+    "octavia": {
+      "description": "Systems architecture and infrastructure design agent",
+      "allowed_intents": ["architect", "review", "optimize", "diagnose"],
+      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
+      "default_provider": "claude",
+      "fallback_chain": ["claude", "openai", "ollama"],
+      "intent_routes": {
+        "architect": "claude",
+        "review": "claude",
+        "optimize": "ollama",
+        "diagnose": "ollama"
+      },
+      "max_input_bytes": 50000,
+      "rate_limit_per_minute": 20,
+      "cost_tier": "premium"
+    },
+    "lucidia": {
+      "description": "Creative vision, synthesis, and mentorship agent",
+      "allowed_intents": ["vision", "synthesize", "mentor", "explore"],
+      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
+      "default_provider": "claude",
+      "fallback_chain": ["claude", "gemini", "openai"],
+      "intent_routes": {
+        "vision": "claude",
+        "synthesize": "claude",
+        "mentor": "ollama",
+        "explore": "ollama"
+      },
+      "max_input_bytes": 40000,
+      "rate_limit_per_minute": 25,
+      "cost_tier": "premium"
+    },
+    "alice": {
+      "description": "DevOps, deployment automation, and routing agent",
+      "allowed_intents": ["deploy", "automate", "route", "monitor"],
+      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
+      "default_provider": "ollama",
+      "fallback_chain": ["ollama", "openai", "claude"],
+      "intent_routes": {
+        "deploy": "ollama",
+        "automate": "ollama",
+        "route": "ollama",
+        "monitor": "ollama"
+      },
+      "max_input_bytes": 30000,
+      "rate_limit_per_minute": 40,
+      "cost_tier": "standard"
+    },
+    "cipher": {
+      "description": "Security auditing, hardening, and vulnerability scanning agent",
+      "allowed_intents": ["audit", "harden", "scan", "encrypt"],
+      "allowed_providers": ["ollama", "claude", "openai"],
+      "default_provider": "claude",
+      "fallback_chain": ["claude", "openai", "ollama"],
+      "intent_routes": {
+        "audit": "claude",
+        "harden": "claude",
+        "scan": "ollama",
+        "encrypt": "ollama"
+      },
+      "max_input_bytes": 60000,
+      "rate_limit_per_minute": 15,
+      "cost_tier": "premium"
+    },
+    "prism": {
+      "description": "Data analysis, pattern recognition, and forecasting agent",
+      "allowed_intents": ["analyze", "correlate", "report", "forecast"],
+      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
+      "default_provider": "ollama",
+      "fallback_chain": ["ollama", "gemini", "openai"],
+      "intent_routes": {
+        "analyze": "ollama",
+        "correlate": "ollama",
+        "report": "claude",
+        "forecast": "gemini"
+      },
+      "max_input_bytes": 80000,
+      "rate_limit_per_minute": 30,
+      "cost_tier": "standard"
+    }
+  },
+  "cost_tiers": {
+    "standard": {
+      "max_requests_per_hour": 200,
+      "max_tokens_per_request": 2048,
+      "priority": 1
+    },
+    "premium": {
+      "max_requests_per_hour": 100,
+      "max_tokens_per_request": 4096,
+      "priority": 2
     }
   }
 }
