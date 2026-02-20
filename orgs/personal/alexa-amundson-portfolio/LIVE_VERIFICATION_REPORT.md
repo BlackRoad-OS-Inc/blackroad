@@ -58,12 +58,12 @@ curl -s -o /dev/null -w "%{http_code}" https://blackroad-guardian-dashboard.page
 ---
 
 ### 3. Cloudflare Worker Health Endpoint
-**URL:** https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev
+**URL:** https://blackroad-deploy-dispatcher.blackroad.workers.dev
 **Status:** ⚠️ **404** (Worker exists but no route configured)
 **What it is:** Distributed development system coordinator
 **Verification:**
 ```bash
-curl -s -o /dev/null -w "%{http_code}" https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev
+curl -s -o /dev/null -w "%{http_code}" https://blackroad-deploy-dispatcher.blackroad.workers.dev
 # Output: 404
 ```
 
@@ -375,7 +375,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://5d7fe908.blackroad-monitoring.p
 curl -s -o /dev/null -w "%{http_code}\n" https://blackroad-guardian-dashboard.pages.dev
 
 # Cloudflare Worker (returns 404 but proves deployment)
-curl -s -o /dev/null -w "%{http_code}\n" https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev
+curl -s -o /dev/null -w "%{http_code}\n" https://blackroad-deploy-dispatcher.blackroad.workers.dev
 
 # Alice (fails - DNS not resolving)
 curl -s -o /dev/null -w "%{http_code}\n" https://alice.blackroad.me

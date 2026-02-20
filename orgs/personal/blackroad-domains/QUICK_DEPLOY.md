@@ -221,5 +221,5 @@ https://docs.lucidia.earth
 ## Support
 
 - **Email:** blackroad.systems@gmail.com
-- **Primary:** amundsonalexa@gmail.com
+- **Primary:** blackroad@gmail.com
 - **Full Docs:** ~/lucidia-earth-router/LUCIDIA_EARTH_INFRASTRUCTURE.md

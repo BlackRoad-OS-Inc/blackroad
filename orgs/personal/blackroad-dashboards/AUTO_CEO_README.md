@@ -527,7 +527,7 @@ Auto CEO Mode is a fully autonomous corporate operations system that runs BlackR
 
 ### Review Queue
 - **Email**: blackroad.systems@gmail.com
-- **Personal**: amundsonalexa@gmail.com
+- **Personal**: blackroad@gmail.com
 - **Linear**: Project management (to be configured)
 
 ### Notifications

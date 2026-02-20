@@ -57,7 +57,7 @@ This will:
 curl -X POST https://deploy-api.blackroad.systems/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "amundsonalexa@gmail.com",
+    "email": "blackroad@gmail.com",
     "password": "your_secure_password"
   }'
 

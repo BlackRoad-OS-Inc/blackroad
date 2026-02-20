@@ -403,7 +403,7 @@ sudo nano /etc/ddclient.conf
 
 # Add:
 # protocol=cloudflare
-# login=amundsonalexa@gmail.com
+# login=blackroad@gmail.com
 # password=<API_TOKEN>
 # zone=lucidia.earth
 # api.lucidia.earth

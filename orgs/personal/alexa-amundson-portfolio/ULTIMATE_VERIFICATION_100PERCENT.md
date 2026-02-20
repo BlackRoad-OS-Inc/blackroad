@@ -132,7 +132,7 @@ cat ~/.blackroad/memory/journals/master-journal.jsonl | jq -r 'select(.action=="
 #### Milestone #1: Cloudflare Worker Live (Dec 27, 2025)
 ```
 [CLOUDFLARE]+[COMPLETE] Worker Deployed & System Operational
-- URL: https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev
+- URL: https://blackroad-deploy-dispatcher.blackroad.workers.dev
 - 4 Pi nodes registered (lucidia, alice, aria, octavia)
 - GitHub → Cloudflare Worker → 4 Raspberry Pis (role-based deployment)
 - 9 automation scripts created

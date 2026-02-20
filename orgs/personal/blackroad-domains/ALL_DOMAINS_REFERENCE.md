@@ -573,4 +573,4 @@ ssh pi@192.168.4.38 'docker-compose logs -f'
 
 **Maintained By:** Claude Code + Alexa Louise Amundson
 **Support:** blackroad.systems@gmail.com
-**Primary:** amundsonalexa@gmail.com
+**Primary:** blackroad@gmail.com

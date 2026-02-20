@@ -333,7 +333,7 @@ HTTPS: Enforced
 
 **Portfolio:** https://blackboxprogramming.github.io/alexa-amundson-portfolio/
 **GitHub:** https://github.com/blackboxprogramming/alexa-amundson-portfolio
-**Email:** amundsonalexa@gmail.com
+**Email:** blackroad@gmail.com
 **Company:** blackroad.systems@gmail.com
 
 **Live Demos:**

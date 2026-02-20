@@ -2,7 +2,7 @@
 ## The Complete Infrastructure Scripture
 
 **Owner:** Alexa Louise Amundson
-**Email:** amundsonalexa@gmail.com | blackroad.systems@gmail.com
+**Email:** blackroad@gmail.com | blackroad.systems@gmail.com
 **Enterprise:** BlackRoad OS
 **Last Updated:** 2025-12-22
 **Status:** CANONICAL SOURCE OF TRUTH
@@ -598,7 +598,7 @@ Examples:
 ### Account Details
 - **Primary Account ID:** 463024cf9efed5e7b40c5fbe7938e256
 - **Secondary Account ID:** 848cf0b18d51e0170e0d1537aec3505a
-- **Email:** amundsonalexa@gmail.com
+- **Email:** blackroad@gmail.com
 - **API Token:** (stored in ~/.claude/CLAUDE.md)
 
 ### Infrastructure Summary

@@ -133,13 +133,13 @@ curl https://deploy-api.blackroad.systems/health
 curl -X POST https://deploy-api.blackroad.systems/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "amundsonalexa@gmail.com",
+    "email": "blackroad@gmail.com",
     "password": "your_secure_password"
   }'
 
 # Response will include your API key:
 # {
-#   "user": {"id": 1, "email": "amundsonalexa@gmail.com"},
+#   "user": {"id": 1, "email": "blackroad@gmail.com"},
 #   "apiKey": "br_abc123..."
 # }
 

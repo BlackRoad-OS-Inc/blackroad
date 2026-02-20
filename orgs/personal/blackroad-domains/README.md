@@ -2,7 +2,7 @@
 
 **Owner:** Alexa Louise Amundson
 **Organization:** BlackRoad Inc.
-**Email:** amundsonalexa@gmail.com | blackroad.systems@gmail.com
+**Email:** blackroad@gmail.com | blackroad.systems@gmail.com
 **Last Updated:** 2025-12-22
 
 ---

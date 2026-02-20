@@ -1,6 +1,6 @@
 # Complete Domain Master List - All Infrastructure
 
-**Owner:** Alexa Louise Amundson (amundsonalexa@gmail.com)
+**Owner:** Alexa Louise Amundson (blackroad@gmail.com)
 **Company:** BlackRoad Inc.
 **Cloudflare Account:** 463024cf9efed5e7b40c5fbe7938e256 / 848cf0b18d51e0170e0d1537aec3505a
 **Last Updated:** 2025-12-22
@@ -705,7 +705,7 @@ Based on naming patterns, likely future deployments:
 
 **Document Maintained By:** Claude Code
 **Owner:** Alexa Louise Amundson
-**Email:** amundsonalexa@gmail.com / blackroad.systems@gmail.com
+**Email:** blackroad@gmail.com / blackroad.systems@gmail.com
 **Last Updated:** 2025-12-22
 
 **Related Documentation:**

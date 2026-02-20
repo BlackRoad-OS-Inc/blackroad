@@ -1,7 +1,7 @@
 # ALEXA LOUISE AMUNDSON
 **Platform & Infrastructure Engineer**
 
-amundsonalexa@gmail.com | github.com/BlackRoad-OS
+blackroad@gmail.com | github.com/BlackRoad-OS
 
 ---
 

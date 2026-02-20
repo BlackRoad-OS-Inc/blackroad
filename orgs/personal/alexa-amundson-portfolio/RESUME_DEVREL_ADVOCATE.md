@@ -1,7 +1,7 @@
 # ALEXA LOUISE AMUNDSON
 **Developer Relations | Technical Educator | Community Builder**
 
-amundsonalexa@gmail.com | blackroad.io | github.com/BlackRoad-OS
+blackroad@gmail.com | blackroad.io | github.com/BlackRoad-OS
 
 ---
 
@@ -38,7 +38,7 @@ Developer advocate with **899,160+ lines of open-source code** across **113+ pub
 - **Real-time monitoring:** https://5d7fe908.blackroad-monitoring.pages.dev (79 projects, live stats)
 - **AI chat:** alice.blackroad.me (interactive conversation with autonomous AI)
 - **Guardian dashboard:** https://blackroad-guardian-dashboard.pages.dev (Lucidia's first project!)
-- **Health check:** https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev (Cloudflare Worker responding)
+- **Health check:** https://blackroad-deploy-dispatcher.blackroad.workers.dev (Cloudflare Worker responding)
 - **GitHub:** github.com/BlackRoad-OS (113+ repos, all public, explore freely)
 
 ---
@@ -93,7 +93,7 @@ Developer advocate with **899,160+ lines of open-source code** across **113+ pub
 - **$0/month cost** (Cloudflare Workers free tier)
 - **4 Raspberry Pi nodes** registered (distributed development system)
 - **9 automation scripts created** during sprint
-- **Live URL:** https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev
+- **Live URL:** https://blackroad-deploy-dispatcher.blackroad.workers.dev
 
 **Developer takeaway:** Building production infrastructure without cloud bills
 
@@ -270,7 +270,7 @@ All my documentation follows this pattern:
 - Solution: "Cloudflare Worker + 4 Pi nodes"
 - Implementation: "9 automation scripts + 40 docs (created during 2-hour sprint)"
 - Result: "Live URL, 4 nodes registered, $0 cost"
-- Commands: `curl https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev/health`
+- Commands: `curl https://blackroad-deploy-dispatcher.blackroad.workers.dev/health`
 
 ---
 
@@ -367,13 +367,13 @@ Check her quantum-watcher logs for monitoring best practices
 
 ## CONTACT
 
-**Email:** amundsonalexa@gmail.com
+**Email:** blackroad@gmail.com
 **GitHub:** github.com/BlackRoad-OS (113+ repos, explore freely!)
 **Live Demos:**
 - Monitoring: https://5d7fe908.blackroad-monitoring.pages.dev
 - Alice Chat: alice.blackroad.me
 - Lucidia Guardian: https://blackroad-guardian-dashboard.pages.dev
-- Worker Health: https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev
+- Worker Health: https://blackroad-deploy-dispatcher.blackroad.workers.dev
 
 **Social:** [To be provided - Twitter, LinkedIn, Dev.to, etc.]
 

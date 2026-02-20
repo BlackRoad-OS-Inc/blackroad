@@ -181,7 +181,7 @@ echo ""
 echo -e "${TEXT_MUTED}CONTACT & IDENTITY${RESET}"
 echo -e "${PINK}─────────────────────────────────────────────────────────────────────────${RESET}"
 echo ""
-echo -e "  ${ORANGE}✉${RESET}  ${TEXT_PRIMARY}Primary Email${RESET}     ${BOLD}${ORANGE}amundsonalexa@gmail.com${RESET}"
+echo -e "  ${ORANGE}✉${RESET}  ${TEXT_PRIMARY}Primary Email${RESET}     ${BOLD}${ORANGE}blackroad@gmail.com${RESET}"
 echo -e "  ${PINK}✉${RESET}  ${TEXT_PRIMARY}Company Email${RESET}     ${BOLD}${PINK}blackroad.systems@gmail.com${RESET}"
 echo ""
 

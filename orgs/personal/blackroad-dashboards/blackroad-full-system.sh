@@ -225,7 +225,7 @@ render_dashboard() {
     # Contact Information
     echo -e "${TEXT_MUTED}╭─ CONTACT & IDENTITY ──────────────────────────────────────────────────╮${RESET}"
     echo ""
-    echo -e "  ${ORANGE}✉${RESET}  ${TEXT_PRIMARY}Primary${RESET}    ${BOLD}${ORANGE}amundsonalexa@gmail.com${RESET}"
+    echo -e "  ${ORANGE}✉${RESET}  ${TEXT_PRIMARY}Primary${RESET}    ${BOLD}${ORANGE}blackroad@gmail.com${RESET}"
     echo -e "  ${PINK}✉${RESET}  ${TEXT_PRIMARY}Company${RESET}    ${BOLD}${PINK}blackroad.systems@gmail.com${RESET}"
     echo ""
 

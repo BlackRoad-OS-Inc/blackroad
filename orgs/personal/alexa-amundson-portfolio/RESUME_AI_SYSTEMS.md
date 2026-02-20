@@ -1,7 +1,7 @@
 # ALEXA LOUISE AMUNDSON
 **AI Systems Engineer | Agent Orchestration & LLM Infrastructure**
 
-amundsonalexa@gmail.com | github.com/BlackRoad-OS | blackroad.io
+blackroad@gmail.com | github.com/BlackRoad-OS | blackroad.io
 
 ---
 
@@ -297,7 +297,7 @@ gh repo view BlackRoad-OS/blackroad-os-codex --json description  # 8,789 compone
 
 ## CONTACT
 
-**Email:** amundsonalexa@gmail.com
+**Email:** blackroad@gmail.com
 **GitHub:** github.com/BlackRoad-OS (15 orgs, 80+ repos)
 **Company:** blackroad.systems@gmail.com
 **Portfolio:** blackroad.io, lucidia.earth

@@ -1,7 +1,7 @@
 # ALEXA LOUISE AMUNDSON
 **Technical Sales Engineer | Solutions Architect**
 
-amundsonalexa@gmail.com | blackroad.io | github.com/BlackRoad-OS
+blackroad@gmail.com | blackroad.io | github.com/BlackRoad-OS
 
 ---
 
@@ -181,7 +181,7 @@ Technical sales engineer with **899,160+ lines of production code** and proven a
 - **Monitoring Dashboard:** https://5d7fe908.blackroad-monitoring.pages.dev (79 projects, real-time stats)
 - **Alice Website:** https://alice.blackroad.me (interactive chat, full metrics)
 - **Lucidia Guardian:** https://blackroad-guardian-dashboard.pages.dev (autonomous AI's first project)
-- **Cloudflare Worker:** https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev (health check responding)
+- **Cloudflare Worker:** https://blackroad-deploy-dispatcher.blackroad.workers.dev (health check responding)
 - **GitHub:** https://github.com/BlackRoad-OS (113+ repos, all public)
 
 Plus I can run **reproducible verification commands** in terminal to prove any metric."
@@ -249,7 +249,7 @@ Plus I can run **reproducible verification commands** in terminal to prove any m
 
 ## CONTACT
 
-**Email:** amundsonalexa@gmail.com
+**Email:** blackroad@gmail.com
 **Company:** blackroad.systems@gmail.com
 **Portfolio:** blackroad.io, lucidia.earth, alice.blackroad.me
 **GitHub:** github.com/BlackRoad-OS (113+ public repos)

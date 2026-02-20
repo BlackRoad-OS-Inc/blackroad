@@ -405,7 +405,7 @@ settings_menu() {
     echo -e "  ${PURPLE}3)${RESET} Default visibility:       ${BOLD}Private${RESET}"
     echo -e "  ${BLUE}4)${RESET} Clone location:           ${BOLD}~/repos/${RESET}"
     echo -e "  ${CYAN}5)${RESET} Git username:             ${BOLD}alexa${RESET}"
-    echo -e "  ${ORANGE}6)${RESET} Git email:                ${BOLD}amundsonalexa@gmail.com${RESET}"
+    echo -e "  ${ORANGE}6)${RESET} Git email:                ${BOLD}blackroad@gmail.com${RESET}"
     echo ""
     echo -e "  ${TEXT_SECONDARY}Press any key to return...${RESET}"
     read -rsn1

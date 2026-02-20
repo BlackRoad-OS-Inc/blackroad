@@ -67,7 +67,7 @@ cat ~/.blackroad/memory/journals/master-journal.jsonl | \
 ---
 
 ### **3. Cloudflare Worker - Distributed Development System**
-**URL:** https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev
+**URL:** https://blackroad-deploy-dispatcher.blackroad.workers.dev
 
 **What it does:**
 - Health check endpoint showing 4 Raspberry Pi nodes registered
@@ -81,7 +81,7 @@ cat ~/.blackroad/memory/journals/master-journal.jsonl | \
 - **Global edge deployment** (runs in 200+ cities worldwide)
 
 **How to demo:**
-1. `curl https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev/health`
+1. `curl https://blackroad-deploy-dispatcher.blackroad.workers.dev/health`
 2. Show JSON response with 4 registered nodes
 3. Explain: "This coordinates deployments across 4 Raspberry Pis from GitHub"
 4. Highlight: $0 cost, 2-hour build time
@@ -449,7 +449,7 @@ open https://blackroad-guardian-dashboard.pages.dev
 
 ```bash
 # 1. Show Cloudflare Worker health
-curl https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev/health | jq .
+curl https://blackroad-deploy-dispatcher.blackroad.workers.dev/health | jq .
 
 # 2. Show deployment success rate
 echo "Total deployments:"
@@ -493,7 +493,7 @@ ls -lh ~/deploy-bots-everywhere.sh ~/blackroad-deploy-all.sh ~/blackroad-deploy-
 **Test these URLs work:**
 - [ ] https://5d7fe908.blackroad-monitoring.pages.dev (monitoring)
 - [ ] https://blackroad-guardian-dashboard.pages.dev (Lucidia's project)
-- [ ] https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev/health (Worker)
+- [ ] https://blackroad-deploy-dispatcher.blackroad.workers.dev/health (Worker)
 - [ ] https://a4aed042.blackroad-hello.pages.dev (sample project)
 
 **Practice these commands:**

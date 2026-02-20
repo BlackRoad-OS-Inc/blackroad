@@ -124,7 +124,7 @@
 - https://5d7fe908.blackroad-monitoring.pages.dev (monitoring dashboard)
 - https://alice.blackroad.me (Alice interactive chat)
 - https://blackroad-guardian-dashboard.pages.dev (Lucidia's project)
-- https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev (Cloudflare Worker)
+- https://blackroad-deploy-dispatcher.blackroad.workers.dev (Cloudflare Worker)
 
 ### **5. Reproducible Commands**
 Every claim has a command you can run:

@@ -38,7 +38,7 @@ systemctl enable cloudflared
 ```bash
 curl -X POST https://deploy-api.blackroad.systems/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email": "amundsonalexa@gmail.com", "password": "YOUR_PASSWORD"}'
+  -d '{"email": "blackroad@gmail.com", "password": "YOUR_PASSWORD"}'
 ```
 
 ## 💻 Install CLI on Mac

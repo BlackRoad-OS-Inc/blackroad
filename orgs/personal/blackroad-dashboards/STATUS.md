@@ -187,7 +187,7 @@ blackroad-dashboards/
 
 ## 🔐 Authentication
 
-**Email:** amundsonalexa@gmail.com
+**Email:** blackroad@gmail.com
 **GitHub:** SSH keys configured
 **Cloudflare:** API tokens active
 **Railway:** Authenticated

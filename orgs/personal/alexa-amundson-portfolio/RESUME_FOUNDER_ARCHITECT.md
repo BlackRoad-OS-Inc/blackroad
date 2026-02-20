@@ -1,7 +1,7 @@
 # ALEXA LOUISE AMUNDSON
 **Technical Founder & Systems Architect**
 
-amundsonalexa@gmail.com | blackroad.io | github.com/BlackRoad-OS
+blackroad@gmail.com | blackroad.io | github.com/BlackRoad-OS
 
 ---
 
@@ -180,7 +180,7 @@ grep -c "blackroad" /tmp/blackroad-os-operator/CLOUDFLARE_INFRA.md  # 19+ domain
 
 ## CONTACT & LINKS
 
-**Email:** amundsonalexa@gmail.com
+**Email:** blackroad@gmail.com
 **GitHub (Primary):** github.com/BlackRoad-OS (15 orgs, 80+ repos)
 **Company Email:** blackroad.systems@gmail.com
 **Portfolio:** blackroad.io, lucidia.earth

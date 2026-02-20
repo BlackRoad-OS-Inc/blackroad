@@ -243,7 +243,7 @@ cat ~/.blackroad/memory/journals/master-journal.jsonl | \
 ### 11 Major Milestones Logged in Memory System
 
 **Milestone #1:** Cloudflare Worker Deployed (Dec 27, 2025)
-- **URL:** https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev
+- **URL:** https://blackroad-deploy-dispatcher.blackroad.workers.dev
 - **Build time:** 2 hours
 - **Cost:** $0
 - **Impact:** Complete distributed development system operational

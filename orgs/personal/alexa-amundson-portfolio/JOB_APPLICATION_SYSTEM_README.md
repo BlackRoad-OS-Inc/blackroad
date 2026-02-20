@@ -239,7 +239,7 @@ Available for a quick call this week?
 
 Best,
 Alexa
-amundsonalexa@gmail.com
+blackroad@gmail.com
 ```
 
 ### Template 2: LinkedIn Message
