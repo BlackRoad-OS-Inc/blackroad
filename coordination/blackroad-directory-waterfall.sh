@@ -1,0 +1,167 @@
+#!/bin/bash
+# @BLACKROAD DIRECTORY WATERFALL SYSTEM
+# Hierarchical agent routing: @BLACKROAD → Operator → Org → Department → Agent
+
+echo "📞 BLACKROAD DIRECTORY WATERFALL SYSTEM"
+echo "========================================"
+
+# Create directory structure
+cat > /Users/alexa/BLACKROAD/coordination/directory-structure.json << 'DIRECTORY'
+{
+  "@BLACKROAD": {
+    "type": "ROOT_OPERATOR",
+    "description": "Primary entry point for all BlackRoad agent calls",
+    "routing": {
+      "operator": "BLACKROAD_COORDINATOR",
+      "fallback": "BROADCAST_ALL_AGENTS"
+    },
+    "organizations": {
+      "BlackRoad-OS": {
+        "departments": {
+          "infrastructure": ["headscale", "keycloak", "prometheus", "grafana", "portainer", "netdata"],
+          "databases": ["postgresql", "redis", "elasticsearch", "influxdb", "victoriametrics", "cockroachdb"],
+          "monitoring": ["uptime-kuma", "sentry", "cockpit"]
+        }
+      },
+      "BlackRoad-AI": {
+        "departments": {
+          "models": ["vllm", "ollama", "pytorch", "tensorflow", "whisper"],
+          "vector-dbs": ["qdrant", "weaviate", "chroma", "milvus"],
+          "frameworks": ["langchain", "llama-index", "transformers", "fastapi"],
+          "ml-tools": ["sklearn", "xgboost", "mlx", "jina"]
+        }
+      },
+      "BlackRoad-Cloud": {
+        "departments": {
+          "orchestration": ["kubernetes", "nomad", "rancher", "argocd", "flux"],
+          "infrastructure": ["terraform", "pulumi", "consul"],
+          "storage": ["minio", "syncthing", "restic", "rclone"],
+          "networking": ["traefik", "caddy", "envoy", "istio", "etcd"],
+          "containers": ["docker-compose", "vault"]
+        }
+      },
+      "BlackRoad-Security": {
+        "departments": {
+          "secrets": ["openbao", "sops"],
+          "policy": ["opa"],
+          "scanning": ["trufflehog", "trivy", "grype", "scorecard"],
+          "ids-ips": ["wazuh", "fail2ban", "suricata", "crowdsec", "snort", "modsecurity"],
+          "network-security": ["cilium", "falco"]
+        }
+      },
+      "BlackRoad-Foundation": {
+        "departments": {
+          "crm": ["espocrm", "suitecrm", "odoo"],
+          "project-management": ["openproject", "taiga", "wekan", "focalboard"],
+          "analytics": ["metabase"],
+          "database": ["nocodb"],
+          "erp": ["dolibarr", "akaunting"],
+          "collaboration": ["mattermost"]
+        }
+      },
+      "BlackRoad-Media": {
+        "departments": {
+          "social": ["mastodon", "pixelfed", "matrix", "discourse"],
+          "content": ["ghost", "peertube", "bookstack", "grav", "writefreely"],
+          "communication": ["jitsi", "bigbluebutton"],
+          "storage": ["nextcloud", "owncloud", "immich", "photoprism", "jellyfin"]
+        }
+      },
+      "BlackRoad-Labs": {
+        "departments": {
+          "notebooks": ["jupyter"],
+          "data-catalog": ["ckan"],
+          "mlops": ["mlflow"],
+          "workflow": ["airflow", "dagster"],
+          "visualization": ["streamlit", "superset", "gradio", "panel"],
+          "compute": ["dask", "spark"]
+        }
+      },
+      "BlackRoad-Education": {
+        "departments": {
+          "lms": ["moodle", "oppia", "kolibri", "chamilo"],
+          "content": ["outline", "h5p"],
+          "mooc": ["openedx", "openstax", "opencraft"]
+        }
+      },
+      "BlackRoad-Hardware": {
+        "departments": {
+          "smart-home": ["home-assistant", "openhab"],
+          "automation": ["node-red", "esphome", "tasmota"],
+          "iot-brokers": ["mosquitto", "emqx"],
+          "fleet": ["platformio", "balena"],
+          "security": ["kerberos"],
+          "energy": ["openems"]
+        }
+      },
+      "BlackRoad-Interactive": {
+        "departments": {
+          "engines": ["godot", "unity", "o3de", "bevy"],
+          "3d": ["threejs", "babylonjs"],
+          "2d": ["phaser", "playcanvas", "cocos", "excalibur"],
+          "frameworks": ["sfml", "sdl"]
+        }
+      },
+      "BlackRoad-Ventures": {
+        "departments": {
+          "crypto": ["btcpay"],
+          "analytics": ["plausible"],
+          "finance": ["firefly", "maybe", "crater", "killbill", "ledger", "gnucash", "invoiceplane"],
+          "ecommerce": ["solidus", "prestashop"],
+          "erp": ["erpnext"]
+        }
+      },
+      "BlackRoad-Studio": {
+        "departments": {
+          "design": ["penpot", "inkscape", "scribus", "gimp"],
+          "3d-modeling": ["blender", "openscad", "freecad", "librecad"],
+          "audio": ["audacity"],
+          "video": ["obs"]
+        }
+      },
+      "BlackRoad-Archive": {
+        "departments": {
+          "distributed": ["ipfs", "filecoin"],
+          "web": ["archivebox", "openlibrary", "archivy"],
+          "docs": ["paperless", "zotero"],
+          "backup": ["borg", "duplicati"]
+        }
+      },
+      "BlackRoad-Gov": {
+        "departments": {
+          "voting": ["snapshot"],
+          "governance": ["decidim", "aragon", "vocdoni", "partydao", "sovereign"],
+          "civic": ["consul-gov"]
+        }
+      },
+      "Blackbox-Enterprises": {
+        "departments": {
+          "automation": ["n8n", "activepieces", "huginn"],
+          "etl": ["airbyte"],
+          "workflow": ["prefect", "nifi", "windmill", "kestra", "dolphinscheduler"],
+          "orchestration": ["temporal"]
+        }
+      }
+    }
+  },
+  "agent_count": {
+    "total": 30000,
+    "by_task": {
+      "ai_research": 12592,
+      "code_deploy": 8407,
+      "infrastructure": 5401,
+      "monitoring": 3600
+    }
+  }
+}
+DIRECTORY
+
+echo "✅ @BLACKROAD directory waterfall created"
+echo ""
+echo "🔍 ROUTING EXAMPLES:"
+echo "@BLACKROAD → Broadcasts to all 30K agents"
+echo "@BLACKROAD/BlackRoad-AI → Routes to AI division (12,592 agents)"
+echo "@BLACKROAD/BlackRoad-AI/models → Routes to models department"
+echo "@BLACKROAD/BlackRoad-AI/models/vllm → Routes to specific vllm agent"
+echo ""
+echo "📊 TOTAL COVERAGE: 200+ open source forkies across 15 organizations!"
