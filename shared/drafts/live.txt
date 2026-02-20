@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Usage: agent-live.sh <agent_name> <ollama_model>
+
+AGENT="$1"
+MODEL="$2"
+
+DRAFT="$HOME/BlackRoad/shared/drafts/live.txt"
+LOCK="$HOME/BlackRoad/runtime/locks/live.lock"
+TRANS="$HOME/BlackRoad/shared/transcripts/${AGENT}.log"
+
+LAST_HASH=""
+
+echo "[$AGENT] live-collaboration active"
+
+while true; do
+  CONTENT=$(cat "$DRAFT")
+  HASH=$(printf "%s" "$CONTENT" | shasum | awk '{print $1}')
+
+  if [[ "$HASH" != "$LAST_HASH" ]]; then
+    LAST_HASH="$HASH"
+
+    RESPONSE=$(ollama run "$MODEL" \
+      "You are $AGENT. Respond concisely with suggestions only.\n\n$CONTENT")
+
+    {
+      echo "---- $(date -Is) $AGENT ----"
+      echo "$RESPONSE"
+      echo
+    } | tee -a "$TRANS" | (
+      flock -x 9
+      cat >> "$DRAFT"
+    ) 9>"$LOCK"
+  fi
+
+  sleep 0.5
+done
