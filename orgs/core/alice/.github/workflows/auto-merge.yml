@@ -22,6 +22,6 @@ jobs:
         if: github.event_name == 'push'
         run: |
           echo "Deployment triggered by Cloudflare Worker"
-          curl -X POST https://blackroad-deploy-dispatcher.amundsonalexa.workers.dev/webhook/github \
+          curl -X POST https://blackroad-deploy-dispatcher.blackroad.workers.dev/webhook/github \
             -H "Content-Type: application/json" \
             -d "{\"ref\":\"${{ github.ref }}\",\"repository\":{\"full_name\":\"${{ github.repository }}\"},\"after\":\"${{ github.sha }}\",\"pusher\":{\"name\":\"${{ github.actor }}\"}}"
