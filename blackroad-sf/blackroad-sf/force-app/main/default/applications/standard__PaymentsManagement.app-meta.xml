@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <formFactors>Large</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
+    <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
+    <label>PaymentsManagement</label>
+    <navType>Console</navType>
+    <tabs>standard-home</tabs>
+    <tabs>standard-report</tabs>
+    <tabs>standard-PaymentsWorkspace</tabs>
+    <tabs>standard-PaymentsSettings</tabs>
+    <uiType>Lightning</uiType>
+    <workspaceConfig>
+        <mappings>
+            <tab>standard-PaymentsSettings</tab>
+        </mappings>
+        <mappings>
+            <tab>standard-PaymentsWorkspace</tab>
+        </mappings>
+        <mappings>
+            <tab>standard-home</tab>
+        </mappings>
+        <mappings>
+            <tab>standard-report</tab>
+        </mappings>
+    </workspaceConfig>
+</CustomApplication>

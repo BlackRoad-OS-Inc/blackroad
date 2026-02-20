@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BlackRoad OS - Pixel Library</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    * { margin: 0; padding: 0; }
+    body { background: #0a0a12; font-family: 'Press Start 2P', monospace; color: #fff; }
+    canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; margin: 20px auto; border: 2px solid #2a2a4a; }
+    h1 { text-align: center; padding: 20px; color: #e94560; font-size: 14px; }
+    .grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 20px; }
+    .tile { background: #1a1a2e; padding: 10px; border-radius: 4px; }
+    .tile canvas { margin: 0; }
+    .tile p { font-size: 8px; text-align: center; margin-top: 8px; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>BLACKROAD OS - PIXEL LIBRARY</h1>
+  <div class="grid" id="grid"></div>
+
+  <script src="lib/floor.js"></script>
+  <script src="lib/wall.js"></script>
+  <script src="lib/desk.js"></script>
+  <script src="lib/chair.js"></script>
+  <script src="lib/agent.js"></script>
+  <script src="lib/server.js"></script>
+  <script src="lib/plant.js"></script>
+  <script src="lib/furniture.js"></script>
+  <script src="lib/lighting.js"></script>
+  <script src="lib/props.js"></script>
+
+  <script>
+    let t = 0;
+
+    function createTile(name, width, height, drawFn) {
+      const div = document.createElement('div');
+      div.className = 'tile';
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const label = document.createElement('p');
+      label.textContent = name;
+      div.appendChild(canvas);
+      div.appendChild(label);
+      document.getElementById('grid').appendChild(div);
+      return { canvas, ctx: canvas.getContext('2d'), draw: drawFn };
+    }
+
+    const tiles = [
+      createTile('Wood Floor', 64, 64, (ctx) => FLOOR.fillWood(ctx, 0, 0, 4, 4)),
+      createTile('Tile Floor', 64, 64, (ctx) => FLOOR.fillTile(ctx, 0, 0, 4, 4)),
+      createTile('Carpet', 64, 64, (ctx) => FLOOR.fillCarpet(ctx, 0, 0, 4, 4, 'red')),
+      createTile('Wall', 96, 72, (ctx) => WALL.fullWall(ctx, 0, 0, 6, 'cream')),
+      createTile('Brick', 64, 64, (ctx) => WALL.fillBrick(ctx, 0, 0, 4, 4)),
+      createTile('Desk', 96, 72, (ctx) => DESK.workstation(ctx, 8, 36, t)),
+      createTile('Chair Up', 32, 48, (ctx) => CHAIR.facingUp(ctx, 4, 6, 'blue')),
+      createTile('Chair Down', 32, 40, (ctx) => CHAIR.facingDown(ctx, 4, 4, 'blue')),
+      createTile('Lucidia', 24, 48, (ctx) => { AGENT.draw(ctx, 4, 8, AGENT.presets.LUCIDIA, 0, t); AGENT.nameBadge(ctx, 4, 8, 'LUCIDIA', '#e94560'); }),
+      createTile('Alice', 24, 48, (ctx) => { AGENT.draw(ctx, 4, 8, AGENT.presets.ALICE, 0, t); AGENT.nameBadge(ctx, 4, 8, 'ALICE', '#00d9ff'); }),
+      createTile('Server Rack', 48, 88, (ctx) => SERVER.rack(ctx, 4, 4, t)),
+      createTile('Mini Rack', 32, 56, (ctx) => SERVER.miniRack(ctx, 4, 4, t)),
+      createTile('Small Plant', 24, 32, (ctx) => PLANT.small(ctx, 4, 6, t, 'terra')),
+      createTile('Large Plant', 32, 48, (ctx) => PLANT.large(ctx, 4, 6, t)),
+      createTile('Cactus', 16, 24, (ctx) => PLANT.cactus(ctx, 2, 2)),
+      createTile('Couch', 80, 52, (ctx) => FURNITURE.couch(ctx, 4, 4, 'blue')),
+      createTile('Coffee Table', 64, 36, (ctx) => FURNITURE.coffeeTable(ctx, 4, 4)),
+      createTile('Bookshelf', 44, 80, (ctx) => FURNITURE.bookshelf(ctx, 4, 4)),
+      createTile('Filing Cabinet', 40, 72, (ctx) => FURNITURE.filingCabinet(ctx, 4, 4)),
+      createTile('Water Cooler', 36, 64, (ctx) => FURNITURE.waterCooler(ctx, 4, 4, t)),
+      createTile('Vending', 48, 80, (ctx) => FURNITURE.vendingMachine(ctx, 4, 4)),
+      createTile('Ceiling Light', 40, 56, (ctx) => LIGHTING.ceilingLight(ctx, 4, 16, t)),
+      createTile('Window', 80, 72, (ctx) => LIGHTING.window(ctx, 8, 8, t)),
+      createTile('Clock', 40, 40, (ctx) => PROPS.clock(ctx, 4, 4, t)),
+      createTile('Whiteboard', 72, 60, (ctx) => PROPS.whiteboard(ctx, 4, 4)),
+      createTile('Poster', 40, 52, (ctx) => PROPS.poster(ctx, 4, 4, 'chart')),
+    ];
+
+    function render() {
+      t++;
+      tiles.forEach(tile => {
+        tile.ctx.fillStyle = '#1a1a2e';
+        tile.ctx.fillRect(0, 0, tile.canvas.width, tile.canvas.height);
+        tile.draw(tile.ctx);
+      });
+      requestAnimationFrame(render);
+    }
+
+    render();
+  </script>
+</body>
+</html>
