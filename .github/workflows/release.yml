@@ -1,0 +1,22 @@
+# Copyright (c) 2025-2026 BlackRoad OS, Inc. All Rights Reserved.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm pack
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: '*.tgz'
