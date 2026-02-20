@@ -309,7 +309,7 @@ check_status() {
 
     # DNS check
     echo "DNS Resolution:"
-    dig +short "$domain" @1.1.1.1 || echo "  No DNS records found"
+    dig "$domain" @1.1.1.1 || echo "  No DNS records found"
     echo ""
 
     # HTTP check

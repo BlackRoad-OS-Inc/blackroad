@@ -184,7 +184,7 @@ fi
 
 subsection "DNS Test (google.com)"
 if command -v dig &> /dev/null; then
-  dig google.com +short
+  dig google.com
 elif command -v nslookup &> /dev/null; then
   nslookup google.com | grep Address | tail -n +2
 else

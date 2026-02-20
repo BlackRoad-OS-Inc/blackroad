@@ -20,8 +20,10 @@ for domain in "${DOMAINS[@]}"; do
     echo "   DNS lookup..."
 
     # Check DNS
-    if dig +short "$domain" | grep -q "."; then
+    dig_output=$(dig +short "$domain")
+    if echo "$dig_output" | grep -q "."; then
         echo "   ✅ DNS resolved"
+        echo "$dig_output" | sed 's/^/   /'
 
         # Check HTTP
         echo "   HTTP check..."
