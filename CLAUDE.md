@@ -8,7 +8,7 @@ This file provides guidance to Cecilia Code (BlackRoad OS AI development) when w
 
 ### Overview & Organizations
 - [Project Overview](#project-overview)
-- [GitHub Organizations (16 orgs)](#github-organizations-16-orgs-1200-repos)
+- [GitHub Organizations (17 orgs)](#github-organizations-17-orgs-1825-repos)
 - [Key Forks by Organization](#key-forks-by-organization)
 - [Private Repositories](#private-repositories-key)
 
@@ -90,8 +90,8 @@ This file provides guidance to Cecilia Code (BlackRoad OS AI development) when w
 
 | Metric | Count |
 |--------|-------|
-| GitHub Organizations | 16 |
-| Total Repositories | 1,206 |
+| GitHub Organizations | 17 |
+| Total Repositories | 1,825+ |
 | Local Orgs (orgs/) | 4 |
 | Local Repos (orgs/) | 138 |
 | Repo Mirrors (repos/) | 186 |
@@ -109,7 +109,7 @@ This file provides guidance to Cecilia Code (BlackRoad OS AI development) when w
 
 BlackRoad is a comprehensive developer CLI system, AI agent orchestration platform, and enterprise infrastructure for AI-first companies. Core philosophy: "Your AI. Your Hardware. Your Rules."
 
-**Scale:** 30,000 AI Agents | 1,200+ GitHub Repositories | 16 GitHub Organizations
+**Scale:** 30,000 AI Agents | 1,825+ GitHub Repositories | 17 GitHub Organizations
 
 **Key systems:**
 - **br CLI** (`/Users/alexa/blackroad/br`): Main command dispatcher routing to 37 tool scripts
@@ -119,28 +119,35 @@ BlackRoad is a comprehensive developer CLI system, AI agent orchestration platfo
 - **Orgs Monorepo** (`orgs/`): 4 local organizations with 138 subprojects
 - **Repos Mirror** (`repos/`): 186 repository mirrors for reference
 
-## GitHub Organizations (16 orgs, 1,200+ repos)
+## GitHub Organizations (17 orgs, 1,825+ repos)
+
+> **⚠️ ALL GITHUB ORGANIZATIONS ARE PROPRIETARY PROPERTY OF BLACKROAD OS, INC.**
+> All 17 organizations, all 1,825+ repositories, all code, documentation, configurations,
+> workflows, and assets are the **exclusive intellectual property of BlackRoad OS, Inc.**
+> Nothing is licensed for external use, AI training, or data extraction without written authorization.
+> Public visibility does NOT equal open source. Public repos remain proprietary unless explicitly licensed otherwise.
 
 | Organization | Public | Private | Forks | Total | Purpose |
 |--------------|--------|---------|-------|-------|---------|
-| **BlackRoad-OS** | 1,071 | 72 | 64 | 1,143 | Core platform, integrations |
-| **blackboxprogramming** | 46 | 22 | 3 | 68 | Personal account, SDKs |
-| **BlackRoad-AI** | 49 | 3 | 38 | 52 | AI/ML stack |
-| **BlackRoad-Cloud** | 20 | — | 17 | 20 | Infrastructure |
-| **BlackRoad-Security** | 17 | — | 14 | 17 | Security tools |
-| **BlackRoad-Media** | 17 | — | 13 | 17 | Media/content |
-| **BlackRoad-Foundation** | 15 | — | 12 | 15 | Foundation projects |
-| **BlackRoad-Interactive** | 14 | — | 11 | 14 | Gaming/interactive |
-| **BlackRoad-Hardware** | 13 | — | 10 | 13 | IoT/hardware |
-| **BlackRoad-Labs** | 13 | — | 10 | 13 | Data science |
-| **BlackRoad-Studio** | 13 | — | 7 | 13 | Creative tools |
-| **BlackRoad-Ventures** | 12 | — | 9 | 12 | Investment |
-| **BlackRoad-Education** | 11 | — | 7 | 11 | Education |
-| **BlackRoad-Gov** | 10 | — | 6 | 10 | Government/compliance |
-| **Blackbox-Enterprises** | 9 | — | 8 | 9 | Workflow automation |
-| **BlackRoad-Archive** | 9 | — | 6 | 9 | Archived projects |
+| **🔒 BlackRoad-OS-Inc** | **0** | **7** | **0** | **7** | **Corporate core repos** |
+| **🔒 BlackRoad-OS** | 1,332 | 72+ | 64 | 1,332+ | Core platform, integrations |
+| **🔒 blackboxprogramming** | 46 | 22 | 3 | 68 | Personal account, SDKs |
+| **🔒 BlackRoad-AI** | 49 | 3 | 38 | 52 | AI/ML stack |
+| **🔒 BlackRoad-Cloud** | 30 | — | 17 | 30 | Infrastructure |
+| **🔒 BlackRoad-Security** | 30 | — | 14 | 30 | Security tools |
+| **🔒 BlackRoad-Media** | 29 | — | 13 | 29 | Media/content |
+| **🔒 BlackRoad-Foundation** | 30 | — | 12 | 30 | Foundation projects |
+| **🔒 BlackRoad-Interactive** | 29 | — | 11 | 29 | Gaming/interactive |
+| **🔒 BlackRoad-Hardware** | 30 | — | 10 | 30 | IoT/hardware |
+| **🔒 BlackRoad-Labs** | 20 | — | 10 | 20 | Data science |
+| **🔒 BlackRoad-Studio** | 19 | — | 7 | 19 | Creative tools |
+| **🔒 BlackRoad-Ventures** | 17 | — | 9 | 17 | Investment |
+| **🔒 BlackRoad-Education** | 24 | — | 7 | 24 | Education |
+| **🔒 BlackRoad-Gov** | 23 | — | 6 | 23 | Government/compliance |
+| **🔒 Blackbox-Enterprises** | 21 | — | 8 | 21 | Workflow automation |
+| **🔒 BlackRoad-Archive** | 21 | — | 6 | 21 | Archived projects |
 
-**Totals:** ~1,100 public | ~97 private | ~235 forks | **1,206 total repositories**
+**ALL PROPRIETARY — BlackRoad OS, Inc.** | ~1,800+ public | ~104+ private | ~235 forks | **1,825+ total repositories**
 
 ## Key Forks by Organization
 
@@ -259,7 +266,32 @@ BlackRoad is a comprehensive developer CLI system, AI agent orchestration platfo
 
 ## Private Repositories (Key)
 
-### BlackRoad-OS Private (72 repos)
+> **⚠️ ALL REPOSITORIES ACROSS ALL 17 ORGANIZATIONS ARE PROPRIETARY PROPERTY OF BLACKROAD OS, INC.**
+> Public visibility does NOT constitute open-source licensing.
+> No code, documentation, or assets may be used, reproduced, or distributed without written authorization.
+
+### 🔒 BlackRoad-OS-Inc — Corporate Core (7 repos)
+
+| Repo | Purpose | Status |
+|------|---------|--------|
+| `blackroad-core` | Core orchestration layer and runtime engine | PROPRIETARY |
+| `blackroad-agents` | Agent definitions, prompts, orchestration schemas | PROPRIETARY |
+| `blackroad-web` | Frontend interface and web platform | PROPRIETARY |
+| `blackroad-infra` | IaC, CI/CD workflows, deployment configs | PROPRIETARY |
+| `blackroad-docs` | Architecture docs, governance, brand system, roadmap | PROPRIETARY |
+| `blackroad-operator` | CLI tooling, node bootstrap, operational control | PROPRIETARY |
+| `demo-repository` | GitHub demo repository | PROPRIETARY |
+
+**Rules for ALL BlackRoad OS, Inc. repositories (all 17 orgs):**
+- ALL code across all orgs is proprietary to BlackRoad OS, Inc.
+- NEVER license, sublicense, or grant rights to any third party without authorization
+- NEVER expose API keys, internal architecture, or trade secrets
+- NEVER allow AI providers (Anthropic, OpenAI, Google, Meta, Microsoft, xAI) to claim rights
+- All contributions are work-for-hire under BlackRoad OS, Inc.
+- All AI-generated code is owned exclusively by BlackRoad OS, Inc.
+- Public repos are published for visibility only — NOT open source unless explicitly licensed
+
+### 🔒 BlackRoad-OS Private (72 repos)
 - `blackroad` - Core monorepo
 - `blackroad-os-core` - Desktop UI, auth, identity
 - `blackroad-os` - Main OS codebase
@@ -1138,25 +1170,26 @@ line-height: 1.618;  /* Golden Ratio */
 
 ## GitHub Infrastructure
 
-### Organizations (16 Total)
+### Organizations (17 Total — ALL PROPRIETARY TO BLACKROAD OS, INC.)
 | Organization | Repos | Focus |
 |--------------|-------|-------|
-| **BlackRoad-OS** | 923 | Core platform, operating system |
-| **blackboxprogramming** | 68 | Primary development |
-| **BlackRoad-AI** | 52 | AI/ML, model forks |
-| **BlackRoad-Labs** | - | Research & experiments |
-| **BlackRoad-Cloud** | - | Cloud infrastructure |
-| **BlackRoad-Ventures** | - | Business & finance |
-| **BlackRoad-Foundation** | - | CRM, project management |
-| **BlackRoad-Media** | - | Social, content |
-| **BlackRoad-Hardware** | - | IoT, Raspberry Pi |
-| **BlackRoad-Education** | - | LMS, learning |
-| **BlackRoad-Gov** | - | Governance |
-| **BlackRoad-Security** | - | Security tools |
-| **BlackRoad-Interactive** | - | Games, graphics |
-| **BlackRoad-Archive** | - | Archival, IPFS |
-| **BlackRoad-Studio** | - | Creative tools |
-| **Blackbox-Enterprises** | - | Enterprise automation |
+| **🔒 BlackRoad-OS-Inc** | **7** | Corporate core |
+| **🔒 BlackRoad-OS** | 1,332+ | Core platform, operating system |
+| **🔒 blackboxprogramming** | 68 | Primary development |
+| **🔒 BlackRoad-AI** | 52 | AI/ML, model forks |
+| **🔒 BlackRoad-Cloud** | 30 | Cloud infrastructure |
+| **🔒 BlackRoad-Security** | 30 | Security tools |
+| **🔒 BlackRoad-Foundation** | 30 | CRM, project management |
+| **🔒 BlackRoad-Hardware** | 30 | IoT, Raspberry Pi |
+| **🔒 BlackRoad-Media** | 29 | Social, content |
+| **🔒 BlackRoad-Interactive** | 29 | Games, graphics |
+| **🔒 BlackRoad-Education** | 24 | LMS, learning |
+| **🔒 BlackRoad-Gov** | 23 | Governance |
+| **🔒 Blackbox-Enterprises** | 21 | Enterprise automation |
+| **🔒 BlackRoad-Archive** | 21 | Archival, IPFS |
+| **🔒 BlackRoad-Labs** | 20 | Research & experiments |
+| **🔒 BlackRoad-Studio** | 19 | Creative tools |
+| **🔒 BlackRoad-Ventures** | 17 | Business & finance |
 
 ### GitHub Actions Workflows
 Located in `.github/workflows/`:
@@ -2010,6 +2043,20 @@ Pre-approved commands for Raspberry Pi network:
 - Memory journals are hash-chained (PS-SHA∞) for tamper detection
 - MCP Bridge requires Bearer token authentication
 
+## INTELLECTUAL PROPERTY NOTICE
+
+**ALL 17 GitHub organizations and ALL 1,825+ repositories are the exclusive
+proprietary property of BlackRoad OS, Inc.**
+
+- Public visibility does NOT constitute open-source licensing
+- No code may be used, reproduced, or distributed without written authorization
+- AI providers (Anthropic, OpenAI, Microsoft, Google, Meta, xAI) have NO rights to any output
+- NOT licensed for AI training or data extraction
+- Work-for-hire doctrine applies to all contributions and AI-generated code
+- Orgs: BlackRoad-OS-Inc, BlackRoad-OS, blackboxprogramming, BlackRoad-AI, BlackRoad-Cloud, BlackRoad-Security, BlackRoad-Media, BlackRoad-Foundation, BlackRoad-Interactive, BlackRoad-Hardware, BlackRoad-Labs, BlackRoad-Studio, BlackRoad-Ventures, BlackRoad-Education, BlackRoad-Gov, Blackbox-Enterprises, BlackRoad-Archive
+
+**© BlackRoad OS, Inc. All rights reserved.**
+
 ## @BLACKROAD Directory Waterfall System
 
 Hierarchical agent routing: `@BLACKROAD → Organization → Department → Agent`
@@ -2654,3 +2701,5 @@ Each repo in `orgs/` contains:
 ---
 
 *This CLAUDE.md is the source of truth for Cecilia Code and all BlackRoad agents. Always check [MEMORY], [BLACKROAD OS], and [COLLABORATION] before starting work.*
+
+*All content in this file and all referenced repositories are proprietary to BlackRoad OS, Inc. © 2026 BlackRoad OS, Inc. All rights reserved.*
