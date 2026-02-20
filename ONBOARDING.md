@@ -375,7 +375,7 @@ docker compose up -d
 | Role | Contact |
 |------|---------|
 | General | blackroad.systems@gmail.com |
-| Alexa | amundsonalexa@gmail.com |
+| Alexa | blackroad@gmail.com |
 | Security | security@blackroad.io |
 
 ### FAQ

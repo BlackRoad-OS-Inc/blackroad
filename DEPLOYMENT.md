@@ -308,7 +308,7 @@ vercel env add NEXT_PUBLIC_API_URL production
 
 ```bash
 # Create droplet
-doctl compute droplet create codex-infinity \
+doctl compute droplet create blackroad os-infinity \
   --region nyc1 \
   --size s-4vcpu-8gb \
   --image ubuntu-22-04-x64 \

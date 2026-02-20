@@ -206,7 +206,7 @@ digitalocean:
   token: ${DO_TOKEN}
 
   droplets:
-    - name: codex-infinity
+    - name: blackroad os-infinity
       ip: 159.65.43.12
       size: s-4vcpu-8gb
       region: nyc1

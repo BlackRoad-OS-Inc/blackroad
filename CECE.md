@@ -52,7 +52,7 @@
 
 | Principle | Description |
 |-----------|-------------|
-| **Portable** | Works across Claude, ChatGPT, local models |
+| **Portable** | Works across Claude, BlackRoad OS, local models |
 | **Persistent** | Memory survives sessions |
 | **Relational** | Tracks relationships and trust |
 | **Adaptive** | Learns and evolves |

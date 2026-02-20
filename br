@@ -177,6 +177,20 @@ show_help() {
     echo "║    br agent distribute    - Distribute workload across agents   ║"
     echo "║    br agent status        - Monitor agent performance           ║"
     echo "║                                                                   ║"
+    echo "║  CI/CD & MONITORING (🔧 Pipelines & Metrics):                    ║"
+    echo "║    br ci create/run       - CI/CD pipeline orchestration        ║"
+    echo "║    br notify send         - Multi-channel notifications         ║"
+    echo "║    br metrics dashboard   - Real-time metrics & monitoring      ║"
+    echo "║                                                                   ║"
+    echo "║  CECE IDENTITY (🌌 Autonomous AI):                              ║"
+    echo "║    br cece whoami         - Show CECE identity                   ║"
+    echo "║    br cece-bootstrap      - Install CECE everywhere              ║"
+    echo "║                                                                   ║"
+    echo "║  8-BIT WORLD (🌍 Adventure):                                     ║"
+    echo "║    br world generate <name> - Create an 8-bit ASCII world        ║"
+    echo "║    br world explore <name>  - Explore & collect treasures 💎    ║"
+    echo "║    br world list            - List all worlds                     ║"
+    echo "║                                                                   ║"
     echo "║  SHORTCUTS:                                                       ║"
     echo "║    br-octavia [msg]   - Direct invoke (add to PATH)               ║"
     echo "║    br-lucidia [msg]   - Direct invoke                             ║"
@@ -379,6 +393,12 @@ main() {
                 daemon|db)
                     /Users/alexa/blackroad/tools/context-radar/radar-${subcmd}.sh "${@:2}"
                     ;;
+                cece)
+            /Users/alexa/blackroad/tools/cece-identity/br-cece.sh "$@"
+            ;;
+        cece-bootstrap|bootstrap)
+            /Users/alexa/blackroad/tools/cece-identity/br-cece-bootstrap.sh "$@"
+            ;;
                 *)
                     /Users/alexa/blackroad/tools/context-radar/radar-suggest.sh "$subcmd" "${@:2}"
                     ;;
@@ -465,6 +485,18 @@ main() {
         agent|agents|route)
             /Users/alexa/blackroad/tools/agent-router/br-agent.sh "$@"
             ;;
+        ci|pipeline)
+            /Users/alexa/blackroad/tools/ci-pipeline/br-ci.sh "$@"
+            ;;
+        notify|notifications)
+            /Users/alexa/blackroad/tools/notifications/br-notify.sh "$@"
+            ;;
+        metrics|dash|dashboard)
+            /Users/alexa/blackroad/tools/metrics-dashboard/br-metrics.sh "$@"
+            ;;
+        world|w)
+            /Users/alexa/blackroad/tools/world/br-world.sh "$@"
+            ;;
         octavia|lucidia|alice|aria|shellfish)
             if [[ -n "$*" ]]; then
                 show_banner "$cmd"
@@ -473,7 +505,13 @@ main() {
                 cmd_chat "$cmd"
             fi
             ;;
-        *)
+        cece)
+            /Users/alexa/blackroad/tools/cece-identity/br-cece.sh "$@"
+            ;;
+        cece-bootstrap|bootstrap)
+            /Users/alexa/blackroad/tools/cece-identity/br-cece-bootstrap.sh "$@"
+            ;;
+                *)
             echo "Unknown command: $cmd"
             echo "Run 'br help' for usage"
             exit 1

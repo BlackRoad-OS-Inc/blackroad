@@ -57,7 +57,7 @@ Cloudflare's serverless SQL database. Used for edge data storage.
 The principle of maintaining full control over your data, AI systems, and infrastructure.
 
 ### Droplet
-A virtual private server on DigitalOcean. BlackRoad uses `codex-infinity` (159.65.43.12).
+A virtual private server on DigitalOcean. BlackRoad uses `blackroad os-infinity` (159.65.43.12).
 
 ---
 

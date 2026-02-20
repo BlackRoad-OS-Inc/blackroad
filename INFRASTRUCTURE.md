@@ -1,767 +1,646 @@
 # BlackRoad OS Infrastructure
 
-> Complete guide to the multi-cloud infrastructure powering BlackRoad OS
+> Ground-truth infrastructure reference derived from config files in this repository.
+> Every resource ID, hostname, and zone listed here traces to a real config file.
 
 ---
 
 ## Table of Contents
 
+- [Status Legend](#status-legend)
 - [Overview](#overview)
 - [Infrastructure Map](#infrastructure-map)
+- [Accounts & Credentials](#accounts--credentials)
 - [Cloudflare](#cloudflare)
 - [Railway](#railway)
 - [Vercel](#vercel)
 - [DigitalOcean](#digitalocean)
-- [Raspberry Pi Fleet](#raspberry-pi-fleet)
-- [GitHub Infrastructure](#github-infrastructure)
-- [Database Layer](#database-layer)
-- [Networking](#networking)
-- [Security](#security)
-- [Disaster Recovery](#disaster-recovery)
+- [Device Fleet](#device-fleet)
+- [Agent Infrastructure](#agent-infrastructure)
+- [Local Services & Networking](#local-services--networking)
+- [Local Databases (SQLite)](#local-databases-sqlite)
+- [GitHub](#github)
+- [Secrets Management](#secrets-management)
+- [Infrastructure Commands](#infrastructure-commands)
+
+---
+
+## Status Legend
+
+Every section in this document is tagged with a verification level:
+
+| Tag | Meaning | Evidence |
+|-----|---------|----------|
+| `[DEPLOYED]` | Verified live with real URL or confirmed operational | Deploy URL in `deployments/status.json`, or confirmed running |
+| `[CONFIGURED]` | Real config with resource IDs exists; runtime status unknown | Real KV/D1 IDs in `wrangler.toml`, real config in `railway.toml` |
+| `[TEMPLATED]` | Config file exists but uses boilerplate, not yet customized | Generic NIXPACKS `railway.toml` or standard `vercel.json` |
 
 ---
 
 ## Overview
 
-BlackRoad OS runs on a **multi-cloud architecture** designed for resilience, performance, and sovereignty. Each cloud provider serves a specific purpose, creating a cohesive platform.
+BlackRoad OS runs on a multi-cloud architecture designed for sovereignty, edge-first compute, and portability. Each cloud provider serves a specific purpose.
 
 ### Design Principles
 
-1. **No Single Point of Failure** - Critical services span multiple providers
-2. **Edge-First** - Compute at the edge when possible
-3. **Cost Optimization** - Right tool for the right job
-4. **Sovereignty** - Data ownership and control
-5. **Portability** - Avoid vendor lock-in
+1. **Sovereignty** - Data ownership and control; local-first where possible
+2. **Edge-First** - Compute at the edge via Cloudflare Workers
+3. **No Vendor Lock-in** - Portable configs, multiple providers
+4. **Tokenless Agents** - Agents never hold API keys; all provider calls go through a gateway
 
-### Provider Overview
+### Provider Status
 
-| Provider | Role | Services | Cost/Month |
-|----------|------|----------|------------|
-| **Cloudflare** | Edge, CDN, DNS | Workers, KV, D1, R2, Tunnel | ~$500 |
-| **Railway** | GPU, APIs, Databases | 14 projects, GPU inference | ~$1,000 |
-| **Vercel** | Web apps, Serverless | 15+ Next.js apps | ~$200 |
-| **DigitalOcean** | Persistent compute | 1 droplet, Spaces | ~$100 |
-| **GitHub** | Source, Actions, Pages | 1,200+ repos, 50+ workflows | ~$50 |
+| Provider | Role | Config Evidence | Status |
+|----------|------|-----------------|--------|
+| **Cloudflare** | Edge, CDN, DNS, storage | 75 `wrangler.toml` files, 19 DNS zones | `[CONFIGURED]` |
+| **Railway** | GPU inference, services | 45 `railway.toml` files, 1 GPU config | `[CONFIGURED]` |
+| **Vercel** | Web apps | 15 `vercel.json` files | `[TEMPLATED]` |
+| **DigitalOcean** | Persistent compute | 1 droplet (shellfish) | `[CONFIGURED]` |
+| **GitHub** | Source, CI/CD, Pages | 16 orgs, 7 workflows in this repo | `[DEPLOYED]` |
 
-**Total Monthly:** ~$1,850
+**Source:** `control-map/index.yaml`
 
 ---
 
 ## Infrastructure Map
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         BLACKROAD INFRASTRUCTURE                            │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│                           INTERNET                                          │
-│                              │                                              │
-│                              ▼                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                     CLOUDFLARE EDGE                                  │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │   │
-│  │  │   Workers   │  │     CDN     │  │   Tunnel    │                 │   │
-│  │  │   (75+)     │  │             │  │             │                 │   │
-│  │  └──────┬──────┘  └─────────────┘  └──────┬──────┘                 │   │
-│  │         │                                  │                        │   │
-│  │  ┌──────┴──────┐  ┌─────────────┐  ┌──────┴──────┐                 │   │
-│  │  │     KV      │  │     D1      │  │     R2      │                 │   │
-│  │  │  (8 stores) │  │  (1 DB)     │  │  (buckets)  │                 │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘                 │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                              │                                              │
-│          ┌───────────────────┼───────────────────┐                         │
-│          │                   │                   │                         │
-│          ▼                   ▼                   ▼                         │
-│  ┌───────────────┐   ┌───────────────┐   ┌───────────────┐                │
-│  │   RAILWAY     │   │    VERCEL     │   │ DIGITALOCEAN  │                │
-│  │               │   │               │   │               │                │
-│  │ • GPU (H100)  │   │ • Next.js     │   │ • Droplet     │                │
-│  │ • vLLM        │   │ • Dashboard   │   │ • Codex       │                │
-│  │ • APIs        │   │ • Landing     │   │ • Persistent  │                │
-│  │ • Workers     │   │ • Docs        │   │ • Backups     │                │
-│  │               │   │               │   │               │                │
-│  │ 14 projects   │   │ 15+ projects  │   │ 1 droplet     │                │
-│  └───────────────┘   └───────────────┘   └───────────────┘                │
-│                              │                                              │
-│                              ▼                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                    LOCAL / EDGE DEVICES                              │   │
-│  │                                                                      │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │   │
-│  │  │ Raspberry   │  │ Raspberry   │  │ Raspberry   │                 │   │
-│  │  │ Pi (lucidia)│  │ Pi (br-pi)  │  │ Pi (alt)    │                 │   │
-│  │  │ .38         │  │ .64         │  │ .99         │                 │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘                 │   │
-│  │                                                                      │   │
-│  │  ┌─────────────┐  ┌─────────────┐                                  │   │
-│  │  │ iPhone Koder│  │ Local Mac   │                                  │   │
-│  │  │ .68:8080    │  │ Dev Machine │                                  │   │
-│  │  └─────────────┘  └─────────────┘                                  │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+                            INTERNET
+                               |
+                               v
+    ┌──────────────────────────────────────────────────────────┐
+    │                   CLOUDFLARE EDGE                         │
+    │  19 DNS zones | 75 workers | 11 KV | 6 D1 | R2 | Tunnel │
+    └──────────────────┬──────────────┬────────────────────────┘
+                       |              |
+          ┌────────────┴──┐     ┌─────┴─────────┐
+          |               |     |               |
+    ┌─────┴─────┐   ┌────┴────┐│  ┌────────────┴──┐
+    │  RAILWAY  │   │ VERCEL  ││  │  DIGITALOCEAN  │
+    │           │   │         ││  │                │
+    │ GPU (A100)│   │ Next.js ││  │  shellfish     │
+    │ vLLM      │   │ 15 apps ││  │  159.65.43.12  │
+    │ 45 configs│   │         ││  │  cloud-bridge  │
+    └───────────┘   └─────────┘│  └────────────────┘
+                               |
+                     ┌─────────┴────────────────────────────┐
+                     │         LOCAL DEVICE FLEET            │
+                     │                                      │
+                     │  alice      - control-plane           │
+                     │  aria       - operations              │
+                     │  octavia    - inference               │
+                     │  codex      - build                   │
+                     │  anastasia  - experimental            │
+                     │                                      │
+                     │  Gateway :8080 → NATS :4222           │
+                     │  Agents: LUCIDIA ALICE OCTAVIA        │
+                     │          PRISM   ECHO  CIPHER         │
+                     │  Milvus :6333 | Ollama :11434         │
+                     └──────────────────────────────────────┘
 ```
+
+**Sources:** `control-map/devices/nodes.yaml`, `net.sh`, `blackroad-mesh.sh`
+
+---
+
+## Accounts & Credentials
+
+From `control-map/index.yaml` and `control-map/accounts/credentials.yaml`:
+
+| Service | Account / Identifier | Config Reference |
+|---------|---------------------|------------------|
+| Cloudflare | Account ID: `848cf0b18d51e0170e0d1537aec3505a` | `CF_API_TOKEN` (env) |
+| GitHub | Enterprise: `blackroad-os`, Account: `blackboxprogramming` | `GH_TOKEN` (env) |
+| DigitalOcean | Connected | `DO_TOKEN` (env) |
+| Stripe | Account: `acct_1SUDM8ChUUSEbzyh` | `STRIPE_API_KEY` (env) |
+| Vercel | Team: `alexa-amundsons-projects` | `VERCEL_TOKEN` (env) |
+| Notion | Workspace: `76cded82e3874f9db0d44dff11b8f2fd` | - |
+| Salesforce | Profiles: `w0290jck2ebf0xos3p`, `alexa-amundson` | - |
+| Instagram | Handle: `blackroad.io` | - |
+
+**Policy:** `no-secrets-in-repo` - All credentials stored as environment variables, never committed.
 
 ---
 
 ## Cloudflare
 
-### Overview
+### DNS Zones (19) `[CONFIGURED]`
 
-Cloudflare serves as the **edge layer** for BlackRoad OS, handling DNS, CDN, serverless compute, and edge storage.
+From `control-map/domains/cloudflare.yaml`:
 
-### Zones (16 domains)
+| # | Zone |
+|---|------|
+| 1 | `aliceqi.com` |
+| 2 | `blackboxprogramming.io` |
+| 3 | `blackroadai.com` |
+| 4 | `blackroad.company` |
+| 5 | `blackroadinc.us` |
+| 6 | `blackroad.io` |
+| 7 | `blackroad.me` |
+| 8 | `blackroad.network` |
+| 9 | `blackroad.systems` |
+| 10 | `blackroadqi.com` |
+| 11 | `blackroadquantum.com` |
+| 12 | `blackroadquantum.info` |
+| 13 | `blackroadquantum.net` |
+| 14 | `blackroadquantum.shop` |
+| 15 | `blackroadquantum.store` |
+| 16 | `lucidiaqi.com` |
+| 17 | `lucidia.studio` |
+| 18 | `roadchain.io` |
+| 19 | `roadcoin.io` |
 
-| Domain | Purpose | SSL | Status |
-|--------|---------|-----|--------|
-| blackroad.io | Primary domain | Full | Active |
-| blackroad.systems | Systems/API | Full | Active |
-| blackroad.ai | AI services | Full | Active |
-| lucidia.earth | Lucidia project | Full | Active |
-| ... | ... | ... | ... |
+All zones share account ID `848cf0b18d51e0170e0d1537aec3505a`.
 
-### Workers (75+)
+### Workers (75 configs) `[CONFIGURED]`
 
-```
-Workers Overview
-================
+75 `wrangler.toml` files found across the repository. Of these, 13 have active KV/D1 bindings with real resource IDs. The rest are templated boilerplate.
 
-Category          Count    Requests/day
---------          -----    ------------
-API Gateway       12       500K
-Authentication    8        200K
-Edge Functions    25       150K
-Webhooks          15       50K
-Utilities         15       30K
+**Key workers with real resource bindings:**
 
-Total: 75 workers | 930K requests/day
-```
+| Worker | Routes | Source |
+|--------|--------|--------|
+| `blackroad-api-gateway` | `api.blackroad.io/*`, `core.blackroad.io/*`, `operator.blackroad.io/*` | `repos/blackroad-os-core/workers/api-gateway/wrangler.toml` |
+| `blackroad-payment-gateway` | `pay.blackroad.io/*`, `payments.blackroad.io/*` | `repos/blackroad-os-core/workers/payment-gateway/wrangler.toml` |
+| `blackroad-io` | `blackroad.io/*` (dashboard-managed) | `repos/blackroad.io/wrangler.toml` |
+| `blackroad-os` | (D1: saas + agent-registry) | `repos/blackroad-os/wrangler.toml` |
+| `blackroad-prism-console` | (D1: agent-registry) | `repos/blackroad-os-prism-console/wrangler.toml` |
+| `command-center` | (D1: continuity) | `repos/command-center/wrangler.toml` |
+| `agents-api` | (D1: continuity) | `repos/agents-api/wrangler.toml` |
+| `tools-api` | (KV: tools, D1: continuity) | `repos/tools-api/wrangler.toml` |
+| `remotejobs-platform` | (KV: jobs + applications) | `repos/blackroad-os-core/remotejobs-platform/wrangler.toml` |
 
-**Key Workers:**
+### KV Namespaces (11) `[CONFIGURED]`
 
-| Worker | Route | Purpose |
-|--------|-------|---------|
-| `blackroad-api-gateway` | `api.blackroad.io/*` | Main API routing |
-| `blackroad-auth` | `auth.blackroad.io/*` | Authentication |
-| `blackroad-edge-agent` | `agent.blackroad.io/*` | Agent routing |
-| `blackroad-memory-edge` | `memory.blackroad.io/*` | Memory cache |
-| `blackroad-redirect` | `blackroad.io/*` | URL redirects |
+Real namespace IDs extracted from `wrangler.toml` files:
 
-### KV Namespaces (8)
+| Binding | Namespace ID | Used By |
+|---------|-------------|---------|
+| `CACHE` | `c878fbcc1faf4eddbc98dcfd7485048d` | api-gateway, subdomain-router |
+| `IDENTITIES` | `10bf69b8bc664a5a832e348f1d0745cf` | api-gateway, subdomain-router |
+| `API_KEYS` | `57e48a017d4248a39df32661c3377908` | api-gateway, subdomain-router |
+| `RATE_LIMIT` | `245a00ee1ffe417fbcf519b2dbb141c6` | api-gateway, subdomain-router |
+| `TOOLS_KV` | `f7b2b20d1e1447b2917b781e6ab7e45c` | tools-api, blackroad-tools |
+| `TEMPLATES` | `8df3dcbf63d94069975a6fa8ab17f313` | blackroad-io |
+| `CONTENT` | `119ac3af15724b1b93731202f2968117` | blackroad-io (WORLD_KV) |
+| `JOBS` | `2557a2b503654590ab7b1da84c7e8b20` | remotejobs-platform |
+| `APPLICATIONS` | `90407b533ddc44508f1ce0841c77082d` | remotejobs-platform |
+| `SUBSCRIPTIONS_KV` | `0cf493d5d19141df8912e3dc2df10464` | payment-gateway |
+| `USERS_KV` | `67a82ad7824d4b89809e7ae2221aba66` | payment-gateway |
 
-| Namespace | Keys | Size | Purpose |
-|-----------|------|------|---------|
-| `CACHE` | 50K | 2GB | Response cache |
-| `CONFIG` | 500 | 1MB | Configuration |
-| `SESSIONS` | 10K | 500MB | User sessions |
-| `RATE_LIMIT` | 100K | 100MB | Rate limiting |
-| `FEATURES` | 100 | 10KB | Feature flags |
-| `AGENTS` | 1K | 50MB | Agent state |
-| `MEMORY_HOT` | 5K | 500MB | Hot memory cache |
-| `METRICS` | 10K | 100MB | Edge metrics |
+**Shared layer:** CACHE, IDENTITIES, API_KEYS, and RATE_LIMIT are shared across the api-gateway and subdomain-router workers.
 
-### D1 Database
+### D1 Databases (6) `[CONFIGURED]`
 
-```sql
--- blackroad-d1
--- Tables: 15
--- Size: 500MB
+Real database IDs extracted from `wrangler.toml` files:
 
-Tables:
-├── users (10K rows)
-├── sessions (50K rows)
-├── api_keys (5K rows)
-├── rate_limits (100K rows)
-├── audit_log (1M rows)
-├── edge_config (500 rows)
-└── ...
-```
+| Database Name | Database ID | Bindings | Used By |
+|--------------|-------------|----------|---------|
+| `blackroad-os-main` | `e2c6dcd9-c21a-48ac-8807-7b3a6881c4f7` | DB | api-gateway, subdomain-router, blackroad-io |
+| `blackroad-continuity` | `f0721506-cb52-41ee-b587-38f7b42b97d9` | CONTINUITY_DB, DB | command-center, agents-api, tools-api, blackroad-tools |
+| `apollo-agent-registry` | `79f8b80d-3bb5-4dd4-beee-a77a1084b574` | AGENT_DB | prism-console |
+| `apollo-agent-registry` | `0abd9447-9479-4138-ab04-cd0ae47b2e30` | DB_AGENTS | blackroad-os |
+| `blackroad-saas` | `c7bec6d8-42fa-49fb-9d8c-57d626dde6b9` | DB_SAAS, BLACKROAD_SAAS | blackroad-os, blackroad-io-app |
+| `blackroad_revenue` | `8744905a-cf6c-4e16-9661-4c67d340813f` | REVENUE_D1 | payment-gateway |
 
-### R2 Storage
+Note: `apollo-agent-registry` appears with two different database IDs across workers. This may indicate separate dev/prod databases or a migration artifact.
 
-| Bucket | Objects | Size | Purpose |
-|--------|---------|------|---------|
-| `blackroad-archive` | 5M | 234GB | Memory archive |
-| `blackroad-assets` | 10K | 5GB | Static assets |
-| `blackroad-backups` | 1K | 50GB | System backups |
-| `blackroad-logs` | 100K | 20GB | Log archive |
+### R2 Storage `[CONFIGURED]`
 
-### Tunnel Configuration
+| Bucket | Size | Purpose | Source |
+|--------|------|---------|--------|
+| `blackroad-models` | ~135 GB | Quantized LLMs (Qwen 72B, Llama 70B, DeepSeek R1 — all Q4_K_M) | `repos/blackroad-os-core/railway-models/` |
 
-```yaml
-# cloudflared config
-tunnel: blackroad-tunnel
-credentials-file: /etc/cloudflared/credentials.json
+Models are downloaded on-demand to Railway GPU instances via `server-r2.py` using boto3.
 
-ingress:
-  - hostname: api.blackroad.io
-    service: http://localhost:8000
+### Pages Deployments `[DEPLOYED]`
 
-  - hostname: dashboard.blackroad.io
-    service: http://localhost:3000
+From `deployments/status.json` — 4 verified live sites:
 
-  - hostname: ws.blackroad.io
-    service: ws://localhost:8080
+| Domain | Deploy URL | Project |
+|--------|-----------|---------|
+| `os.blackroad.io` | `https://a81f29a4.blackroad-os-web.pages.dev` | blackroad-os-web |
+| `products.blackroad.io` | `https://79ea5ba2.blackroad-dashboard.pages.dev` | blackroad-dashboard |
+| `roadtrip.blackroad.io` | `https://1486760f.blackroad-pitstop.pages.dev` | blackroad-pitstop |
+| `pitstop.blackroad.io` | `https://30db9407.blackroad-portals.pages.dev` | blackroad-portals |
 
-  - service: http_status:404
-```
+Total Pages projects: 79 (7 brand-compliant, 72 being perfected).
+
+### Tunnel `[CONFIGURED]`
+
+A Cloudflare tunnel named `blackroad` runs on the local device fleet using QUIC protocol. Configuration is managed via `cloudflared` with token-based authentication. The tunnel routes external domains to local services.
 
 ---
 
 ## Railway
 
-### Overview
+### Config Pattern `[TEMPLATED]`
 
-Railway hosts **GPU inference**, APIs, and managed databases. It's the primary compute layer for AI workloads.
+45 `railway.toml` files found. The standard template uses:
 
-### Projects (14)
+```toml
+[build]
+builder = "NIXPACKS"
 
-| Project | Services | GPU | Purpose |
-|---------|----------|-----|---------|
-| `blackroad-api` | 3 | No | Core API |
-| `blackroad-gpu` | 2 | Yes | LLM inference |
-| `blackroad-agents` | 4 | No | Agent services |
-| `blackroad-memory` | 2 | No | Memory services |
-| `blackroad-workers` | 3 | No | Background workers |
-| ... | ... | ... | ... |
-
-### GPU Configuration
-
-```yaml
-# railway.toml for GPU service
 [deploy]
-numReplicas = 2
+startCommand = "npm start"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+```
 
+All standard configs use NIXPACKS builder, port 8080, and `/health` checks. These are boilerplate — no project IDs or live service URLs are embedded.
+
+### Model Inference `[CONFIGURED]`
+
+One non-boilerplate config exists at `repos/blackroad-os-core/railway-models/railway.toml`:
+
+```toml
 [build]
-dockerfilePath = "Dockerfile.gpu"
+builder = "DOCKERFILE"
 
-[service]
-gpu = "H100"
-memory = "80GB"
+[deploy]
+startCommand = "python server.py"
+
+[resources]
+gpu = "nvidia-a100-80gb"
+replicas = 1
 ```
 
-### vLLM Service
+**Configuration:**
+- Model: `blackroad-qwen-72b` (Qwen 2.5 72B, Q4_K_M quantized)
+- GPU: NVIDIA A100 80GB
+- Memory utilization: 0.9
+- Tensor parallel size: 1
+- Identity validation: enabled
+- Audit logging: enabled
+- Breath synchronization: enabled
 
-```python
-# vLLM configuration
-{
-    "model": "meta-llama/Meta-Llama-3.1-70B-Instruct",
-    "tensor_parallel_size": 1,
-    "gpu_memory_utilization": 0.9,
-    "max_model_len": 128000,
-    "quantization": "awq",
-    "dtype": "auto"
-}
-```
-
-### Database Services
-
-| Database | Type | Size | Connections |
-|----------|------|------|-------------|
-| `blackroad-postgres` | PostgreSQL 16 | 100GB | 100 |
-| `blackroad-redis` | Redis 7 | 10GB | 500 |
-
-### Scaling Configuration
-
-```yaml
-# Autoscaling rules
-scaling:
-  min_replicas: 2
-  max_replicas: 10
-  target_cpu: 70
-  target_memory: 80
-  scale_up_cooldown: 60s
-  scale_down_cooldown: 300s
-```
+**Source:** `repos/blackroad-os-core/railway-models/railway.toml`
 
 ---
 
 ## Vercel
 
-### Overview
+### Team & Projects `[TEMPLATED]`
 
-Vercel hosts all **frontend applications** and serverless functions for the web layer.
+| Detail | Value |
+|--------|-------|
+| Team | `alexa-amundsons-projects` |
+| Config files found | 15 `vercel.json` files |
 
-### Projects (15+)
-
-| Project | Framework | Domain | Purpose |
-|---------|-----------|--------|---------|
-| `blackroad-web` | Next.js 14 | app.blackroad.io | Main dashboard |
-| `blackroad-docs` | Nextra | docs.blackroad.io | Documentation |
-| `blackroad-landing` | Next.js | blackroad.io | Landing page |
-| `blackroad-console` | Next.js | console.blackroad.io | Admin console |
-| `lucidia-web` | Next.js | lucidia.earth | Lucidia site |
-| ... | ... | ... | ... |
-
-### Configuration
+All `vercel.json` files use the same template pattern:
 
 ```json
-// vercel.json
 {
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "regions": ["iad1", "sfo1", "cdg1"],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@api_url"
-  },
+  "version": 2,
+  "builds": [{ "src": "package.json", "use": "@vercel/next" }],
   "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
-      ]
-    }
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "X-Content-Type-Options", "value": "nosniff" }
+    ]}
   ]
 }
 ```
 
-### Edge Functions
+**Key projects with `vercel.json`:**
+- `blackroad-os-prism-console`
+- `blackroad-os`
+- `blackroad-os-mesh`
+- `blackroad-os-helper`
+- `containers-template`
+- `clerk-docs`
+- `blackbox-airbyte` (docusaurus)
 
-```typescript
-// middleware.ts
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+No custom domains, edge functions, or project IDs are configured in these files. All use `@vercel/next` builder.
 
-export function middleware(request: NextRequest) {
-  // Authentication check
-  const token = request.cookies.get('token')
-  if (!token && request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-  return NextResponse.next()
-}
-
-export const config = {
-  matcher: ['/dashboard/:path*', '/api/:path*']
-}
-```
+**Source:** `control-map/index.yaml` (team name)
 
 ---
 
 ## DigitalOcean
 
-### Overview
+### Droplet: shellfish `[CONFIGURED]`
 
-DigitalOcean provides **persistent compute** for workloads that need always-on servers.
+| Detail | Value |
+|--------|-------|
+| Hostname | `shellfish` |
+| IP | `159.65.43.12` |
+| Role | `cloud-bridge` |
+| Notes | DigitalOcean droplet, gateway to cloud services |
 
-### Droplet: codex-infinity
+This is the only DigitalOcean resource referenced in config files. The `blackroad-mesh.sh` script pings this IP as its DigitalOcean health check.
+
+**Source:** `control-map/devices/nodes.yaml`, `blackroad-mesh.sh`
+
+---
+
+## Device Fleet
+
+### Nodes (6) `[CONFIGURED]`
+
+From `control-map/devices/nodes.yaml`:
+
+| Node | Host | Role | Notes |
+|------|------|------|-------|
+| **alice** | `alice` | control-plane | Primary coordinator |
+| **aria** | `aria` | operations | Automation / workflows |
+| **octavia** | `octavia` | inference | AI / acceleration |
+| **codex** | `codex` | build | Code + CI tasks |
+| **shellfish** | `shellfish` | cloud-bridge | DigitalOcean droplet / gateway |
+| **anastasia** | `anastasia` | experimental | Sandbox / testing |
+
+**Fleet config:**
+- Fleet name: `blackroad-edge`
+- Default user: `pi`
+- SSH key: `~/.ssh/id_ed25519`
+- Access mode: `read-only` (per `control-map/index.yaml`)
+
+IP addresses are not stored in the config files. SSH access uses hostname resolution.
+
+---
+
+## Agent Infrastructure
+
+### Topology `[CONFIGURED]`
+
+From `state/topology.yaml`:
+
+**5 agents + 1 human operator:**
+
+| Agent | Role | Locality |
+|-------|------|----------|
+| **lucidia** | recursive-core | local |
+| **alice** | infra-gateway | local |
+| **octavia** | inference-queue | local |
+| **aria** | filesystem-state | local |
+| **anastasia** | security-audit | local |
+
+**Human operator:** Alexa (authority: root)
+
+**Execution rules:**
+- Execution: `explicit` (no autonomous actions without approval)
+- Defaults: `deny`
+- Logging: `append-only`
+
+### 30K Agent Manifest `[CONFIGURED]`
+
+From `agents/manifest.json`:
+
+| Node | Capacity | Role | Status |
+|------|----------|------|--------|
+| `octavia_pi` | 22,500 | PRIMARY | `DISK_FULL_NEEDS_CLEANUP` |
+| `lucidia_pi` | 7,500 | SECONDARY | `OPERATIONAL` (21GB free) |
+| `shellfish_droplet` | 0 | FAILOVER | `STANDBY` |
+
+**Total declared capacity:** 30,000 agents
+
+**Task distribution:**
+
+| Task Type | Agents | % |
+|-----------|--------|---|
+| AI Research | 12,592 | 42% |
+| Code Deploy | 8,407 | 28% |
+| Infrastructure | 5,401 | 18% |
+| Monitoring | 3,600 | 12% |
+
+### Core Agent Personas
+
+From `net.sh` — the 6 software agents connected via the NATS message bus:
+
+| Agent | Color | Role |
+|-------|-------|------|
+| **LUCIDIA** | Red | Coordinator, strategy, recursive reasoning |
+| **ALICE** | Cyan | Routing, navigation, task distribution |
+| **OCTAVIA** | Green | Inference, compute, heavy processing |
+| **PRISM** | Yellow | Pattern recognition, data analysis |
+| **ECHO** | Purple | Memory, recall, context preservation |
+| **CIPHER** | Blue | Security, authentication, encryption |
+
+---
+
+## Local Services & Networking
+
+### Service Topology `[CONFIGURED]`
+
+From `net.sh`:
 
 ```
-Name: codex-infinity
-IP: 159.65.43.12
-Region: NYC1
-Size: s-4vcpu-8gb
-OS: Ubuntu 22.04 LTS
-Storage: 160GB SSD
+Gateway :8080
+    |
+ NATS :4222
+    |
+    ├── LUCIDIA
+    ├── ALICE
+    ├── OCTAVIA
+    ├── PRISM
+    ├── ECHO
+    └── CIPHER
 
-Services:
-├── Ollama (local inference)
-├── Codex system
-├── Persistent storage
-├── Backup services
-└── Development tools
+Milvus :6333  |  Ollama :11434
 ```
 
-### Server Configuration
+| Service | Port | Purpose |
+|---------|------|---------|
+| Gateway | `:8080` | Tokenless API gateway for agent-to-provider calls |
+| NATS | `:4222` | Message bus connecting all 6 agents |
+| Milvus | `:6333` | Vector database for semantic memory |
+| Ollama | `:11434` | Local LLM inference |
 
+### Mesh Checks `[DEPLOYED]`
+
+`blackroad-mesh.sh` tests connectivity to 7 external services:
+
+| Service | Check Method | Details |
+|---------|-------------|---------|
+| GitHub | HTTPS API call | `api.github.com/users/blackboxprogramming` |
+| Hugging Face | HTTPS API call | `huggingface.co/api/models?limit=1` |
+| Cloudflare | HTTPS reachability | Domain: `blackroad.io` (configurable via `CLOUDFLARE_DOMAIN`) |
+| Vercel | HTTPS reachability | `vercel.com` |
+| DigitalOcean | ICMP ping | `159.65.43.12` (configurable via `DO_DROPLET_IP`) |
+| Ollama | HTTP API call | `localhost:11434/api/tags` |
+| Railway | GraphQL API or CLI | `backboard.railway.app/graphql/v2` |
+
+**Usage:**
 ```bash
-# /etc/systemd/system/blackroad.service
-[Unit]
-Description=BlackRoad Services
-After=network.target
-
-[Service]
-Type=simple
-User=blackroad
-WorkingDirectory=/opt/blackroad
-ExecStart=/opt/blackroad/start.sh
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
+./blackroad-mesh.sh              # Check all 7 services
+./blackroad-mesh.sh --json       # Output as JSON
+./blackroad-mesh.sh --service X  # Check single service
+./blackroad-mesh.sh --boot       # Check + start orchestrator
 ```
 
-### Spaces (Object Storage)
+### MCP Bridge `[CONFIGURED]`
 
-| Space | Size | Purpose |
-|-------|------|---------|
-| `blackroad-backup` | 50GB | Server backups |
-| `blackroad-data` | 100GB | Persistent data |
+Local MCP server at `mcp-bridge/`:
 
-### Firewall Rules
-
-```
-Name: blackroad-firewall
-
-Inbound Rules:
-├── SSH (22) - Your IP only
-├── HTTP (80) - All
-├── HTTPS (443) - All
-├── Ollama (11434) - Internal
-└── API (8000) - Internal
-
-Outbound Rules:
-└── All traffic allowed
-```
+| Detail | Value |
+|--------|-------|
+| Address | `127.0.0.1:8420` |
+| Auth | Bearer token required |
+| Endpoints | `/system`, `/exec`, `/file/read`, `/file/write`, `/memory/write`, `/memory/read`, `/memory/list` |
 
 ---
 
-## Raspberry Pi Fleet
+## Local Databases (SQLite)
 
-### Overview
+The real persistence layer for BlackRoad is SQLite — not PostgreSQL or Redis. Over 25 distinct `.db` files are referenced across shell scripts, all initialized on first use via `sqlite3`.
 
-The Raspberry Pi fleet provides **edge computing** capabilities, including LED displays, local inference, and IoT integration.
+### Primary Databases (`~/.blackroad/`)
 
-### Devices
+| Database | Purpose |
+|----------|---------|
+| `agent-router.db` | Agent routing rules |
+| `backup-manager.db` | Backup tracking |
+| `cece-identity.db` | CECE AI identity (relationships, skills, beliefs) |
+| `ci-pipeline.db` | CI/CD pipeline tracking |
+| `cloudflare.db` | Cloudflare configuration cache |
+| `code-quality.db` | Code quality metrics |
+| `db-client.db` | Database client configs |
+| `digitalocean.db` | DigitalOcean droplet info |
+| `docker-manager.db` | Docker container tracking |
+| `env-manager.db` | Environment variable management |
+| `file-finder.db` | File indexing |
+| `metrics.db` | Dashboard metrics |
+| `notifications.db` | Notification logs |
+| `pi-manager.db` | Raspberry Pi management |
+| `security-scanner.db` | Security scan results |
+| `smart-search.db` | Search index |
+| `test-suite.db` | Test results |
+| `web-dev.db` | Web development tracking |
+| `web-monitor.db` | Web monitoring data |
+| `world.db` | World/environment data |
 
-| Name | IP | Model | Role | Status |
-|------|-----|-------|------|--------|
-| `lucidia` | 192.168.4.38 | Pi 4 8GB | Main edge | Online |
-| `blackroad-pi` | 192.168.4.64 | Pi 4 4GB | Secondary | Online |
-| `lucidia-alt` | 192.168.4.99 | Pi 4 8GB | Backup | Offline |
+### Tool-Specific Databases
 
-### lucidia (Primary)
+| Database | Purpose |
+|----------|---------|
+| `radar.db` | Context radar (`tools/cece-identity/`) |
+| `deployments.db` | Deployment tracking |
+| `perf.db` | Performance monitoring |
+| `snippets.db` | Code snippet storage |
+| `api-history.db` | API request history |
 
-```
-Device: Raspberry Pi 4 Model B (8GB)
-IP: 192.168.4.38
-OS: Raspberry Pi OS 64-bit
+### Memory System
 
-Hardware:
-├── 8GB RAM
-├── 128GB SD Card
-├── LED Matrix (32x64)
-├── Temperature sensor
-└── USB peripherals
-
-Services:
-├── Ollama (llama3.2:1b)
-├── LED controller
-├── Agent runtime
-├── Sensor monitoring
-└── Edge API
-```
-
-### LED Matrix Features
-
-```python
-# LED display modes
-modes = {
-    "status": "System status display",
-    "agent": "Agent activity visualization",
-    "metrics": "Real-time metrics",
-    "clock": "Digital clock",
-    "message": "Text messages",
-    "matrix": "Matrix rain effect"
-}
-
-# Example: Display agent status
-./led.sh mode agent
-./led.sh message "ALICE: Online"
-./led.sh color green
-```
-
-### Fleet Management
-
-```bash
-# Manage all Pis
-./pi-fleet.sh status              # Status of all Pis
-./pi-fleet.sh deploy              # Deploy to all
-./pi-fleet.sh update              # Update all
-./pi-fleet.sh restart <service>   # Restart service
-./pi-fleet.sh ssh lucidia         # SSH to specific Pi
-```
+| Path | Purpose |
+|------|---------|
+| `~/.blackroad/memory/journals/master-journal.jsonl` | PS-SHA-infinity append-only journal (hash-chained) |
+| `~/.blackroad/memory/sessions/` | Session state files |
+| `~/.blackroad/memory/tasks/` | Task marketplace (available/claimed/completed) |
+| `~/.blackroad/memory/til/` | Today I Learned broadcasts |
 
 ---
 
-## GitHub Infrastructure
+## GitHub
 
-### Organizations (16)
+### Organizations (16) `[DEPLOYED]`
 
-| Organization | Repos | Purpose |
-|--------------|-------|---------|
-| BlackRoad-OS | 1,143 | Core platform |
-| blackboxprogramming | 68 | Personal, SDKs |
-| BlackRoad-AI | 52 | AI/ML stack |
-| BlackRoad-Cloud | 20 | Infrastructure |
-| BlackRoad-Security | 17 | Security tools |
-| ... | ... | ... |
+From `control-map/github/orgs.yaml`:
 
-### Actions Workflows (50+)
+| # | Organization |
+|---|-------------|
+| 1 | BlackRoad-OS |
+| 2 | BlackRoad-AI |
+| 3 | BlackRoad-Labs |
+| 4 | BlackRoad-Cloud |
+| 5 | BlackRoad-Hardware |
+| 6 | BlackRoad-Education |
+| 7 | BlackRoad-Gov |
+| 8 | BlackRoad-Security |
+| 9 | BlackRoad-Foundation |
+| 10 | BlackRoad-Media |
+| 11 | BlackRoad-Studio |
+| 12 | BlackRoad-Interactive |
+| 13 | BlackRoad-Ventures |
+| 14 | BlackRoad-Archive |
+| 15 | Blackbox-Enterprises |
+| 16 | blackboxprogramming |
 
-```yaml
-# .github/workflows/ci.yml
-name: CI
+Enterprise account: `blackroad-os`
 
-on:
-  push:
-    branches: [main]
-  pull_request:
+### Workflows (7) `[DEPLOYED]`
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
+**Standard workflows** (`.github/workflows/`):
 
-  deploy:
-    needs: test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: ./deploy.sh
-```
+| Workflow | Purpose |
+|----------|---------|
+| `workflow-index-sync.yml` | Syncs workflow metadata to `.blackroad/workflow-index.jsonl` |
+| `check-dependencies.yml` | Validates workflow dependencies (runs every 6 hours) |
 
-### GitHub Pages Sites (16+)
+**Autonomous workflows** (`.github/workflows-autonomous/`):
 
-| Site | URL | Purpose |
-|------|-----|---------|
-| blackroad-os | blackroad-os.github.io | Org docs |
-| docs | docs.blackroad.io | Documentation |
-| status | status.blackroad.io | Status page |
-| ... | ... | ... |
-
-### Secrets Management
-
-```
-Repository Secrets:
-├── CLOUDFLARE_API_TOKEN
-├── RAILWAY_TOKEN
-├── VERCEL_TOKEN
-├── DIGITALOCEAN_TOKEN
-├── PINECONE_API_KEY
-├── OPENAI_API_KEY
-└── ...
-
-Organization Secrets:
-├── NPM_TOKEN
-├── DOCKER_HUB_TOKEN
-└── ...
-```
+| Workflow | Purpose | Trigger |
+|----------|---------|---------|
+| `autonomous-orchestrator.yml` | Master coordinator: test, build, security, review, deploy | Push, PR, issues, schedule (4h) |
+| `autonomous-self-healer.yml` | Auto-fix failing workflows (lint, deps, security) | Workflow failure, schedule (6h) |
+| `autonomous-cross-repo.yml` | Cross-repo sync for shared packages | Push to shared/, manual |
+| `autonomous-dependency-manager.yml` | Dependency updates with auto-PR | Schedule (Monday 3 AM) |
+| `autonomous-issue-manager.yml` | Issue triage, labeling, stale cleanup | Issues, comments, schedule (daily) |
 
 ---
 
-## Database Layer
+## Secrets Management
 
-### Primary Databases
+### Policy `[CONFIGURED]`
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      DATABASE LAYER                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  PostgreSQL (Railway)                Redis (Railway)            │
-│  ├── blackroad_main                  ├── Cache                  │
-│  ├── blackroad_agents                ├── Sessions               │
-│  ├── blackroad_memory                ├── Rate limits            │
-│  └── blackroad_analytics             └── Job queues             │
-│                                                                 │
-│  Pinecone (Cloud)                    D1 (Cloudflare)           │
-│  ├── semantic-memory                 ├── Edge config            │
-│  └── embeddings                      └── Edge cache             │
-│                                                                 │
-│  R2 (Cloudflare)                     SQLite (Local)            │
-│  ├── Archive storage                 ├── CECE identity          │
-│  └── Backups                         └── Local cache            │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Connection Strings
-
-```bash
-# PostgreSQL
-DATABASE_URL=postgresql://user:pass@host:5432/blackroad
-
-# Redis
-REDIS_URL=redis://user:pass@host:6379
-
-# Pinecone
-PINECONE_API_KEY=xxx
-PINECONE_ENVIRONMENT=us-east-1
-
-# SQLite
-SQLITE_PATH=~/.blackroad/cece-identity.db
-```
-
----
-
-## Networking
-
-### DNS Configuration
+From `control-map/accounts/credentials.yaml`:
 
 ```
-blackroad.io                   A     104.21.x.x (Cloudflare)
-*.blackroad.io                 CNAME blackroad.io
-api.blackroad.io               CNAME blackroad.io (proxied)
-app.blackroad.io               CNAME cname.vercel-dns.com
-docs.blackroad.io              CNAME cname.vercel-dns.com
+policy: no-secrets-in-repo
 ```
 
-### SSL/TLS
+All secrets are stored as environment variables or via platform-specific secret stores:
 
-- **Edge:** Cloudflare Universal SSL (automatic)
-- **Origin:** Full (strict) mode
-- **Certificates:** Auto-renewed via Cloudflare
+| Provider | Secret Mechanism | Env Var |
+|----------|-----------------|---------|
+| Cloudflare | `wrangler secret put` | `CF_API_TOKEN` |
+| GitHub | Repository/org secrets | `GH_TOKEN` |
+| DigitalOcean | API token | `DO_TOKEN` |
+| Stripe | `wrangler secret put` | `STRIPE_API_KEY` |
+| Vercel | Vercel env vars | `VERCEL_TOKEN` |
+| Railway | Railway variables | `RAILWAY_TOKEN` |
 
-### Network Security
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    NETWORK SECURITY                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Internet → Cloudflare WAF → Origin Shield → Backend           │
-│                                                                 │
-│  Protection Layers:                                             │
-│  1. DDoS mitigation (Cloudflare)                               │
-│  2. WAF rules (OWASP, custom)                                  │
-│  3. Rate limiting                                               │
-│  4. Bot management                                              │
-│  5. mTLS for internal                                          │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Security
-
-### Security Layers
-
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| Edge | Cloudflare WAF | DDoS, bot protection |
-| Transport | TLS 1.3 | Encryption in transit |
-| Application | JWT, API Keys | Authentication |
-| Data | AES-256 | Encryption at rest |
-| Infrastructure | VPC, Firewall | Network isolation |
-
-### Secrets Management
-
-```yaml
-# Production secrets stored in:
-# 1. Cloudflare Secrets (edge)
-# 2. Railway Variables (compute)
-# 3. Vercel Environment (web)
-# 4. GitHub Secrets (CI/CD)
-# 5. HashiCorp Vault (enterprise)
-
-# Local development:
-# ~/.blackroad/vault/ (encrypted)
-```
-
-### Access Control
-
-```
-Role-Based Access:
-├── admin (full access)
-├── developer (read/write code)
-├── operator (deploy, monitor)
-└── viewer (read-only)
-
-Service Accounts:
-├── ci-deploy (CI/CD)
-├── monitoring (metrics)
-└── backup (data access)
-```
-
----
-
-## Disaster Recovery
-
-### Backup Strategy
-
-| Data | Frequency | Retention | Location |
-|------|-----------|-----------|----------|
-| PostgreSQL | Hourly | 30 days | R2, Spaces |
-| Redis | Daily | 7 days | R2 |
-| Memory | Daily | 90 days | R2 |
-| Code | Continuous | Forever | GitHub |
-| Config | On change | 30 days | R2 |
-
-### Recovery Procedures
-
-```bash
-# Database recovery
-./recovery.sh postgres restore --backup latest
-
-# Full system recovery
-./recovery.sh full --from-backup backup_2026_02_05
-
-# Failover to backup region
-./recovery.sh failover --region eu-west
-```
-
-### RTO/RPO Targets
-
-| System | RTO | RPO |
-|--------|-----|-----|
-| API | 5 min | 0 |
-| Dashboard | 15 min | 1 hour |
-| Agents | 30 min | 5 min |
-| Memory | 1 hour | 1 hour |
-
-### Runbook
-
-```markdown
-# Disaster Recovery Runbook
-
-## Total System Failure
-1. Assess damage scope
-2. Activate incident response team
-3. Restore from latest backup
-4. Verify data integrity
-5. Gradual traffic restoration
-6. Post-incident review
-
-## Partial Outage
-1. Identify affected components
-2. Failover to healthy replicas
-3. Investigate root cause
-4. Apply fix
-5. Restore original configuration
-```
+**Wrangler secrets referenced in worker configs:**
+- `ANTHROPIC_API_KEY` (api-gateway)
+- `OPENAI_API_KEY` (api-gateway)
+- `TUNNEL_URL` (api-gateway)
+- `STRIPE_SECRET_KEY` (payment-gateway)
+- `STRIPE_WEBHOOK_SECRET` (payment-gateway)
 
 ---
 
 ## Infrastructure Commands
 
+Scripts that exist in this repository:
+
+| Command | Purpose |
+|---------|---------|
+| `./blackroad-mesh.sh` | Test connectivity to all 7 infrastructure services |
+| `./blackroad-mesh.sh --boot` | Test connectivity + start orchestrator |
+| `./blackroad-mesh.sh --json` | Output mesh status as JSON |
+| `./net.sh` | Display network topology diagram |
+| `./status.sh` | Quick system status display |
+| `./health.sh` | System health check |
+| `./monitor.sh` | Real-time resource monitor |
+
+**Cloudflare deployment** (via wrangler, not a custom script):
 ```bash
-# Status
-./blackroad-mesh.sh              # Full mesh status
-./status.sh                      # System status
-./health.sh                      # Health check
+wrangler deploy                          # Deploy a worker
+wrangler pages deploy . --project-name=X # Deploy Pages site
+wrangler secret put SECRET_NAME          # Set a secret
+wrangler kv namespace list               # List KV namespaces
+```
 
-# Deployment
-./deploy.sh cloudflare           # Deploy to Cloudflare
-./deploy.sh railway              # Deploy to Railway
-./deploy.sh vercel               # Deploy to Vercel
-./deploy.sh all                  # Deploy everywhere
-
-# Scaling
-./scale.sh api 3                 # Scale API to 3 replicas
-./scale.sh workers 5             # Scale workers
-
-# Maintenance
-./maintenance.sh enable          # Enable maintenance mode
-./maintenance.sh disable         # Disable maintenance mode
-
-# Backup
-./backup.sh create               # Create backup
-./backup.sh restore <id>         # Restore backup
+**Railway deployment** (via railway CLI):
+```bash
+railway up        # Deploy service
+railway logs      # View logs
+railway variables # Manage env vars
 ```
 
 ---
 
-*Last updated: 2026-02-05*
+*Last updated: 2026-02-18*
+*Sources: `control-map/`, `state/topology.yaml`, `agents/manifest.json`, `deployments/status.json`, 75 `wrangler.toml` files, 45 `railway.toml` files, 15 `vercel.json` files, `blackroad-mesh.sh`, `net.sh`*

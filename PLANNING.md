@@ -43,7 +43,7 @@
 | Cloudflare (75+ workers) | ✅ Active | Healthy |
 | Railway (14 projects) | ✅ Active | Healthy |
 | Vercel (15+ projects) | ✅ Active | Healthy |
-| DigitalOcean (codex-infinity) | ✅ Active | Healthy |
+| DigitalOcean (blackroad os-infinity) | ✅ Active | Healthy |
 | Raspberry Pi Fleet (5 devices) | ⚠️ Partial | 3/5 online |
 | Ollama Local | ✅ Active | Healthy |
 
