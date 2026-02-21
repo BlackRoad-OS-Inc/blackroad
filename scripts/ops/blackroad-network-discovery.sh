@@ -56,15 +56,20 @@ ssh_probe() {
         # Quick port check with nc
         if nc -z -w1 "$ip" 22 2>/dev/null; then
             # Try SSH with pi user
-            local hostname=$(ssh -o ConnectTimeout=2 -o BatchMode=yes -o StrictHostKeyChecking=no "pi@$ip" "hostname" 2>/dev/null)
+            # Try hostname-based user first, then fall back to common users
+            local hostname=""
+            for try_user in alice aria cecilia lucidia octavia root; do
+                hostname=$(ssh -o ConnectTimeout=2 -o BatchMode=yes -o StrictHostKeyChecking=no "${try_user}@${ip}" "hostname" 2>/dev/null) && break
+            done
 
             if [[ -n "$hostname" ]]; then
-                local model=$(ssh -o ConnectTimeout=2 -o BatchMode=yes "pi@$ip" "cat /proc/device-tree/model 2>/dev/null | tr -d '\0'" 2>/dev/null || echo "")
-                local tailscale_ip=$(ssh -o ConnectTimeout=2 -o BatchMode=yes "pi@$ip" "tailscale ip -4 2>/dev/null" 2>/dev/null || echo "none")
+                local ssh_user=$(echo "$hostname" | tr '[:upper:]' '[:lower:]')
+                local model=$(ssh -o ConnectTimeout=2 -o BatchMode=yes "${ssh_user}@${ip}" "cat /proc/device-tree/model 2>/dev/null | tr -d '\0'" 2>/dev/null || echo "")
+                local wg_ip=$(ssh -o ConnectTimeout=2 -o BatchMode=yes "$ip" "ip -4 addr show wg0 2>/dev/null | grep inet | awk '{print \$2}' | cut -d/ -f1" 2>/dev/null || echo "none")
 
                 echo -e "${GREEN}✓ $ip${NC} → ${WHITE}$hostname${NC}"
                 [[ -n "$model" ]] && echo -e "    Model: $model"
-                [[ "$tailscale_ip" != "none" ]] && echo -e "    Tailscale: $tailscale_ip"
+                [[ "$wg_ip" != "none" ]] && echo -e "    WireGuard: $wg_ip"
                 ((found++))
             else
                 # SSH open but auth failed
@@ -148,10 +153,14 @@ full_scan() {
                 [[ -n "$name" ]] && echo -e "  Known as: ${WHITE}$name${NC}"
 
                 # Try SSH to get more info
-                local hostname=$(ssh -o ConnectTimeout=2 -o BatchMode=yes -o StrictHostKeyChecking=no "pi@$ip" "hostname" 2>/dev/null)
+                local hostname=""
+                for try_user in alice aria cecilia lucidia octavia root; do
+                    hostname=$(ssh -o ConnectTimeout=2 -o BatchMode=yes -o StrictHostKeyChecking=no "${try_user}@${ip}" "hostname" 2>/dev/null) && break
+                done
                 if [[ -n "$hostname" ]]; then
+                    local ssh_user=$(echo "$hostname" | tr '[:upper:]' '[:lower:]')
                     echo -e "  Hostname: ${GREEN}$hostname${NC} (SSH OK)"
-                    local model=$(ssh -o ConnectTimeout=2 -o BatchMode=yes "pi@$ip" "cat /proc/device-tree/model 2>/dev/null | tr -d '\0'" 2>/dev/null)
+                    local model=$(ssh -o ConnectTimeout=2 -o BatchMode=yes "${ssh_user}@${ip}" "cat /proc/device-tree/model 2>/dev/null | tr -d '\0'" 2>/dev/null)
                     [[ -n "$model" ]] && echo -e "  Model: $model"
                 else
                     echo -e "  SSH: ${RED}Not accessible${NC}"

@@ -33,10 +33,10 @@ done
 wait
 echo ""
 
-# Tailscale devices
+# WireGuard devices
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔐 Tailscale Network:"
-tailscale status 2>&1
+echo "🔐 WireGuard Network:"
+sudo wg show wg0 2>&1
 echo ""
 
 # Known infrastructure

@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS agents (
     type TEXT NOT NULL,  -- hardware, ai, human
     platform TEXT,       -- raspberry_pi, claude, grok, etc.
     ip_local TEXT,
-    ip_tailscale TEXT,
+    ip_wireguard TEXT,
     role TEXT,
     status TEXT DEFAULT 'active',
     sha2048_fingerprint TEXT,
@@ -160,7 +160,9 @@ connect() {
 
     if [[ -n "$ip" ]]; then
         echo -e "${GREEN}Connecting to ${WHITE}$name${GREEN} at ${ip}...${NC}"
-        ssh "pi@$ip"
+        # Use hostname-based user (alice@alice, cecilia@cecilia, etc.)
+        local user=$(sqlite3 "$REGISTRY_DB" "SELECT LOWER(name) FROM agents WHERE name='$name';")
+        ssh "${user}@${ip}"
     else
         echo -e "${RED}Agent not found or not a hardware agent: $name${NC}"
         return 1

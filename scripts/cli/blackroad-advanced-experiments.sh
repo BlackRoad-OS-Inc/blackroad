@@ -41,7 +41,7 @@ echo -e "${NC}"
 echo -e "\n${BOLD}${PINK}━━━ Experiment 1: What are Aria's 142 Containers? ━━━${NC}\n"
 
 echo "Fetching container details from Aria..."
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.82 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no aria@192.168.4.82 \
     "docker ps --format '{{.Names}}' | head -20" 2>/dev/null > /tmp/aria-containers.txt
 
 echo -e "${YELLOW}First 20 containers on Aria:${NC}"
@@ -56,10 +56,10 @@ grep -o '^[^-_]*' /tmp/aria-containers.txt | sort | uniq -c | sort -rn | head -1
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo -e "\n${BOLD}${PINK}━━━ Experiment 2: Cluster Resource Usage ━━━${NC}\n"
 
-for device in "octavia:pi:id_octavia:192.168.4.81" \
-              "alice:pi::192.168.4.49" \
-              "lucidia:pi:br_mesh_ed25519:192.168.4.38" \
-              "aria:pi:br_mesh_ed25519:192.168.4.82" \
+for device in "lucidia:lucidia:id_octavia:192.168.4.81" \
+              "alice:alice::192.168.4.49" \
+              "octavia:octavia:br_mesh_ed25519:192.168.4.38" \
+              "aria:aria:br_mesh_ed25519:192.168.4.82" \
               "shellfish:alexa::174.138.44.45"; do
 
     IFS=':' read -r name user key ip <<< "$device"
@@ -85,19 +85,19 @@ echo "Starting parallel workload across all 5 nodes..."
 START=$(date +%s)
 
 # Start jobs on all nodes simultaneously
-ssh -i ~/.ssh/id_octavia -o StrictHostKeyChecking=no pi@192.168.4.81 \
+ssh -i ~/.ssh/id_octavia -o StrictHostKeyChecking=no lucidia@192.168.4.81 \
     "time python3 -c 'sum(i*i for i in range(1000000))'" &> /tmp/octavia-compute.txt &
 PID1=$!
 
-ssh -o StrictHostKeyChecking=no pi@192.168.4.49 \
+ssh -o StrictHostKeyChecking=no alice@192.168.4.49 \
     "time python3 -c 'sum(i*i for i in range(1000000))'" &> /tmp/alice-compute.txt &
 PID2=$!
 
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.38 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no octavia@192.168.4.38 \
     "time python3 -c 'sum(i*i for i in range(1000000))'" &> /tmp/lucidia-compute.txt &
 PID3=$!
 
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.82 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no aria@192.168.4.82 \
     "time python3 -c 'sum(i*i for i in range(1000000))'" &> /tmp/aria-compute.txt &
 PID4=$!
 
@@ -201,10 +201,10 @@ TIMESTAMP=$(date +%s)
 
 echo "Pulling $TEST_CONTAINER on all nodes..."
 
-for device in "octavia:pi:id_octavia:192.168.4.81" \
-              "alice:pi::192.168.4.49" \
-              "lucidia:pi:br_mesh_ed25519:192.168.4.38" \
-              "aria:pi:br_mesh_ed25519:192.168.4.82"; do
+for device in "lucidia:lucidia:id_octavia:192.168.4.81" \
+              "alice:alice::192.168.4.49" \
+              "octavia:octavia:br_mesh_ed25519:192.168.4.38" \
+              "aria:aria:br_mesh_ed25519:192.168.4.82"; do
 
     IFS=':' read -r name user key ip <<< "$device"
 
@@ -242,10 +242,10 @@ done
 echo ""
 echo -e "${YELLOW}Cleaning up test containers...${NC}"
 
-for device in "octavia:pi:id_octavia:192.168.4.81" \
-              "alice:pi::192.168.4.49" \
-              "lucidia:pi:br_mesh_ed25519:192.168.4.38" \
-              "aria:pi:br_mesh_ed25519:192.168.4.82"; do
+for device in "lucidia:lucidia:id_octavia:192.168.4.81" \
+              "alice:alice::192.168.4.49" \
+              "octavia:octavia:br_mesh_ed25519:192.168.4.38" \
+              "aria:aria:br_mesh_ed25519:192.168.4.82"; do
 
     IFS=':' read -r name user key ip <<< "$device"
 

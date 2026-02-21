@@ -154,7 +154,7 @@ test_pi_node() {
         return 1
     fi
 
-    if ssh -o ConnectTimeout=5 -o BatchMode=yes pi@"$pi_ip" "echo 'OK'" >/dev/null 2>&1; then
+    if ssh -o ConnectTimeout=5 -o BatchMode=yes "$pi_ip" "echo 'OK'" >/dev/null 2>&1; then
         success "$pi_ip SSH is working"
         return 0
     else
@@ -169,7 +169,7 @@ test_pi_service() {
 
     log "Testing service $service on $pi_ip"
 
-    if ssh -o ConnectTimeout=5 pi@"$pi_ip" "cd /home/pi/services/$service && docker-compose ps" >/dev/null 2>&1; then
+    if ssh -o ConnectTimeout=5 "$pi_ip" "cd ~/services/$service && docker-compose ps" >/dev/null 2>&1; then
         success "$service is running on $pi_ip"
         return 0
     else

@@ -247,7 +247,7 @@ echo -e "\n${BOLD}${PINK}Deploying mega experiment to cluster...${NC}\n"
 
 # Run on different nodes
 echo "  📍 Aria (142 containers): Running hybrid quantum-trinary system..."
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.82 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no aria@192.168.4.82 \
     "python3 -" < /tmp/mega_experiment.py 2>&1 | tee /tmp/mega-aria.txt
 
 echo ""

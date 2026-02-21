@@ -41,7 +41,7 @@ echo -e "${YELLOW}Starting LED controllers on all nodes...${NC}"
 
 # Aria - The Beast (142 containers)
 echo "  📍 Aria (192.168.4.82) - 142 containers"
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.82 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no aria@192.168.4.82 \
     "python3 -" < <(cat << 'PYTHON'
 import lgpio
 import time
@@ -78,7 +78,7 @@ PID_ARIA=$!
 
 # Lucidia - Data Hub (235GB storage)
 echo "  📍 Lucidia (192.168.4.38) - 235GB storage"
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.38 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no octavia@192.168.4.38 \
     "python3 -" < <(cat << 'PYTHON'
 import lgpio
 import time
@@ -116,7 +116,7 @@ PID_LUCIDIA=$!
 
 # Octavia - Coordinator (7GB free RAM)
 echo "  📍 Octavia (192.168.4.81) - 7GB free RAM"
-ssh -i ~/.ssh/id_octavia -o StrictHostKeyChecking=no pi@192.168.4.81 \
+ssh -i ~/.ssh/id_octavia -o StrictHostKeyChecking=no lucidia@192.168.4.81 \
     "python3 -" < <(cat << 'PYTHON'
 import lgpio
 import time
@@ -155,7 +155,7 @@ PID_OCTAVIA=$!
 
 # Alice - K8s Master
 echo "  📍 Alice (192.168.4.49) - Kubernetes master"
-ssh -o StrictHostKeyChecking=no pi@192.168.4.49 \
+ssh -o StrictHostKeyChecking=no alice@192.168.4.49 \
     "python3 -" < <(cat << 'PYTHON'
 try:
     import RPi.GPIO as GPIO

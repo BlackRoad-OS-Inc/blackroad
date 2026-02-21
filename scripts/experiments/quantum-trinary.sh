@@ -114,7 +114,7 @@ print(f"\n✓ Qubit simulation complete!")
 PYTHON
 
 echo "Running on Aria (142 containers - quantum-ready!)..."
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.82 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no aria@192.168.4.82 \
     "python3 -" < /tmp/qubit_simulator.py 2>&1 | tee "$RESULTS_DIR/qubit_results.txt"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -189,7 +189,7 @@ print(f"\n✓ Qutrit simulation complete!")
 PYTHON
 
 echo "Running on Lucidia (235GB storage - data-ready!)..."
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.38 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no octavia@192.168.4.38 \
     "python3 -" < /tmp/qutrit_simulator.py 2>&1 | tee "$RESULTS_DIR/qutrit_results.txt"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -288,7 +288,7 @@ print(f"\n✓ Quaternion mathematics complete!")
 PYTHON
 
 echo "Running on Octavia (7GB free RAM - math-ready!)..."
-ssh -i ~/.ssh/id_octavia -o StrictHostKeyChecking=no pi@192.168.4.81 \
+ssh -i ~/.ssh/id_octavia -o StrictHostKeyChecking=no lucidia@192.168.4.81 \
     "python3 -" < /tmp/quaternion_math.py 2>&1 | tee "$RESULTS_DIR/quaternion_results.txt"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -377,7 +377,7 @@ print(f"\n✓ Qudit simulation complete!")
 PYTHON
 
 echo "Running on Alice (Kubernetes master - orchestration-ready!)..."
-ssh -o StrictHostKeyChecking=no pi@192.168.4.49 \
+ssh -o StrictHostKeyChecking=no alice@192.168.4.49 \
     "python3 -" < /tmp/qudit_simulator.py 2>&1 | tee "$RESULTS_DIR/qudit_results.txt"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -623,22 +623,22 @@ PYTHON
 echo "Distributing quantum simulation across all nodes..."
 
 echo "  • Node 1 (Aria): 3-qubit circuit"
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.82 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no aria@192.168.4.82 \
     "python3 -" < /tmp/distributed_quantum.py > "$RESULTS_DIR/quantum_aria.txt" 2>&1 &
 PID1=$!
 
 echo "  • Node 2 (Lucidia): 3-qubit circuit"
-ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no pi@192.168.4.38 \
+ssh -i ~/.ssh/br_mesh_ed25519 -o StrictHostKeyChecking=no octavia@192.168.4.38 \
     "python3 -" < /tmp/distributed_quantum.py > "$RESULTS_DIR/quantum_lucidia.txt" 2>&1 &
 PID2=$!
 
 echo "  • Node 3 (Octavia): 3-qubit circuit"
-ssh -i ~/.ssh/id_octavia -o StrictHostKeyChecking=no pi@192.168.4.81 \
+ssh -i ~/.ssh/id_octavia -o StrictHostKeyChecking=no lucidia@192.168.4.81 \
     "python3 -" < /tmp/distributed_quantum.py > "$RESULTS_DIR/quantum_octavia.txt" 2>&1 &
 PID3=$!
 
 echo "  • Node 4 (Alice): 3-qubit circuit"
-ssh -o StrictHostKeyChecking=no pi@192.168.4.49 \
+ssh -o StrictHostKeyChecking=no alice@192.168.4.49 \
     "python3 -" < /tmp/distributed_quantum.py > "$RESULTS_DIR/quantum_alice.txt" 2>&1 &
 PID4=$!
 

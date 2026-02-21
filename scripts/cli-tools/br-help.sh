@@ -41,7 +41,7 @@ HELP
     ;;
   pi)
     echo "Pi Cluster Commands:"
-    echo "  tailscale status"
+    echo "  sudo wg show wg0"
     echo "  ssh alice"
     echo "  ssh aria"
     ;;

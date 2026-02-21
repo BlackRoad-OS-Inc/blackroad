@@ -31,13 +31,13 @@ touch "$JOURNAL"
 
 # ─── REAL PI FLEET ───────────────────────────────────────────────────────────
 
-# Device definitions: name|local_ip|tailscale_ip|role|sprite
+# Device definitions: name|local_ip|wireguard_ip|role|sprite
 DEVICES=(
-    "cecilia|192.168.4.89|100.72.180.98|Primary AI (Hailo-8)|👩‍💻"
-    "lucidia|192.168.4.81|100.83.149.86|AI Inference|🎨"
-    "alice|192.168.4.49|100.77.210.18|Worker Node|📚"
-    "aria|192.168.4.82|100.109.14.17|Harmony Protocols|🧠"
-    "octavia|192.168.4.38|100.66.235.47|Multi-arm Processing|🐙"
+    "cecilia|192.168.4.89|10.8.0.2|Primary AI (Hailo-8)|👩‍💻"
+    "lucidia|192.168.4.81|10.8.0.3|AI Inference|🎨"
+    "alice|192.168.4.49|10.8.0.5|Worker Node|📚"
+    "aria|192.168.4.82|10.8.0.4|Harmony Protocols|🧠"
+    "octavia|192.168.4.38|10.8.0.6|Multi-arm Processing|🐙"
 )
 
 timestamp() {
@@ -50,7 +50,7 @@ generate_uuid() {
 
 # ─── DEVICE MONITORING ───────────────────────────────────────────────────────
 
-# Check if device is reachable (try local first, then tailscale)
+# Check if device is reachable (try local first, then WireGuard)
 check_device() {
     local name="$1"
     local local_ip="$2"
@@ -62,9 +62,9 @@ check_device() {
         return 0
     fi
 
-    # Try Tailscale
+    # Try WireGuard
     if ping -c 1 -W 2 "$ts_ip" &>/dev/null; then
-        echo "tailscale|$ts_ip"
+        echo "wireguard|$ts_ip"
         return 0
     fi
 

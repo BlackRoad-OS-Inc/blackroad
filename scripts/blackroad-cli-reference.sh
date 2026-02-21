@@ -94,7 +94,7 @@ LAYER 8: IDENTITY → SHA-2048 (RoadChain, identity > provider)
 LAYER 7: API      → blackroad-ai (local/anthropic/openai)
 LAYER 6: CDN      → Cloudflare (205 projects, owned)
 LAYER 5: DNS      → Pi-hole + Cloudflare DNS
-LAYER 4: ISP      → Tailscale mesh (8 devices)
+LAYER 4: ISP      → WireGuard mesh (8 devices)
 LAYER 3: BACKBONE → Encrypted tunnels
 LAYER 2: OS       → macOS, Linux (Pis), Windows (WSL2)
 LAYER 1: HARDWARE → M1, Pi cluster, Hailo-8

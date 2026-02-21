@@ -92,8 +92,9 @@ check_pi_node() {
     local name="$1"
     local ip="$2"
 
-    if ssh -o ConnectTimeout=3 -o BatchMode=yes pi@"$ip" "echo 'OK'" >/dev/null 2>&1; then
-        local uptime=$(ssh -o ConnectTimeout=3 pi@"$ip" "uptime -p" 2>/dev/null | sed 's/up //')
+    local user=$(echo "$name" | tr '[:upper:]' '[:lower:]' | awk -F- '{print $1}')
+    if ssh -o ConnectTimeout=3 -o BatchMode=yes "${user}@${ip}" "echo 'OK'" >/dev/null 2>&1; then
+        local uptime=$(ssh -o ConnectTimeout=3 "${user}@${ip}" "uptime -p" 2>/dev/null | sed 's/up //')
         print_status "ok" "$name ($ip) - up $uptime"
         return 0
     else
@@ -236,7 +237,7 @@ show_services_summary() {
     local healthy_pis=0
 
     for pi_ip in 192.168.4.38 192.168.4.64 192.168.4.99; do
-        if ssh -o ConnectTimeout=3 -o BatchMode=yes pi@"$pi_ip" "echo 'OK'" >/dev/null 2>&1; then
+        if ssh -o ConnectTimeout=3 -o BatchMode=yes "$pi_ip" "echo 'OK'" >/dev/null 2>&1; then
             ((healthy_pis++))
         fi
     done

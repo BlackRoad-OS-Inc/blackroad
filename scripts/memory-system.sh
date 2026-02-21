@@ -319,7 +319,7 @@ $(grep -E '"action":"decided"' "$JOURNAL_DIR/master-journal.jsonl" 2>/dev/null |
 
 ## Active Deployments
 
-$(ssh pi@aria64 "docker ps --format '{{.Names}} → {{.Ports}}'" 2>/dev/null || echo "Cannot reach aria64")
+$(ssh aria "docker ps --format '{{.Names}} → {{.Ports}}'" 2>/dev/null || echo "Cannot reach aria")
 
 ---
 

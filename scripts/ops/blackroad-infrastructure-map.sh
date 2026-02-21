@@ -30,26 +30,28 @@ echo "  🌐 codex-infinity  159.65.43.12   (DigitalOcean droplet, user: root)"
 echo ""
 
 echo ""
-echo "🔐 TAILSCALE VPN MESH (100.x.x.x)"
+echo "🔐 WIREGUARD VPN MESH (10.8.0.x)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-if command -v tailscale >/dev/null 2>&1; then
-    if tailscale status >/dev/null 2>&1; then
-        echo "  ✅ Tailscale ACTIVE on this machine"
+if command -v wg >/dev/null 2>&1; then
+    if sudo wg show wg0 >/dev/null 2>&1; then
+        echo "  ✅ WireGuard ACTIVE on this machine"
         echo ""
-        tailscale status | head -10
+        sudo wg show wg0 | head -10
     else
-        echo "  ⚠️  Tailscale installed but not connected"
+        echo "  ⚠️  WireGuard installed but not connected"
     fi
 else
-    echo "  ⚠️  Tailscale not installed"
+    echo "  ⚠️  WireGuard not installed"
 fi
 
 echo ""
 echo "  Configured nodes:"
-echo "    - cecilia-ts   (100.72.180.98)"
-echo "    - lucidia-ts   (100.83.149.86)"
-echo "    - aria-ts      (100.109.14.17)"
+echo "    - cecilia-wg   (10.8.0.2)"
+echo "    - lucidia-wg   (10.8.0.3)"
+echo "    - aria-wg      (10.8.0.4)"
+echo "    - alice-wg     (10.8.0.5)"
+echo "    - octavia-wg   (10.8.0.6)"
 echo ""
 
 echo ""
@@ -70,7 +72,7 @@ LOCAL_COUNT=$((LOCAL_COUNT + $(/sbin/ping -c 1 192.168.4.82 >/dev/null 2>&1 && e
 
 echo "  Local Network:  $LOCAL_COUNT/4 Pi nodes online + cecilia (unknown)"
 echo "  Cloud:          2 DigitalOcean droplets"
-echo "  VPN Mesh:       3 Tailscale endpoints configured"
+echo "  VPN Mesh:       5 WireGuard endpoints configured"
 echo "  Control:        1 PiKVM + this operator machine"
 echo ""
 echo "  Total nodes:    ~10 devices"

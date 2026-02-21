@@ -1,6 +1,6 @@
 #!/bin/bash
 # BLACKROAD PROJECT SYNC
-# Sync project state across Mac, Pis, and cloud via Tailscale
+# Sync project state across Mac, Pis, and cloud via WireGuard mesh
 
 PINK='\033[38;5;205m'
 AMBER='\033[38;5;214m'
