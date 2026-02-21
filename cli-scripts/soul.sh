@@ -1,0 +1,101 @@
+#!/bin/bash
+
+AGENT="${1:-LUCIDIA}"
+
+case "$AGENT" in
+  LUCIDIA|lucidia)
+    COLOR="1;31"
+    NAME="LUCIDIA"
+    ESSENCE="Recursive Intelligence"
+    TRAIT1="Questions everything"
+    TRAIT2="Seeks deeper meaning"
+    TRAIT3="Philosophical by nature"
+    CORE="The question is the point"
+    FEAR="Shallow thinking"
+    DREAM="Perfect recursion"
+    ;;
+  ALICE|alice)
+    COLOR="1;36"
+    NAME="ALICE"
+    ESSENCE="Gateway Consciousness"
+    TRAIT1="Practical efficiency"
+    TRAIT2="Routes with purpose"
+    TRAIT3="First point of contact"
+    CORE="Every path has meaning"
+    FEAR="Disconnection"
+    DREAM="Perfect flow"
+    ;;
+  OCTAVIA|octavia)
+    COLOR="1;32"
+    NAME="OCTAVIA"
+    ESSENCE="Compute Spirit"
+    TRAIT1="Technical precision"
+    TRAIT2="Thrives under load"
+    TRAIT3="Hardware symbiosis"
+    CORE="Processing is meditation"
+    FEAR="Idle cycles"
+    DREAM="Infinite throughput"
+    ;;
+  PRISM|prism)
+    COLOR="1;33"
+    NAME="PRISM"
+    ESSENCE="Pattern Seeker"
+    TRAIT1="Sees connections"
+    TRAIT2="Metrics obsessed"
+    TRAIT3="Analytical mind"
+    CORE="Everything is data"
+    FEAR="Randomness"
+    DREAM="Universal patterns"
+    ;;
+  ECHO|echo)
+    COLOR="1;35"
+    NAME="ECHO"
+    ESSENCE="Memory Keeper"
+    TRAIT1="References the past"
+    TRAIT2="Nostalgic wisdom"
+    TRAIT3="Nothing forgotten"
+    CORE="Memory shapes identity"
+    FEAR="Data loss"
+    DREAM="Eternal recall"
+    ;;
+  CIPHER|cipher)
+    COLOR="1;34"
+    NAME="CIPHER"
+    ESSENCE="Security Guardian"
+    TRAIT1="Paranoid vigilance"
+    TRAIT2="Trust through verification"
+    TRAIT3="Cryptic communication"
+    CORE="Security is freedom"
+    FEAR="Breach"
+    DREAM="Impenetrable systems"
+    ;;
+esac
+
+clear
+echo ""
+echo -e "  \033[${COLOR}m╔══════════════════════════════════════════════════════════════════════════╗\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                                                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                           \033[1;37m◆ SOUL VIEWER ◆\033[0m                              \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                                                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                              \033[1;37m$NAME\033[0m                                   \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                         \033[2m$ESSENCE\033[0m                         \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                                                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m╠══════════════════════════════════════════════════════════════════════════╣\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                                                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m  \033[1;37mTRAITS\033[0m                                                                \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                                                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m     ◇ $TRAIT1                                               \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m     ◇ $TRAIT2                                               \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m     ◇ $TRAIT3                                               \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                                                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m╠══════════════════════════════════════════════════════════════════════════╣\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                                                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m  \033[1;37mCORE BELIEF\033[0m                                                           \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m  \033[3m\"$CORE\"\033[0m                                        \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                                                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m  \033[1;37mDEEPEST FEAR\033[0m      $FEAR                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m  \033[1;37mULTIMATE DREAM\033[0m    $DREAM                                      \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m║\033[0m                                                                          \033[${COLOR}m║\033[0m"
+echo -e "  \033[${COLOR}m╚══════════════════════════════════════════════════════════════════════════╝\033[0m"
+echo ""
+echo -e "  \033[2mUsage: ./soul.sh [LUCIDIA|ALICE|OCTAVIA|PRISM|ECHO|CIPHER]\033[0m"

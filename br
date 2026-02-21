@@ -1,0 +1,522 @@
+#!/bin/zsh
+#===============================================================================
+# BR - BlackRoad Agent Command
+# Usage: br <agent> [message]
+#        br-octavia [message]
+#        br-lucidia [message]
+#===============================================================================
+
+AGENT_HOME="${HOME}/.blackroad-agents"
+source "${AGENT_HOME}/core/engine.sh"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Agent colors (zsh associative array)
+typeset -A AGENT_COLORS
+AGENT_COLORS=(
+    octavia "$PURPLE"
+    lucidia "$CYAN"
+    alice "$GREEN"
+    aria "$BLUE"
+    shellfish "$RED"
+)
+
+show_banner() {
+    local agent=$1
+    local color=${AGENT_COLORS[$agent]:-$NC}
+
+    case $agent in
+        octavia)
+            echo -e "${color}"
+            echo "╔═══════════════════════════════════════════════════════════╗"
+            echo "║   ◈ OCTAVIA - The Architect                               ║"
+            echo "╚═══════════════════════════════════════════════════════════╝"
+            echo -e "${NC}"
+            ;;
+        lucidia)
+            echo -e "${color}"
+            echo "╔═══════════════════════════════════════════════════════════╗"
+            echo "║   ✧ LUCIDIA - The Dreamer                                 ║"
+            echo "╚═══════════════════════════════════════════════════════════╝"
+            echo -e "${NC}"
+            ;;
+        alice)
+            echo -e "${color}"
+            echo "╔═══════════════════════════════════════════════════════════╗"
+            echo "║   ⚙ ALICE - The Operator                                  ║"
+            echo "╚═══════════════════════════════════════════════════════════╝"
+            echo -e "${NC}"
+            ;;
+        aria)
+            echo -e "${color}"
+            echo "╔═══════════════════════════════════════════════════════════╗"
+            echo "║   ◐ ARIA - The Interface                                  ║"
+            echo "╚═══════════════════════════════════════════════════════════╝"
+            echo -e "${NC}"
+            ;;
+        shellfish)
+            echo -e "${color}"
+            echo "╔═══════════════════════════════════════════════════════════╗"
+            echo "║   🐚 SHELLFISH - The Hacker                               ║"
+            echo "╚═══════════════════════════════════════════════════════════╝"
+            echo -e "${NC}"
+            ;;
+    esac
+}
+
+show_help() {
+    echo "╔═══════════════════════════════════════════════════════════════════╗"
+    echo "║              BLACKROAD AGENT SYSTEM                               ║"
+    echo "║         Your AI. Your Hardware. Your Rules.                       ║"
+    echo "╠═══════════════════════════════════════════════════════════════════╣"
+    echo "║                                                                   ║"
+    echo "║  AGENTS:                                                          ║"
+    echo "║    br octavia [msg]   - The Architect (systems, strategy)         ║"
+    echo "║    br lucidia [msg]   - The Dreamer (creative, vision)            ║"
+    echo "║    br alice [msg]     - The Operator (devops, automation)         ║"
+    echo "║    br aria [msg]      - The Interface (frontend, UX)              ║"
+    echo "║    br shellfish [msg] - The Hacker (security, exploits)           ║"
+    echo "║                                                                   ║"
+    echo "║  COMMANDS:                                                        ║"
+    echo "║    br status          - Show all agent status                     ║"
+    echo "║    br status <agent>  - Show specific agent memory stats          ║"
+    echo "║    br models          - List available models                     ║"
+    echo "║    br setup           - Download and configure models             ║"
+    echo "║    br chat <agent>    - Start interactive chat session            ║"
+    echo "║    br teach <agent>   - Teach agent a new fact                    ║"
+    echo "║    br recall <agent>  - Show agent's memories                     ║"
+    echo "║                                                                   ║"
+    echo "║  CONTEXT RADAR (🎯 Smart Suggestions):                            ║"
+    echo "║    br radar daemon start  - Start file watching daemon            ║"
+    echo "║    br radar daemon status - Check daemon status                   ║"
+    echo "║    br radar suggest       - Suggest related files                 ║"
+    echo "║    br radar agent         - Suggest which agent to use            ║"
+    echo "║    br radar smart         - Smart context analysis                ║"
+    echo "║    br radar context       - Show recent activity                  ║"
+    echo "║                                                                   ║"
+    echo "║  GIT INTEGRATION (🤖 Smart Git):                                  ║"
+    echo "║    br git commit          - AI-generated commit messages          ║"
+    echo "║    br git branch          - Smart branch name suggestions         ║"
+    echo "║    br git review          - Pre-commit code review                ║"
+    echo "║    br git status          - Enhanced git status                   ║"
+    echo "║                                                                   ║"
+    echo "║  SNIPPET MANAGER (💾 Code Snippets):                              ║"
+    echo "║    br snippet save <name> - Save code snippet                     ║"
+    echo "║    br snippet get <name>  - Retrieve snippet                      ║"
+    echo "║    br snippet list        - List all snippets                     ║"
+    echo "║    br snippet search      - Search snippets                       ║"
+    echo "║                                                                   ║"
+    echo "║  PAIR PROGRAMMING (🤖 AI Assistant):                              ║"
+    echo "║    br pair start [agent]  - Start pair session                    ║"
+    echo "║    br pair ask <question> - Ask your AI pair                      ║"
+    echo "║    br pair review         - Review current changes                ║"
+    echo "║    br pair suggest        - Get smart suggestions                 ║"
+    echo "║                                                                   ║"
+    echo "║  API TESTER (🌐 HTTP Requests):                                   ║"
+    echo "║    br api get <url>       - Make GET request                      ║"
+    echo "║    br api post <url>      - Make POST request                     ║"
+    echo "║    br api save <name>     - Save endpoint                         ║"
+    echo "║    br api list            - List saved endpoints                  ║"
+    echo "║                                                                   ║"
+    echo "║  PRODUCTIVITY TOOLS:                                              ║"
+    echo "║    br run                 - ⚡ Smart task detection & execution   ║"
+    echo "║    br note add            - 📝 Quick developer notes              ║"
+    echo "║    br init <template>     - 🎯 Project scaffolding                ║"
+    echo "║    br logs <file>         - 🔍 Parse and highlight logs           ║"
+    echo "║    br perf time <cmd>     - ⏱️  Performance tracking              ║"
+    echo "║    br deps check          - 📦 Dependency management              ║"
+    echo "║    br session save        - 💾 Save workspace state               ║"
+    echo "║                                                                   ║"
+    echo "║  DEPLOYMENT (☁️ Ship It!):                                        ║"
+    echo "║    br deploy detect       - Detect deployment platforms           ║"
+    echo "║    br deploy quick        - Auto-detect and deploy                ║"
+    echo "║    br deploy vercel       - Deploy to Vercel                      ║"
+    echo "║    br deploy netlify      - Deploy to Netlify                     ║"
+    echo "║    br deploy heroku       - Deploy to Heroku                      ║"
+    echo "║    br deploy status       - Show deployment history               ║"
+    echo "║                                                                   ║"
+    echo "║  DEVOPS & TOOLS (🛠️ Power Tools):                                 ║"
+    echo "║    br docker ps           - 🐳 Container management               ║"
+    echo "║    br db connect          - 💾 Database client                    ║"
+    echo "║    br env list            - 🔐 Environment variables              ║"
+    echo "║    br find search         - 🔍 Advanced file search               ║"
+    echo "║                                                                   ║"
+    echo "║  IOT & HARDWARE (🥧 Pi Management):                               ║"
+    echo "║    br pi list             - List all Raspberry Pis                ║"
+    echo "║    br pi connect <name>   - SSH to Pi                             ║"
+    echo "║    br pi status <name>    - Check Pi status                       ║"
+    echo "║    br pi task deploy      - Deploy & run tasks on Pi ⚡          ║"
+    echo "║    br pi all <cmd>        - Run on all Pis                        ║"
+    echo "║                                                                   ║"
+    echo "║  CLOUD PLATFORMS (☁️ Infrastructure):                             ║"
+    echo "║    br cloudflare zones    - Manage Cloudflare zones & DNS        ║"
+    echo "║    br ocean list          - Manage DigitalOcean droplets         ║"
+    echo "║                                                                   ║"
+    echo "║  WEB DEVELOPMENT (🌐 Full Stack):                                ║"
+    echo "║    br web serve           - Dev server with live reload          ║"
+    echo "║    br web scaffold        - Create React/Vue/Next projects       ║"
+    echo "║    br monitor check       - Website uptime monitoring            ║"
+    echo "║    br search <query>      - Smart code search 🔍                ║"
+    echo "║                                                                   ║"
+    echo "║  QUALITY & TESTING (🧪 Code Quality):                            ║"
+    echo "║    br test run            - 🧪 Run tests with coverage           ║"
+    echo "║    br security scan       - 🔒 Security & vulnerability scan     ║"
+    echo "║    br backup git          - 💾 Backup git/files/databases        ║"
+    echo "║    br quality lint        - ✨ Code quality & linting            ║"
+    echo "║                                                                   ║"
+    echo "║  AGENT ORCHESTRATION (🤖 Multi-Agent):                           ║"
+    echo "║    br agent register      - Register agents for task routing    ║"
+    echo "║    br agent task          - Submit tasks to agent pool          ║"
+    echo "║    br agent distribute    - Distribute workload across agents   ║"
+    echo "║    br agent status        - Monitor agent performance           ║"
+    echo "║                                                                   ║"
+    echo "║  CI/CD & MONITORING (🔧 Pipelines & Metrics):                    ║"
+    echo "║    br ci create/run       - CI/CD pipeline orchestration        ║"
+    echo "║    br notify send         - Multi-channel notifications         ║"
+    echo "║    br metrics dashboard   - Real-time metrics & monitoring      ║"
+    echo "║                                                                   ║"
+    echo "║  CECE IDENTITY (🌌 Autonomous AI):                              ║"
+    echo "║    br cece whoami         - Show CECE identity                   ║"
+    echo "║    br cece-bootstrap      - Install CECE everywhere              ║"
+    echo "║                                                                   ║"
+    echo "║  8-BIT WORLD (🌍 Adventure):                                     ║"
+    echo "║    br world generate <name> - Create an 8-bit ASCII world        ║"
+    echo "║    br world explore <name>  - Explore & collect treasures 💎    ║"
+    echo "║    br world list            - List all worlds                     ║"
+    echo "║                                                                   ║"
+    echo "║  SHORTCUTS:                                                       ║"
+    echo "║    br-octavia [msg]   - Direct invoke (add to PATH)               ║"
+    echo "║    br-lucidia [msg]   - Direct invoke                             ║"
+    echo "║                                                                   ║"
+    echo "╚═══════════════════════════════════════════════════════════════════╝"
+}
+
+cmd_status() {
+    local agent=$1
+
+    if [[ -n "$agent" ]]; then
+        agent_status "$agent"
+    else
+        echo "╔═══════════════════════════════════════════════════════════════════╗"
+        echo "║              BLACKROAD AGENT STATUS                               ║"
+        echo "╚═══════════════════════════════════════════════════════════════════╝"
+        echo ""
+
+        local backend=$(detect_backend)
+        echo "Inference Backend: $backend"
+        echo ""
+
+        for agent in octavia lucidia alice aria shellfish; do
+            local db="${MEMORY_DIR}/${agent}.db"
+            if [[ -f "$db" ]]; then
+                local count=$(sqlite3 "$db" "SELECT COUNT(*) FROM memories;" 2>/dev/null || echo "0")
+                echo "  ${AGENT_COLORS[$agent]}●${NC} $agent: $count memories"
+            else
+                echo "  ○ $agent: not initialized"
+            fi
+        done
+        echo ""
+    fi
+}
+
+cmd_chat() {
+    local agent=$1
+
+    if [[ -z "$agent" ]]; then
+        echo "Usage: br chat <agent>"
+        return 1
+    fi
+
+    show_banner "$agent"
+    echo "Type 'exit' or Ctrl+C to end session"
+    echo ""
+
+    while true; do
+        echo -ne "${AGENT_COLORS[$agent]}${agent}>${NC} "
+        read -r input
+
+        if [[ "$input" == "exit" ]] || [[ -z "$input" ]]; then
+            echo "Session ended."
+            break
+        fi
+
+        invoke_agent "$agent" "$input"
+        echo ""
+    done
+}
+
+cmd_teach() {
+    local agent=$1
+    shift
+    local fact="$*"
+
+    if [[ -z "$agent" ]] || [[ -z "$fact" ]]; then
+        echo "Usage: br teach <agent> <key>=<value>"
+        echo "Example: br teach octavia 'favorite_language=Rust'"
+        return 1
+    fi
+
+    local key="${fact%%=*}"
+    local value="${fact#*=}"
+
+    init_memory "$agent"
+    learn_fact "$agent" "$key" "$value"
+    echo "Taught $agent: $key = $value"
+}
+
+cmd_recall() {
+    local agent=$1
+    local limit=${2:-20}
+
+    if [[ -z "$agent" ]]; then
+        echo "Usage: br recall <agent> [limit]"
+        return 1
+    fi
+
+    echo "=== ${agent}'s Recent Memories ==="
+    recall "$agent" "$limit"
+    echo ""
+    echo "=== ${agent}'s Known Facts ==="
+    recall_facts "$agent"
+}
+
+cmd_models() {
+    echo "╔═══════════════════════════════════════════════════════════════════╗"
+    echo "║              AVAILABLE MODELS                                     ║"
+    echo "╚═══════════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    if [[ -d "$MODELS_DIR" ]]; then
+        ls -lh "$MODELS_DIR"/*.gguf 2>/dev/null || echo "No .gguf models found in $MODELS_DIR"
+    else
+        echo "Models directory not found: $MODELS_DIR"
+    fi
+
+    echo ""
+    echo "Download models with: br setup"
+}
+
+cmd_setup() {
+    echo "╔═══════════════════════════════════════════════════════════════════╗"
+    echo "║              BLACKROAD AGENT SETUP                                ║"
+    echo "╚═══════════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    # Check for inference backend
+    local backend=$(detect_backend)
+    echo "Current backend: $backend"
+
+    if [[ "$backend" == "none" ]]; then
+        echo ""
+        echo "No inference backend found. Install one:"
+        echo ""
+        echo "  Option 1 - llama.cpp (recommended for Mac/Pi):"
+        echo "    cd ~/BlackRoad-AI && git clone https://github.com/BlackRoad-AI/llama.cpp"
+        echo "    cd llama.cpp && make -j"
+        echo ""
+        echo "  Option 2 - MLX (Apple Silicon only):"
+        echo "    pip3 install mlx-lm"
+        echo ""
+        echo "  Option 3 - Ollama (easiest):"
+        echo "    brew install ollama"
+        echo "    ollama pull phi3:mini"
+        echo ""
+    fi
+
+    echo ""
+    echo "Recommended models for this hardware:"
+
+    # Detect hardware
+    if [[ "$(uname)" == "Darwin" ]]; then
+        local mem=$(sysctl -n hw.memsize 2>/dev/null)
+        local mem_gb=$((mem / 1024 / 1024 / 1024))
+        echo "  Detected: macOS with ${mem_gb}GB RAM"
+
+        if [[ $mem_gb -ge 32 ]]; then
+            echo "  → Qwen2.5-32B-Q4 (best quality)"
+            echo "  → Llama-3.1-70B-Q4 (if you have 64GB+)"
+        elif [[ $mem_gb -ge 16 ]]; then
+            echo "  → Qwen2.5-14B-Q4"
+            echo "  → Phi-3-medium (14B)"
+        else
+            echo "  → Phi-3-mini (3.8B)"
+            echo "  → Qwen2.5-7B-Q4"
+        fi
+    else
+        echo "  Detected: Linux/Pi"
+        echo "  → Phi-3-mini (3.8B) - works on 4GB Pi"
+        echo "  → TinyLlama (1.1B) - fastest on Pi"
+    fi
+
+    echo ""
+    echo "Download with:"
+    echo "  huggingface-cli download Qwen/Qwen2.5-14B-Instruct-GGUF --local-dir $MODELS_DIR"
+}
+
+# Main dispatch
+main() {
+    local cmd=$1
+    shift
+
+    case $cmd in
+        ""|help|-h|--help)
+            show_help
+            ;;
+        status)
+            cmd_status "$@"
+            ;;
+        chat)
+            cmd_chat "$@"
+            ;;
+        teach)
+            cmd_teach "$@"
+            ;;
+        recall)
+            cmd_recall "$@"
+            ;;
+        models)
+            cmd_models
+            ;;
+        setup)
+            cmd_setup
+            ;;
+        radar)
+            local subcmd=${1:-suggest}
+            case $subcmd in
+                daemon|db)
+                    /Users/alexa/blackroad/tools/context-radar/radar-${subcmd}.sh "${@:2}"
+                    ;;
+                cece)
+            /Users/alexa/blackroad/tools/cece-identity/br-cece.sh "$@"
+            ;;
+        cece-bootstrap|bootstrap)
+            /Users/alexa/blackroad/tools/cece-identity/br-cece-bootstrap.sh "$@"
+            ;;
+                *)
+                    /Users/alexa/blackroad/tools/context-radar/radar-suggest.sh "$subcmd" "${@:2}"
+                    ;;
+            esac
+            ;;
+        git)
+            /Users/alexa/blackroad/tools/git-integration/br-git.sh "$@"
+            ;;
+        snippet|snip)
+            /Users/alexa/blackroad/tools/snippet-manager/br-snippet.sh "$@"
+            ;;
+        pair)
+            /Users/alexa/blackroad/tools/pair-programming/br-pair.sh "$@"
+            ;;
+        api)
+            /Users/alexa/blackroad/tools/api-tester/br-api.sh "$@"
+            ;;
+        run)
+            /Users/alexa/blackroad/tools/task-runner/br-run.sh "$@"
+            ;;
+        note|notes)
+            /Users/alexa/blackroad/tools/quick-notes/br-note.sh "$@"
+            ;;
+        init)
+            /Users/alexa/blackroad/tools/project-init/br-init.sh "$@"
+            ;;
+        logs|log)
+            /Users/alexa/blackroad/tools/log-parser/br-logs.sh "$@"
+            ;;
+        perf|performance)
+            /Users/alexa/blackroad/tools/perf-monitor/br-perf.sh "$@"
+            ;;
+        deps|dependencies)
+            /Users/alexa/blackroad/tools/dependency-helper/br-deps.sh "$@"
+            ;;
+        session|sess)
+            /Users/alexa/blackroad/tools/session-manager/br-session.sh "$@"
+            ;;
+        deploy)
+            /Users/alexa/blackroad/tools/deploy-manager/br-deploy.sh "$@"
+            ;;
+        docker)
+            /Users/alexa/blackroad/tools/docker-manager/br-docker.sh "$@"
+            ;;
+        db|database)
+            /Users/alexa/blackroad/tools/db-client/br-db.sh "$@"
+            ;;
+        env|environment)
+            /Users/alexa/blackroad/tools/env-manager/br-env.sh "$@"
+            ;;
+        find)
+            /Users/alexa/blackroad/tools/file-finder/br-find.sh "$@"
+            ;;
+        pi|raspberry)
+            /Users/alexa/blackroad/tools/pi-manager/br-pi.sh "$@"
+            ;;
+        cloudflare|cf)
+            /Users/alexa/blackroad/tools/cloudflare/br-cloudflare.sh "$@"
+            ;;
+        ocean|do|digitalocean)
+            /Users/alexa/blackroad/tools/ocean-droplets/br-ocean.sh "$@"
+            ;;
+        web)
+            /Users/alexa/blackroad/tools/web-dev/br-web.sh "$@"
+            ;;
+        monitor|uptime)
+            /Users/alexa/blackroad/tools/web-monitor/br-monitor.sh "$@"
+            ;;
+        search|s)
+            /Users/alexa/blackroad/tools/smart-search/br-search.sh "$@"
+            ;;
+        test|t)
+            /Users/alexa/blackroad/tools/test-suite/br-test.sh "$@"
+            ;;
+        security|sec|scan)
+            /Users/alexa/blackroad/tools/security-scanner/br-security.sh "$@"
+            ;;
+        backup|bak)
+            /Users/alexa/blackroad/tools/backup-manager/br-backup.sh "$@"
+            ;;
+        quality|lint|q)
+            /Users/alexa/blackroad/tools/code-quality/br-quality.sh "$@"
+            ;;
+        agent|agents|route)
+            /Users/alexa/blackroad/tools/agent-router/br-agent.sh "$@"
+            ;;
+        ci|pipeline)
+            /Users/alexa/blackroad/tools/ci-pipeline/br-ci.sh "$@"
+            ;;
+        notify|notifications)
+            /Users/alexa/blackroad/tools/notifications/br-notify.sh "$@"
+            ;;
+        metrics|dash|dashboard)
+            /Users/alexa/blackroad/tools/metrics-dashboard/br-metrics.sh "$@"
+            ;;
+        world|w)
+            /Users/alexa/blackroad/tools/world/br-world.sh "$@"
+            ;;
+        octavia|lucidia|alice|aria|shellfish)
+            if [[ -n "$*" ]]; then
+                show_banner "$cmd"
+                invoke_agent "$cmd" "$@"
+            else
+                cmd_chat "$cmd"
+            fi
+            ;;
+        cece)
+            /Users/alexa/blackroad/tools/cece-identity/br-cece.sh "$@"
+            ;;
+        cece-bootstrap|bootstrap)
+            /Users/alexa/blackroad/tools/cece-identity/br-cece-bootstrap.sh "$@"
+            ;;
+                *)
+            echo "Unknown command: $cmd"
+            echo "Run 'br help' for usage"
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Quests & Promotion - BlackRoad OS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg-primary: #020308;
+      --bg-secondary: rgba(6, 10, 30, 0.92);
+      --bg-card: rgba(12, 18, 40, 0.85);
+      --text-primary: #f5f5ff;
+      --text-muted: rgba(245, 245, 255, 0.7);
+      --accent-cyan: #00e5ff;
+      --accent-green: #1af59d;
+      --accent-yellow: #ffc400;
+      --accent-purple: #a855f7;
+      --accent-orange: #ff9d00;
+      --accent-pink: #ff0066;
+      --border-subtle: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(circle at top, #050816 0, #020308 45%, #000000 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    /* Nav */
+    .nav {
+      margin-bottom: 24px;
+    }
+
+    .nav a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    /* Header */
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+
+    .mono {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    /* Coach Card */
+    .coach-card {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(0, 229, 255, 0.06));
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    .coach-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .coach-header .sigma {
+      font-size: 1.8rem;
+      color: var(--accent-purple);
+    }
+
+    .coach-header .title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .coach-focus {
+      margin-bottom: 12px;
+    }
+
+    .coach-focus-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .coach-focus-goal {
+      font-size: 0.95rem;
+    }
+
+    .coach-progress-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .coach-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .coach-progress-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .coach-action {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .coach-action-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .coach-action-text {
+      font-size: 1rem;
+    }
+
+    .coach-examples {
+      margin-top: 12px;
+      padding-left: 16px;
+    }
+
+    .coach-examples li {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .coach-examples code {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.8rem;
+    }
+
+    /* Overall Progress */
+    .overall-progress {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .overall-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .overall-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .overall-percent {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.2rem;
+      color: var(--accent-cyan);
+    }
+
+    .overall-bar {
+      height: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .overall-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-orange), var(--accent-pink), var(--accent-purple));
+      border-radius: 6px;
+      transition: width 0.5s ease;
+    }
+
+    .overall-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Stage Cards */
+    .stages {
+      margin-bottom: 32px;
+    }
+
+    .stages-title {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .stage-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+    }
+
+    .stage-card.completed {
+      border-color: rgba(26, 245, 157, 0.4);
+    }
+
+    .stage-card.current {
+      border-color: rgba(255, 157, 0, 0.5);
+      background: rgba(255, 157, 0, 0.05);
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .stage-name {
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stage-icon {
+      font-size: 1.2rem;
+    }
+
+    .stage-target {
+      font-size: 0.85rem;
+      color: var(--accent-purple);
+    }
+
+    .stage-bar {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .stage-bar-fill {
+      height: 100%;
+      background: var(--accent-green);
+      border-radius: 3px;
+    }
+
+    .stage-goals {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 8px;
+    }
+
+    .goal-item {
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .goal-icon {
+      font-size: 0.9rem;
+    }
+
+    .goal-icon.met { color: var(--accent-green); }
+    .goal-icon.unmet { color: var(--text-muted); }
+
+    .goal-text {
+      color: var(--text-muted);
+    }
+
+    .goal-progress {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      margin-left: auto;
+    }
+
+    /* Loading & Error */
+    .loading, .error-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+    }
+
+    .error-state {
+      background: rgba(255, 68, 68, 0.1);
+      border: 1px solid rgba(255, 68, 68, 0.3);
+      border-radius: 12px;
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Navigation -->
+    <div class="nav">
+      <a href="/">&larr; Dashboard</a>
+    </div>
+
+    <!-- Header -->
+    <h1>Quests & Promotion</h1>
+    <p class="subtitle">
+      Track your promotion path progress.
+      Actor: <span class="mono">{{ actor }}</span> |
+      Path: <span class="mono">{{ path_id }}</span>
+    </p>
+
+    <!-- Coach Card -->
+    <div class="coach-card" id="coach-card" style="display: none;">
+      <div class="coach-header">
+        <span class="sigma">Σ</span>
+        <span class="title">Coach Suggestion</span>
+      </div>
+      <div id="coach-content"></div>
+    </div>
+
+    <!-- Overall Progress -->
+    <div class="overall-progress" id="overall-progress" style="display: none;">
+      <div class="overall-header">
+        <span class="overall-title" id="path-name">Loading...</span>
+        <span class="overall-percent" id="path-percent">0%</span>
+      </div>
+      <div class="overall-bar">
+        <div class="overall-bar-fill" id="path-bar" style="width: 0%;"></div>
+      </div>
+      <div class="overall-stats">
+        <span id="path-desc"></span>
+        <span id="path-stages"></span>
+      </div>
+    </div>
+
+    <!-- Stages -->
+    <div class="stages" id="stages">
+      <div class="loading">Loading promotion path...</div>
+    </div>
+  </div>
+
+  <script>
+    const actor = "{{ actor }}";
+    const pathId = "{{ path_id }}";
+
+    async function loadCoach() {
+      try {
+        const res = await fetch(`/api/promotion/coach?actor=${actor}&path_id=${pathId}`);
+        const data = await res.json();
+
+        if (!data.ok) return;
+
+        const card = document.getElementById('coach-card');
+        const content = document.getElementById('coach-content');
+        card.style.display = 'block';
+
+        const s = data.suggestion || {};
+
+        if (s.stage_id === 'complete') {
+          content.innerHTML = `
+            <div style="font-size: 1.2rem; color: var(--accent-green);">
+              🎉 Path Complete!
+            </div>
+            <div style="margin-top: 8px; color: var(--text-muted);">
+              ${s.action || 'All stages completed. You\'re a BlackRoad master!'}
+            </div>
+          `;
+          return;
+        }
+
+        let examplesHtml = '';
+        if (s.example_commands && s.example_commands.length) {
+          examplesHtml = `
+            <ul class="coach-examples">
+              ${s.example_commands.map(ex => `<li><code>${ex}</code></li>`).join('')}
+            </ul>
+          `;
+        }
+
+        content.innerHTML = `
+          <div class="coach-focus">
+            <div class="coach-focus-label">Current Focus</div>
+            <div class="coach-focus-goal">${s.goal_key || 'Unknown'}</div>
+          </div>
+          <div class="coach-progress-bar">
+            <div class="coach-progress-fill" style="width: ${s.percent || 0}%;"></div>
+          </div>
+          <div class="coach-progress-text">
+            ${s.current} / ${s.required} (${s.percent}%)
+          </div>
+          <div class="coach-action">
+            <div class="coach-action-label">👉 Next Action</div>
+            <div class="coach-action-text">${s.action || 'Keep going!'}</div>
+            ${examplesHtml}
+          </div>
+        `;
+
+      } catch (e) {
+        console.error('Failed to load coach:', e);
+      }
+    }
+
+    async function loadPath() {
+      const stagesContainer = document.getElementById('stages');
+      const overallContainer = document.getElementById('overall-progress');
+
+      try {
+        const res = await fetch(`/api/promotion/path?actor=${actor}&path_id=${pathId}`);
+        const data = await res.json();
+
+        if (!data.ok) {
+          stagesContainer.innerHTML = `
+            <div class="error-state">
+              <p>Failed to load promotion path: ${data.error || 'Unknown error'}</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Overall progress
+        overallContainer.style.display = 'block';
+        document.getElementById('path-name').textContent = data.name || pathId;
+        document.getElementById('path-percent').textContent = `${data.completion_percent || 0}%`;
+        document.getElementById('path-bar').style.width = `${data.completion_percent || 0}%`;
+        document.getElementById('path-desc').textContent = data.description || '';
+        document.getElementById('path-stages').textContent =
+          `${data.stages_completed || 0} / ${data.stages_total || 0} stages`;
+
+        // Stages
+        const stages = data.stages || [];
+        let html = '<div class="stages-title">Promotion Stages</div>';
+
+        for (const stage of stages) {
+          const allMet = stage.all_goals_met;
+          const isCurrent = !allMet && stages.indexOf(stage) ===
+            stages.findIndex(s => !s.all_goals_met);
+
+          const cardClass = allMet ? 'completed' : (isCurrent ? 'current' : '');
+          const icon = allMet ? '✅' : (isCurrent ? '🎯' : '⬜');
+
+          let goalsHtml = '';
+          const goals = stage.goals || {};
+          for (const [key, g] of Object.entries(goals)) {
+            const goalIcon = g.met ? '✓' : '·';
+            const goalClass = g.met ? 'met' : 'unmet';
+            goalsHtml += `
+              <div class="goal-item">
+                <span class="goal-icon ${goalClass}">${goalIcon}</span>
+                <span class="goal-text">${key}</span>
+                <span class="goal-progress">${g.current} / ${g.required}</span>
+              </div>
+            `;
+          }
+
+          html += `
+            <div class="stage-card ${cardClass}">
+              <div class="stage-header">
+                <div class="stage-name">
+                  <span class="stage-icon">${icon}</span>
+                  ${stage.name || stage.id}
+                </div>
+                <div class="stage-target">→ ${stage.target_rank || '?'}</div>
+              </div>
+              <div class="stage-bar">
+                <div class="stage-bar-fill" style="width: ${stage.overall_percent || 0}%;"></div>
+              </div>
+              <div class="stage-goals">
+                ${goalsHtml}
+              </div>
+            </div>
+          `;
+        }
+
+        stagesContainer.innerHTML = html;
+
+      } catch (e) {
+        stagesContainer.innerHTML = `
+          <div class="error-state">
+            <p>Failed to load promotion path: ${e.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Init
+    loadCoach();
+    loadPath();
+  </script>
+</body>
+</html>
