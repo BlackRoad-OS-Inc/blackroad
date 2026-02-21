@@ -1,0 +1,230 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# brctl-jobs - Distributed job scheduler for BlackRoad cluster
+# Usage: brctl-jobs <command> [args]
+
+JOBS_DIR="$HOME/.blackroad/cluster-jobs"
+NODES="cecilia lucidia octavia aria blackroad os cadence"
+
+mkdir -p "$JOBS_DIR"/{pending,running,completed,failed}
+
+usage() {
+    cat << 'EOF'
+brctl-jobs - Distributed Job Scheduler
+
+USAGE:
+    brctl-jobs <command> [args]
+
+COMMANDS:
+    submit <name> <command>    Submit a job to run on best available node
+    submit-all <name> <cmd>    Run job on ALL nodes
+    submit-to <node> <name> <cmd>  Run job on specific node
+    status                     Show all jobs
+    list                       List pending jobs
+    cancel <job-id>            Cancel a pending job
+    logs <job-id>              View job logs
+    cleanup                    Remove completed/failed jobs older than 24h
+
+EXAMPLES:
+    brctl-jobs submit "backup" "tar czf /tmp/backup.tar.gz /opt/blackroad"
+    brctl-jobs submit-all "update" "sudo apt-get update"
+    brctl-jobs submit-to cecilia "model-pull" "ollama pull llama3.2:3b"
+EOF
+}
+
+# Find best node (lowest load, online)
+find_best_node() {
+    local best_node=""
+    local best_load=999
+
+    for node in $NODES; do
+        if ssh -T -o ConnectTimeout=2 -o BatchMode=yes -o LogLevel=ERROR "$node" "true" &>/dev/null; then
+            local load=$(ssh -T -o LogLevel=ERROR "$node" "cat /proc/loadavg | awk '{print \$1}'" 2>/dev/null | grep -Ev "(Welcome|Node:)" | head -1)
+            load=${load%.*}  # Integer part
+            if [ "${load:-999}" -lt "$best_load" ]; then
+                best_load=$load
+                best_node=$node
+            fi
+        fi
+    done
+
+    echo "$best_node"
+}
+
+# Submit job
+submit_job() {
+    local name="$1"
+    local cmd="$2"
+    local target="${3:-auto}"
+
+    local job_id="job-$(date +%s)-$$"
+    local job_file="$JOBS_DIR/pending/${job_id}.json"
+
+    if [ "$target" = "auto" ]; then
+        target=$(find_best_node)
+        if [ -z "$target" ]; then
+            echo "ERROR: No nodes available"
+            return 1
+        fi
+    fi
+
+    cat > "$job_file" << EOF
+{
+    "id": "$job_id",
+    "name": "$name",
+    "command": "$cmd",
+    "target": "$target",
+    "submitted": "$(date -Iseconds)",
+    "status": "pending"
+}
+EOF
+
+    echo "Job submitted: $job_id"
+    echo "  Name: $name"
+    echo "  Target: $target"
+    echo "  Command: $cmd"
+
+    # Execute immediately
+    run_job "$job_id"
+}
+
+# Run a job
+run_job() {
+    local job_id="$1"
+    local job_file="$JOBS_DIR/pending/${job_id}.json"
+
+    if [ ! -f "$job_file" ]; then
+        echo "Job not found: $job_id"
+        return 1
+    fi
+
+    local target=$(jq -r '.target' "$job_file")
+    local cmd=$(jq -r '.command' "$job_file")
+    local name=$(jq -r '.name' "$job_file")
+
+    mv "$job_file" "$JOBS_DIR/running/"
+    job_file="$JOBS_DIR/running/${job_id}.json"
+
+    echo "Running job $job_id on $target..."
+
+    local log_file="$JOBS_DIR/running/${job_id}.log"
+    local start_time=$(date -Iseconds)
+
+    if ssh -T -o ConnectTimeout=10 -o LogLevel=ERROR "$target" "$cmd" 2>&1 | grep -Ev "(Welcome|Node:)" > "$log_file"; then
+        local end_time=$(date -Iseconds)
+        jq --arg status "completed" --arg end "$end_time" \
+            '. + {status: $status, completed: $end}' "$job_file" > "${job_file}.tmp"
+        mv "${job_file}.tmp" "$job_file"
+        mv "$job_file" "$JOBS_DIR/completed/"
+        mv "$log_file" "$JOBS_DIR/completed/"
+        echo "Job completed: $job_id"
+    else
+        local end_time=$(date -Iseconds)
+        jq --arg status "failed" --arg end "$end_time" \
+            '. + {status: $status, failed: $end}' "$job_file" > "${job_file}.tmp"
+        mv "${job_file}.tmp" "$job_file"
+        mv "$job_file" "$JOBS_DIR/failed/"
+        mv "$log_file" "$JOBS_DIR/failed/"
+        echo "Job failed: $job_id"
+    fi
+}
+
+# Submit to all nodes
+submit_all() {
+    local name="$1"
+    local cmd="$2"
+
+    for node in $NODES; do
+        if ssh -T -o ConnectTimeout=2 -o BatchMode=yes -o LogLevel=ERROR "$node" "true" &>/dev/null; then
+            submit_job "${name}-${node}" "$cmd" "$node" &
+        fi
+    done
+    wait
+}
+
+# Show status
+show_status() {
+    echo "=== Job Status ==="
+    echo ""
+    echo "Pending:   $(ls -1 $JOBS_DIR/pending/*.json 2>/dev/null | wc -l)"
+    echo "Running:   $(ls -1 $JOBS_DIR/running/*.json 2>/dev/null | wc -l)"
+    echo "Completed: $(ls -1 $JOBS_DIR/completed/*.json 2>/dev/null | wc -l)"
+    echo "Failed:    $(ls -1 $JOBS_DIR/failed/*.json 2>/dev/null | wc -l)"
+    echo ""
+
+    if ls $JOBS_DIR/running/*.json >/dev/null 2>&1; then
+        echo "Running jobs:"
+        for f in $JOBS_DIR/running/*.json; do
+            local id=$(jq -r '.id' "$f")
+            local name=$(jq -r '.name' "$f")
+            local target=$(jq -r '.target' "$f")
+            echo "  $id: $name ($target)"
+        done
+    fi
+}
+
+# View logs
+view_logs() {
+    local job_id="$1"
+    local log_file=""
+
+    for dir in running completed failed; do
+        if [ -f "$JOBS_DIR/$dir/${job_id}.log" ]; then
+            log_file="$JOBS_DIR/$dir/${job_id}.log"
+            break
+        fi
+    done
+
+    if [ -n "$log_file" ]; then
+        cat "$log_file"
+    else
+        echo "No logs found for job: $job_id"
+    fi
+}
+
+# Main
+case "${1:-}" in
+    submit)
+        submit_job "$2" "$3"
+        ;;
+    submit-all)
+        submit_all "$2" "$3"
+        ;;
+    submit-to)
+        submit_job "$3" "$4" "$2"
+        ;;
+    status)
+        show_status
+        ;;
+    list)
+        ls -1 "$JOBS_DIR/pending/" 2>/dev/null
+        ;;
+    logs)
+        view_logs "$2"
+        ;;
+    cancel)
+        rm -f "$JOBS_DIR/pending/$2.json"
+        echo "Cancelled: $2"
+        ;;
+    cleanup)
+        find "$JOBS_DIR/completed" -mtime +1 -delete 2>/dev/null
+        find "$JOBS_DIR/failed" -mtime +1 -delete 2>/dev/null
+        echo "Cleanup complete"
+        ;;
+    -h|--help|help|"")
+        usage
+        ;;
+    *)
+        echo "Unknown command: $1"
+        usage
+        exit 1
+        ;;
+esac

@@ -1,0 +1,40 @@
+#!/bin/bash
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+case "$1" in
+    start)
+        echo -e "${PINK}Starting Scheduler...${NC}"
+        nohup python3 ~/.blackroad/scheduler/scheduler.py daemon > ~/.blackroad/scheduler/logs/scheduler.log 2>&1 &
+        echo $! > ~/.blackroad/scheduler/scheduler.pid
+        echo -e "${GREEN}Scheduler started${NC}"
+        ;;
+    stop)
+        [ -f ~/.blackroad/scheduler/scheduler.pid ] && kill $(cat ~/.blackroad/scheduler/scheduler.pid) 2>/dev/null
+        rm -f ~/.blackroad/scheduler/scheduler.pid
+        echo "Scheduler stopped"
+        ;;
+    add)
+        shift
+        python3 ~/.blackroad/scheduler/scheduler.py add "$@"
+        ;;
+    list)
+        python3 ~/.blackroad/scheduler/scheduler.py list
+        ;;
+    run)
+        python3 ~/.blackroad/scheduler/scheduler.py run "$2"
+        ;;
+    delete)
+        python3 ~/.blackroad/scheduler/scheduler.py delete "$2"
+        ;;
+    *)
+        echo "br-schedule - Distributed Job Scheduler"
+        echo "Commands: start, stop, add, list, run <id>, delete <id>"
+        echo ""
+        echo "Add job: br-schedule add <id> <name> <schedule> <target> <command>"
+        echo "Schedule: @hourly, @daily, @every 5m, '*/5 * * * *'"
+        echo "Target: cecilia, all, any, local"
+        ;;
+esac

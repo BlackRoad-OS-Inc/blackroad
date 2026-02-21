@@ -1,0 +1,245 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+set -euo pipefail
+
+VERSION="0.1.4"
+
+resolve_self() {
+  local path="$0"
+  if [[ "$path" != /* ]]; then
+    path="$(command -v "$path" 2>/dev/null || true)"
+  fi
+  if [[ -n "$path" ]]; then
+    echo "$path"
+  else
+    echo "$0"
+  fi
+}
+
+find_registry() {
+  local candidates=(
+    "$PWD/infra/blackroad_registry.json"
+    "$HOME/infra/blackroad_registry.json"
+    "$HOME/blackroad/infra/blackroad_registry.json"
+  )
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [[ -f "$candidate" ]]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+print_help() {
+  echo "BlackRoad CLI (local)"
+  echo
+  echo "Commands:"
+  echo "  brx help"
+  echo "  brx whoami"
+  echo "  brx status"
+  echo "  brx version"
+  echo "  brx paths"
+  echo "  brx registry"
+  echo "  brx doctor"
+}
+
+print_whoami() {
+  echo "origin=BlackRoad"
+  echo "engine=Lucidia"
+}
+
+print_status() {
+  local now
+  now=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date)
+  echo "Status: ok"
+  echo "Mode: local"
+  echo "Time: $now"
+}
+
+print_version() {
+  echo "brx version $VERSION"
+}
+
+print_paths() {
+  local resolved cmd_path
+  resolved="$(resolve_self)"
+  cmd_path="$(command -v brx 2>/dev/null || true)"
+
+  echo "brx path: $resolved"
+  if [[ -n "$cmd_path" ]]; then
+    echo "brx in PATH: $cmd_path"
+  else
+    echo "brx in PATH: not found"
+  fi
+
+  echo "PATH entries:"
+  local entry note
+  IFS=':' read -r -a path_entries <<< "${PATH:-}"
+  for entry in "${path_entries[@]}"; do
+    note=""
+    if [[ "$entry" == "$HOME/bin" ]]; then
+      note=" (home bin)"
+    elif [[ "$entry" == "$HOME/.local/bin" ]]; then
+      note=" (local bin)"
+    fi
+    printf '  %s%s\n' "$entry" "$note"
+  done
+}
+
+print_registry() {
+  local registry version updated
+  registry="$(find_registry || true)"
+
+  if [[ -z "$registry" ]]; then
+    echo "registry: not found in common locations"
+    return 0
+  fi
+
+  version="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$registry" | head -n1)"
+  updated="$(sed -n 's/.*"updated"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$registry" | head -n1)"
+
+  echo "registry: $registry"
+  if [[ -n "$version" ]]; then
+    echo "version: $version"
+  fi
+  if [[ -n "$updated" ]]; then
+    echo "updated: $updated"
+  fi
+
+  if command -v node >/dev/null 2>&1; then
+    node -e '
+      const fs = require("fs")
+      const path = process.argv[1]
+      try {
+        const data = JSON.parse(fs.readFileSync(path, "utf8"))
+        const domains = data.domains || {}
+        const names = Object.keys(domains).sort()
+        const unique = new Set()
+        let total = 0
+
+        const counts = names.map((name) => {
+          const entries = domains[name] || {}
+          const keys = Object.keys(entries)
+          total += keys.length
+          for (const key of keys) {
+            const svc = entries[key]
+            if (svc && svc.service_name) unique.add(svc.service_name)
+          }
+          return { name, count: keys.length }
+        })
+
+        if (names.length) {
+          console.log(`domains: ${names.length} (${names.join(", ")})`)
+        } else {
+          console.log("domains: 0")
+        }
+        console.log(`services: ${total} total, ${unique.size} unique`)
+        for (const item of counts) {
+          console.log(`domain ${item.name}: ${item.count}`)
+        }
+        for (const name of names) {
+          const entries = domains[name] || {}
+          const keys = Object.keys(entries).sort()
+          if (!keys.length) continue
+          console.log(`subdomains ${name}:`)
+          for (const key of keys) {
+            const svc = entries[key]
+            const svcName = svc && svc.service_name ? svc.service_name : "unknown"
+            const target = svc && (svc.prod_url || svc.cloudflare_target || svc.target || "")
+            const suffix = target ? ` -> ${target}` : ""
+            console.log(`  ${key}: ${svcName}${suffix}`)
+          }
+        }
+      } catch (err) {
+        console.log("summary: unable to parse registry for counts")
+      }
+    ' "$registry"
+  else
+    echo "summary: node not available, skipping counts"
+  fi
+}
+
+print_doctor() {
+  local resolved cmd_path
+  resolved="$(resolve_self)"
+  cmd_path="$(command -v brx 2>/dev/null || true)"
+
+  echo "Doctor report"
+  echo "brx path: $resolved"
+  echo "brx version: $VERSION"
+  if [[ -x "$resolved" ]]; then
+    echo "brx executable: ok"
+  else
+    echo "brx executable: missing"
+  fi
+
+  if [[ -n "$cmd_path" ]]; then
+    echo "brx in PATH: ok ($cmd_path)"
+  else
+    echo "brx in PATH: missing"
+  fi
+
+  if command -v bros >/dev/null 2>&1; then
+    echo "bros: ok ($(command -v bros))"
+  else
+    echo "bros: missing"
+  fi
+
+  if [[ -f "$HOME/.zshrc" ]] && grep -q '^alias br=' "$HOME/.zshrc" 2>/dev/null; then
+    echo "br alias: configured (~/.zshrc)"
+  elif command -v br >/dev/null 2>&1; then
+    echo "br: ok ($(command -v br))"
+  else
+    echo "br alias: missing"
+  fi
+
+  local registry
+  registry="$(find_registry || true)"
+  if [[ -n "$registry" ]]; then
+    echo "registry: found ($registry)"
+  else
+    echo "registry: not found in common locations"
+  fi
+}
+
+COMMAND="${1:-}"
+
+case "$COMMAND" in
+  help|"")
+    print_help
+    ;;
+  whoami)
+    print_whoami
+    ;;
+  status)
+    print_status
+    ;;
+  version)
+    print_version
+    ;;
+  paths)
+    print_paths
+    ;;
+  registry)
+    print_registry
+    ;;
+  doctor)
+    print_doctor
+    ;;
+  *)
+    echo "Unknown command: $COMMAND"
+    exit 1
+    ;;
+esac

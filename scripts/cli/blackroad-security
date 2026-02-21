@@ -1,0 +1,116 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# BlackRoad Security CLI
+# Zero Trust + PS-SHA-∞ + API Rotation + Tailscale
+
+PINK='\033[38;5;205m'
+GREEN='\033[38;5;82m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+WHITE='\033[1;37m'
+NC='\033[0m'
+
+SEC_DIR="$HOME/.blackroad/security"
+
+case "$1" in
+    status|"")
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${WHITE}  BlackRoad Security Status - $(hostname)${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+
+        echo -e "${BLUE}Components:${NC}"
+        [[ -f "$SEC_DIR/ps_sha_infinity.py" ]] && echo -e "  ${GREEN}●${NC} PS-SHA-∞" || echo -e "  ○ PS-SHA-∞"
+        [[ -f "$SEC_DIR/zero_trust.py" ]] && echo -e "  ${GREEN}●${NC} Zero Trust" || echo -e "  ○ Zero Trust"
+        [[ -f "$SEC_DIR/api_rotation.py" ]] && echo -e "  ${GREEN}●${NC} API Rotation" || echo -e "  ○ API Rotation"
+        [[ -f "$SEC_DIR/tailscale_tracker.sh" ]] && echo -e "  ${GREEN}●${NC} Tailscale Tracker" || echo -e "  ○ Tailscale Tracker"
+
+        echo ""
+        echo -e "${BLUE}API Keys:${NC}"
+        python3 "$SEC_DIR/api_rotation.py" list 2>/dev/null | head -5 || echo "  No keys configured"
+
+        echo ""
+        echo -e "${BLUE}Trusted Agents:${NC}"
+        if [[ -f "$SEC_DIR/trust_store.json" ]]; then
+            jq -r '.agents | keys[]' "$SEC_DIR/trust_store.json" 2>/dev/null | while read agent; do
+                echo -e "  ${GREEN}●${NC} $agent"
+            done
+        else
+            echo "  No agents registered"
+        fi
+
+        echo ""
+        echo -e "${BLUE}Tailscale:${NC}"
+        if which tailscale &>/dev/null; then
+            ts_ip=$(tailscale ip -4 2>/dev/null || echo "not connected")
+            echo "  IP: $ts_ip"
+        else
+            echo "  Not installed"
+        fi
+        ;;
+
+    hash)
+        shift
+        python3 "$SEC_DIR/ps_sha_infinity.py" hash "$@"
+        ;;
+
+    genkey)
+        name="${2:-api_$(date +%s)}"
+        priority="${3:-standard}"
+        python3 "$SEC_DIR/api_rotation.py" create "$name" "$priority"
+        ;;
+
+    rotate)
+        if [[ -z "$2" ]]; then
+            python3 "$SEC_DIR/api_rotation.py" auto
+        else
+            python3 "$SEC_DIR/api_rotation.py" rotate "$2"
+        fi
+        ;;
+
+    trust)
+        shift
+        python3 "$SEC_DIR/zero_trust.py" "$@"
+        ;;
+
+    tailscale|ts)
+        shift
+        "$SEC_DIR/tailscale_tracker.sh" "$@"
+        ;;
+
+    audit)
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${WHITE}  Security Audit Log${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+
+        echo -e "${AMBER}Access Log:${NC}"
+        python3 "$SEC_DIR/zero_trust.py" audit 5 2>/dev/null || echo "  No access log"
+
+        echo ""
+        echo -e "${AMBER}Rotation Log:${NC}"
+        tail -5 "$SEC_DIR/audit/rotations.jsonl" 2>/dev/null | jq -r '"\(.timestamp | split("T")[0]) [\(.action)] \(.key_name)"' || echo "  No rotation log"
+        ;;
+
+    *)
+        echo -e "${PINK}br-security${NC} - BlackRoad Security CLI"
+        echo ""
+        echo "Commands:"
+        echo "  status          - Show security status"
+        echo "  hash <data>     - Generate PS-SHA-∞ hash"
+        echo "  genkey [name]   - Generate API key"
+        echo "  rotate [name]   - Rotate API key(s)"
+        echo "  trust <cmd>     - Zero Trust operations"
+        echo "  tailscale       - Tailscale tracking"
+        echo "  audit           - View audit logs"
+        ;;
+esac

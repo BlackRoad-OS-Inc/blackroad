@@ -1,0 +1,32 @@
+#!/bin/bash
+PINK='\033[38;5;205m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+case "$1" in
+    quick)
+        shift
+        python3 ~/.blackroad/sync/filesync.py quick "$@"
+        ;;
+    all)
+        python3 ~/.blackroad/sync/filesync.py sync
+        ;;
+    compare)
+        python3 ~/.blackroad/sync/filesync.py compare "$2"
+        ;;
+    scripts)
+        echo -e "${PINK}Syncing scripts to fleet...${NC}"
+        for node in cecilia lucidia octavia aria anastasia; do
+            echo -n "$node: "
+            rsync -az ~/pi-autonomy-package/ "$node":~/pi-autonomy-package/ 2>/dev/null && \
+                echo -e "${GREEN}OK${NC}" || echo "FAIL"
+        done
+        ;;
+    *)
+        echo "br-sync - Distributed File Sync"
+        echo "Commands:"
+        echo "  quick <src> <node:path>...  - Quick sync"
+        echo "  scripts                     - Sync pi-autonomy-package"
+        echo "  compare <file>              - Compare file across nodes"
+        ;;
+esac

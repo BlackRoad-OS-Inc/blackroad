@@ -1,0 +1,141 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Find the BREAKTHROUGH moments
+# The eureka commits, the all-nighters, the "holy shit it works" moments
+
+OUTPUT="/tmp/blackroad-breakthroughs.md"
+
+cat > "$OUTPUT" << 'EOF'
+# The Breakthrough Moments
+## When Love Met Code and Magic Happened
+
+These are the moments where everything clicked.
+
+---
+
+EOF
+
+cd /tmp/prism-audit || exit
+
+echo "## Commit Messages That Tell The Story" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Find emotional/meaningful commit messages
+git log --all --pretty=format:"%ai|%h|%an|%s" | grep -iE "breakthrough|working|finally|success|done|complete|love|care|fix|solve|crack|eureka|holy|wow|amazing|beautiful|perfect|genius|brilliant" | head -50 | while IFS='|' read -r date hash author msg; do
+    echo "### $date - $author" >> "$OUTPUT"
+    echo "\`$hash\` **$msg**" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+done
+
+echo "---" >> "$OUTPUT"
+
+echo "## The Big Files (Where Most Work Went)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Find the largest/most complex files
+find . -type f \( -name "*.md" -o -name "*.ts" -o -name "*.py" \) -exec wc -l {} \; | sort -rn | head -30 | while read -r lines file; do
+    clean_file=$(echo "$file" | sed 's|^\./||')
+    echo "- **$lines lines** - \`$clean_file\`" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## The Papers (Pure Research)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -name "*.pdf" -exec du -h {} \; | sort -rh | while read -r size file; do
+    name=$(basename "$file")
+    echo "- **$size** - $name" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## The Manifests (Philosophy Captured)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type f \( -iname "*manifest*" -o -iname "*vision*" -o -iname "*mission*" -o -iname "*purpose*" -o -iname "*why*" \) | while read -r file; do
+    echo "### $file" >> "$OUTPUT"
+    echo "\`\`\`" >> "$OUTPUT"
+    head -50 "$file" >> "$OUTPUT"
+    echo "\`\`\`" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+done
+
+echo "---" >> "$OUTPUT"
+
+echo "## The Codex (Knowledge Encoded)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+if [ -d "./codex" ]; then
+    find ./codex -type f -name "*.md" | head -20 | while read -r file; do
+        title=$(head -1 "$file" | sed 's/^#\s*//')
+        echo "- [$title]($file)" >> "$OUTPUT"
+    done
+fi
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## The Prompts (How Agents Were Born)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -path "*/prompts/*" -name "*.md" -o -name "*.prompt" -o -name "*.prompt.md" | head -20 | while read -r prompt; do
+    echo "### $(basename "$prompt")" >> "$OUTPUT"
+    echo "\`\`\`" >> "$OUTPUT"
+    head -20 "$prompt" >> "$OUTPUT"
+    echo "\`\`\`" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+done
+
+echo "---" >> "$OUTPUT"
+
+echo "## The Experiments (What Got Tried)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type d \( -name "*experiment*" -o -name "*test*" -o -name "*demo*" -o -name "*prototype*" -o -name "*poc*" \) | head -20 | while read -r dir; do
+    echo "- \`$dir\`" >> "$OUTPUT"
+    ls "$dir" | head -5 | while read -r item; do
+        echo "  - $item" >> "$OUTPUT"
+    done
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## The Tools (Built Along The Way)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+if [ -d "./tools" ]; then
+    find ./tools -maxdepth 2 -name "package.json" -o -name "README.md" | while read -r tool; do
+        if [[ "$tool" == *package.json ]]; then
+            name=$(jq -r '.name // "unnamed"' "$tool" 2>/dev/null)
+            desc=$(jq -r '.description // "no description"' "$tool" 2>/dev/null)
+            echo "- **$name**: $desc" >> "$OUTPUT"
+        fi
+    done
+fi
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## File Creation Timeline (First 100 files)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+git log --all --pretty=format:"%ai|%h" --name-only --diff-filter=A | grep -v "^$" | head -200 | while IFS='|' read -r date hash; do
+    read -r filename
+    [ -n "$filename" ] && echo "- \`$date\` - $filename" >> "$OUTPUT"
+done
+
+echo ""
+echo "Breakthroughs extracted to: $OUTPUT"
+wc -l "$OUTPUT"

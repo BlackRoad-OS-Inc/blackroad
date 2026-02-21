@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# BlackRoad Web Renderer - Render web pages and HTML in terminal
+# Usage: br-web-render <url|file>
+#        br-web-render --serve <html-file>
+#        br-web-render --live <url>
+
+# Color functions (using printf for proper escape handling)
+c_pink()   { printf '\033[38;5;205m'; }
+c_blue()   { printf '\033[38;5;75m'; }
+c_orange() { printf '\033[38;5;208m'; }
+c_gray()   { printf '\033[38;5;240m'; }
+c_reset()  { printf '\033[0m'; }
+
+# ==================
+# RENDERER DETECTION
+# ==================
+
+detect_renderer() {
+    if command -v w3m >/dev/null 2>&1; then
+        echo "w3m"
+    elif command -v lynx >/dev/null 2>&1; then
+        echo "lynx"
+    elif command -v curl >/dev/null 2>&1; then
+        echo "curl"
+    else
+        echo "none"
+    fi
+}
+
+# ==================
+# RENDER FUNCTIONS
+# ==================
+
+render_url() {
+    local url="$1"
+    local renderer="$2"
+    
+    c_blue; printf "🌐 Rendering: "; c_reset; printf "%s\n" "$url"
+    c_gray; printf "Renderer: %s\n\n" "$renderer"; c_reset
+    
+    case "$renderer" in
+        w3m)
+            w3m -dump "$url"
+            ;;
+        lynx)
+            lynx -dump -nolist "$url"
+            ;;
+        curl)
+            curl -sL "$url" | sed 's/<[^>]*>//g' | sed '/^$/d'
+            ;;
+        *)
+            c_orange; printf "❌ No renderer available\n"; c_reset
+            printf "Install one of: w3m, lynx, curl\n"
+            return 1
+            ;;
+    esac
+}
+
+render_file() {
+    local file="$1"
+    local renderer="$2"
+    
+    if [[ ! -f "$file" ]]; then
+        c_orange; printf "❌ File not found: %s\n" "$file"; c_reset
+        return 1
+    fi
+    
+    c_blue; printf "📄 Rendering: "; c_reset; printf "%s\n" "$file"
+    c_gray; printf "Renderer: %s\n\n" "$renderer"; c_reset
+    
+    case "$renderer" in
+        w3m)
+            w3m -dump "$file"
+            ;;
+        lynx)
+            lynx -dump -nolist "$file"
+            ;;
+        *)
+            # Fallback: strip HTML tags
+            sed 's/<[^>]*>//g' "$file" | sed '/^$/d'
+            ;;
+    esac
+}
+
+# ==================
+# LIVE MODE
+# ==================
+
+render_live() {
+    local url="$1"
+    local interval="${2:-5}"
+    local renderer=$(detect_renderer)
+    
+    c_pink; printf "═══ LIVE MODE ═══\n"; c_reset
+    c_gray; printf "URL: %s\n" "$url"
+    printf "Refresh: %ss\n" "$interval"
+    printf "Press Ctrl+C to exit\n\n"; c_reset
+    
+    while true; do
+        clear
+        render_url "$url" "$renderer"
+        c_gray; printf "\n─────────────────────────\n"; c_reset
+        c_gray; printf "Updated: %s\n" "$(date)"; c_reset
+        sleep "$interval"
+    done
+}
+
+# ==================
+# SERVE MODE
+# ==================
+
+serve_html() {
+    local file="$1"
+    local renderer=$(detect_renderer)
+    
+    if [[ ! -f "$file" ]]; then
+        c_orange; printf "❌ File not found: %s\n" "$file"; c_reset
+        return 1
+    fi
+    
+    c_pink; printf "═══ SERVE MODE ═══\n"; c_reset
+    c_gray; printf "File: %s\n" "$file"
+    printf "Press 'r' to refresh, 'q' to quit\n\n"; c_reset
+    
+    while true; do
+        render_file "$file" "$renderer"
+        
+        c_gray; printf "\n─────────────────────────\n"; c_reset
+        read -rsn1 -p "Command (r=refresh, q=quit): " key
+        printf "\n"
+        
+        case "$key" in
+            r|R)
+                clear
+                ;;
+            q|Q)
+                break
+                ;;
+        esac
+    done
+}
+
+# ==================
+# MAIN CLI
+# ==================
+
+main() {
+    local arg="${1:-}"
+    
+    if [[ -z "$arg" ]]; then
+        cat <<'HELP'
+BlackRoad Web Renderer - Render web pages in terminal
+
+USAGE:
+  br-web-render <url>                Render URL once
+  br-web-render <file.html>          Render HTML file
+  br-web-render --live <url> [sec]   Auto-refresh every N seconds
+  br-web-render --serve <file>       Serve HTML with refresh option
+  br-web-render --help               Show this help
+
+EXAMPLES:
+  br-web-render https://github.com
+  br-web-render ~/index.html
+  br-web-render --live https://blackroad.io 10
+  br-web-render --serve ~/dashboard.html
+
+RENDERERS (in order of preference):
+  1. w3m     - Best terminal browser (recommended)
+  2. lynx    - Classic terminal browser
+  3. curl    - Basic HTML stripping fallback
+
+INSTALL:
+  brew install w3m        # macOS
+  apt install w3m         # Debian/Ubuntu
+  dnf install w3m         # Fedora
+HELP
+        return 0
+    fi
+    
+    local renderer=$(detect_renderer)
+    
+    case "$arg" in
+        --live|-l)
+            render_live "${2:-}" "${3:-5}"
+            ;;
+        --serve|-s)
+            serve_html "${2:-}"
+            ;;
+        --help|-h)
+            main ""
+            ;;
+        http://*|https://*)
+            render_url "$arg" "$renderer"
+            ;;
+        *)
+            if [[ -f "$arg" ]]; then
+                render_file "$arg" "$renderer"
+            else
+                c_orange; printf "❌ Invalid input: %s\n" "$arg"; c_reset
+                printf "Use --help for usage\n"
+                return 1
+            fi
+            ;;
+    esac
+}
+
+main "$@"

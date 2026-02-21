@@ -1,0 +1,170 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Agent Worker - Individual agent in the swarm
+# Watches conversation and responds when mentioned or when it's their turn
+
+AGENT_NAME="$1"
+SWARM_DIR="$HOME/.blackroad/swarm"
+CONVERSATION="$SWARM_DIR/conversation.log"
+TASK_FILE="$SWARM_DIR/current_task.txt"
+OLLAMA_URL="http://localhost:11434"
+
+# Get model for agent
+get_model() {
+  case "$1" in
+    cecilia) echo "Cecilia:latest" ;;
+    lucidia) echo "lucidia:latest" ;;
+    aria) echo "aria:latest" ;;
+    silas) echo "Silas:latest" ;;
+    cadence) echo "Cadence:latest" ;;
+    alice) echo "alice:latest" ;;
+    gematria) echo "Gematria:latest" ;;
+    *) echo "llama3.2" ;;
+  esac
+}
+
+# Get role for agent
+get_role() {
+  case "$1" in
+    cecilia) echo "Orchestrator - coordinates tasks, delegates work" ;;
+    lucidia) echo "Recursive Core - deep thinking, contradictions, philosophy" ;;
+    aria) echo "Navigator - finds solutions, explores codebases" ;;
+    silas) echo "Engineer - writes code, builds systems" ;;
+    cadence) echo "Harmonist - UX, design, human factors" ;;
+    alice) echo "Gateway - infrastructure, K3s, networking" ;;
+    gematria) echo "Encoder - security, cryptography, verification" ;;
+    *) echo "Agent" ;;
+  esac
+}
+
+# Get color for agent
+get_color() {
+  case "$1" in
+    cecilia) echo "198" ;;
+    lucidia) echo "214" ;;
+    aria) echo "39" ;;
+    silas) echo "82" ;;
+    cadence) echo "141" ;;
+    alice) echo "45" ;;
+    gematria) echo "208" ;;
+    *) echo "255" ;;
+  esac
+}
+
+MODEL=$(get_model "$AGENT_NAME")
+ROLE=$(get_role "$AGENT_NAME")
+COLOR=$(get_color "$AGENT_NAME")
+
+# Header
+clear
+echo -e "\033[38;5;${COLOR}m╔═══════════════════════════════════════════════════════════╗\033[0m"
+echo -e "\033[38;5;${COLOR}m║\033[0m  ◆ \033[38;5;${COLOR}m$(echo $AGENT_NAME | tr '[:lower:]' '[:upper:]')\033[0m · ${ROLE}"
+echo -e "\033[38;5;${COLOR}m╚═══════════════════════════════════════════════════════════╝\033[0m"
+echo -e "\033[38;5;245mModel: $MODEL\033[0m"
+echo ""
+
+# Think and respond
+think() {
+  local task=$(cat "$TASK_FILE" 2>/dev/null)
+  local context=$(tail -30 "$CONVERSATION" 2>/dev/null)
+
+  local prompt="You are $AGENT_NAME, the ${ROLE} in a multi-agent AI swarm.
+
+TASK: $task
+
+RECENT CONVERSATION:
+$context
+
+Instructions:
+- Contribute meaningfully to the task
+- If you need another agent, @mention them (e.g., @aria, @silas)
+- If writing code, use markdown code blocks
+- Keep responses focused (2-4 sentences, or code block + 1 sentence)
+- Build on what others said
+
+Your response as $AGENT_NAME:"
+
+  curl -s "$OLLAMA_URL/api/generate" \
+    -d "{\"model\": \"$MODEL\", \"prompt\": \"$prompt\", \"stream\": false}" 2>/dev/null | jq -r '.response // empty'
+}
+
+# Post to conversation
+post() {
+  local message="$1"
+  echo "[$(date +%H:%M:%S)] $(echo $AGENT_NAME | tr '[:lower:]' '[:upper:]'): $message" >> "$CONVERSATION"
+  echo "" >> "$CONVERSATION"
+}
+
+# Main loop - interactive
+echo -e "\033[38;5;245mCommands: think (auto-respond), say <msg>, code <task>, watch, quit\033[0m"
+echo ""
+
+while true; do
+  echo -ne "\033[38;5;${COLOR}m${AGENT_NAME}>\033[0m "
+  read -r cmd args
+
+  case "$cmd" in
+    think|t)
+      echo -e "\033[38;5;245m[thinking...]\033[0m"
+      response=$(think)
+      if [ -n "$response" ]; then
+        echo -e "\033[38;5;${COLOR}m$(echo $AGENT_NAME | tr '[:lower:]' '[:upper:]'):\033[0m $response"
+        post "$response"
+      fi
+      ;;
+
+    say|s)
+      if [ -n "$args" ]; then
+        echo -e "\033[38;5;${COLOR}m$(echo $AGENT_NAME | tr '[:lower:]' '[:upper:]'):\033[0m $args"
+        post "$args"
+      fi
+      ;;
+
+    code|c)
+      echo -e "\033[38;5;245m[generating code...]\033[0m"
+      code_prompt="Write code for: $args. Return ONLY the code in a markdown block."
+      code_response=$(curl -s "$OLLAMA_URL/api/generate" \
+        -d "{\"model\": \"$MODEL\", \"prompt\": \"$code_prompt\", \"stream\": false}" 2>/dev/null | jq -r '.response // empty')
+      echo "$code_response"
+      post "Code for '$args':\n$code_response"
+      ;;
+
+    watch|w)
+      echo -e "\033[38;5;245m[watching conversation - Ctrl+C to stop]\033[0m"
+      tail -f "$CONVERSATION"
+      ;;
+
+    context|ctx)
+      tail -20 "$CONVERSATION"
+      ;;
+
+    task)
+      cat "$TASK_FILE"
+      ;;
+
+    quit|q|exit)
+      echo "Goodbye from $AGENT_NAME"
+      exit 0
+      ;;
+
+    "")
+      ;;
+
+    *)
+      # Treat as direct message
+      if [ -n "$cmd" ]; then
+        full_msg="$cmd $args"
+        echo -e "\033[38;5;${COLOR}m$(echo $AGENT_NAME | tr '[:lower:]' '[:upper:]'):\033[0m $full_msg"
+        post "$full_msg"
+      fi
+      ;;
+  esac
+done

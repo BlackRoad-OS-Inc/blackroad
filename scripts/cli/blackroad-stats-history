@@ -1,0 +1,110 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+
+# BlackRoad Stats History Tracker
+# Shows trends over time
+
+HISTORY_DIR="$HOME/.blackroad/stats-history"
+CACHE_FILE="$HOME/.blackroad/stats-cache/stats.json"
+
+mkdir -p "$HISTORY_DIR"
+
+case "$1" in
+    snapshot)
+        # Save current stats to history
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        if [ -f "$CACHE_FILE" ]; then
+            cp "$CACHE_FILE" "$HISTORY_DIR/$TIMESTAMP.json"
+            echo "✅ Snapshot saved: $TIMESTAMP"
+        else
+            echo "❌ No current stats to snapshot"
+            exit 1
+        fi
+        ;;
+        
+    list)
+        echo "📊 Historical Snapshots:"
+        echo ""
+        ls -1 "$HISTORY_DIR"/*.json 2>/dev/null | while read file; do
+            basename "$file" .json
+            jq -r '"  Repos: \(.infrastructure.repositories) | Commits: \(.infrastructure.total_commits) | Stars: \(.infrastructure.github_stars)"' "$file" 2>/dev/null
+            echo ""
+        done
+        ;;
+        
+    compare)
+        if [ -z "$2" ] || [ -z "$3" ]; then
+            echo "Usage: $0 compare <snapshot1> <snapshot2>"
+            echo ""
+            echo "Available snapshots:"
+            ls -1 "$HISTORY_DIR"/*.json 2>/dev/null | xargs -n1 basename | sed 's/.json$//'
+            exit 1
+        fi
+        
+        FILE1="$HISTORY_DIR/$2.json"
+        FILE2="$HISTORY_DIR/$3.json"
+        
+        if [ ! -f "$FILE1" ] || [ ! -f "$FILE2" ]; then
+            echo "❌ Snapshot not found"
+            exit 1
+        fi
+        
+        echo "📊 Comparison: $2 → $3"
+        echo ""
+        
+        REPOS1=$(jq -r '.infrastructure.repositories' "$FILE1")
+        REPOS2=$(jq -r '.infrastructure.repositories' "$FILE2")
+        DIFF_REPOS=$((REPOS2 - REPOS1))
+        
+        COMMITS1=$(jq -r '.infrastructure.total_commits' "$FILE1")
+        COMMITS2=$(jq -r '.infrastructure.total_commits' "$FILE2")
+        DIFF_COMMITS=$((COMMITS2 - COMMITS1))
+        
+        STARS1=$(jq -r '.infrastructure.github_stars' "$FILE1")
+        STARS2=$(jq -r '.infrastructure.github_stars' "$FILE2")
+        DIFF_STARS=$((STARS2 - STARS1))
+        
+        echo "Repositories:  $REPOS1 → $REPOS2 (${DIFF_REPOS:+"+"}$DIFF_REPOS)"
+        echo "Commits:       $COMMITS1 → $COMMITS2 (${DIFF_COMMITS:+"+"}$DIFF_COMMITS)"
+        echo "Stars:         $STARS1 → $STARS2 (${DIFF_STARS:+"+"}$DIFF_STARS)"
+        ;;
+        
+    trend)
+        echo "📈 Growth Trend:"
+        echo ""
+        
+        FILES=("$HISTORY_DIR"/*.json)
+        if [ ${#FILES[@]} -lt 2 ]; then
+            echo "❌ Need at least 2 snapshots for trend analysis"
+            exit 1
+        fi
+        
+        for file in "${FILES[@]}"; do
+            if [ -f "$file" ]; then
+                DATE=$(basename "$file" .json)
+                REPOS=$(jq -r '.infrastructure.repositories' "$file")
+                COMMITS=$(jq -r '.infrastructure.total_commits' "$file")
+                echo "$DATE | Repos: $REPOS | Commits: $COMMITS"
+            fi
+        done
+        ;;
+        
+    *)
+        echo "Usage: $0 {snapshot|list|compare|trend}"
+        echo ""
+        echo "Commands:"
+        echo "  snapshot              - Save current stats"
+        echo "  list                  - List all snapshots"
+        echo "  compare <s1> <s2>     - Compare two snapshots"
+        echo "  trend                 - Show growth trend"
+        exit 1
+        ;;
+esac

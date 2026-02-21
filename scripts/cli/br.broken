@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+RESET="\033[0m"
+BR_ORANGE="\033[38;5;208m"
+BR_DARKORANGE="\033[38;5;202m"
+BR_PINK="\033[38;5;198m"
+BR_ORCHID="\033[38;5;163m"
+BR_MAGENTA="\033[38;5;201m"
+BR_BLUE="\033[38;5;33m"
+BR_GRAY="\033[38;5;245m"
+BR_WHITE="\033[38;5;231m"
+
+case "${1:-}" in
+  colors)
+    echo -e "\n  ${BR_ORANGE}████${RESET} 208 orange"
+    echo -e "  ${BR_DARKORANGE}████${RESET} 202 dark_orange"
+    echo -e "  ${BR_PINK}████${RESET} 198 pink"
+    echo -e "  ${BR_ORCHID}████${RESET} 163 orchid"
+    echo -e "  ${BR_MAGENTA}████${RESET} 201 magenta"
+    echo -e "  ${BR_BLUE}████${RESET}  33 blue\n"
+    ;;
+  gradient)
+    echo -e "\n${BR_ORANGE}██${BR_DARKORANGE}██${BR_PINK}██${BR_ORCHID}██${BR_MAGENTA}██${BR_BLUE}██${RESET}\n"
+    ;;
+  banner)
+    echo -e "\n${BR_ORANGE}B${BR_DARKORANGE}L${BR_PINK}A${BR_ORCHID}C${BR_MAGENTA}K${BR_BLUE}R${BR_ORANGE}O${BR_DARKORANGE}A${BR_PINK}D${RESET}\n"
+    ;;
+  256)
+    for i in {0..255}; do printf "\x1b[38;5;%sm%3d " "$i" "$i"; (( (i+1) % 16 == 0 )) && printf "\n"; done
+    ;;
+  status)
+    echo -e "\n${BR_ORANGE}▸${RESET} $(hostname)"
+    echo -e "${BR_PINK}▸${RESET} $(whoami)"
+    echo -e "${BR_ORCHID}▸${RESET} $(uptime | sed 's/.*up /up /' | sed 's/,.*//')"
+    echo -e "${BR_BLUE}▸${RESET} $(git branch --show-current 2>/dev/null || echo 'no git')\n"
+    ;;
+  motd)
+    echo -e "\n${BR_ORANGE}B${BR_DARKORANGE}L${BR_PINK}A${BR_ORCHID}C${BR_MAGENTA}K${BR_BLUE}R${BR_ORANGE}O${BR_DARKORANGE}A${BR_PINK}D${RESET} ${BR_GRAY}$(date '+%H:%M')${RESET}\n"
+    ;;
+  agents)
+    echo -e "\n${BR_ORANGE}agents${RESET}"
+    echo -e "  ${BR_GRAY}alice${RESET}    $(ping -c1 -W1 alice.blackroad.lan &>/dev/null && echo -e "${BR_BLUE}●${RESET}" || echo -e "${BR_PINK}○${RESET}")"
+    echo -e "  ${BR_GRAY}octavia${RESET}  $(ping -c1 -W1 octavia.blackroad.lan &>/dev/null && echo -e "${BR_BLUE}●${RESET}" || echo -e "${BR_PINK}○${RESET}")\n"
+    ;;
+  infra)
+    echo -e "\n${BR_ORANGE}infra${RESET}"
+    curl -s --max-time 2 http://alice.blackroad.lan:6443/healthz &>/dev/null && echo -e "  k3s   ${BR_BLUE}●${RESET}" || echo -e "  k3s   ${BR_PINK}○${RESET}"
+    curl -s --max-time 2 http://alice.blackroad.lan:6379 &>/dev/null && echo -e "  redis ${BR_BLUE}●${RESET}" || echo -e "  redis ${BR_PINK}○${RESET}"
+    echo
+    ;;
+  *)
+    echo "br colors|gradient|banner|status|motd|agents|infra|256"
+    ;;
+esac
+
+  # ═══════════════════════════════════════════════════════════════════
+  # CLOUDFLARE OPS
+  # ═══════════════════════════════════════════════════════════════════
+  cf)
+    case "${2:-}" in
+      whoami) wrangler whoami ;;
+      workers) wrangler deployments list 2>/dev/null || echo "use: wrangler login" ;;
+      deploy) shift 2; wrangler deploy "$@" ;;
+      logs) wrangler tail "${3:-blackroad-io}" --format pretty ;;
+      kv) wrangler kv:namespace list ;;
+      d1) wrangler d1 list ;;
+      dev) wrangler dev --local ;;
+      *) echo -e "${BR_ORANGE}br cf${RESET} whoami|workers|deploy|logs|kv|d1|dev" ;;
+    esac
+    ;;
+
+  # ═══════════════════════════════════════════════════════════════════
+  # GITHUB OPS
+  # ═══════════════════════════════════════════════════════════════════
+  gh)
+    case "${2:-}" in
+      repos) gh repo list BlackRoad-OS --limit "${3:-20}" ;;
+      clone) gh repo clone "BlackRoad-OS/${3}" ;;
+      new) gh repo create "BlackRoad-OS/${3}" --public --description "${4:-BlackRoad component}" ;;
+      push) git add -A && git commit -m "${3:-update}" && git push ;;
+      sync) git pull --rebase && git push ;;
+      pr) gh pr create --title "${3:-PR}" --body "${4:-Automated}" ;;
+      issues) gh issue list --repo "BlackRoad-OS/${3:-blackroad.io}" ;;
+      *) echo -e "${BR_ORANGE}br gh${RESET} repos|clone|new|push|sync|pr|issues" ;;
+    esac
+    ;;
+
+  # ═══════════════════════════════════════════════════════════════════
+  # CLUSTER OPS (Alice/Octavia)
+  # ═══════════════════════════════════════════════════════════════════
+  k)
+    ALICE="pi@alice.blackroad.lan"
+    case "${2:-}" in
+      pods) ssh $ALICE "kubectl get pods -A" 2>/dev/null || echo "cannot reach alice" ;;
+      nodes) ssh $ALICE "kubectl get nodes" ;;
+      svc) ssh $ALICE "kubectl get svc -A" ;;
+      logs) ssh $ALICE "kubectl logs ${3}" ;;
+      apply) scp "${3}" $ALICE:/tmp/ && ssh $ALICE "kubectl apply -f /tmp/$(basename ${3})" ;;
+      shell) ssh "${3:-pi@alice.blackroad.lan}" ;;
+      *) echo -e "${BR_ORANGE}br k${RESET} pods|nodes|svc|logs|apply|shell" ;;
+    esac
+    ;;
+
+  # ═══════════════════════════════════════════════════════════════════
+  # QUICK DEPLOY
+  # ═══════════════════════════════════════════════════════════════════
+  deploy)
+    echo -e "${BR_ORANGE}▸${RESET} deploying to cloudflare..."
+    wrangler deploy
+    echo -e "${BR_BLUE}▸${RESET} done"
+    ;;
+
+  # ═══════════════════════════════════════════════════════════════════
+  # FULL STATUS
+  # ═══════════════════════════════════════════════════════════════════
+  all)
+    echo -e "\n${BR_ORANGE}═══ BLACKROAD STATUS ═══${RESET}\n"
+    echo -e "${BR_PINK}local${RESET}"
+    echo -e "  host   $(hostname)"
+    echo -e "  user   $(whoami)"
+    echo -e "  git    $(git branch --show-current 2>/dev/null || echo 'n/a')"
+    echo
+    echo -e "${BR_ORCHID}cluster${RESET}"
+    ping -c1 -W1 alice.blackroad.lan &>/dev/null && echo -e "  alice   ${BR_BLUE}●${RESET}" || echo -e "  alice   ${BR_PINK}○${RESET}"
+    ping -c1 -W1 octavia.blackroad.lan &>/dev/null && echo -e "  octavia ${BR_BLUE}●${RESET}" || echo -e "  octavia ${BR_PINK}○${RESET}"
+    echo
+    echo -e "${BR_MAGENTA}cloudflare${RESET}"
+    wrangler whoami 2>/dev/null | grep -q "logged in" && echo -e "  auth    ${BR_BLUE}●${RESET}" || echo -e "  auth    ${BR_PINK}○${RESET}"
+    echo
+    echo -e "${BR_BLUE}github${RESET}"
+    gh auth status &>/dev/null && echo -e "  auth    ${BR_BLUE}●${RESET}" || echo -e "  auth    ${BR_PINK}○${RESET}"
+    echo
+    ;;

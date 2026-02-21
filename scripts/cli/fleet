@@ -1,0 +1,225 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# BlackRoad Fleet Command - Control all agents from one place
+
+BR_PINK="\033[38;5;204m"
+BR_ORANGE="\033[38;5;208m"
+BR_BLUE="\033[38;5;33m"
+BR_PURPLE="\033[38;5;129m"
+BR_GRAY="\033[38;5;240m"
+BR_GREEN="\033[38;5;82m"
+BR_RED="\033[38;5;196m"
+BR_RESET="\033[0m"
+
+# Fleet configuration
+FLEET_HOSTS=(
+    "cecilia:cecilia:CECE"
+    "lucidia:lucidia:LUCIDIA"
+    "aria:aria:ARIA"
+    "octavia:octavia:OCTAVIA"
+    "alice:alice@alice:ALICE"
+    "shellfish:shellfish:SHELLFISH"
+    "blackroad os:root@blackroad os-infinity:BLACKROAD OS"
+)
+
+show_help() {
+    echo -e "${BR_PINK}╔══════════════════════════════════════════════════════════════╗${BR_RESET}"
+    echo -e "${BR_PINK}║${BR_RESET}  ${BR_ORANGE}BlackRoad Fleet Command${BR_RESET} - Control all AI agents            ${BR_PINK}║${BR_RESET}"
+    echo -e "${BR_PINK}╚══════════════════════════════════════════════════════════════╝${BR_RESET}"
+    echo ""
+    echo -e "${BR_BLUE}Usage:${BR_RESET}"
+    echo "  fleet status              - Status of all nodes"
+    echo "  fleet ask \"question\"      - Ask ALL agents a question"
+    echo "  fleet ask cece \"question\" - Ask specific agent"
+    echo "  fleet run \"command\"       - Run command on all nodes"
+    echo "  fleet ssh <agent>         - SSH to specific agent"
+    echo "  fleet models              - List models on all nodes"
+    echo "  fleet health              - Detailed health check"
+    echo ""
+    echo -e "${BR_BLUE}Agents:${BR_RESET} cece, lucidia, aria, octavia, alice, shellfish, blackroad os"
+}
+
+get_ssh_cmd() {
+    local name=$1
+    local upper_name=$(echo "$name" | tr '[:lower:]' '[:upper:]')
+    for entry in "${FLEET_HOSTS[@]}"; do
+        IFS=':' read -r short ssh_cmd agent_name <<< "$entry"
+        if [[ "$short" == "$name" || "$agent_name" == "$upper_name" ]]; then
+            echo "$ssh_cmd"
+            return
+        fi
+    done
+}
+
+fleet_status() {
+    echo -e "${BR_PINK}╔══════════════════════════════════════════════════════════════╗${BR_RESET}"
+    echo -e "${BR_PINK}║${BR_RESET}  ${BR_ORANGE}BlackRoad Fleet Status${BR_RESET}                                      ${BR_PINK}║${BR_RESET}"
+    echo -e "${BR_PINK}╚══════════════════════════════════════════════════════════════╝${BR_RESET}"
+    echo ""
+
+    for entry in "${FLEET_HOSTS[@]}"; do
+        IFS=':' read -r short ssh_cmd agent_name <<< "$entry"
+        echo -en "  ${BR_ORANGE}${agent_name}${BR_RESET} (${short}): "
+
+        result=$(ssh -o ConnectTimeout=3 -o BatchMode=yes $ssh_cmd 'echo "$(uptime -p 2>/dev/null || echo up) | $(df -h / | tail -1 | awk "{print \$5}")"' 2>/dev/null)
+
+        if [[ -n "$result" ]]; then
+            echo -e "${BR_GREEN}●${BR_RESET} $result"
+        else
+            echo -e "${BR_RED}○ offline${BR_RESET}"
+        fi
+    done
+    echo ""
+}
+
+fleet_ask_all() {
+    local question="$1"
+    echo -e "${BR_PINK}╔══════════════════════════════════════════════════════════════╗${BR_RESET}"
+    echo -e "${BR_PINK}║${BR_RESET}  ${BR_ORANGE}Fleet Query:${BR_RESET} ${question:0:45}${BR_PINK}║${BR_RESET}"
+    echo -e "${BR_PINK}╚══════════════════════════════════════════════════════════════╝${BR_RESET}"
+    echo ""
+
+    for entry in "${FLEET_HOSTS[@]}"; do
+        IFS=':' read -r short ssh_cmd agent_name <<< "$entry"
+        echo -e "${BR_BLUE}━━━ ${BR_ORANGE}${agent_name}${BR_BLUE} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${BR_RESET}"
+
+        response=$(ssh -o ConnectTimeout=10 $ssh_cmd "~/blackroad-ai-shell.sh '$question'" 2>/dev/null | head -20)
+
+        if [[ -n "$response" ]]; then
+            echo "$response"
+        else
+            echo -e "${BR_GRAY}(no response or offline)${BR_RESET}"
+        fi
+        echo ""
+    done &
+    wait
+}
+
+fleet_ask_one() {
+    local agent="$1"
+    local question="$2"
+    local ssh_cmd=$(get_ssh_cmd "$agent")
+
+    if [[ -z "$ssh_cmd" ]]; then
+        echo -e "${BR_RED}Unknown agent: $agent${BR_RESET}"
+        echo "Available: cece, lucidia, aria, octavia, alice, shellfish, blackroad os"
+        return 1
+    fi
+
+    echo -e "${BR_BLUE}Asking ${BR_ORANGE}${agent^^}${BR_BLUE}...${BR_RESET}"
+    ssh -t $ssh_cmd "~/blackroad-ai-shell.sh '$question'" 2>/dev/null
+}
+
+fleet_run() {
+    local cmd="$1"
+    echo -e "${BR_PINK}Running on all nodes:${BR_RESET} $cmd"
+    echo ""
+
+    for entry in "${FLEET_HOSTS[@]}"; do
+        IFS=':' read -r short ssh_cmd agent_name <<< "$entry"
+        echo -e "${BR_ORANGE}${agent_name}${BR_RESET}:"
+        ssh -o ConnectTimeout=5 $ssh_cmd "$cmd" 2>/dev/null || echo -e "${BR_RED}failed${BR_RESET}"
+        echo ""
+    done
+}
+
+fleet_ssh() {
+    local agent="$1"
+    local ssh_cmd=$(get_ssh_cmd "$agent")
+
+    if [[ -z "$ssh_cmd" ]]; then
+        echo -e "${BR_RED}Unknown agent: $agent${BR_RESET}"
+        return 1
+    fi
+
+    echo -e "${BR_BLUE}Connecting to ${BR_ORANGE}${agent^^}${BR_RESET}..."
+    ssh -t $ssh_cmd
+}
+
+fleet_models() {
+    echo -e "${BR_PINK}Models across fleet:${BR_RESET}"
+    echo ""
+
+    for entry in "${FLEET_HOSTS[@]}"; do
+        IFS=':' read -r short ssh_cmd agent_name <<< "$entry"
+        echo -e "${BR_ORANGE}${agent_name}${BR_RESET}:"
+        ssh -o ConnectTimeout=5 $ssh_cmd 'ollama list 2>/dev/null | tail -n +2' 2>/dev/null || echo "  (offline)"
+        echo ""
+    done
+}
+
+fleet_health() {
+    echo -e "${BR_PINK}╔══════════════════════════════════════════════════════════════╗${BR_RESET}"
+    echo -e "${BR_PINK}║${BR_RESET}  ${BR_ORANGE}BlackRoad Fleet Health Check${BR_RESET}                                ${BR_PINK}║${BR_RESET}"
+    echo -e "${BR_PINK}╚══════════════════════════════════════════════════════════════╝${BR_RESET}"
+    echo ""
+
+    printf "%-12s %-8s %-10s %-10s %-15s\n" "AGENT" "STATUS" "DISK" "LOAD" "UPTIME"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    for entry in "${FLEET_HOSTS[@]}"; do
+        IFS=':' read -r short ssh_cmd agent_name <<< "$entry"
+
+        result=$(ssh -o ConnectTimeout=3 $ssh_cmd '
+            disk=$(df -h / | tail -1 | awk "{print \$5}")
+            load=$(cat /proc/loadavg 2>/dev/null | awk "{print \$1}" || echo "N/A")
+            up=$(uptime -p 2>/dev/null | sed "s/up //" | cut -c1-12 || echo "N/A")
+            echo "$disk|$load|$up"
+        ' 2>/dev/null)
+
+        if [[ -n "$result" ]]; then
+            IFS='|' read -r disk load uptime <<< "$result"
+            printf "%-12s ${BR_GREEN}%-8s${BR_RESET} %-10s %-10s %-15s\n" "$agent_name" "online" "$disk" "$load" "$uptime"
+        else
+            printf "%-12s ${BR_RED}%-8s${BR_RESET} %-10s %-10s %-15s\n" "$agent_name" "offline" "-" "-" "-"
+        fi
+    done
+    echo ""
+}
+
+# Main
+case "${1:-help}" in
+    status|st)
+        fleet_status
+        ;;
+    ask)
+        if [[ -n "$3" ]]; then
+            fleet_ask_one "$2" "$3"
+        elif [[ -n "$2" ]]; then
+            fleet_ask_all "$2"
+        else
+            echo "Usage: fleet ask \"question\" OR fleet ask <agent> \"question\""
+        fi
+        ;;
+    run|exec)
+        if [[ -n "$2" ]]; then
+            fleet_run "$2"
+        else
+            echo "Usage: fleet run \"command\""
+        fi
+        ;;
+    ssh|connect)
+        if [[ -n "$2" ]]; then
+            fleet_ssh "$2"
+        else
+            echo "Usage: fleet ssh <agent>"
+        fi
+        ;;
+    models)
+        fleet_models
+        ;;
+    health|check)
+        fleet_health
+        ;;
+    help|--help|-h|*)
+        show_help
+        ;;
+esac

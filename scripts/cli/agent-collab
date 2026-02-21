@@ -1,0 +1,174 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Agent Collab - Watch agents collaborate on a task in real-time
+# Usage: agent-collab "Build a REST API for the agent registry"
+
+OLLAMA_URL="http://localhost:11434"
+SWARM_DIR="$HOME/.blackroad/swarm"
+mkdir -p "$SWARM_DIR"
+
+# Colors
+PINK='\033[38;5;198m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;39m'
+GREEN='\033[38;5;82m'
+VIOLET='\033[38;5;141m'
+PINK='\033[38;5;45m'
+GRAY='\033[38;5;245m'
+RESET='\033[0m'
+BOLD='\033[1m'
+
+# Get model for agent
+get_model() {
+  case "$1" in
+    cecilia) echo "Cecilia:latest" ;;
+    lucidia) echo "lucidia:latest" ;;
+    aria) echo "aria:latest" ;;
+    silas) echo "Silas:latest" ;;
+    *) echo "llama3.2" ;;
+  esac
+}
+
+# Get role for agent
+get_role() {
+  case "$1" in
+    cecilia) echo "Orchestrator" ;;
+    lucidia) echo "Recursive Core" ;;
+    aria) echo "Navigator" ;;
+    silas) echo "Engineer" ;;
+    *) echo "Agent" ;;
+  esac
+}
+
+# Get color for agent
+get_color() {
+  case "$1" in
+    cecilia) echo "$PINK" ;;
+    lucidia) echo "$AMBER" ;;
+    aria) echo "$BLUE" ;;
+    silas) echo "$GREEN" ;;
+    *) echo "$GRAY" ;;
+  esac
+}
+
+# Task
+TASK="${*:-Discuss how to improve the BlackRoad agent system}"
+
+# Conversation history
+HISTORY=""
+
+# Header
+echo ""
+echo -e "${PINK}╔═══════════════════════════════════════════════════════════════════════════╗${RESET}"
+echo -e "${PINK}║${RESET}  ${BOLD}AGENT COLLABORATION${RESET} · ${GRAY}BlackRoad OS Multi-Agent System${RESET}"
+echo -e "${PINK}╚═══════════════════════════════════════════════════════════════════════════╝${RESET}"
+echo ""
+echo -e "${GRAY}Task:${RESET} ${BOLD}$TASK${RESET}"
+echo -e "${GRAY}Agents:${RESET} cecilia (orchestrator), lucidia (core), aria (navigator), silas (engineer)"
+echo ""
+echo -e "${GRAY}─────────────────────────────────────────────────────────────────────────────${RESET}"
+echo ""
+
+# Get agent response
+get_response() {
+  local agent="$1"
+  local model=$(get_model "$agent")
+  local role=$(get_role "$agent")
+
+  local prompt="You are $agent, the $role in a BlackRoad OS agent collaboration.
+
+TASK: $TASK
+
+CONVERSATION SO FAR:
+$HISTORY
+
+YOUR TURN. Respond as $agent:
+- Build on what others said
+- Be specific and actionable
+- If writing code, use code blocks
+- Keep it to 2-4 sentences (or code + brief explanation)
+
+$agent:"
+
+  # Build JSON with jq to handle escaping
+  local json=$(jq -n \
+    --arg model "$model" \
+    --arg prompt "$prompt" \
+    '{model: $model, prompt: $prompt, stream: false, options: {temperature: 0.8, num_predict: 300}}')
+
+  curl -s "$OLLAMA_URL/api/generate" -d "$json" 2>/dev/null | jq -r '.response // "..."'
+}
+
+# Print agent message
+print_agent() {
+  local agent="$1"
+  local message="$2"
+  local color=$(get_color "$agent")
+  local role=$(get_role "$agent")
+
+  echo -e "${color}┌─ ${BOLD}$(echo $agent | tr '[:lower:]' '[:upper:]')${RESET} ${GRAY}(${role})${RESET}"
+  echo -e "${color}│${RESET}"
+  # Handle multi-line messages with proper indentation
+  echo "$message" | while IFS= read -r line; do
+    echo -e "${color}│${RESET}  $line"
+  done
+  echo -e "${color}│${RESET}"
+  echo -e "${color}└─────────────────────────────────────────${RESET}"
+  echo ""
+}
+
+# Run collaboration
+echo -e "${PINK}[Starting collaboration...]${RESET}"
+echo ""
+
+# Add initial context
+HISTORY="[TASK: $TASK]
+
+"
+
+# Run 3 rounds of conversation
+for round in 1 2 3; do
+  echo -e "${GRAY}═══ Round $round ═══${RESET}"
+  echo ""
+
+  for agent in cecilia lucidia aria silas; do
+    # Get response
+    response=$(get_response "$agent")
+
+    if [ -n "$response" ] && [ "$response" != "..." ]; then
+      # Clean up response
+      response=$(echo "$response" | sed 's/^[[:space:]]*//' | head -20)
+
+      # Print
+      print_agent "$agent" "$response"
+
+      # Add to history
+      HISTORY="${HISTORY}$(echo $agent | tr '[:lower:]' '[:upper:]'): $response
+
+"
+    fi
+
+    # Small delay for readability
+    sleep 0.5
+  done
+done
+
+echo -e "${GRAY}─────────────────────────────────────────────────────────────────────────────${RESET}"
+echo ""
+echo -e "${PINK}[Collaboration complete]${RESET}"
+echo ""
+
+# Save conversation
+SAVE_FILE="$SWARM_DIR/collab-$(date +%Y%m%d-%H%M%S).log"
+echo "TASK: $TASK" > "$SAVE_FILE"
+echo "" >> "$SAVE_FILE"
+echo "$HISTORY" >> "$SAVE_FILE"
+echo -e "${GRAY}Saved to: $SAVE_FILE${RESET}"

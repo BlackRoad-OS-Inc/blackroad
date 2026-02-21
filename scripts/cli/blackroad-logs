@@ -1,0 +1,188 @@
+#!/bin/bash
+# br-logs - Centralized Logging CLI
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+RED='\033[38;5;196m'
+YELLOW='\033[38;5;226m'
+NC='\033[0m'
+
+LOG_DIR="$HOME/.blackroad/logs"
+LOG_URL="http://localhost:5141"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+# Color by level
+color_level() {
+    case "$1" in
+        error|critical) echo -e "${RED}$1${NC}" ;;
+        warn|warning) echo -e "${YELLOW}$1${NC}" ;;
+        info) echo -e "${GREEN}$1${NC}" ;;
+        debug) echo -e "${BLUE}$1${NC}" ;;
+        *) echo "$1" ;;
+    esac
+}
+
+case "$cmd" in
+    start)
+        echo -e "${PINK}Starting Log Server...${NC}"
+        nohup python3 "$LOG_DIR/log_server.py" > "$LOG_DIR/server.log" 2>&1 &
+        echo $! > "$LOG_DIR/log.pid"
+        sleep 1
+        echo -e "${GREEN}Log Server started (PID: $(cat "$LOG_DIR/log.pid"))${NC}"
+        echo "  HTTP: $LOG_URL"
+        ;;
+    stop)
+        if [ -f "$LOG_DIR/log.pid" ]; then
+            kill $(cat "$LOG_DIR/log.pid") 2>/dev/null
+            rm "$LOG_DIR/log.pid"
+            echo -e "${AMBER}Log Server stopped${NC}"
+        fi
+        ;;
+    status)
+        if [ -f "$LOG_DIR/log.pid" ] && kill -0 $(cat "$LOG_DIR/log.pid") 2>/dev/null; then
+            echo -e "${GREEN}●${NC} Log Server running"
+            curl -s "$LOG_URL/stats" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f\"  Total: {data['total_logs']:,} logs\")
+print(f\"  Today: {data['logs_today']:,} logs\")
+levels = data.get('by_level', {})
+if levels:
+    print(f\"  Levels: \" + ', '.join(f'{k}:{v}' for k,v in sorted(levels.items())))
+" 2>/dev/null
+        else
+            echo -e "${RED}○${NC} Log Server not running"
+        fi
+        ;;
+    search)
+        query="$*"
+        curl -s "$LOG_URL/search?q=$query&limit=50" | python3 -c "
+import sys, json
+from datetime import datetime
+data = json.load(sys.stdin)
+for log in data.get('logs', []):
+    ts = datetime.fromisoformat(log['@timestamp']).strftime('%H:%M:%S')
+    level = log['level'].upper()[:4]
+    host = log.get('host', '')[:10]
+    svc = log.get('service', '')[:12]
+    msg = log['message'][:80]
+
+    # Color by level
+    if 'error' in level.lower() or 'crit' in level.lower():
+        level = f'\033[38;5;196m{level}\033[0m'
+    elif 'warn' in level.lower():
+        level = f'\033[38;5;226m{level}\033[0m'
+    else:
+        level = f'\033[38;5;82m{level}\033[0m'
+
+    print(f'{ts} {level} [{host:<10}] [{svc:<12}] {msg}')
+"
+        ;;
+    tail)
+        service="${1:-*}"
+        limit="${2:-20}"
+        echo -e "${PINK}Last $limit logs${NC} (service: $service)"
+        echo ""
+        curl -s "$LOG_URL/search?service=$service&limit=$limit" | python3 -c "
+import sys, json
+from datetime import datetime
+data = json.load(sys.stdin)
+for log in reversed(data.get('logs', [])):
+    ts = datetime.fromisoformat(log['@timestamp']).strftime('%H:%M:%S')
+    level = log['level'].upper()[:4]
+    host = log.get('host', '')[:10]
+    svc = log.get('service', '')[:12]
+    msg = log['message'][:100]
+
+    if 'error' in level.lower():
+        level = f'\033[38;5;196m{level}\033[0m'
+    elif 'warn' in level.lower():
+        level = f'\033[38;5;226m{level}\033[0m'
+    else:
+        level = f'\033[38;5;82m{level}\033[0m'
+
+    print(f'{ts} {level} [{host:<10}] [{svc:<12}] {msg}')
+"
+        ;;
+    send)
+        level="${1:-info}"
+        message="${*:2}"
+        if [ -z "$message" ]; then
+            echo "Usage: br-logs send <level> <message>"
+            exit 1
+        fi
+        curl -s -X POST "$LOG_URL/ingest" \
+            -H "Content-Type: application/json" \
+            -d "{\"level\":\"$level\",\"message\":\"$message\",\"host\":\"$(hostname)\",\"service\":\"cli\"}" | python3 -m json.tool
+        ;;
+    services)
+        echo -e "${PINK}Services with logs:${NC}"
+        curl -s "$LOG_URL/services" | python3 -c "
+import sys, json
+for svc in json.load(sys.stdin):
+    print(f'  {svc}')
+"
+        ;;
+    hosts)
+        echo -e "${PINK}Hosts with logs:${NC}"
+        curl -s "$LOG_URL/hosts" | python3 -c "
+import sys, json
+for host in json.load(sys.stdin):
+    print(f'  {host}')
+"
+        ;;
+    aggregate)
+        interval="${1:-1h}"
+        curl -s "$LOG_URL/aggregate?interval=$interval" | python3 -c "
+import sys, json
+from datetime import datetime
+data = json.load(sys.stdin)
+print(f'{\"TIME\":<20} {\"TOTAL\":<8} {\"BY LEVEL\"}')
+for bucket in data.get('buckets', []):
+    ts = datetime.fromtimestamp(bucket['timestamp']).strftime('%Y-%m-%d %H:%M')
+    levels = ', '.join(f'{k}:{v}' for k,v in bucket.get('by_level', {}).items())
+    print(f'{ts:<20} {bucket[\"total\"]:<8} {levels}')
+"
+        ;;
+    fleet)
+        echo -e "${PINK}╭─ LOG FLEET STATUS ────────────────────────────────────────────────────────────╮${NC}"
+        for host in cecilia lucidia octavia aria; do
+            echo -n -e "${PINK}│${NC}  ${BLUE}$host:${NC} "
+            result=$(ssh -o ConnectTimeout=3 "$host" 'curl -s http://localhost:5141/stats 2>/dev/null' 2>/dev/null)
+            if [ -n "$result" ]; then
+                echo "$result" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f\"{data['total_logs']:,} total, {data['logs_today']:,} today\")
+" 2>/dev/null || echo "offline"
+            else
+                echo "offline"
+            fi
+        done
+        echo -e "${PINK}╰────────────────────────────────────────────────────────────────────────────────╯${NC}"
+        ;;
+    help|*)
+        echo -e "${PINK}br-logs - Centralized Logging${NC}"
+        echo ""
+        echo "Server:"
+        echo "  start                 Start log server"
+        echo "  stop                  Stop log server"
+        echo "  status                Show status"
+        echo ""
+        echo "Querying:"
+        echo "  search <query>        Search logs"
+        echo "  tail [svc] [n]        Show last N logs"
+        echo "  aggregate [interval]  Time-based aggregation"
+        echo ""
+        echo "Info:"
+        echo "  services              List services"
+        echo "  hosts                 List hosts"
+        echo "  fleet                 Fleet-wide status"
+        echo ""
+        echo "Send:"
+        echo "  send <level> <msg>    Send log entry"
+        ;;
+esac

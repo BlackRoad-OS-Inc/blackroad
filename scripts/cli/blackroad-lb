@@ -1,0 +1,63 @@
+#!/bin/bash
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+NC='\033[0m'
+
+LB_DIR="$HOME/.blackroad/loadbalancer"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    start)
+        echo -e "${PINK}Starting Load Balancer...${NC}"
+        nohup python3 "$LB_DIR/loadbalancer.py" > "$LB_DIR/logs/lb.log" 2>&1 &
+        echo $! > "$LB_DIR/lb.pid"
+        echo -e "${GREEN}Load Balancer started (PID: $(cat "$LB_DIR/lb.pid"))${NC}"
+        echo "  Main: http://localhost:8090"
+        echo "  Stats: http://localhost:8091"
+        ;;
+    stop)
+        if [ -f "$LB_DIR/lb.pid" ]; then
+            kill $(cat "$LB_DIR/lb.pid") 2>/dev/null
+            rm "$LB_DIR/lb.pid"
+            echo -e "${AMBER}Load Balancer stopped${NC}"
+        else
+            echo "Load Balancer not running"
+        fi
+        ;;
+    status)
+        if [ -f "$LB_DIR/lb.pid" ] && kill -0 $(cat "$LB_DIR/lb.pid") 2>/dev/null; then
+            echo -e "${GREEN}●${NC} Load Balancer running (PID: $(cat "$LB_DIR/lb.pid"))"
+            curl -s http://localhost:8091 2>/dev/null | python3 -m json.tool 2>/dev/null || echo "  (stats unavailable)"
+        else
+            echo -e "${AMBER}○${NC} Load Balancer not running"
+        fi
+        ;;
+    stats)
+        curl -s http://localhost:8091 | python3 -m json.tool
+        ;;
+    pools)
+        curl -s http://localhost:8091 | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for name, pool in data.get('pools', {}).items():
+    print(f\"\\n{name} ({pool['mode']}):\")
+    for b in pool['backends']:
+        status = '●' if b['healthy'] else '○'
+        print(f\"  {status} {b['name']}: {b['active_conn']} conn, {b['total_requests']} req, {b['avg_response_time']}ms\")
+"
+        ;;
+    help|*)
+        echo -e "${PINK}br-lb - Load Balancer Control${NC}"
+        echo ""
+        echo "Commands:"
+        echo "  start       Start load balancer"
+        echo "  stop        Stop load balancer"
+        echo "  status      Show status and stats"
+        echo "  stats       Detailed JSON stats"
+        echo "  pools       Show backend pools"
+        ;;
+esac

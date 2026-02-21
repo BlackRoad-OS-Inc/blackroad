@@ -1,0 +1,228 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# ═══════════════════════════════════════════════════════════════════════════════
+# BLACKROAD ROUND TABLE ASK - Query Multiple AIs in Parallel
+# Get perspectives from all AIs on a single question
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Colors
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+RESET='\033[0m'
+BOLD='\033[1m'
+
+# Config
+RESULTS_DIR="$HOME/.blackroad/roundtable/results"
+mkdir -p "$RESULTS_DIR"
+
+# Show banner
+show_banner() {
+    echo -e "${AMBER}${BOLD}"
+    cat << 'EOF'
+    ╔═══════════════════════════════════════════════════════════╗
+    ║   ROUND TABLE ASK - Query All AIs                        ║
+    ╚═══════════════════════════════════════════════════════════╝
+EOF
+    echo -e "${RESET}"
+}
+
+# Ask a single AI
+ask_ai() {
+    local ai="$1"
+    local question="$2"
+    local output_file="$3"
+
+    case "$ai" in
+        claude)
+            # Use claude CLI in non-interactive mode
+            echo "$question" | timeout 60 claude --print 2>/dev/null > "$output_file" || echo "Claude: Timeout or error" > "$output_file"
+            ;;
+        copilot)
+            # GitHub Copilot explain
+            echo "$question" | timeout 60 copilot explain 2>/dev/null > "$output_file" || echo "Copilot: Timeout or error" > "$output_file"
+            ;;
+        codex)
+            # OpenAI Codex
+            timeout 60 codex "$question" 2>/dev/null > "$output_file" || echo "Codex: Timeout or error" > "$output_file"
+            ;;
+        gemini)
+            # Gemini CLI
+            timeout 60 gemini-cli "$question" 2>/dev/null > "$output_file" || echo "Gemini: Timeout or error" > "$output_file"
+            ;;
+        grok)
+            # Grok CLI
+            timeout 60 grok-cli "$question" 2>/dev/null > "$output_file" || echo "Grok: Timeout or error" > "$output_file"
+            ;;
+    esac
+}
+
+# Ask all AIs in parallel
+ask_all() {
+    local question="$*"
+    local session_id=$(date +%s)
+    local session_dir="$RESULTS_DIR/$session_id"
+    mkdir -p "$session_dir"
+
+    show_banner
+    echo -e "${AMBER}Question:${RESET} $question"
+    echo ""
+    echo -e "${VIOLET}Querying all AIs in parallel...${RESET}"
+    echo ""
+
+    # Launch all queries in parallel
+    ask_ai "claude" "$question" "$session_dir/claude.txt" &
+    local pid_claude=$!
+
+    ask_ai "copilot" "$question" "$session_dir/copilot.txt" &
+    local pid_copilot=$!
+
+    ask_ai "codex" "$question" "$session_dir/codex.txt" &
+    local pid_codex=$!
+
+    ask_ai "gemini" "$question" "$session_dir/gemini.txt" &
+    local pid_gemini=$!
+
+    ask_ai "grok" "$question" "$session_dir/grok.txt" &
+    local pid_grok=$!
+
+    # Wait for all with progress
+    local count=0
+    local total=5
+
+    for pid in $pid_claude $pid_copilot $pid_codex $pid_gemini $pid_grok; do
+        wait $pid 2>/dev/null
+        ((count++))
+        echo -ne "\r  Progress: $count/$total AIs responded"
+    done
+    echo ""
+    echo ""
+
+    # Display results
+    echo -e "${AMBER}════════════════════════════════════════════════════════════════${RESET}"
+    echo ""
+
+    if [[ -f "$session_dir/claude.txt" ]] && [[ -s "$session_dir/claude.txt" ]]; then
+        echo -e "${BLUE}${BOLD}┌─ CLAUDE (Anthropic) ─────────────────────────────────────────┐${RESET}"
+        cat "$session_dir/claude.txt" | head -20
+        echo -e "${BLUE}└──────────────────────────────────────────────────────────────┘${RESET}"
+        echo ""
+    fi
+
+    if [[ -f "$session_dir/copilot.txt" ]] && [[ -s "$session_dir/copilot.txt" ]]; then
+        echo -e "${VIOLET}${BOLD}┌─ COPILOT (GitHub) ───────────────────────────────────────────┐${RESET}"
+        cat "$session_dir/copilot.txt" | head -20
+        echo -e "${VIOLET}└──────────────────────────────────────────────────────────────┘${RESET}"
+        echo ""
+    fi
+
+    if [[ -f "$session_dir/codex.txt" ]] && [[ -s "$session_dir/codex.txt" ]]; then
+        echo -e "${PINK}${BOLD}┌─ CODEX (OpenAI) ─────────────────────────────────────────────┐${RESET}"
+        cat "$session_dir/codex.txt" | head -20
+        echo -e "${PINK}└──────────────────────────────────────────────────────────────┘${RESET}"
+        echo ""
+    fi
+
+    if [[ -f "$session_dir/gemini.txt" ]] && [[ -s "$session_dir/gemini.txt" ]]; then
+        echo -e "${GREEN}${BOLD}┌─ GEMINI (Google) ────────────────────────────────────────────┐${RESET}"
+        cat "$session_dir/gemini.txt" | head -20
+        echo -e "${GREEN}└──────────────────────────────────────────────────────────────┘${RESET}"
+        echo ""
+    fi
+
+    if [[ -f "$session_dir/grok.txt" ]] && [[ -s "$session_dir/grok.txt" ]]; then
+        echo -e "${RED}${BOLD}┌─ GROK (xAI) ─────────────────────────────────────────────────┐${RESET}"
+        cat "$session_dir/grok.txt" | head -20
+        echo -e "${RED}└──────────────────────────────────────────────────────────────┘${RESET}"
+        echo ""
+    fi
+
+    echo -e "${AMBER}════════════════════════════════════════════════════════════════${RESET}"
+    echo -e "Full results saved to: ${VIOLET}$session_dir${RESET}"
+
+    # Log to context bus
+    rt-context post "rt-ask" "all" "Asked all AIs: $question" 2>/dev/null || true
+}
+
+# Ask specific AIs
+ask_specific() {
+    local ais="$1"
+    shift
+    local question="$*"
+
+    show_banner
+    echo -e "${AMBER}Question:${RESET} $question"
+    echo -e "${VIOLET}AIs:${RESET} $ais"
+    echo ""
+
+    for ai in $(echo "$ais" | tr ',' ' '); do
+        local output=$(mktemp)
+        echo -e "${AMBER}Asking $ai...${RESET}"
+        ask_ai "$ai" "$question" "$output"
+
+        case "$ai" in
+            claude) echo -e "${BLUE}${BOLD}$ai:${RESET}" ;;
+            copilot) echo -e "${VIOLET}${BOLD}$ai:${RESET}" ;;
+            codex) echo -e "${PINK}${BOLD}$ai:${RESET}" ;;
+            gemini) echo -e "${GREEN}${BOLD}$ai:${RESET}" ;;
+            grok) echo -e "${RED}${BOLD}$ai:${RESET}" ;;
+        esac
+
+        cat "$output"
+        echo ""
+        rm -f "$output"
+    done
+}
+
+# Help
+show_help() {
+    show_banner
+    echo "Usage: rt-ask [options] <question>"
+    echo ""
+    echo "Options:"
+    echo "  -a, --all                Query all AIs in parallel"
+    echo "  -s, --specific AISOURCE   Query specific AIs (comma-separated)"
+    echo "  -h, --help               Show this help"
+    echo ""
+    echo "Examples:"
+    echo "  rt-ask 'How do I implement JWT auth?'"
+    echo "  rt-ask -s claude,codex 'Best database for this use case?'"
+    echo "  rt-ask -a 'Compare React vs Vue vs Svelte'"
+    echo ""
+    echo "Available AIs: claude, copilot, codex, gemini, grok"
+}
+
+# Main
+case "${1:-}" in
+    -h|--help|help)
+        show_help
+        ;;
+    -a|--all)
+        shift
+        ask_all "$@"
+        ;;
+    -s|--specific)
+        shift
+        local ais="$1"
+        shift
+        ask_specific "$ais" "$@"
+        ;;
+    "")
+        show_help
+        ;;
+    *)
+        # Default: ask all
+        ask_all "$@"
+        ;;
+esac

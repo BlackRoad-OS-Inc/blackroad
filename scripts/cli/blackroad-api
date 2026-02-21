@@ -1,0 +1,68 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-api - Check all BlackRoad API endpoints across the fleet
+# Usage: br-api [host]
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+BLUE='\033[38;5;69m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+NC='\033[0m'
+
+AGENTS=(cecilia lucidia octavia aria alice gematria anastasia)
+
+check_api() {
+    local host=$1
+    local port=$2
+    local name=$3
+
+    response=$(ssh -o ConnectTimeout=3 "$host" "curl -s http://localhost:$port/" 2>/dev/null)
+    if [[ -n "$response" ]]; then
+        status=$(echo "$response" | jq -r '.status // .service // "ok"' 2>/dev/null)
+        echo -e "  ${GREEN}●${NC} $name (port $port): $status"
+    else
+        echo -e "  ${DIM}○${NC} $name (port $port): ${DIM}offline${NC}"
+    fi
+}
+
+if [[ -n "$1" ]]; then
+    # Check specific host
+    host=$1
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${WHITE}API Status: ${AMBER}$host${NC}"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    check_api "$host" 8000 "FastAPI Agent"
+    check_api "$host" 9000 "Webhook Handler"
+    check_api "$host" 3000 "Node.js Server"
+    check_api "$host" 11434 "Ollama"
+else
+    # Check all hosts
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${WHITE}           BlackRoad API Fleet Status${NC}"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    for agent in "${AGENTS[@]}"; do
+        echo -e "${AMBER}$agent${NC}:"
+        # Quick ping first
+        if ssh -o ConnectTimeout=2 "$agent" "echo ok" &>/dev/null; then
+            check_api "$agent" 8000 "FastAPI"
+            check_api "$agent" 9000 "Webhooks"
+            check_api "$agent" 3000 "Node.js"
+        else
+            echo -e "  ${RED}✗${NC} ${DIM}unreachable${NC}"
+        fi
+        echo ""
+    done
+fi

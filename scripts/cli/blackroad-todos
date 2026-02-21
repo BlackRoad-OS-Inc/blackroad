@@ -1,0 +1,124 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Extract every TODO, idea, dream, wish
+# The future encoded in comments
+
+OUTPUT="/tmp/blackroad-future-dreams.md"
+
+cat > "$OUTPUT" << 'EOF'
+# Dreams Encoded in Comments
+## Every TODO, FIXME, HACK, and Wish
+
+This is the roadmap written in code comments. The future that hasn't happened yet.
+
+---
+
+## TODOs (The Work Ahead)
+
+EOF
+
+cd /tmp/prism-audit || exit
+
+echo "### High Priority" >> "$OUTPUT"
+find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.md" \) -exec grep -H "TODO.*IMPORTANT\|TODO.*URGENT\|TODO.*CRITICAL\|TODO.*HIGH" {} \; | head -50 | while IFS=: read -r file comment; do
+    echo "- [\`$(basename "$file")\`] $comment" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+
+echo "### General TODOs" >> "$OUTPUT"
+find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.md" \) -exec grep -H "TODO:" {} \; | grep -v "IMPORTANT\|URGENT\|CRITICAL" | head -100 | while IFS=: read -r file comment; do
+    clean_comment=$(echo "$comment" | sed 's/.*TODO://')
+    echo "- [\`$(basename "$file")\`] $clean_comment" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## FIXMEs (The Known Issues)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" \) -exec grep -H "FIXME:\|BUG:\|BROKEN:" {} \; | head -50 | while IFS=: read -r file comment; do
+    clean_comment=$(echo "$comment" | sed 's/.*FIXME://; s/.*BUG://; s/.*BROKEN://')
+    echo "- [\`$(basename "$file")\`] $clean_comment" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## HACKs (The Quick Fixes)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" \) -exec grep -H "HACK:\|XXX:\|TEMP:" {} \; | head -50 | while IFS=: read -r file comment; do
+    clean_comment=$(echo "$comment" | sed 's/.*HACK://; s/.*XXX://; s/.*TEMP://')
+    echo "- [\`$(basename "$file")\`] $clean_comment" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## NOTEs (The Wisdom)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.md" \) -exec grep -H "NOTE:\|IMPORTANT:\|REMEMBER:" {} \; | head -100 | while IFS=: read -r file comment; do
+    clean_comment=$(echo "$comment" | sed 's/.*NOTE://; s/.*IMPORTANT://; s/.*REMEMBER://')
+    echo "- [\`$(basename "$file")\`] $clean_comment" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Questions (The Unknowns)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.md" \) -exec grep -H "QUESTION:\|WHY:\|\?\?\?" {} \; | head -50 | while IFS=: read -r file comment; do
+    echo "- [\`$(basename "$file")\`] $comment" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Ideas (The Sparks)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type f -name "*.md" -exec grep -H "idea:\|IDEA:\|what if\|What if" {} \; | head -50 | while IFS=: read -r file comment; do
+    echo "- [\`$(basename "$file")\`] $comment" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Love & Care Comments" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.md" \) -exec grep -iH "love\|care\|dignity\|respect\|gentle\|kind" {} \; | grep "//" | head -50 | while IFS=: read -r file comment; do
+    echo "- [\`$(basename "$file")\`] $comment" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Summary Statistics" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+total_todos=$(find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.md" \) -exec grep -h "TODO:" {} \; | wc -l)
+total_fixmes=$(find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" \) -exec grep -h "FIXME:\|BUG:" {} \; | wc -l)
+total_hacks=$(find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" \) -exec grep -h "HACK:\|XXX:" {} \; | wc -l)
+total_notes=$(find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.md" \) -exec grep -h "NOTE:\|IMPORTANT:" {} \; | wc -l)
+
+echo "- **$total_todos** TODOs (future work planned)" >> "$OUTPUT"
+echo "- **$total_fixmes** FIXMEs (known issues to resolve)" >> "$OUTPUT"
+echo "- **$total_hacks** HACKs (temporary solutions)" >> "$OUTPUT"
+echo "- **$total_notes** NOTEs (important reminders)" >> "$OUTPUT"
+
+echo ""
+echo "Future dreams extracted to: $OUTPUT"
+wc -l "$OUTPUT"

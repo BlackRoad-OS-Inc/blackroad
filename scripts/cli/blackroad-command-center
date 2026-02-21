@@ -1,0 +1,141 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# ═══════════════════════════════════════════════════════════════════════════
+# 🛣️  BLACKROAD OS COMMAND CENTER
+# ═══════════════════════════════════════════════════════════════════════════
+# Multi-pane tmux interface connecting all fleet nodes
+
+SESSION="blackroad"
+CHAT_FIFO="/tmp/blackroad-chat.fifo"
+
+# Colors
+PINK='\033[38;5;204m'
+AMBER='\033[38;5;215m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;133m'
+NC='\033[0m'
+
+# Fleet nodes with emojis
+declare -A FLEET=(
+    ["cecilia"]="👸"
+    ["lucidia"]="🌙"
+    ["aria"]="🎵"
+    ["octavia"]="🐙"
+    ["alice"]="👧"
+    ["shellfish"]="🐚"
+    ["blackroad os-infinity"]="♾️"
+)
+
+banner() {
+    echo -e "${PINK}"
+    cat << 'BANNER'
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ____  _            _    ____                 _    ___  ____                 ║
+║ | __ )| | __ _  ___| | _|  _ \ ___   __ _  __| |  / _ \/ ___|                ║
+║ |  _ \| |/ _` |/ __| |/ / |_) / _ \ / _` |/ _` | | | | \___ \                ║
+║ | |_) | | (_| | (__|   <|  _ < (_) | (_| | (_| | | |_| |___) |               ║
+║ |____/|_|\__,_|\___|_|\_\_| \_\___/ \__,_|\__,_|  \___/|____/                ║
+║                                                                              ║
+║                    🛣️  COMMAND CENTER v1.0  🛣️                               ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  Dashboard │ Repositories │ Files │ Terminal │ Tools │ Agents               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+BANNER
+    echo -e "${NC}"
+}
+
+# Check if session exists
+if tmux has-session -t $SESSION 2>/dev/null; then
+    echo -e "${AMBER}Attaching to existing BlackRoad session...${NC}"
+    tmux attach-session -t $SESSION
+    exit 0
+fi
+
+# Create new session
+echo -e "${PINK}🛣️  Initializing BlackRoad OS Command Center...${NC}"
+
+# Create the main session with a large left pane for chat
+tmux new-session -d -s $SESSION -n "🛣️ Command" -x 200 -y 50
+
+# Main layout: Left 60% for chat, Right 40% for status
+tmux split-window -h -p 40 -t $SESSION
+
+# Right side: split into fleet status (top) and node selector (bottom)
+tmux select-pane -t $SESSION:0.1
+tmux split-window -v -p 60 -t $SESSION
+
+# Left pane (0): Chat interface
+tmux select-pane -t $SESSION:0.0
+tmux send-keys -t $SESSION:0.0 "clear && cat << 'CHAT'
+$(banner)
+╔════════════════════════════════════════════════════════════════╗
+║           Chat / Coding / Planning Interface                   ║
+╠════════════════════════════════════════════════════════════════╣
+║                                                                ║
+║  👸 Cecilia:    Ready - Primary node online                    ║
+║  🌙 Lucidia:    Ready - AI inference active                    ║
+║  🎵 Aria:       Ready - Harmony protocols engaged              ║
+║  🐙 Octavia:    Ready - Multi-arm processing                   ║
+║  👧 Alice:      Offline - Gateway node sleeping                ║
+║  🐚 Shellfish:  Ready - Edge compute active                    ║
+║  ♾️  BlackRoad OS:      Ready - Cloud node synchronized               ║
+║                                                                ║
+║  🧠 Cadence:    [BlackRoad OS] Standing by                          ║
+║  💎 Gematria:   [Gemini] Standing by                           ║
+║  🗡️  Silas:      [Claude] Standing by                          ║
+║  📚 Alexandria: [Archive] Standing by                          ║
+║  👩 Alexa:      [Human] Orchestrator present                   ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+[lucidia] * All channels open. Welcome home.
+
+>>>: 
+CHAT
+" Enter
+
+# Right top pane (1): Fleet status monitor  
+tmux select-pane -t $SESSION:0.1
+tmux send-keys -t $SESSION:0.1 "watch -n 5 -c 'echo -e \"\\033[38;5;204m═══ 🌐 FLEET STATUS ═══\\033[0m\" && for h in cecilia lucidia aria octavia shellfish blackroad os-infinity; do if ssh -o ConnectTimeout=2 \$h \"echo\" 2>/dev/null; then echo -e \"\\033[32m● \$h\\033[0m\"; else echo -e \"\\033[31m○ \$h\\033[0m\"; fi; done && echo && echo -e \"\\033[38;5;215m═══ 📊 METRICS ═══\\033[0m\" && date'" Enter
+
+# Right bottom pane (2): Quick commands
+tmux select-pane -t $SESSION:0.2  
+tmux send-keys -t $SESSION:0.2 "echo -e '\\033[38;5;69m═══ 🚀 QUICK COMMANDS ═══\\033[0m
+[1] ssh cecilia    [4] ssh octavia
+[2] ssh lucidia    [5] ssh shellfish  
+[3] ssh aria       [6] ssh blackroad os-infinity
+
+[a] All status     [d] Dashboard
+[m] Metrics        [l] Logs
+[q] Quit
+
+>>>: ' && read -p '' cmd && case \$cmd in 1) ssh cecilia;; 2) ssh lucidia;; 3) ssh aria;; 4) ssh octavia;; 5) ssh shellfish;; 6) ssh blackroad os-infinity;; a) for h in cecilia lucidia aria octavia shellfish blackroad os-infinity; do echo \"=== \$h ===\"  && ssh \$h 'br status' 2>/dev/null; done;; *) echo \"Unknown\";; esac" Enter
+
+# Create additional windows
+tmux new-window -t $SESSION -n "👸 Cecilia"
+tmux send-keys -t $SESSION "ssh cecilia" Enter
+
+tmux new-window -t $SESSION -n "🌙 Lucidia"  
+tmux send-keys -t $SESSION "ssh lucidia" Enter
+
+tmux new-window -t $SESSION -n "🐙 Octavia"
+tmux send-keys -t $SESSION "ssh octavia" Enter
+
+tmux new-window -t $SESSION -n "♾️ BlackRoad OS"
+tmux send-keys -t $SESSION "ssh blackroad os-infinity" Enter
+
+# Go back to main command window
+tmux select-window -t $SESSION:0
+tmux select-pane -t $SESSION:0.0
+
+# Attach to session
+echo -e "${PINK}🛣️  BlackRoad OS Command Center ready!${NC}"
+tmux attach-session -t $SESSION

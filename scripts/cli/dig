@@ -1,0 +1,55 @@
+#!/bin/bash
+# dig - BlackRoad AI Query Tool
+# Intercepts dig command to route queries to AI
+# Usage: dig <question> or dig (interactive mode)
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+RESET='\033[0m'
+
+# Check if this looks like a real DNS query (has dots or DNS record types)
+if [[ "$*" =~ \. ]] || [[ "$1" =~ ^(A|AAAA|MX|NS|TXT|SOA|CNAME|PTR)$ ]] || [[ "$*" =~ ^@ ]]; then
+    # Pass through to real dig
+    /usr/bin/dig "$@"
+    exit $?
+fi
+
+# AI mode
+if [ -z "$*" ]; then
+    # Interactive mode
+    echo -e "${PINK}╔═══════════════════════════════════════╗${RESET}"
+    echo -e "${PINK}║       DIG - BlackRoad AI Query        ║${RESET}"
+    echo -e "${PINK}╚═══════════════════════════════════════╝${RESET}"
+    echo ""
+    echo -e "${AMBER}Ask:${RESET} "
+    read -r QUERY
+else
+    QUERY="$*"
+fi
+
+[ -z "$QUERY" ] && exit 0
+
+echo ""
+echo -e "${AMBER}; <<>> DIG AI <<>> ${QUERY}${RESET}"
+echo ";; Query time: now"
+echo ";; SERVER: cecilia#11434(ollama)"
+echo ""
+
+# Route to local Ollama on cecilia
+RESPONSE=$(ssh -o ConnectTimeout=3 cecilia "ollama run cece3b:latest '$QUERY'" 2>/dev/null)
+
+if [ -n "$RESPONSE" ]; then
+    echo -e "${PINK};; ANSWER SECTION:${RESET}"
+    echo "$RESPONSE"
+else
+    # Fallback to claude CLI if available
+    if command -v claude &>/dev/null; then
+        echo -e "${PINK};; ANSWER SECTION (claude):${RESET}"
+        claude --print "$QUERY" 2>/dev/null | head -50
+    else
+        echo ";; connection timed out; no servers could be reached"
+    fi
+fi
+
+echo ""
+echo -e ";; WHEN: $(date)"

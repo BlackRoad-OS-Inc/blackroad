@@ -1,0 +1,29 @@
+#!/bin/bash
+PINK='\033[38;5;205m'
+NC='\033[0m'
+
+case "$1" in
+    send)
+        shift
+        python3 ~/.blackroad/notify/notify.py send "$@"
+        ;;
+    broadcast)
+        shift
+        python3 ~/.blackroad/notify/notify.py broadcast "$@"
+        ;;
+    recent)
+        python3 ~/.blackroad/notify/notify.py recent "${2:-10}"
+        ;;
+    alert)
+        shift
+        python3 ~/.blackroad/notify/notify.py send "ALERT" "$*" "error"
+        ;;
+    *)
+        echo "br-notify - Notification System"
+        echo "Commands:"
+        echo "  send <title> <message> [level]  - Send notification"
+        echo "  broadcast <title> <message>     - Broadcast to all nodes"
+        echo "  alert <message>                 - Send error alert"
+        echo "  recent [n]                      - Show recent notifications"
+        ;;
+esac

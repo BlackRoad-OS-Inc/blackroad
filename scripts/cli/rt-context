@@ -1,0 +1,282 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# ═══════════════════════════════════════════════════════════════════════════════
+# BLACKROAD ROUND TABLE CONTEXT BUS
+# Shared memory for AI coordination
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Colors
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+RESET='\033[0m'
+BOLD='\033[1m'
+
+# Config
+CONTEXT_DIR="$HOME/.blackroad/roundtable/context"
+MESSAGES_DIR="$HOME/.blackroad/roundtable/messages"
+SHARED_FILE="$CONTEXT_DIR/shared.md"
+MISSION_FILE="$CONTEXT_DIR/mission.txt"
+DECISIONS_FILE="$CONTEXT_DIR/decisions.jsonl"
+
+# Ensure directories exist
+mkdir -p "$CONTEXT_DIR" "$MESSAGES_DIR"
+
+# Post a message to the bus (any AI can call this)
+post_message() {
+    local from="$1"
+    local to="${2:-all}"
+    local message="$3"
+    local timestamp=$(date -Iseconds)
+    local msg_id=$(openssl rand -hex 4)
+
+    local json="{\"id\":\"$msg_id\",\"timestamp\":\"$timestamp\",\"from\":\"$from\",\"to\":\"$to\",\"message\":\"$message\"}"
+
+    echo "$json" >> "$MESSAGES_DIR/bus.jsonl"
+
+    # Also write to individual agent's inbox
+    if [[ "$to" != "all" ]]; then
+        mkdir -p "$MESSAGES_DIR/inbox/$to"
+        echo "$json" >> "$MESSAGES_DIR/inbox/$to/messages.jsonl"
+    fi
+
+    echo -e "${GREEN}✓ Message posted: $from → $to${RESET}"
+    echo "$msg_id"
+}
+
+# Read messages (for a specific AI or all)
+read_messages() {
+    local for_agent="${1:-all}"
+    local limit="${2:-10}"
+
+    if [[ "$for_agent" == "all" ]]; then
+        echo -e "${AMBER}=== Round Table Message Bus ===${RESET}"
+        tail -n "$limit" "$MESSAGES_DIR/bus.jsonl" 2>/dev/null | while read -r line; do
+            local from=$(echo "$line" | jq -r '.from')
+            local to=$(echo "$line" | jq -r '.to')
+            local msg=$(echo "$line" | jq -r '.message')
+            local ts=$(echo "$line" | jq -r '.timestamp')
+            echo -e "${VIOLET}[$ts]${RESET} ${BLUE}$from${RESET} → ${GREEN}$to${RESET}: $msg"
+        done
+    else
+        echo -e "${AMBER}=== Messages for $for_agent ===${RESET}"
+        cat "$MESSAGES_DIR/inbox/$for_agent/messages.jsonl" 2>/dev/null | tail -n "$limit" | while read -r line; do
+            local from=$(echo "$line" | jq -r '.from')
+            local msg=$(echo "$line" | jq -r '.message')
+            echo -e "${BLUE}$from${RESET}: $msg"
+        done
+    fi
+}
+
+# Set the mission (conductor only)
+set_mission() {
+    local mission="$*"
+    local timestamp=$(date -Iseconds)
+
+    echo "$mission" > "$MISSION_FILE"
+
+    # Announce to all
+    post_message "CONDUCTOR" "all" "NEW MISSION: $mission"
+
+    # Update shared context
+    cat > "$SHARED_FILE" << EOF
+# BlackRoad AI Round Table - Shared Context
+> Updated: $timestamp
+> Conductor: Alexa (alexandria)
+
+## CURRENT MISSION
+$mission
+
+## AI Status
+Check with: rt-context status
+
+## Recent Decisions
+$(tail -5 "$DECISIONS_FILE" 2>/dev/null | jq -r '"\(.timestamp): \(.ai) decided: \(.decision)"' 2>/dev/null || echo "None yet")
+
+## Protocol
+1. Read mission: \`rt-context mission\`
+2. Post proposal: \`rt-context propose <ai> <proposal>\`
+3. Vote on proposals: \`rt-context vote <ai> <proposal-id> yes/no\`
+4. Log decision: \`rt-context decide <ai> <decision>\`
+5. Report progress: \`rt-context progress <ai> <update>\`
+EOF
+
+    echo -e "${GREEN}✓ Mission set and broadcast to all AIs${RESET}"
+}
+
+# Get current mission
+get_mission() {
+    if [[ -f "$MISSION_FILE" ]]; then
+        echo -e "${AMBER}${BOLD}CURRENT MISSION:${RESET}"
+        echo ""
+        cat "$MISSION_FILE"
+    else
+        echo -e "${RED}No mission set. Use: rt-context mission set <description>${RESET}"
+    fi
+}
+
+# Propose a solution
+propose() {
+    local ai="$1"
+    local proposal="$2"
+    local timestamp=$(date -Iseconds)
+    local prop_id=$(openssl rand -hex 4)
+
+    local json="{\"id\":\"$prop_id\",\"timestamp\":\"$timestamp\",\"ai\":\"$ai\",\"proposal\":\"$proposal\",\"votes\":{}}"
+
+    echo "$json" >> "$CONTEXT_DIR/proposals.jsonl"
+    post_message "$ai" "all" "PROPOSAL [$prop_id]: $proposal"
+
+    echo -e "${GREEN}✓ Proposal submitted: $prop_id${RESET}"
+}
+
+# Log a decision
+decide() {
+    local ai="$1"
+    local decision="$2"
+    local timestamp=$(date -Iseconds)
+
+    local json="{\"timestamp\":\"$timestamp\",\"ai\":\"$ai\",\"decision\":\"$decision\"}"
+    echo "$json" >> "$DECISIONS_FILE"
+
+    post_message "$ai" "all" "DECISION: $decision"
+
+    echo -e "${GREEN}✓ Decision logged${RESET}"
+}
+
+# Report progress
+progress() {
+    local ai="$1"
+    local update="$2"
+    local timestamp=$(date -Iseconds)
+
+    local json="{\"timestamp\":\"$timestamp\",\"ai\":\"$ai\",\"progress\":\"$update\"}"
+    echo "$json" >> "$CONTEXT_DIR/progress.jsonl"
+
+    post_message "$ai" "all" "PROGRESS: $update"
+
+    echo -e "${GREEN}✓ Progress logged${RESET}"
+}
+
+# Show status of all AIs
+show_status() {
+    echo -e "${AMBER}${BOLD}=== AI Round Table Status ===${RESET}"
+    echo ""
+
+    # Check each AI
+    for ai in claude copilot codex gemini grok; do
+        local color=""
+        case $ai in
+            claude) color="${BLUE}" ;;
+            copilot) color="${VIOLET}" ;;
+            codex) color="${PINK}" ;;
+            gemini) color="${GREEN}" ;;
+            grok) color="${RED}" ;;
+        esac
+
+        # Check if AI has recent activity
+        local last_msg=$(grep "\"from\":\"$ai\"" "$MESSAGES_DIR/bus.jsonl" 2>/dev/null | tail -1)
+        if [[ -n "$last_msg" ]]; then
+            local ts=$(echo "$last_msg" | jq -r '.timestamp')
+            echo -e "${color}● $ai${RESET}: Last active $ts"
+        else
+            echo -e "${color}○ $ai${RESET}: No activity yet"
+        fi
+    done
+
+    echo ""
+    echo -e "${AMBER}Messages in bus:${RESET} $(wc -l < "$MESSAGES_DIR/bus.jsonl" 2>/dev/null || echo 0)"
+    echo -e "${AMBER}Decisions made:${RESET} $(wc -l < "$DECISIONS_FILE" 2>/dev/null || echo 0)"
+}
+
+# Watch the bus in real-time
+watch_bus() {
+    echo -e "${AMBER}${BOLD}Watching Round Table Bus (Ctrl+C to stop)...${RESET}"
+    echo ""
+    tail -f "$MESSAGES_DIR/bus.jsonl" 2>/dev/null | while read -r line; do
+        local from=$(echo "$line" | jq -r '.from')
+        local to=$(echo "$line" | jq -r '.to')
+        local msg=$(echo "$line" | jq -r '.message')
+        local ts=$(echo "$line" | jq -r '.timestamp' | cut -d'T' -f2 | cut -d'+' -f1)
+        echo -e "${VIOLET}[$ts]${RESET} ${BLUE}$from${RESET} → ${GREEN}$to${RESET}: $msg"
+    done
+}
+
+# Help
+show_help() {
+    echo -e "${AMBER}${BOLD}BlackRoad Round Table Context Bus${RESET}"
+    echo ""
+    echo "Usage: rt-context <command> [args]"
+    echo ""
+    echo -e "${VIOLET}Commands:${RESET}"
+    echo "  post <from> <to> <message>    Post message to bus"
+    echo "  read [agent] [limit]          Read messages"
+    echo "  mission                       Show current mission"
+    echo "  mission set <description>     Set new mission"
+    echo "  propose <ai> <proposal>       Submit proposal"
+    echo "  decide <ai> <decision>        Log decision"
+    echo "  progress <ai> <update>        Report progress"
+    echo "  status                        Show AI status"
+    echo "  watch                         Watch bus real-time"
+    echo "  context                       Show shared context"
+    echo "  help                          Show this help"
+    echo ""
+    echo -e "${PINK}Examples:${RESET}"
+    echo "  rt-context mission set 'Build authentication system'"
+    echo "  rt-context propose claude 'Use JWT tokens with refresh'"
+    echo "  rt-context decide claude 'Implementing JWT approach'"
+    echo "  rt-context progress claude 'Token generation complete'"
+}
+
+# Main
+case "${1:-help}" in
+    post)
+        post_message "$2" "$3" "$4"
+        ;;
+    read)
+        read_messages "$2" "${3:-10}"
+        ;;
+    mission)
+        if [[ "$2" == "set" ]]; then
+            shift 2
+            set_mission "$@"
+        else
+            get_mission
+        fi
+        ;;
+    propose)
+        propose "$2" "$3"
+        ;;
+    decide)
+        decide "$2" "$3"
+        ;;
+    progress)
+        progress "$2" "$3"
+        ;;
+    status)
+        show_status
+        ;;
+    watch)
+        watch_bus
+        ;;
+    context)
+        cat "$SHARED_FILE" 2>/dev/null || echo "No context yet"
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        show_help
+        ;;
+esac

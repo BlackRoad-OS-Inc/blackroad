@@ -1,0 +1,145 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Extract all API endpoints, routes, services
+# The interfaces to the world
+
+OUTPUT="/tmp/api-catalog.md"
+
+cat > "$OUTPUT" << 'EOF'
+# API Catalog
+## Every Endpoint, Route, Service, and Interface
+
+How the world talks to BlackRoad.
+
+---
+
+## REST API Endpoints
+
+EOF
+
+cd /tmp/prism-audit || exit
+
+echo "### Express/FastAPI Routes" >> "$OUTPUT"
+grep -r -h "app\.get\|app\.post\|app\.put\|app\.delete\|@app\.route\|router\." --include="*.ts" --include="*.js" --include="*.py" . | sort -u | head -100 >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "### GraphQL Schemas" >> "$OUTPUT"
+find . -name "*.graphql" -o -name "*schema*.ts" -o -name "*schema*.js" | head -10 | while read -r schema; do
+    echo "#### $schema" >> "$OUTPUT"
+    head -50 "$schema" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+done
+
+echo "---" >> "$OUTPUT"
+
+echo "### WebSocket Endpoints" >> "$OUTPUT"
+grep -r -h "WebSocket\|websocket\|ws:/\|wss:/\|socket\.on" --include="*.ts" --include="*.js" . | head -50 >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "### tRPC Procedures" >> "$OUTPUT"
+grep -r -h "trpc\|tRPC\|procedure" --include="*.ts" . | head -50 >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## API Documentation" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -name "*api*.md" -o -name "API*.md" | while read -r api_doc; do
+    echo "### $api_doc" >> "$OUTPUT"
+    head -100 "$api_doc" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+done
+
+echo "---" >> "$OUTPUT"
+
+echo "## OpenAPI/Swagger Specs" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -name "swagger.json" -o -name "openapi.json" -o -name "openapi.yaml" | while read -r spec; do
+    echo "### $spec" >> "$OUTPUT"
+    head -100 "$spec" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+done
+
+echo "---" >> "$OUTPUT"
+
+echo "## Service Definitions" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -name "*service*.ts" -o -name "*service*.js" -o -name "*service*.py" | head -20 | while read -r service; do
+    echo "### $service" >> "$OUTPUT"
+    # Extract class/function definitions
+    grep -A 3 "class\|export.*function\|def " "$service" | head -20 >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+done
+
+echo "---" >> "$OUTPUT"
+
+echo "## External Integrations" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+echo "### Airtable" >> "$OUTPUT"
+find ./br-ingest-airtable -name "*.ts" -o -name "*.js" 2>/dev/null | head -3 | while read -r file; do
+    grep -h "airtable\|Airtable" "$file" | head -10 >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+
+echo "### Stripe" >> "$OUTPUT"
+find ./br-ingest-stripe -name "*.ts" -o -name "*.js" 2>/dev/null | head -3 | while read -r file; do
+    grep -h "stripe\|Stripe" "$file" | head -10 >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+
+echo "### GitHub" >> "$OUTPUT"
+find ./br-ingest-github -name "*.ts" -o -name "*.js" 2>/dev/null | head -3 | while read -r file; do
+    grep -h "github\|GitHub\|octokit" "$file" | head -10 >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+
+echo "### Twitter/X" >> "$OUTPUT"
+find ./br-ingest-source-x -name "*.ts" -o -name "*.js" 2>/dev/null | head -3 | while read -r file; do
+    grep -h "twitter\|Twitter" "$file" | head -10 >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Database Schemas" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -name "*schema*.sql" -o -name "*migration*.sql" -o -name "schema.prisma" | head -10 | while read -r db; do
+    echo "### $db" >> "$OUTPUT"
+    head -50 "$db" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+done
+
+echo "---" >> "$OUTPUT"
+
+echo "## RPC/gRPC Services" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -name "*.proto" | while read -r proto; do
+    echo "### $proto" >> "$OUTPUT"
+    cat "$proto" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+done
+
+echo ""
+echo "API catalog complete: $OUTPUT"
+wc -l "$OUTPUT"

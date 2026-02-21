@@ -1,0 +1,61 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-task - Queue a task for an agent to execute
+# Usage: br-task <agent> <task-id> "command"
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+WHITE='\033[1;37m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+if [[ -z "$1" || -z "$2" || -z "$3" ]]; then
+    echo -e "${PINK}br-task${NC} - Queue task for agent"
+    echo ""
+    echo "Usage: br-task <agent> <task-id> \"command\""
+    echo ""
+    echo "Examples:"
+    echo "  br-task cecilia backup-db \"pg_dump mydb > backup.sql\""
+    echo "  br-task lucidia update-sys \"sudo apt update && sudo apt upgrade -y\""
+    exit 1
+fi
+
+agent="$1"
+task_id="$2"
+command="$3"
+ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+task_json=$(cat <<EOF
+{
+    "task_id": "$task_id",
+    "command": "$command",
+    "queued_at": "$ts",
+    "queued_by": "erebus"
+}
+EOF
+)
+
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${WHITE}Queuing task: ${AMBER}$task_id${NC}"
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+ssh -o ConnectTimeout=10 "$agent" "
+    mkdir -p ~/.blackroad-autonomy/tasks/pending
+    echo '$task_json' > ~/.blackroad-autonomy/tasks/pending/${task_id}.json
+" 2>/dev/null
+
+if [[ $? -eq 0 ]]; then
+    echo -e "Task ${GREEN}queued${NC} on $agent"
+    echo -e "Will execute on next autonomy cycle (within 5 min)"
+else
+    echo -e "${PINK}Error:${NC} Could not reach $agent"
+fi

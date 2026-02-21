@@ -1,0 +1,184 @@
+#!/bin/bash
+# br-auth - Identity & Access Management CLI
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+RED='\033[38;5;196m'
+NC='\033[0m'
+
+AUTH_DIR="$HOME/.blackroad/auth"
+AUTH_URL="http://localhost:9000"
+TOKEN_FILE="$AUTH_DIR/.token"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+# Helper to get stored token
+get_token() {
+    [ -f "$TOKEN_FILE" ] && cat "$TOKEN_FILE"
+}
+
+case "$cmd" in
+    start)
+        echo -e "${PINK}Starting Auth Server...${NC}"
+        nohup python3 "$AUTH_DIR/auth_server.py" > "$AUTH_DIR/logs/auth.log" 2>&1 &
+        echo $! > "$AUTH_DIR/auth.pid"
+        sleep 1
+        echo -e "${GREEN}Auth Server started (PID: $(cat "$AUTH_DIR/auth.pid"))${NC}"
+        echo "  API: $AUTH_URL"
+        echo "  Default: admin/blackroad"
+        ;;
+    stop)
+        if [ -f "$AUTH_DIR/auth.pid" ]; then
+            kill $(cat "$AUTH_DIR/auth.pid") 2>/dev/null
+            rm "$AUTH_DIR/auth.pid"
+            echo -e "${AMBER}Auth Server stopped${NC}"
+        fi
+        ;;
+    status)
+        if [ -f "$AUTH_DIR/auth.pid" ] && kill -0 $(cat "$AUTH_DIR/auth.pid") 2>/dev/null; then
+            echo -e "${GREEN}●${NC} Auth Server running"
+            curl -s "$AUTH_URL/stats" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f\"  Users: {data['users']}, API Keys: {data['api_keys']}, Sessions: {data['active_sessions']}\")
+print(f\"  Logins: {data['logins']}, API Calls: {data['api_calls']}, Failed: {data['failed_auth']}\")
+" 2>/dev/null
+        else
+            echo -e "${RED}○${NC} Auth Server not running"
+        fi
+        ;;
+    login)
+        username="${1:-admin}"
+        echo -n "Password: "
+        read -s password
+        echo ""
+
+        result=$(curl -s -X POST "$AUTH_URL/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"$username\",\"password\":\"$password\"}")
+
+        if echo "$result" | grep -q "access_token"; then
+            echo "$result" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])" > "$TOKEN_FILE"
+            echo -e "${GREEN}Login successful!${NC}"
+            echo "$result" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f\"  User: {data['user']['username']}\")
+print(f\"  Roles: {', '.join(data['user']['roles'])}\")
+print(f\"  Expires: {data['expires_in']}s\")
+"
+        else
+            echo -e "${RED}Login failed${NC}"
+            echo "$result"
+        fi
+        ;;
+    logout)
+        token=$(get_token)
+        if [ -n "$token" ]; then
+            curl -s -X POST "$AUTH_URL/auth/logout" \
+                -H "Authorization: Bearer $token"
+            rm -f "$TOKEN_FILE"
+            echo -e "${AMBER}Logged out${NC}"
+        else
+            echo "Not logged in"
+        fi
+        ;;
+    whoami)
+        token=$(get_token)
+        if [ -z "$token" ]; then
+            echo "Not logged in. Run: br-auth login"
+            exit 1
+        fi
+
+        curl -s -H "Authorization: Bearer $token" "$AUTH_URL/auth/validate" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if data.get('valid'):
+    print(f\"User: {data['user']['username']}\")
+    print(f\"ID: {data['user']['id']}\")
+    print(f\"Roles: {', '.join(data['user']['roles'])}\")
+else:
+    print('Session expired. Run: br-auth login')
+"
+        ;;
+    users)
+        token=$(get_token)
+        curl -s -H "Authorization: Bearer $token" "$AUTH_URL/users" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if isinstance(data, list):
+    print(f'{\"USERNAME\":<20} {\"ROLES\":<30} {\"ENABLED\":<10}')
+    for u in data:
+        roles = ', '.join(u['roles'])
+        enabled = '✓' if u['enabled'] else '✗'
+        print(f'{u[\"username\"]:<20} {roles:<30} {enabled:<10}')
+else:
+    print(data)
+"
+        ;;
+    create-user)
+        username="$1"; password="$2"; roles="${3:-developer}"
+        if [ -z "$username" ] || [ -z "$password" ]; then
+            echo "Usage: br-auth create-user <username> <password> [roles]"
+            exit 1
+        fi
+        token=$(get_token)
+        curl -s -X POST "$AUTH_URL/users" \
+            -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"$username\",\"password\":\"$password\",\"roles\":[\"$roles\"]}" | python3 -m json.tool
+        ;;
+    create-key)
+        name="${1:-api-key}"
+        token=$(get_token)
+        result=$(curl -s -X POST "$AUTH_URL/auth/apikey" \
+            -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"$name\"}")
+
+        if echo "$result" | grep -q "key"; then
+            echo -e "${GREEN}API Key created:${NC}"
+            echo "$result" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f\"  Key: {data['key']}\")
+print(f\"  ID: {data['key_id']}\")
+print(f\"\\n  Save this key - it won't be shown again!\")
+"
+        else
+            echo -e "${RED}Failed to create key${NC}"
+            echo "$result"
+        fi
+        ;;
+    validate-key)
+        key="$1"
+        if [ -z "$key" ]; then
+            echo "Usage: br-auth validate-key <api-key>"
+            exit 1
+        fi
+        curl -s -H "X-API-Key: $key" "$AUTH_URL/auth/apikey/validate" | python3 -m json.tool
+        ;;
+    help|*)
+        echo -e "${PINK}br-auth - Identity & Access Management${NC}"
+        echo ""
+        echo "Server:"
+        echo "  start                      Start auth server"
+        echo "  stop                       Stop auth server"
+        echo "  status                     Show status"
+        echo ""
+        echo "Authentication:"
+        echo "  login [username]           Login (prompts for password)"
+        echo "  logout                     Logout current session"
+        echo "  whoami                     Show current user"
+        echo ""
+        echo "User Management:"
+        echo "  users                      List all users"
+        echo "  create-user <u> <p> [r]    Create user"
+        echo ""
+        echo "API Keys:"
+        echo "  create-key [name]          Create API key"
+        echo "  validate-key <key>         Validate API key"
+        ;;
+esac

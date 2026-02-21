@@ -1,0 +1,42 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# BlackRoad OS Workflow ID Generator
+# Scale-first, never-reused, human+machine readable
+
+PREFIX="${1:-WF}"
+SCOPE="${2:-SYS}"
+TIMESTAMP=$(date +%Y%m%d)
+SEQ_FILE=~/.blackroad/workflow-id-seq-${TIMESTAMP}
+
+# Create dirs
+mkdir -p ~/.blackroad
+
+# Get and increment sequence
+if [ -f "$SEQ_FILE" ]; then
+    SEQ=$(cat "$SEQ_FILE")
+    SEQ=$((SEQ + 1))
+else
+    SEQ=1
+fi
+
+# Save new sequence
+echo "$SEQ" > "$SEQ_FILE"
+
+# Format with zero-padding
+SEQ_PADDED=$(printf "%04d" $SEQ)
+
+# Generate ID
+WORKFLOW_ID="${PREFIX}-${TIMESTAMP}-${SCOPE}-${SEQ_PADDED}"
+
+# Log to registry (append-only)
+echo "{\"id\":\"$WORKFLOW_ID\",\"created\":\"$(date -Iseconds)\",\"prefix\":\"$PREFIX\",\"scope\":\"$SCOPE\",\"seq\":$SEQ}" >> ~/.blackroad/workflow-id-registry.jsonl
+
+echo "$WORKFLOW_ID"

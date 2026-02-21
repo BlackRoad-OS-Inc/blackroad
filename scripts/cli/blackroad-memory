@@ -1,0 +1,115 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-memory - BlackRoad distributed memory management
+# Usage: br-memory <command>
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+WHITE='\033[1;37m'
+NC='\033[0m'
+
+AGENTS=(cecilia lucidia octavia aria anastasia)
+MEMORY_DIR="$HOME/.blackroad/memory"
+JOURNAL="$MEMORY_DIR/journals/master-journal.jsonl"
+
+case "$1" in
+    status|"")
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${WHITE}           [MEMORY] Federation Status${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+
+        for agent in "${AGENTS[@]}"; do
+            echo -n -e "${AMBER}$agent${NC}: "
+            result=$(ssh -o ConnectTimeout=3 "$agent" 'wc -l < ~/.blackroad/memory/journals/master-journal.jsonl 2>/dev/null || echo 0' 2>/dev/null)
+            if [[ -n "$result" && "$result" != "0" ]]; then
+                echo -e "${GREEN}$result entries${NC}"
+            else
+                echo -e "no journal"
+            fi
+        done
+
+        echo ""
+        local_count=$(wc -l < "$JOURNAL" 2>/dev/null || echo "0")
+        echo -e "${BLUE}Local (alexandria):${NC} $local_count entries"
+        ;;
+
+    sync)
+        echo -e "${PINK}Syncing [MEMORY] to all agents...${NC}"
+
+        for agent in "${AGENTS[@]}"; do
+            echo -n "$agent: "
+            ssh "$agent" 'mkdir -p ~/.blackroad/memory/journals' 2>/dev/null
+            rsync -az "$JOURNAL" "$agent":~/.blackroad/memory/journals/ 2>/dev/null && \
+                echo -e "${GREEN}synced${NC}" || echo "failed"
+        done
+
+        echo -e "\n${GREEN}Memory federation synced${NC}"
+        ;;
+
+    collect)
+        echo -e "${PINK}Collecting new entries from all agents...${NC}"
+
+        temp_file=$(mktemp)
+        for agent in "${AGENTS[@]}"; do
+            echo -n "$agent: "
+            # Get entries from last hour
+            ssh "$agent" 'tail -100 ~/.blackroad/memory/journals/master-journal.jsonl 2>/dev/null' >> "$temp_file" 2>/dev/null && \
+                echo -e "${GREEN}collected${NC}" || echo "skipped"
+        done
+
+        # Merge unique entries
+        sort -u "$temp_file" >> "$JOURNAL"
+        rm "$temp_file"
+
+        echo -e "\n${GREEN}Entries collected and merged${NC}"
+        ;;
+
+    broadcast)
+        shift
+        message="$*"
+        echo -e "${PINK}Broadcasting to all agents: $message${NC}"
+
+        for agent in "${AGENTS[@]}"; do
+            ssh "$agent" "~/memory-system.sh log broadcast alexandria '$message' 'federation'" &
+        done
+        wait
+        echo -e "${GREEN}Broadcast complete${NC}"
+        ;;
+
+    recent)
+        n="${2:-5}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${WHITE}  Recent [MEMORY] Entries (all agents)${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+
+        for agent in "${AGENTS[@]}"; do
+            echo -e "${AMBER}$agent:${NC}"
+            ssh -o ConnectTimeout=3 "$agent" "tail -$n ~/.blackroad/memory/journals/master-journal.jsonl 2>/dev/null | jq -r '\"  [\(.action)] \(.entity)\"' 2>/dev/null" || echo "  (unavailable)"
+            echo ""
+        done
+        ;;
+
+    *)
+        echo -e "${PINK}br-memory${NC} - Distributed memory management"
+        echo ""
+        echo "Commands:"
+        echo "  status     - Show federation status"
+        echo "  sync       - Sync local memory to all agents"
+        echo "  collect    - Collect entries from all agents"
+        echo "  broadcast  - Send message to all agents"
+        echo "  recent [n] - Show recent entries from all"
+        ;;
+esac

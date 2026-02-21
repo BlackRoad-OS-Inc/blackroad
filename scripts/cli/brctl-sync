@@ -1,0 +1,149 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# brctl-sync - Sync files across cluster nodes
+# Usage: brctl-sync <command> [args]
+
+NODES="cecilia lucidia octavia aria blackroad os cadence"
+SYNC_DIR="/opt/blackroad/shared"
+
+usage() {
+    cat << 'EOF'
+brctl-sync - Cluster File Synchronization
+
+USAGE:
+    brctl-sync <command> [args]
+
+COMMANDS:
+    push <file> [nodes]     Push file to all/specified nodes
+    pull <node> <file>      Pull file from a node
+    broadcast <file>        Push file to ALL online nodes
+    collect <remote> <local> Collect file from all nodes
+    init                    Initialize sync directories on all nodes
+
+EXAMPLES:
+    brctl-sync push config.yaml             # Push to all nodes
+    brctl-sync push script.sh cecilia       # Push to cecilia only
+    brctl-sync broadcast /opt/blackroad/bin/brnode
+    brctl-sync collect /var/log/syslog ./logs/
+EOF
+}
+
+# Push file to nodes
+push_file() {
+    local file="$1"
+    shift
+    local targets="${@:-$NODES}"
+
+    if [ ! -f "$file" ]; then
+        echo "File not found: $file"
+        return 1
+    fi
+
+    local filename=$(basename "$file")
+
+    for node in $targets; do
+        echo -n "$node: "
+        if ssh -o ConnectTimeout=2 -o BatchMode=yes "$node" "true" 2>/dev/null; then
+            cat "$file" | ssh "$node" "cat > $SYNC_DIR/$filename" 2>/dev/null && echo "OK" || echo "FAILED"
+        else
+            echo "OFFLINE"
+        fi
+    done
+}
+
+# Pull file from node
+pull_file() {
+    local node="$1"
+    local remote_file="$2"
+    local local_file="${3:-$(basename $remote_file)}"
+
+    echo "Pulling $remote_file from $node..."
+    ssh "$node" "cat $remote_file" > "$local_file" 2>/dev/null && echo "OK: $local_file" || echo "FAILED"
+}
+
+# Broadcast file to all online nodes
+broadcast_file() {
+    local file="$1"
+    local remote_path="${2:-$file}"
+
+    if [ ! -f "$file" ]; then
+        echo "File not found: $file"
+        return 1
+    fi
+
+    for node in $NODES; do
+        echo -n "$node: "
+        if ssh -o ConnectTimeout=2 -o BatchMode=yes "$node" "true" 2>/dev/null; then
+            local dir=$(dirname "$remote_path")
+            ssh "$node" "mkdir -p $dir" 2>/dev/null
+            cat "$file" | ssh "$node" "cat > $remote_path && chmod +x $remote_path 2>/dev/null" && echo "OK" || echo "FAILED"
+        else
+            echo "OFFLINE"
+        fi
+    done
+}
+
+# Collect file from all nodes
+collect_files() {
+    local remote_file="$1"
+    local local_dir="$2"
+
+    mkdir -p "$local_dir"
+
+    for node in $NODES; do
+        echo -n "$node: "
+        if ssh -o ConnectTimeout=2 -o BatchMode=yes "$node" "true" 2>/dev/null; then
+            local filename=$(basename "$remote_file")
+            ssh "$node" "cat $remote_file" > "$local_dir/${node}-${filename}" 2>/dev/null && echo "OK" || echo "FAILED"
+        else
+            echo "OFFLINE"
+        fi
+    done
+}
+
+# Initialize sync directories
+init_sync() {
+    for node in $NODES; do
+        echo -n "$node: "
+        if ssh -o ConnectTimeout=2 -o BatchMode=yes "$node" "true" 2>/dev/null; then
+            ssh "$node" "sudo mkdir -p $SYNC_DIR && sudo chown \$(whoami) $SYNC_DIR" 2>/dev/null && echo "OK" || echo "FAILED"
+        else
+            echo "OFFLINE"
+        fi
+    done
+}
+
+case "${1:-}" in
+    push)
+        shift
+        push_file "$@"
+        ;;
+    pull)
+        pull_file "$2" "$3" "$4"
+        ;;
+    broadcast)
+        broadcast_file "$2" "$3"
+        ;;
+    collect)
+        collect_files "$2" "$3"
+        ;;
+    init)
+        init_sync
+        ;;
+    -h|--help|help|"")
+        usage
+        ;;
+    *)
+        echo "Unknown command: $1"
+        usage
+        exit 1
+        ;;
+esac

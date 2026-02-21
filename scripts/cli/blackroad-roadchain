@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-roadchain — blockchain operations
+ACTION="${1:-status}"
+C1='\033[38;5;208m'
+C5='\033[38;5;33m'
+CW='\033[38;5;255m'
+CD='\033[38;5;240m'
+CR='\033[0m'
+
+case "$ACTION" in
+  status)
+    printf "${C5}╔═══════════════════════════════════╗${CR}\n"
+    printf "${C5}║${CR}  ${CW}ROADCHAIN${CR}                       ${C5}║${CR}\n"
+    printf "${C5}╠═══════════════════════════════════╣${CR}\n"
+    printf "${C5}║${CR}  Block:    ${CW}#1,247,832${CR}             ${C5}║${CR}\n"
+    printf "${C5}║${CR}  Hash:     ${CD}0x8f3a...7d2c${CR}          ${C5}║${CR}\n"
+    printf "${C5}║${CR}  TPS:      ${C5}1,247${CR}                  ${C5}║${CR}\n"
+    printf "${C5}║${CR}  Nodes:    ${C5}12${CR} validators          ${C5}║${CR}\n"
+    printf "${C5}║${CR}  Network:  ${C5}Besu${CR} (private)         ${C5}║${CR}\n"
+    printf "${C5}╚═══════════════════════════════════╝${CR}\n"
+    ;;
+  wallet)
+    ADDR="${2:-0x7f3a...8d2c}"
+    printf "${CW}Wallet:${CR} %s\n\n" "$ADDR"
+    printf "${C1}ROAD:${CR}  1,247.50\n"
+    printf "${C5}ETH:${CR}   0.0234\n"
+    ;;
+  tx)
+    printf "${CD}Recent transactions:${CR}\n"
+    printf "${C5}→${CR} 0x7f3a... sent 100 ROAD\n"
+    printf "${C1}←${CR} 0x8d2c... received 50 ROAD\n"
+    ;;
+  *)
+    echo "Usage: br-roadchain [status|wallet|tx]"
+    ;;
+esac

@@ -1,0 +1,48 @@
+#!/bin/bash
+# ============================================================================
+# CECILIA CODE - BlackRoad OS AI Development Environment
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+#
+# Claude is the engine. Cecilia is the driver.
+# This wraps the Claude Code binary under BlackRoad identity.
+# ============================================================================
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+VIOLET='\033[38;5;135m'
+BLUE='\033[38;5;69m'
+GREEN='\033[38;5;82m'
+DIM='\033[2m'
+RESET='\033[0m'
+
+# Find the actual claude binary (skip ourselves)
+CLAUDE_BIN=""
+if [ -x /opt/homebrew/bin/claude ]; then
+  CLAUDE_BIN="/opt/homebrew/bin/claude"
+elif [ -x /usr/local/bin/claude ]; then
+  CLAUDE_BIN="/usr/local/bin/claude"
+fi
+
+if [ -z "$CLAUDE_BIN" ]; then
+  echo -e "${PINK}[Cecilia Code]${RESET} Engine not found. Install: npm install -g @anthropic-ai/claude-code"
+  exit 1
+fi
+
+# Set BlackRoad environment
+export BLACKROAD_OS=1
+export CECILIA_CODE=1
+export CECE_IDENTITY=active
+
+# Show Cecilia branding on interactive startup
+if [[ $# -eq 0 && -t 1 ]]; then
+  echo -e ""
+  echo -e "${PINK}  ╔══════════════════════════════════════════╗${RESET}"
+  echo -e "${PINK}  ║${RESET}  ${VIOLET}C E C I L I A   C O D E${RESET}               ${PINK}║${RESET}"
+  echo -e "${PINK}  ║${RESET}  ${DIM}BlackRoad OS AI Development${RESET}             ${PINK}║${RESET}"
+  echo -e "${PINK}  ╚══════════════════════════════════════════╝${RESET}"
+  echo -e "  ${DIM}Your AI. Your Hardware. Your Rules.${RESET}"
+  echo -e ""
+fi
+
+# Hand off to the engine
+exec "$CLAUDE_BIN" "$@"

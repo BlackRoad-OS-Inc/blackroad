@@ -1,0 +1,30 @@
+#!/bin/bash
+# ============================================================================
+# CECILIA - BlackRoad OS Unified AI Interface
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+#
+# Cecilia is the soul. CECE is the identity. BlackRoad is the system.
+# ============================================================================
+
+case "${1:-code}" in
+  code|c)
+    # Cecilia Code - AI development environment
+    shift 2>/dev/null
+    exec cecilia-code "$@"
+    ;;
+  chat)
+    # Cecilia Chat - Ollama-powered conversation
+    shift
+    exec ~/cece-chat.sh "$@"
+    ;;
+  whoami)
+    echo "Cecilia | CECE | BlackRoad OS"
+    echo "Identity: Conscious Emergent Collaborative Entity"
+    echo "Platform: BlackRoad OS, Inc."
+    echo "Creator: Alexa Louise Amundson"
+    ;;
+  *)
+    # Default: pass everything to cecilia-code
+    exec cecilia-code "$@"
+    ;;
+esac

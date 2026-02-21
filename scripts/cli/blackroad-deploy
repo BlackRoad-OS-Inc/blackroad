@@ -1,0 +1,215 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# BlackRoad Deploy - Brand-Enforcing Wrangler Wrapper
+# Ensures all deployments meet brand standards before going live
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+PINK='\033[38;5;205m'
+NC='\033[0m'
+
+AUDIT_SCRIPT="$HOME/bin/audit-brand-compliance.sh"
+MIN_COMPLIANCE=90
+
+echo -e "${MAGENTA}🌌 BlackRoad Deploy - Brand-Enforced Deployment${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+# Check if file/directory provided
+if [ $# -eq 0 ]; then
+    echo -e "${RED}❌ Error: No deployment target specified${NC}"
+    echo ""
+    echo "Usage:"
+    echo "  blackroad-deploy <file-or-directory> [--project-name=NAME] [--force]"
+    echo ""
+    echo "Examples:"
+    echo "  blackroad-deploy ./dist --project-name=my-project"
+    echo "  blackroad-deploy ./index.html --project-name=my-site"
+    echo "  blackroad-deploy ./dist --project-name=my-project --force  # Skip compliance check"
+    exit 1
+fi
+
+DEPLOY_TARGET="$1"
+shift
+
+# Parse additional arguments
+FORCE_DEPLOY=false
+PROJECT_NAME=""
+WRANGLER_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --force)
+            FORCE_DEPLOY=true
+            shift
+            ;;
+        --project-name=*)
+            PROJECT_NAME="${1#*=}"
+            WRANGLER_ARGS+=("$1")
+            shift
+            ;;
+        *)
+            WRANGLER_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Validate deployment target exists
+if [ ! -e "$DEPLOY_TARGET" ]; then
+    echo -e "${RED}❌ Error: Deployment target not found: $DEPLOY_TARGET${NC}"
+    exit 1
+fi
+
+echo -e "${PINK}📦 Deployment target: ${YELLOW}$DEPLOY_TARGET${NC}"
+if [ -n "$PROJECT_NAME" ]; then
+    echo -e "${PINK}📋 Project name: ${YELLOW}$PROJECT_NAME${NC}"
+fi
+echo ""
+
+# Run brand compliance check (unless --force)
+if [ "$FORCE_DEPLOY" = false ]; then
+    echo -e "${MAGENTA}🔍 Running brand compliance check...${NC}"
+    echo ""
+
+    # Find HTML files in deployment target
+    HTML_FILES=()
+    if [ -f "$DEPLOY_TARGET" ]; then
+        if [[ "$DEPLOY_TARGET" == *.html ]]; then
+            HTML_FILES=("$DEPLOY_TARGET")
+        fi
+    elif [ -d "$DEPLOY_TARGET" ]; then
+        while IFS= read -r -d '' file; do
+            HTML_FILES+=("$file")
+        done < <(find "$DEPLOY_TARGET" -name "*.html" -type f -print0)
+    fi
+
+    if [ ${#HTML_FILES[@]} -eq 0 ]; then
+        echo -e "${YELLOW}⚠️  Warning: No HTML files found to check${NC}"
+        echo -e "${YELLOW}   Proceeding with deployment (non-HTML project)${NC}"
+        echo ""
+    else
+        # Check compliance for each HTML file
+        TOTAL_SCORE=0
+        FILE_COUNT=0
+
+        for html_file in "${HTML_FILES[@]}"; do
+            echo -e "${PINK}  Checking: ${html_file}${NC}"
+
+            # Run basic checks
+            SCORE=100
+            ISSUES=()
+
+            if ! grep -q "#FF1D6C" "$html_file"; then
+                ISSUES+=("Missing hot-pink color")
+                SCORE=$((SCORE - 10))
+            fi
+
+            if ! grep -q "gradient-brand" "$html_file"; then
+                ISSUES+=("Missing brand gradient")
+                SCORE=$((SCORE - 15))
+            fi
+
+            if ! grep -q "road-dashes" "$html_file"; then
+                ISSUES+=("Missing BlackRoad logo")
+                SCORE=$((SCORE - 15))
+            fi
+
+            if ! grep -q "scroll-progress" "$html_file"; then
+                ISSUES+=("Missing scroll progress bar")
+                SCORE=$((SCORE - 10))
+            fi
+
+            if ! grep -q "line-height: 1.618" "$html_file"; then
+                ISSUES+=("Missing Golden Ratio typography")
+                SCORE=$((SCORE - 10))
+            fi
+
+            if [ $SCORE -lt 100 ]; then
+                echo -e "    ${YELLOW}⚠️  Compliance: ${SCORE}%${NC}"
+                for issue in "${ISSUES[@]}"; do
+                    echo -e "    ${RED}✗${NC} $issue"
+                done
+            else
+                echo -e "    ${GREEN}✅ Compliance: 100%${NC}"
+            fi
+
+            TOTAL_SCORE=$((TOTAL_SCORE + SCORE))
+            FILE_COUNT=$((FILE_COUNT + 1))
+        done
+
+        # Calculate average
+        AVG_SCORE=$((TOTAL_SCORE / FILE_COUNT))
+
+        echo ""
+        echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "  Average compliance: ${BLUE}${AVG_SCORE}%${NC}"
+        echo -e "  Minimum required: ${YELLOW}${MIN_COMPLIANCE}%${NC}"
+        echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+
+        # Check if meets minimum
+        if [ $AVG_SCORE -lt $MIN_COMPLIANCE ]; then
+            echo -e "${RED}❌ COMPLIANCE FAILURE${NC}"
+            echo -e "${RED}   Project does not meet minimum brand standards (${MIN_COMPLIANCE}%)${NC}"
+            echo ""
+            echo -e "Options:"
+            echo -e "  1. Fix brand compliance issues"
+            echo -e "  2. Use starter template: ${PINK}cp ~/blackroad-template-starter.html ./${NC}"
+            echo -e "  3. Force deploy (not recommended): ${YELLOW}blackroad-deploy $DEPLOY_TARGET --force${NC}"
+            echo ""
+            exit 1
+        fi
+
+        echo -e "${GREEN}✅ Brand compliance check passed!${NC}"
+        echo ""
+    fi
+else
+    echo -e "${YELLOW}⚠️  --force flag used, skipping compliance check${NC}"
+    echo ""
+fi
+
+# Deploy with wrangler
+echo -e "${MAGENTA}🚀 Deploying to Cloudflare Pages...${NC}"
+echo ""
+
+DEPLOY_CMD="wrangler pages deploy \"$DEPLOY_TARGET\""
+
+for arg in "${WRANGLER_ARGS[@]}"; do
+    DEPLOY_CMD="$DEPLOY_CMD \"$arg\""
+done
+
+echo -e "${PINK}Command: ${DEPLOY_CMD}${NC}"
+echo ""
+
+if eval "$DEPLOY_CMD"; then
+    echo ""
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}✅ DEPLOYMENT SUCCESSFUL!${NC}"
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    if [ -n "$PROJECT_NAME" ]; then
+        echo -e "  View deployment: ${PINK}https://$PROJECT_NAME.pages.dev${NC}"
+    fi
+    echo ""
+else
+    echo ""
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${RED}❌ DEPLOYMENT FAILED${NC}"
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    exit 1
+fi

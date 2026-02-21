@@ -1,0 +1,53 @@
+#!/bin/bash
+# br-status - Quick terminal status view
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+RED='\033[38;5;196m'
+NC='\033[0m'
+
+echo -e "${PINK}╭─────────────────────────────────────────────────────────────────────────────╮${NC}"
+echo -e "${PINK}│${NC}              ${AMBER}⬡${NC} ${PINK}BLACKROAD INFRASTRUCTURE STATUS${NC}                           ${PINK}│${NC}"
+echo -e "${PINK}╰─────────────────────────────────────────────────────────────────────────────╯${NC}"
+echo ""
+
+# Services
+echo -e "${BLUE}SERVICES:${NC}"
+services=("auth:9000" "logs:5141" "db:5432" "mq:5672" "registry:8500" "containers:8100" "lb:8090" "cache:6379" "scheduler:8300")
+for svc in "${services[@]}"; do
+    name="${svc%:*}"
+    port="${svc#*:}"
+    if nc -z localhost "$port" 2>/dev/null; then
+        echo -e "  ${GREEN}●${NC} $name (:$port)"
+    else
+        echo -e "  ${RED}○${NC} $name (:$port)"
+    fi
+done
+echo ""
+
+# Nodes
+echo -e "${BLUE}FLEET NODES:${NC}"
+for node in cecilia lucidia octavia aria; do
+    if ssh -o ConnectTimeout=2 -o BatchMode=yes "$node" 'exit' 2>/dev/null; then
+        load=$(ssh -o ConnectTimeout=2 "$node" "uptime | awk -F'load average: ' '{print \$2}' | cut -d',' -f1" 2>/dev/null)
+        echo -e "  ${GREEN}●${NC} $node (load: ${load:-?})"
+    else
+        echo -e "  ${RED}○${NC} $node (offline)"
+    fi
+done
+echo ""
+
+# Quick stats
+echo -e "${BLUE}QUICK STATS:${NC}"
+containers=$(ssh -o ConnectTimeout=2 cecilia 'docker ps -q 2>/dev/null | wc -l' 2>/dev/null || echo "?")
+echo "  Containers on cecilia: $containers"
+
+if [ -f ~/.blackroad/memory/journals/master-journal.jsonl ]; then
+    events=$(wc -l < ~/.blackroad/memory/journals/master-journal.jsonl 2>/dev/null || echo "0")
+    echo "  Memory events: $events"
+fi
+
+echo ""
+echo -e "${PINK}─────────────────────────────────────────────────────────────────────────────${NC}"
+echo -e "  Dashboard: ${AMBER}br-dashboard start${NC} | Full status: ${AMBER}br-status${NC}"

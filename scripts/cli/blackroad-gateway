@@ -1,0 +1,67 @@
+#!/bin/bash
+# br-gateway - BlackRoad API Gateway CLI (local)
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+case "$1" in
+    start)
+        echo -e "${PINK}Starting Gateway on cecilia...${NC}"
+        ssh cecilia '~/br-gateway start'
+        ;;
+
+    stop)
+        ssh cecilia '~/br-gateway stop'
+        ;;
+
+    status)
+        ssh cecilia '~/br-gateway status'
+        ;;
+
+    health)
+        ssh cecilia '~/br-gateway health'
+        ;;
+
+    metrics)
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${GREEN}           FLEET METRICS${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        for node in cecilia lucidia octavia aria anastasia; do
+            echo -e "${AMBER}$node:${NC}"
+            cpu=$(ssh -o ConnectTimeout=3 "$node" "top -bn1 | grep 'Cpu' | awk '{print \$2}'" 2>/dev/null || echo "?")
+            mem=$(ssh -o ConnectTimeout=3 "$node" "free | awk '/Mem:/{printf \"%.1f\", \$3/\$2*100}'" 2>/dev/null || echo "?")
+            disk=$(ssh -o ConnectTimeout=3 "$node" "df / | awk 'NR==2{print \$5}'" 2>/dev/null || echo "?")
+            load=$(ssh -o ConnectTimeout=3 "$node" "cat /proc/loadavg | awk '{print \$1}'" 2>/dev/null || echo "?")
+            echo "  CPU: ${cpu}%  MEM: ${mem}%  DISK: ${disk}  LOAD: ${load}"
+        done
+        ;;
+
+    logs)
+        service="${2:-api}"
+        echo -e "${PINK}Collecting $service logs...${NC}"
+        for node in cecilia lucidia octavia aria anastasia; do
+            echo -e "\n${AMBER}=== $node ===${NC}"
+            case "$service" in
+                api) ssh -o ConnectTimeout=3 "$node" 'tail -5 ~/blackroad-api/api.log 2>/dev/null' ;;
+                mesh) ssh -o ConnectTimeout=3 "$node" 'tail -5 ~/.blackroad/mesh/hub.log 2>/dev/null' ;;
+                eventbus) ssh -o ConnectTimeout=3 "$node" 'tail -5 ~/.blackroad/eventbus/logs/bus.log 2>/dev/null' ;;
+                gateway) ssh -o ConnectTimeout=3 "$node" 'tail -5 ~/.blackroad/gateway/logs/gateway.log 2>/dev/null' ;;
+            esac
+        done
+        ;;
+
+    *)
+        echo -e "${PINK}br-gateway${NC} - BlackRoad API Gateway"
+        echo ""
+        echo "Commands:"
+        echo "  start       - Start Gateway on cecilia"
+        echo "  stop        - Stop Gateway"
+        echo "  status      - Show gateway status"
+        echo "  health      - Check backend health"
+        echo "  metrics     - Show fleet metrics"
+        echo "  logs [svc]  - Show logs (api/mesh/eventbus/gateway)"
+        ;;
+esac

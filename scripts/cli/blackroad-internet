@@ -1,0 +1,118 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-internet - BlackRoad Internet Status Dashboard
+# The new internet runs on BlackRoad
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+NC='\033[0m'
+
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${WHITE}                    ██████╗ ██╗      █████╗  ██████╗██╗  ██╗${NC}"
+echo -e "${WHITE}                    ██╔══██╗██║     ██╔══██╗██╔════╝██║ ██╔╝${NC}"
+echo -e "${WHITE}                    ██████╔╝██║     ███████║██║     █████╔╝${NC}"
+echo -e "${WHITE}                    ██╔══██╗██║     ██╔══██║██║     ██╔═██╗${NC}"
+echo -e "${WHITE}                    ██████╔╝███████╗██║  ██║╚██████╗██║  ██╗${NC}"
+echo -e "${WHITE}                    ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝${NC}"
+echo -e "${AMBER}                           ROAD INTERNET${NC}"
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+# Count active services
+online_agents=0
+total_apis=0
+active_tunnels=0
+
+echo -e "${BLUE}╭─ EDGE NODES ─────────────────────────────────────────────────────────────╮${NC}"
+for agent in cecilia lucidia octavia aria; do
+    echo -n -e "${BLUE}│${NC} "
+    if ssh -o ConnectTimeout=2 "$agent" "echo ok" &>/dev/null 2>&1; then
+        echo -n -e "${GREEN}●${NC} $agent"
+        ((online_agents++))
+
+        # Check services
+        services=""
+        if ssh -o ConnectTimeout=2 "$agent" "curl -s http://localhost:8000/ | grep -q status" 2>/dev/null; then
+            services+=" ${GREEN}API${NC}"
+            ((total_apis++))
+        fi
+        if ssh -o ConnectTimeout=2 "$agent" "curl -s http://localhost:3000/ | grep -q status" 2>/dev/null; then
+            services+=" ${VIOLET}Node${NC}"
+        fi
+        if ssh -o ConnectTimeout=2 "$agent" "curl -s http://localhost:9000/ | grep -q status" 2>/dev/null; then
+            services+=" ${AMBER}Webhook${NC}"
+        fi
+        if ssh -o ConnectTimeout=2 "$agent" "curl -s http://localhost:11434/api/tags" 2>/dev/null | grep -q name; then
+            services+=" ${PINK}Ollama${NC}"
+        fi
+
+        printf "%-12s" ""
+        echo -e "$services"
+    else
+        echo -e "${RED}○${NC} $agent           ${DIM}offline${NC}"
+    fi
+done
+echo -e "${BLUE}│${NC}"
+echo -e "${BLUE}│${NC}  ${DIM}Local Network: 192.168.4.x${NC}"
+echo -e "${BLUE}╰───────────────────────────────────────────────────────────────────────────╯${NC}"
+echo ""
+
+echo -e "${VIOLET}╭─ CLOUD NODES ────────────────────────────────────────────────────────────╮${NC}"
+for agent in gematria anastasia shellfish; do
+    echo -n -e "${VIOLET}│${NC} "
+    if ssh -o ConnectTimeout=3 "$agent" "echo ok" &>/dev/null 2>&1; then
+        echo -e "${GREEN}●${NC} $agent"
+        ((online_agents++))
+    else
+        echo -e "${RED}○${NC} $agent"
+    fi
+done
+echo -e "${VIOLET}│${NC}"
+echo -e "${VIOLET}│${NC}  ${DIM}DigitalOcean: NYC/SFO${NC}"
+echo -e "${VIOLET}╰───────────────────────────────────────────────────────────────────────────╯${NC}"
+echo ""
+
+echo -e "${AMBER}╭─ CLOUDFLARE TUNNELS ─────────────────────────────────────────────────────╮${NC}"
+tunnel_count=$(cloudflared tunnel list 2>/dev/null | grep -c "blackroad-" || echo "0")
+active_tunnel_count=$(cloudflared tunnel list 2>/dev/null | grep "blackroad-" | grep -c "x" || echo "0")
+echo -e "${AMBER}│${NC}  Total: $tunnel_count tunnels, ${GREEN}$active_tunnel_count active${NC}"
+echo -e "${AMBER}│${NC}"
+
+# Show active tunnels
+cloudflared tunnel list 2>/dev/null | grep "blackroad-" | while read -r line; do
+    name=$(echo "$line" | awk '{print $2}')
+    conns=$(echo "$line" | awk '{print $4}')
+    if [[ -n "$conns" && "$conns" != "" ]]; then
+        echo -e "${AMBER}│${NC}  ${GREEN}●${NC} $name: $conns"
+    fi
+done
+echo -e "${AMBER}╰───────────────────────────────────────────────────────────────────────────╯${NC}"
+echo ""
+
+echo -e "${GREEN}╭─ DOMAINS ────────────────────────────────────────────────────────────────╮${NC}"
+echo -e "${GREEN}│${NC}  blackroad.io          → Main site"
+echo -e "${GREEN}│${NC}  api.blackroad.io      → API Gateway"
+echo -e "${GREEN}│${NC}  cecilia.blackroad.io  → Primary AI Agent"
+echo -e "${GREEN}│${NC}  lucidia.blackroad.io  → Inference Node"
+echo -e "${GREEN}│${NC}  mesh.blackroad.io     → Mesh Network"
+echo -e "${GREEN}╰───────────────────────────────────────────────────────────────────────────╯${NC}"
+echo ""
+
+# Summary stats
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${WHITE}  Agents: ${GREEN}$online_agents${NC} online  │  APIs: ${GREEN}$total_apis${NC}  │  Tunnels: ${GREEN}$active_tunnel_count${NC} active${NC}"
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

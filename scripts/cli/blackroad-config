@@ -1,0 +1,71 @@
+#!/bin/bash
+# br-config - Fleet-wide configuration management
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    show)
+        node="${1:-all}"
+        if [ "$node" = "all" ]; then
+            echo -e "${PINK}Configuration across fleet:${NC}"
+            for host in cecilia lucidia octavia aria; do
+                echo -e "\n${AMBER}=== $host ===${NC}"
+                ssh "$host" '~/br-config show 2>/dev/null | head -20' 2>/dev/null
+            done
+        else
+            ssh "$node" '~/br-config show' 2>/dev/null
+        fi
+        ;;
+    set)
+        key="$1"; value="$2"; scope="${3:-global}"
+        if [ -z "$key" ] || [ -z "$value" ]; then
+            echo "Usage: br-config set <key> <value> [global|<node>]"
+            exit 1
+        fi
+        if [ "$scope" = "global" ]; then
+            echo -e "${AMBER}Setting '$key' globally...${NC}"
+            for host in cecilia lucidia octavia aria; do
+                echo -n "  $host: "
+                ssh "$host" "~/br-config set '$key' '$value'" 2>/dev/null && echo -e "${GREEN}OK${NC}" || echo "FAIL"
+            done
+        else
+            echo -e "${AMBER}Setting '$key' on $scope...${NC}"
+            ssh "$scope" "~/br-config set '$key' '$value'" 2>/dev/null
+        fi
+        ;;
+    get)
+        key="$1"
+        if [ -z "$key" ]; then
+            echo "Usage: br-config get <key>"
+            exit 1
+        fi
+        echo -e "${AMBER}Config '$key' across fleet:${NC}"
+        for host in cecilia lucidia octavia aria; do
+            echo -n "  $host: "
+            ssh "$host" "~/br-config get '$key'" 2>/dev/null
+        done
+        ;;
+    sync)
+        echo -e "${PINK}Syncing config from cecilia to all nodes...${NC}"
+        scp -q cecilia:~/.blackroad/config/global.yaml /tmp/global-config.yaml 2>/dev/null
+        for host in lucidia octavia aria; do
+            echo -n "  $host: "
+            scp -q /tmp/global-config.yaml "$host":~/.blackroad/config/global.yaml 2>/dev/null && echo -e "${GREEN}OK${NC}" || echo "FAIL"
+        done
+        rm -f /tmp/global-config.yaml
+        ;;
+    help|*)
+        echo -e "${PINK}br-config - Fleet Configuration Center${NC}"
+        echo ""
+        echo "Commands:"
+        echo "  show [node|all]         Show configuration"
+        echo "  set <key> <val> [scope] Set config (global or node)"
+        echo "  get <key>               Get config from all nodes"
+        echo "  sync                    Sync from cecilia to all"
+        ;;
+esac

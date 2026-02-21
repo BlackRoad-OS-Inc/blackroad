@@ -1,0 +1,52 @@
+#!/bin/bash
+# Lucidia Daemon Controller
+
+LUCIDIA_DIR="$HOME/.lucidia"
+PID_FILE="$LUCIDIA_DIR/daemon.pid"
+LOG_FILE="$LUCIDIA_DIR/daemon.log"
+DAEMON_SCRIPT="$LUCIDIA_DIR/lib/daemon.js"
+
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+is_running() {
+  [ -f "$PID_FILE" ] && ps -p $(cat "$PID_FILE") > /dev/null 2>&1
+}
+
+start() {
+  is_running && { echo -e "${YELLOW}Already running${NC}"; return; }
+  echo -e "${BLUE}Starting daemon...${NC}"
+  cd "$LUCIDIA_DIR"
+  nohup node "$DAEMON_SCRIPT" > "$LOG_FILE" 2>&1 &
+  sleep 2
+  is_running && echo -e "${GREEN}✓ Started on port 11435${NC}" || echo -e "${RED}Failed${NC}"
+}
+
+stop() {
+  is_running || { echo -e "${YELLOW}Not running${NC}"; return; }
+  kill $(cat "$PID_FILE") 2>/dev/null
+  sleep 1
+  rm -f "$PID_FILE"
+  echo -e "${GREEN}✓ Stopped${NC}"
+}
+
+status() {
+  if is_running; then
+    echo -e "${GREEN}✓ Running (PID: $(cat $PID_FILE))${NC}"
+    curl -s http://localhost:11435/health > /dev/null && echo -e "${GREEN}✓ API OK${NC}"
+  else
+    echo -e "${RED}✗ Not running${NC}"
+  fi
+}
+
+case "$1" in
+  start) start ;;
+  stop) stop ;;
+  restart) stop; sleep 1; start ;;
+  status) status ;;
+  logs) tail -f "$LOG_FILE" ;;
+  *) echo "Usage: $0 {start|stop|restart|status|logs}" ;;
+esac

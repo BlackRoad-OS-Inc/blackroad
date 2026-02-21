@@ -1,0 +1,120 @@
+#!/bin/bash
+# BlackRoad AI - Unlimited local AI assistant
+# Routes through your unlimited copilot system with local models first
+
+set -e
+
+UNLIMITED_COPILOT="$HOME/blackroad-unlimited-copilot.py"
+
+# Colors (BlackRoad brand - #F5A623 amber primary)
+AMBER='\033[38;5;214m'      # Primary brand (F5A623)
+BLUE='\033[38;5;33m'        # Electric blue (2979FF)
+GREEN='\033[38;5;82m'       # Success
+RED='\033[38;5;196m'        # Error
+RESET='\033[0m'
+
+# Check if Python script exists
+if [ ! -f "$UNLIMITED_COPILOT" ]; then
+    echo -e "${RED}Error: blackroad-unlimited-copilot.py not found${RESET}"
+    echo "Expected location: $UNLIMITED_COPILOT"
+    exit 1
+fi
+
+# Handle different subcommands
+case "${1:-}" in
+    suggest|explain|s|e)
+        # Code generation/explanation - use unlimited system
+        shift
+        
+        if [ -z "$*" ]; then
+            echo -e "${BLUE}Usage:${RESET} blackroad-ai suggest \"your question\""
+            exit 1
+        fi
+        
+        # Enhanced header
+        echo -e "${PINK}╔═══════════════════════════════════════════════════════════════╗${RESET}"
+        echo -e "${PINK}║${RESET}          BlackRoad AI - Unlimited Intelligence            ${PINK}║${RESET}"
+        echo -e "${PINK}╠═══════════════════════════════════════════════════════════════╣${RESET}"
+        
+        # Check what's available
+        if curl -s -m 1 http://octavia:11434/api/tags > /dev/null 2>&1; then
+            models=$(ssh octavia "curl -s http://localhost:11434/api/tags | jq -r '.models | length'" 2>/dev/null || echo "?")
+            echo -e "${PINK}║${RESET}  ${GREEN}✅ Octavia Online${RESET} - $models local models ready           ${PINK}║${RESET}"
+        else
+            echo -e "${PINK}║${RESET}  ${AMBER}⚠️  Local AI loading...${RESET} falling back to cloud        ${PINK}║${RESET}"
+        fi
+        
+        echo -e "${PINK}║${RESET}  ${GREEN}Cost:${RESET} \$0/month (local) + fallback to cloud          ${PINK}║${RESET}"
+        echo -e "${PINK}║${RESET}  ${GREEN}Rate Limits:${RESET} None on local models                    ${PINK}║${RESET}"
+        echo -e "${PINK}║${RESET}  ${GREEN}Privacy:${RESET} Code stays local on your network             ${PINK}║${RESET}"
+        echo -e "${PINK}╚═══════════════════════════════════════════════════════════════╝${RESET}"
+        echo ""
+        
+        python3 "$UNLIMITED_COPILOT" "$@"
+        ;;
+    
+    status)
+        # Show system status with enhanced header
+        echo -e "${PINK}╔═══════════════════════════════════════════════════════════════╗${RESET}"
+        echo -e "${PINK}║${RESET}          BlackRoad AI - System Status                      ${PINK}║${RESET}"
+        echo -e "${PINK}╠═══════════════════════════════════════════════════════════════╣${RESET}"
+        
+        # Check Ollama (Octavia)
+        echo -e "${BLUE}Ollama (octavia:11434):${RESET}"
+        if ssh -o ConnectTimeout=2 octavia "curl -s http://localhost:11434/api/tags" > /dev/null 2>&1; then
+            models=$(ssh octavia "curl -s http://localhost:11434/api/tags | jq -r '.models | length'" 2>/dev/null || echo "?")
+            echo -e "  ${GREEN}✅ Online${RESET} - $models models available"
+            echo -e "  Models: codellama, llama3, qwen2.5, gemma, lucidia"
+        else
+            echo -e "  ${AMBER}⚠️  Offline (will use fallbacks)${RESET}"
+        fi
+        
+        # Check gh copilot (fallback)
+        echo -e "\n${BLUE}GitHub Copilot (fallback):${RESET}"
+        if command -v gh > /dev/null && gh auth status > /dev/null 2>&1; then
+            echo -e "  ${GREEN}✅ Authenticated${RESET}"
+        else
+            echo -e "  ${AMBER}⚠️  Not authenticated${RESET}"
+        fi
+        
+        # Show available methods
+        echo -e "\n${BLUE}Available Methods:${RESET}"
+        python3 "$UNLIMITED_COPILOT" 2>&1 | grep -E "^\s+•" || echo "  Run 'python3 $UNLIMITED_COPILOT' for details"
+        ;;
+    
+    methods|list)
+        # List available methods
+        python3 "$UNLIMITED_COPILOT"
+        ;;
+    
+    help|--help|-h|"")
+        # Show help
+        echo -e "${PINK}╔═══════════════════════════════════════════════╗${RESET}"
+        echo -e "${PINK}║${RESET}              BlackRoad AI                     ${PINK}║${RESET}"
+        echo -e "${PINK}╚═══════════════════════════════════════════════╝${RESET}"
+        echo ""
+        echo -e "${BLUE}Usage:${RESET}"
+        echo "  blackroad-ai suggest \"write a hello world in rust\""
+        echo "  blackroad-ai explain \"what does this function do?\""
+        echo "  blackroad-ai status          # Check system health"
+        echo "  blackroad-ai methods         # List all AI methods"
+        echo ""
+        echo -e "${GREEN}Features:${RESET}"
+        echo "  • Uses local AI first (unlimited, free)"
+        echo "  • Automatic fallback to cloud APIs"
+        echo "  • 10+ access methods"
+        echo "  • Zero rate limits on local models"
+        echo ""
+        echo -e "${AMBER}Aliases:${RESET}"
+        echo "  suggest -> s"
+        echo "  explain -> e"
+        ;;
+    
+    *)
+        # Unknown command - show help
+        echo -e "${AMBER}Unknown command: $1${RESET}"
+        echo ""
+        "$0" help
+        exit 1
+        ;;
+esac

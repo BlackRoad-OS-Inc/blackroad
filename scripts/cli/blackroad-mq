@@ -1,0 +1,107 @@
+#!/bin/bash
+# br-mq - Message Queue CLI
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+NC='\033[0m'
+
+MQ_DIR="$HOME/.blackroad/mq"
+API_URL="http://localhost:5673"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    start)
+        echo -e "${PINK}Starting Message Queue...${NC}"
+        nohup python3 "$MQ_DIR/mq_server.py" > "$MQ_DIR/logs/mq.log" 2>&1 &
+        echo $! > "$MQ_DIR/mq.pid"
+        echo -e "${GREEN}MQ started (PID: $(cat "$MQ_DIR/mq.pid"))${NC}"
+        echo "  AMQP: tcp://localhost:5672"
+        echo "  API:  http://localhost:5673"
+        ;;
+    stop)
+        if [ -f "$MQ_DIR/mq.pid" ]; then
+            kill $(cat "$MQ_DIR/mq.pid") 2>/dev/null
+            rm "$MQ_DIR/mq.pid"
+            echo -e "${AMBER}MQ stopped${NC}"
+        fi
+        ;;
+    status)
+        if [ -f "$MQ_DIR/mq.pid" ] && kill -0 $(cat "$MQ_DIR/mq.pid") 2>/dev/null; then
+            echo -e "${GREEN}●${NC} Message Queue running"
+            curl -s "$API_URL/api/overview" | python3 -m json.tool 2>/dev/null || echo "  (API unavailable)"
+        else
+            echo -e "${AMBER}○${NC} Message Queue not running"
+        fi
+        ;;
+    queues)
+        curl -s "$API_URL/api/queues" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'{\"QUEUE\":<30} {\"MESSAGES\":<10} {\"CONSUMERS\":<10}')
+for name, info in data.items():
+    print(f'{name:<30} {info[\"messages\"]:<10} {info[\"consumers\"]:<10}')
+"
+        ;;
+    exchanges)
+        curl -s "$API_URL/api/exchanges" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'{\"EXCHANGE\":<30} {\"TYPE\":<10} {\"BINDINGS\":<10}')
+for name, info in data.items():
+    print(f'{name:<30} {info[\"type\"]:<10} {info[\"bindings\"]:<10}')
+"
+        ;;
+    publish)
+        queue="$1"; message="$2"
+        if [ -z "$queue" ] || [ -z "$message" ]; then
+            echo "Usage: br-mq publish <queue> <message>"
+            exit 1
+        fi
+        python3 -c "
+from $MQ_DIR.mq_client import MQClient
+client = MQClient()
+client.connect()
+client.declare_queue('$queue')
+result = client.publish('$message', routing_key='$queue')
+print(f'Published: {result}')
+client.close()
+" 2>/dev/null || echo "MQ not running"
+        ;;
+    consume)
+        queue="$1"
+        if [ -z "$queue" ]; then
+            echo "Usage: br-mq consume <queue>"
+            exit 1
+        fi
+        python3 -c "
+import sys
+sys.path.insert(0, '$MQ_DIR')
+from mq_client import MQClient
+client = MQClient()
+client.connect()
+msg = client.consume('$queue')
+if msg:
+    print(f'Message: {msg}')
+else:
+    print('No messages')
+client.close()
+" 2>/dev/null
+        ;;
+    help|*)
+        echo -e "${PINK}br-mq - Message Queue CLI${NC}"
+        echo ""
+        echo "Management:"
+        echo "  start             Start MQ server"
+        echo "  stop              Stop MQ server"
+        echo "  status            Show status"
+        echo ""
+        echo "Operations:"
+        echo "  queues            List queues"
+        echo "  exchanges         List exchanges"
+        echo "  publish <q> <msg> Publish message"
+        echo "  consume <q>       Consume message"
+        ;;
+esac

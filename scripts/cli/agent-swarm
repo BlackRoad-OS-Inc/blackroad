@@ -1,0 +1,187 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Agent Swarm - Watch AI agents collaborate in tmux
+# Usage: agent-swarm [task]
+
+SWARM_DIR="$HOME/.blackroad/swarm"
+CONVERSATION="$SWARM_DIR/conversation.log"
+TASK_FILE="$SWARM_DIR/current_task.txt"
+OLLAMA_URL="http://localhost:11434"
+
+# Colors
+PINK='\033[38;5;198m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;39m'
+GREEN='\033[38;5;82m'
+VIOLET='\033[38;5;141m'
+GRAY='\033[38;5;245m'
+RESET='\033[0m'
+
+# Setup
+mkdir -p "$SWARM_DIR"
+> "$CONVERSATION"
+
+# Default task
+TASK="${1:-Discuss the architecture of BlackRoad OS and propose improvements}"
+echo "$TASK" > "$TASK_FILE"
+
+# Get model for agent
+get_model() {
+  case "$1" in
+    cecilia) echo "Cecilia:latest" ;;
+    lucidia) echo "lucidia:latest" ;;
+    aria) echo "aria:latest" ;;
+    silas) echo "Silas:latest" ;;
+    *) echo "llama3.2" ;;
+  esac
+}
+
+# Get role for agent
+get_role() {
+  case "$1" in
+    cecilia) echo "Orchestrator" ;;
+    lucidia) echo "Recursive Core" ;;
+    aria) echo "Navigator" ;;
+    silas) echo "Engineer" ;;
+    *) echo "Agent" ;;
+  esac
+}
+
+# Get color for agent
+get_color() {
+  case "$1" in
+    cecilia) echo "198" ;;
+    lucidia) echo "214" ;;
+    aria) echo "39" ;;
+    silas) echo "82" ;;
+    *) echo "245" ;;
+  esac
+}
+
+# Function to make agent think and respond
+agent_think() {
+  local name="$1"
+  local task="$2"
+  local context="$3"
+  local model=$(get_model "$name")
+  local role=$(get_role "$name")
+
+  local prompt="You are $name, the $role in BlackRoad OS agent swarm.
+
+CURRENT TASK: $task
+
+CONVERSATION SO FAR:
+$context
+
+Your turn to contribute. Keep it under 3 sentences. Be specific and actionable.
+If you're writing code, show it. If delegating, @mention the agent.
+Respond as $name:"
+
+  response=$(curl -s "$OLLAMA_URL/api/generate" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$prompt\", \"stream\": false}" 2>/dev/null | jq -r '.response // empty')
+
+  echo "$response"
+}
+
+# Start swarm session
+start_swarm() {
+  local task=$(cat "$TASK_FILE")
+
+  # Create tmux session
+  tmux kill-session -t swarm 2>/dev/null
+  tmux new-session -d -s swarm -n agents
+
+  # Split into 4 panes (2x2 grid)
+  tmux split-window -h -t swarm
+  tmux split-window -v -t swarm:0.0
+  tmux split-window -v -t swarm:0.1
+
+  # Start agent watchers in each pane
+  tmux send-keys -t swarm:0.0 "~/bin/agent-worker cecilia" C-m
+  tmux send-keys -t swarm:0.1 "~/bin/agent-worker lucidia" C-m
+  tmux send-keys -t swarm:0.2 "~/bin/agent-worker aria" C-m
+  tmux send-keys -t swarm:0.3 "~/bin/agent-worker silas" C-m
+
+  # Create conversation pane at bottom
+  tmux split-window -v -t swarm -p 30
+  tmux send-keys -t swarm:0.4 "tail -f $CONVERSATION" C-m
+
+  # Attach
+  tmux attach -t swarm
+}
+
+# Run the coordinator (kicks off the conversation)
+run_coordinator() {
+  local task=$(cat "$TASK_FILE")
+  echo -e "${PINK}[SWARM]${RESET} Starting task: $task"
+  echo ""
+  echo "[$(date +%H:%M:%S)] TASK: $task" >> "$CONVERSATION"
+  echo "" >> "$CONVERSATION"
+
+  # Cecilia starts
+  echo "[$(date +%H:%M:%S)] CECILIA (Orchestrator): Let me coordinate this task..." >> "$CONVERSATION"
+
+  # Rounds of conversation
+  for round in 1 2 3; do
+    echo -e "${GRAY}--- Round $round ---${RESET}"
+
+    for agent in cecilia lucidia aria silas; do
+      local role=$(get_role "$agent")
+      local color=$(get_color "$agent")
+
+      context=$(tail -20 "$CONVERSATION")
+      response=$(agent_think "$agent" "$task" "$context")
+
+      if [ -n "$response" ]; then
+        echo "[$(date +%H:%M:%S)] $(echo $agent | tr '[:lower:]' '[:upper:]') ($role): $response" >> "$CONVERSATION"
+        echo ""  >> "$CONVERSATION"
+        echo -e "\033[38;5;${color}m$(echo $agent | tr '[:lower:]' '[:upper:]'):\033[0m $response"
+      fi
+
+      sleep 1
+    done
+
+    echo "" >> "$CONVERSATION"
+  done
+
+  echo "[$(date +%H:%M:%S)] [SWARM COMPLETE]" >> "$CONVERSATION"
+}
+
+# Help
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  echo "Agent Swarm - Multi-agent collaboration in tmux"
+  echo ""
+  echo "Usage:"
+  echo "  agent-swarm [task]           Start swarm with task"
+  echo "  agent-swarm --run [task]     Run without tmux (just conversation)"
+  echo "  agent-swarm --view           View current conversation"
+  echo ""
+  echo "Agents: cecilia, lucidia, aria, silas"
+  exit 0
+fi
+
+if [ "$1" = "--view" ]; then
+  cat "$CONVERSATION"
+  exit 0
+fi
+
+if [ "$1" = "--run" ]; then
+  shift
+  TASK="${*:-Discuss the architecture of BlackRoad OS}"
+  echo "$TASK" > "$TASK_FILE"
+  run_coordinator
+  exit 0
+fi
+
+# Default: start tmux swarm
+TASK="${*:-Discuss the architecture of BlackRoad OS and propose improvements}"
+echo "$TASK" > "$TASK_FILE"
+start_swarm
