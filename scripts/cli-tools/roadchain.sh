@@ -509,6 +509,188 @@ print(f'  Blocks mined:    {w.get(\"blocks_mined\",0)}')
 "
 ;;
 
+millennium)
+python3 - "$BURNS" "$ECON" << 'PYEOF'
+import json, sys, os, math, statistics
+from datetime import datetime
+from collections import defaultdict
+
+BURNS, ECON = sys.argv[1], sys.argv[2]
+P = "\033[38;2;255;29;108m"
+A = "\033[38;2;245;166;35m"
+V = "\033[38;2;156;39;176m"
+B = "\033[38;2;41;121;255m"
+G = "\033[38;2;0;200;83m"
+W = "\033[1;37m"
+D = "\033[2m"
+R = "\033[0m"
+
+# Import millennium module for live computation
+mill_mod = None
+try:
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("millennium", os.path.expanduser("~/.roadchain/millennium.py"))
+    mill_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mill_mod)
+except: pass
+
+print(f"\033[2J\033[H", end="")
+print(f"{P}╔{'═'*94}╗{R}")
+print(f"{P}║{A}  🏛️  MILLENNIUM PRIZE PROBLEMS — DEEP ANALYSIS  {D}roadchain millennium{R}{P}{' '*26}║{R}")
+print(f"{P}╚{'═'*94}╝{R}")
+
+# Load economics
+try:
+    with open(ECON) as f: econ = json.load(f)
+except: econ = {}
+
+# Scan all millennium burns
+mill_burns = []
+problem_vals = defaultdict(list)
+combined_vals = []
+total_base = 0
+total_bonus = 0
+per_session = defaultdict(lambda: {"count": 0, "bonus": 0, "avg_mult": []})
+
+for line in open(BURNS):
+    line = line.strip()
+    if not line: continue
+    try:
+        d = json.loads(line)
+        if d.get("type") == "AI_COMPUTE_BURN" and d.get("millennium"):
+            mill_burns.append(d)
+            mm = d["millennium"]
+            mult = d.get("millennium_multiplier", 1.0)
+            base = d.get("road_burned_base", 0)
+            actual = d.get("road_burned", 0)
+            total_base += base
+            total_bonus += (actual - base)
+            combined_vals.append(mult)
+            for key, val in mm.items():
+                problem_vals[key].append(val)
+            sid = d.get("session", "unknown")[:8]
+            per_session[sid]["count"] += 1
+            per_session[sid]["bonus"] += (actual - base)
+            per_session[sid]["avg_mult"].append(mult)
+    except: pass
+
+activated = econ.get("millennium_activated", "N/A")
+total_mill = econ.get("millennium_burns_total", total_bonus)
+
+# ── Header stats ──
+print()
+print(f"  {A}ACTIVATED{R}  {G}{activated}{R}  {D}│{R}  {P}BURNS{R}  {G}{len(mill_burns)}{R}  {D}│{R}  {A}BASE ROAD{R}  {V}{total_base:,.4f}{R}  {D}│{R}  {P}BONUS ROAD{R}  {G}{total_bonus:,.4f}{R}")
+if total_base > 0:
+    print(f"  {D}Effective multiplier:{R}  {A}×{(total_base + total_bonus) / total_base:.5f}{R}  {D}│  Extra ROAD burned by math alone:{R}  {P}{total_bonus:,.4f}{R}")
+print()
+
+# ── Per-problem deep stats ──
+labels = [
+    ("p_vs_np",       "P vs NP",         "Subset Sum Solution Density",          P, "NP-complete instance, DP reachability fraction"),
+    ("riemann",       "Riemann ζ",       "Zeta on Critical Line Re(s)=½",        V, "Partial sum ζ₅₀(½+it), sigmoid on magnitude"),
+    ("yang_mills",    "Yang-Mills",      "SU(3) Mass Gap & Confinement",         B, "One-loop α_s running, confinement ratio"),
+    ("navier_stokes", "Navier-Stokes",   "Reynolds Number Turbulence",           A, "Re = (tokens/100K)·(ctx/10)/δ, log-scaled"),
+    ("hodge",         "Hodge",           "Calabi-Yau Hodge Numbers h¹¹,h²¹",    G, "SHA-256 → CY3 topology, χ = 2(h¹¹−h²¹)"),
+    ("bsd",           "BSD",             "Elliptic Curve L-function L(E,1)",     P, "Point counting mod p, Euler product over 8 primes"),
+    ("poincare",      "Poincaré",        "Perelman W-Entropy Functional",        V, "W = τ(R+1) + f − 3, Ricci flow parameter"),
+]
+
+print(f"  {W}{'─'*94}{R}")
+print(f"  {W}THE SEVEN PROBLEMS{R}")
+print(f"  {W}{'─'*94}{R}")
+
+for key, name, full_name, color, method in labels:
+    vals = problem_vals.get(key, [])
+    if not vals:
+        print(f"  {D}{name}: no data{R}")
+        continue
+    mean = statistics.mean(vals)
+    mn = min(vals)
+    mx = max(vals)
+    std = statistics.stdev(vals) if len(vals) > 1 else 0
+    contrib = (mean - 1.0) * total_base  # estimated ROAD contribution
+
+    # Bar: 30-char proportional to max contribution (0.010)
+    bar_pct = min((mean - 1.0) / 0.010, 1.0)
+    bar_len = int(bar_pct * 30)
+    bar = "▓" * bar_len + "░" * (30 - bar_len)
+
+    print()
+    print(f"  {color}{name:<15}{R}  {D}{full_name}{R}")
+    print(f"  {color}{bar}{R}  {A}mean ×{mean:.5f}{R}  {D}min ×{mn:.5f}  max ×{mx:.5f}  σ {std:.6f}{R}")
+    print(f"  {D}{method}{R}")
+    print(f"  {D}Est. ROAD contributed:{R}  {color}{contrib:,.4f} ROAD{R}")
+
+# ── Distribution ──
+print()
+print(f"  {W}{'─'*94}{R}")
+print(f"  {W}COMBINED MULTIPLIER DISTRIBUTION{R}  {D}({len(combined_vals)} burns){R}")
+print(f"  {W}{'─'*94}{R}")
+
+if combined_vals:
+    mean_c = statistics.mean(combined_vals)
+    std_c = statistics.stdev(combined_vals) if len(combined_vals) > 1 else 0
+    print(f"  {A}Mean:{R}  ×{mean_c:.5f}  {D}│{R}  {V}Median:{R}  ×{statistics.median(combined_vals):.5f}  {D}│{R}  {B}Stdev:{R}  {std_c:.5f}  {D}│{R}  {P}Range:{R}  ×{min(combined_vals):.5f} — ×{max(combined_vals):.5f}")
+    print()
+
+    # Histogram
+    buckets = [0] * 20
+    for m in combined_vals:
+        idx = min(int((m - 1.0) * 500), 19)
+        buckets[idx] += 1
+    max_b = max(buckets) if buckets else 1
+    for i, count in enumerate(buckets):
+        if count == 0: continue
+        lo = 1.0 + i * 0.002
+        hi = lo + 0.002
+        bar = "█" * int(count / max_b * 50)
+        print(f"  {D}{lo:.3f}–{hi:.3f}{R}  {V}{bar}{R}  {D}{count}{R}")
+
+# ── Per-session breakdown ──
+print()
+print(f"  {W}{'─'*94}{R}")
+print(f"  {W}PER-SESSION MILLENNIUM IMPACT{R}")
+print(f"  {W}{'─'*94}{R}")
+print(f"  {D}{'Session':<10} {'Burns':>6} {'Avg Mult':>10} {'Bonus ROAD':>12}{R}")
+print(f"  {D}{'─'*42}{R}")
+
+for sid, data in sorted(per_session.items(), key=lambda x: -x[1]["bonus"]):
+    avg = statistics.mean(data["avg_mult"]) if data["avg_mult"] else 1.0
+    print(f"  {B}{sid:<10}{R} {G}{data['count']:>6}{R} {A}×{avg:.5f}{R} {P}{data['bonus']:>12.4f}{R}")
+
+# ── Live probe ──
+if mill_mod:
+    print()
+    print(f"  {W}{'─'*94}{R}")
+    print(f"  {W}LIVE PROBE — Current Parameter Space{R}")
+    print(f"  {W}{'─'*94}{R}")
+    import time
+    ts = time.time()
+    # Probe with extreme parameters
+    probes = [
+        ("Min burn (startup)",       0.001,  0.01,    1000,  5,  "probe-min",     ts),
+        ("Typical session",          0.05,   5.0,   200000, 50,  "probe-typical", ts),
+        ("Heavy Opus session",       0.10,  25.0,   500000, 85,  "probe-heavy",   ts),
+        ("Turbulent burst",          0.0001, 30.0,  700000, 95,  "probe-turbo",   ts),
+        ("Maximum theoretical",      0.0001, 50.0,  999999, 99,  "probe-max",     ts),
+    ]
+    print(f"  {D}{'Scenario':<25} {'Combined':>10} {'P≠NP':>7} {'Riem':>7} {'Y-M':>7} {'N-S':>7} {'Hodge':>7} {'BSD':>7} {'Poin':>7}{R}")
+    print(f"  {D}{'─'*94}{R}")
+    for label, delta, cost, tokens, ctx, sid, t in probes:
+        mult, bd = mill_mod.compute(delta, cost, tokens, ctx, "Opus 4.6", sid, t)
+        print(f"  {A}{label:<25}{R} {G}×{mult:.5f}{R} {P}{bd['p_vs_np']:.5f}{R} {V}{bd['riemann']:.5f}{R} {B}{bd['yang_mills']:.5f}{R} {A}{bd['navier_stokes']:.5f}{R} {G}{bd['hodge']:.5f}{R} {P}{bd['bsd']:.5f}{R} {V}{bd['poincare']:.5f}{R}")
+
+    # Performance
+    t0 = time.time()
+    for _ in range(1000):
+        mill_mod.compute(0.05, 5.0, 200000, 50, "Opus 4.6", "bench", ts)
+    elapsed = (time.time() - t0) * 1000 / 1000
+    print(f"\n  {D}Performance: {elapsed:.3f}ms/call (budget: <1ms){R}")
+
+print(f"\n  {D}Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}{R}")
+PYEOF
+;;
+
 help|*)
 cat << 'USAGE'
   ⛓️  roadchain — RoadChain AI Compute Ledger CLI
@@ -521,6 +703,7 @@ cat << 'USAGE'
     commit       Commit pending burns to chain.json as a PoW block
     wallet       Show wallet balance and address
     burns [n]    Show last [n] burn records (default: 10)
+    millennium   Deep analysis of all 7 Millennium Prize multipliers
     stats        Summary statistics
     help         This message
 USAGE
