@@ -191,8 +191,53 @@ for line in last_n_lines(BURNS, 5):
         ts = datetime.fromtimestamp(d["timestamp"]).strftime("%H:%M:%S")
         tk = d.get("tokens", 0)
         sid = d.get("session", "")[:8]
-        print(f"  {P}🔥{R} {B}{ts}{R}  ${d['usd_cost']:.4f} USD → {A}{d['road_burned']:.4f} ROAD{R}  {P}{tk:,} tokens{R}  {D}[{d['hash']}]{R}  {D}{sid}{R}")
+        mm = d.get("millennium_multiplier", "")
+        mm_str = f"  ×{mm:.5f}" if mm else ""
+        print(f"  {P}🔥{R} {B}{ts}{R}  ${d['usd_cost']:.4f} USD → {A}{d['road_burned']:.4f} ROAD{R}{G}{mm_str}{R}  {P}{tk:,} tokens{R}  {D}[{d['hash']}]{R}  {D}{sid}{R}")
     except: pass
+
+# ── Millennium Prize Multipliers ──
+last_burn_lines = last_n_lines(BURNS, 10)
+mill_data = None
+for line in reversed(last_burn_lines):
+    line = line.strip()
+    if not line: continue
+    try:
+        d = json.loads(line)
+        if d.get("type") == "AI_COMPUTE_BURN" and d.get("millennium"):
+            mill_data = d
+            break
+    except: pass
+
+if mill_data:
+    mm = mill_data.get("millennium", {})
+    combined = mill_data.get("millennium_multiplier", 1.0)
+    base = mill_data.get("road_burned_base", mill_data.get("road_burned", 0))
+    actual = mill_data.get("road_burned", 0)
+    bonus = actual - base
+
+    labels = {
+        "p_vs_np":       ("P vs NP        ", "Subset sum density"),
+        "riemann":       ("Riemann ζ      ", "Zeta critical line"),
+        "yang_mills":    ("Yang-Mills     ", "SU(3) coupling"),
+        "navier_stokes": ("Navier-Stokes  ", "Reynolds number"),
+        "hodge":         ("Hodge          ", "CY3 Hodge numbers"),
+        "bsd":           ("BSD            ", "Elliptic L-function"),
+        "poincare":      ("Poincaré       ", "W-entropy functional"),
+    }
+    colors = [P, V, B, A, G, P, V]
+
+    print(f"\n  {P}═══ MILLENNIUM PRIZE MULTIPLIERS ═══{R}  {D}(×{combined:.5f} combined){R}")
+    for i, (key, (label, desc)) in enumerate(labels.items()):
+        val = mm.get(key, 1.0)
+        contrib = val - 1.0
+        bar_len = int(min(contrib * 1000, 10))  # scale: 0.010 = full 10
+        bar = "▓" * bar_len + "░" * (10 - bar_len)
+        c = colors[i % len(colors)]
+        print(f"  {c}{label}{R} {c}{bar}{R} {A}×{val:.5f}{R}  {D}{desc}{R}")
+
+    print(f"  {D}{'─'*60}{R}")
+    print(f"  {A}Base burn:{R} {base:.4f}  {P}+ {bonus:.4f} millennium{R}  {G}= {actual:.4f} ROAD{R}")
 
 print(f"\n  {D}Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  │  Refresh: statusline renders every ~1s{R}")
 PYEOF
