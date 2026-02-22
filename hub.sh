@@ -1,4 +1,20 @@
 #!/bin/bash
+#===============================================================================
+# BlackRoad OS Hub — Launcher
+# Delegates to the full hub in blackroad-operator/cli-scripts/hub.sh
+#===============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REAL_HUB="${SCRIPT_DIR}/blackroad-operator/cli-scripts/hub.sh"
+
+if [[ -f "$REAL_HUB" ]]; then
+  exec bash "$REAL_HUB" "$@"
+fi
+
+# Fallback: simple arrow-key menu if operator hub not found
+echo -e "\033[1;33m⚠  Real hub not found at: ${REAL_HUB}\033[0m"
+echo -e "\033[2mFalling back to basic menu...\033[0m"
+sleep 1
 
 selected=0
 options=("DASHBOARD" "AGENTS" "CHAT" "LOGS" "NETWORK" "MEMORY" "TASKS" "EVENTS" "METRICS" "OFFICE" "EXIT")
