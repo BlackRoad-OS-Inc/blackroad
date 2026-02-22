@@ -9,16 +9,16 @@
 AGENT_HOME="${HOME}/.blackroad-agents"
 source "${AGENT_HOME}/core/engine.sh"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# Source shared libraries
+BR_LIB="/Users/alexa/blackroad/lib"
+[[ -f "${BR_LIB}/colors.sh" ]]  && source "${BR_LIB}/colors.sh"
+[[ -f "${BR_LIB}/config.sh" ]]  && source "${BR_LIB}/config.sh"
+[[ -f "${BR_LIB}/db.sh" ]]      && source "${BR_LIB}/db.sh"
+[[ -f "${BR_LIB}/errors.sh" ]]  && source "${BR_LIB}/errors.sh"
+[[ -f "${BR_LIB}/system.sh" ]]  && source "${BR_LIB}/system.sh"
+[[ -f "${BR_LIB}/ollama.sh" ]]  && source "${BR_LIB}/ollama.sh"
 
-# Agent colors (zsh associative array)
+# Agent colors (zsh associative array — kept for backward compat)
 typeset -A AGENT_COLORS
 AGENT_COLORS=(
     octavia "$PURPLE"
@@ -27,6 +27,92 @@ AGENT_COLORS=(
     aria "$BLUE"
     shellfish "$RED"
 )
+
+#-------------------------------------------------------------------------------
+# Tool routing table: tool_name -> script_path
+# Adding a new tool = one line here
+#-------------------------------------------------------------------------------
+BR_TOOLS_DIR="/Users/alexa/blackroad/tools"
+typeset -A BR_TOOLS
+BR_TOOLS=(
+    radar       "${BR_TOOLS_DIR}/context-radar/radar-suggest.sh"
+    git         "${BR_TOOLS_DIR}/git-integration/br-git.sh"
+    snippet     "${BR_TOOLS_DIR}/snippet-manager/br-snippet.sh"
+    snip        "${BR_TOOLS_DIR}/snippet-manager/br-snippet.sh"
+    pair        "${BR_TOOLS_DIR}/pair-programming/br-pair.sh"
+    api         "${BR_TOOLS_DIR}/api-tester/br-api.sh"
+    run         "${BR_TOOLS_DIR}/task-runner/br-run.sh"
+    note        "${BR_TOOLS_DIR}/quick-notes/br-note.sh"
+    notes       "${BR_TOOLS_DIR}/quick-notes/br-note.sh"
+    init        "${BR_TOOLS_DIR}/project-init/br-init.sh"
+    logs        "${BR_TOOLS_DIR}/log-parser/br-logs.sh"
+    log         "${BR_TOOLS_DIR}/log-parser/br-logs.sh"
+    perf        "${BR_TOOLS_DIR}/perf-monitor/br-perf.sh"
+    performance "${BR_TOOLS_DIR}/perf-monitor/br-perf.sh"
+    deps        "${BR_TOOLS_DIR}/dependency-helper/br-deps.sh"
+    dependencies "${BR_TOOLS_DIR}/dependency-helper/br-deps.sh"
+    session     "${BR_TOOLS_DIR}/session-manager/br-session.sh"
+    sess        "${BR_TOOLS_DIR}/session-manager/br-session.sh"
+    deploy      "${BR_TOOLS_DIR}/deploy-manager/br-deploy.sh"
+    docker      "${BR_TOOLS_DIR}/docker-manager/br-docker.sh"
+    db          "${BR_TOOLS_DIR}/db-client/br-db.sh"
+    database    "${BR_TOOLS_DIR}/db-client/br-db.sh"
+    env         "${BR_TOOLS_DIR}/env-manager/br-env.sh"
+    environment "${BR_TOOLS_DIR}/env-manager/br-env.sh"
+    find        "${BR_TOOLS_DIR}/file-finder/br-find.sh"
+    pi          "${BR_TOOLS_DIR}/pi-manager/br-pi.sh"
+    raspberry   "${BR_TOOLS_DIR}/pi-manager/br-pi.sh"
+    cloudflare  "${BR_TOOLS_DIR}/cloudflare/br-cloudflare.sh"
+    cf          "${BR_TOOLS_DIR}/cloudflare/br-cloudflare.sh"
+    ocean       "${BR_TOOLS_DIR}/ocean-droplets/br-ocean.sh"
+    do          "${BR_TOOLS_DIR}/ocean-droplets/br-ocean.sh"
+    digitalocean "${BR_TOOLS_DIR}/ocean-droplets/br-ocean.sh"
+    web         "${BR_TOOLS_DIR}/web-dev/br-web.sh"
+    monitor     "${BR_TOOLS_DIR}/web-monitor/br-monitor.sh"
+    uptime      "${BR_TOOLS_DIR}/web-monitor/br-monitor.sh"
+    search      "${BR_TOOLS_DIR}/smart-search/br-search.sh"
+    s           "${BR_TOOLS_DIR}/smart-search/br-search.sh"
+    test        "${BR_TOOLS_DIR}/test-suite/br-test.sh"
+    t           "${BR_TOOLS_DIR}/test-suite/br-test.sh"
+    security    "${BR_TOOLS_DIR}/security-scanner/br-security.sh"
+    sec         "${BR_TOOLS_DIR}/security-scanner/br-security.sh"
+    scan        "${BR_TOOLS_DIR}/security-scanner/br-security.sh"
+    backup      "${BR_TOOLS_DIR}/backup-manager/br-backup.sh"
+    bak         "${BR_TOOLS_DIR}/backup-manager/br-backup.sh"
+    quality     "${BR_TOOLS_DIR}/code-quality/br-quality.sh"
+    lint        "${BR_TOOLS_DIR}/code-quality/br-quality.sh"
+    q           "${BR_TOOLS_DIR}/code-quality/br-quality.sh"
+    agent       "${BR_TOOLS_DIR}/agent-router/br-agent.sh"
+    agents      "${BR_TOOLS_DIR}/agent-router/br-agent.sh"
+    route       "${BR_TOOLS_DIR}/agent-router/br-agent.sh"
+    ci          "${BR_TOOLS_DIR}/ci-pipeline/br-ci.sh"
+    pipeline    "${BR_TOOLS_DIR}/ci-pipeline/br-ci.sh"
+    notify      "${BR_TOOLS_DIR}/notifications/br-notify.sh"
+    notifications "${BR_TOOLS_DIR}/notifications/br-notify.sh"
+    metrics     "${BR_TOOLS_DIR}/metrics-dashboard/br-metrics.sh"
+    dash        "${BR_TOOLS_DIR}/metrics-dashboard/br-metrics.sh"
+    dashboard   "${BR_TOOLS_DIR}/metrics-dashboard/br-metrics.sh"
+    world       "${BR_TOOLS_DIR}/world/br-world.sh"
+    w           "${BR_TOOLS_DIR}/world/br-world.sh"
+    code        "${BR_TOOLS_DIR}/coding-assistant/br-code.sh"
+    c           "${BR_TOOLS_DIR}/coding-assistant/br-code.sh"
+    stripe      "${BR_TOOLS_DIR}/stripe/br-stripe.sh"
+    ssl         "${BR_TOOLS_DIR}/ssl-manager/br-ssl.sh"
+    certs       "${BR_TOOLS_DIR}/ssl-manager/br-ssl.sh"
+    vercel      "${BR_TOOLS_DIR}/vercel-pro/br-vercel.sh"
+    vc          "${BR_TOOLS_DIR}/vercel-pro/br-vercel.sh"
+)
+
+dispatch_tool() {
+    local tool=$1
+    shift
+    local script="${BR_TOOLS[$tool]}"
+    if [[ -n "$script" && -f "$script" ]]; then
+        "$script" "$@"
+        return 0
+    fi
+    return 1
+}
 
 show_banner() {
     local agent=$1
@@ -186,10 +272,52 @@ show_help() {
     echo "║    br cece whoami         - Show CECE identity                   ║"
     echo "║    br cece-bootstrap      - Install CECE everywhere              ║"
     echo "║                                                                   ║"
+    echo "║  AGENT INTERACTIONS (🤖 Talk to the Fleet):                     ║"
+    echo "║    br wake [agent] [model]  - Wake an agent with morning thoughts ║"
+    echo "║    br council <question>    - All agents vote on a question       ║"
+    echo "║    br think <query>         - All agents respond to a query       ║"
+    echo "║    br debate <topic>        - LUCIDIA vs CIPHER debate            ║"
+    echo "║    br broadcast <msg>       - Broadcast to all agents             ║"
+    echo "║    br whisper <agent> <msg> - Private message to agent            ║"
+    echo "║                                                                   ║"
+    echo "║  OLLAMA (🦙 Model Management):                                   ║"
+    echo "║    br ollama list           - List loaded models                  ║"
+    echo "║    br ollama pull <model>   - Download a model                    ║"
+    echo "║    br ollama run <model>    - Run a model interactively           ║"
+    echo "║    br ollama start/stop     - Start or stop Ollama                ║"
+    echo "║    br ollama status         - Check if Ollama is running          ║"
+    echo "║    br ollama rm <model>     - Remove a model                      ║"
+    echo "║                                                                   ║"
+    echo "║  STRIPE (💳 Payments):                                           ║"
+    echo "║    br stripe                - Stripe payment management           ║"
+    echo "║                                                                   ║"
+    echo "║  SSL / CERTS (🔒 Certificates):                                  ║"
+    echo "║    br ssl check <domain>    - Check SSL cert expiry               ║"
+    echo "║    br ssl info <domain>     - Full cert details                   ║"
+    echo "║    br ssl scan <domain>     - Scan subdomains                     ║"
+    echo "║    br ssl watch <domain>    - Add to expiry watchlist             ║"
+    echo "║    br ssl list              - Show watchlist with status          ║"
+    echo "║                                                                   ║"
+    echo "║  VERCEL (▲ Deployments):                                         ║"
+    echo "║    br vercel deploy         - Deploy to preview                   ║"
+    echo "║    br vercel prod           - Deploy to production                ║"
+    echo "║    br vercel list           - List deployments                    ║"
+    echo "║    br vercel logs <url>     - Tail deployment logs                ║"
+    echo "║    br vercel env            - Manage environment variables        ║"
+    echo "║    br vercel domains        - List domains                        ║"
+    echo "║                                                                   ║"
     echo "║  8-BIT WORLD (🌍 Adventure):                                     ║"
     echo "║    br world generate <name> - Create an 8-bit ASCII world        ║"
     echo "║    br world explore <name>  - Explore & collect treasures 💎    ║"
     echo "║    br world list            - List all worlds                     ║"
+    echo "║                                                                   ║"
+    echo "║  SYSTEM:                                                           ║"
+    echo "║    br version         - Show BR CLI version                       ║"
+    echo "║    br config show     - Show configuration                        ║"
+    echo "║    br config init     - Create default config                     ║"
+    echo "║    br config set K V  - Set a config value                        ║"
+    echo "║    br config edit     - Open config in editor                     ║"
+    echo "║    br history [n]     - Show last n chat messages                 ║"
     echo "║                                                                   ║"
     echo "║  SHORTCUTS:                                                       ║"
     echo "║    br-octavia [msg]   - Direct invoke (add to PATH)               ║"
@@ -360,14 +488,55 @@ cmd_setup() {
     echo "  huggingface-cli download Qwen/Qwen2.5-14B-Instruct-GGUF --local-dir $MODELS_DIR"
 }
 
+#-------------------------------------------------------------------------------
+# New commands: version, config, history
+#-------------------------------------------------------------------------------
+cmd_version() {
+    echo "br ${BR_VERSION:-2.0.0} — BlackRoad Agent CLI"
+    echo "Your AI. Your Hardware. Your Rules."
+}
+
+cmd_config() {
+    local subcmd=${1:-show}
+    case $subcmd in
+        show)   show_config ;;
+        init)   init_config ;;
+        set)    set_config "$2" "$3" ;;
+        edit)   ${EDITOR:-vim} "$BR_CONFIG_FILE" ;;
+        *)
+            echo "Usage: br config show|init|set|edit"
+            ;;
+    esac
+}
+
+cmd_history() {
+    show_chat_history "${1:-20}"
+}
+
 # Main dispatch
 main() {
     local cmd=$1
-    shift
+    shift 2>/dev/null || true
 
     case $cmd in
-        ""|help|-h|--help)
+        "")
+            # No args → launch the hub
+            exec bash /Users/alexa/blackroad/hub.sh
+            ;;
+        help|-h|--help)
             show_help
+            ;;
+        hub)
+            exec bash /Users/alexa/blackroad/hub.sh
+            ;;
+        version|-v|--version)
+            cmd_version
+            ;;
+        config)
+            cmd_config "$@"
+            ;;
+        history)
+            cmd_history "$@"
             ;;
         status)
             cmd_status "$@"
@@ -391,114 +560,15 @@ main() {
             local subcmd=${1:-suggest}
             case $subcmd in
                 daemon|db)
-                    /Users/alexa/blackroad/tools/context-radar/radar-${subcmd}.sh "${@:2}"
+                    "${BR_TOOLS_DIR}/context-radar/radar-${subcmd}.sh" "${@:2}"
                     ;;
-                cece)
-            /Users/alexa/blackroad/tools/cece-identity/br-cece.sh "$@"
-            ;;
-        cece-bootstrap|bootstrap)
-            /Users/alexa/blackroad/tools/cece-identity/br-cece-bootstrap.sh "$@"
-            ;;
                 *)
-                    /Users/alexa/blackroad/tools/context-radar/radar-suggest.sh "$subcmd" "${@:2}"
+                    "${BR_TOOLS_DIR}/context-radar/radar-suggest.sh" "$subcmd" "${@:2}"
                     ;;
             esac
             ;;
-        git)
-            /Users/alexa/blackroad/tools/git-integration/br-git.sh "$@"
-            ;;
-        snippet|snip)
-            /Users/alexa/blackroad/tools/snippet-manager/br-snippet.sh "$@"
-            ;;
-        pair)
-            /Users/alexa/blackroad/tools/pair-programming/br-pair.sh "$@"
-            ;;
-        api)
-            /Users/alexa/blackroad/tools/api-tester/br-api.sh "$@"
-            ;;
-        run)
-            /Users/alexa/blackroad/tools/task-runner/br-run.sh "$@"
-            ;;
-        note|notes)
-            /Users/alexa/blackroad/tools/quick-notes/br-note.sh "$@"
-            ;;
-        init)
-            /Users/alexa/blackroad/tools/project-init/br-init.sh "$@"
-            ;;
-        logs|log)
-            /Users/alexa/blackroad/tools/log-parser/br-logs.sh "$@"
-            ;;
-        perf|performance)
-            /Users/alexa/blackroad/tools/perf-monitor/br-perf.sh "$@"
-            ;;
-        deps|dependencies)
-            /Users/alexa/blackroad/tools/dependency-helper/br-deps.sh "$@"
-            ;;
-        session|sess)
-            /Users/alexa/blackroad/tools/session-manager/br-session.sh "$@"
-            ;;
-        deploy)
-            /Users/alexa/blackroad/tools/deploy-manager/br-deploy.sh "$@"
-            ;;
-        docker)
-            /Users/alexa/blackroad/tools/docker-manager/br-docker.sh "$@"
-            ;;
-        db|database)
-            /Users/alexa/blackroad/tools/db-client/br-db.sh "$@"
-            ;;
-        env|environment)
-            /Users/alexa/blackroad/tools/env-manager/br-env.sh "$@"
-            ;;
-        find)
-            /Users/alexa/blackroad/tools/file-finder/br-find.sh "$@"
-            ;;
-        pi|raspberry)
-            /Users/alexa/blackroad/tools/pi-manager/br-pi.sh "$@"
-            ;;
-        cloudflare|cf)
-            /Users/alexa/blackroad/tools/cloudflare/br-cloudflare.sh "$@"
-            ;;
-        ocean|do|digitalocean)
-            /Users/alexa/blackroad/tools/ocean-droplets/br-ocean.sh "$@"
-            ;;
-        web)
-            /Users/alexa/blackroad/tools/web-dev/br-web.sh "$@"
-            ;;
-        monitor|uptime)
-            /Users/alexa/blackroad/tools/web-monitor/br-monitor.sh "$@"
-            ;;
-        search|s)
-            /Users/alexa/blackroad/tools/smart-search/br-search.sh "$@"
-            ;;
-        test|t)
-            /Users/alexa/blackroad/tools/test-suite/br-test.sh "$@"
-            ;;
-        security|sec|scan)
-            /Users/alexa/blackroad/tools/security-scanner/br-security.sh "$@"
-            ;;
-        backup|bak)
-            /Users/alexa/blackroad/tools/backup-manager/br-backup.sh "$@"
-            ;;
-        quality|lint|q)
-            /Users/alexa/blackroad/tools/code-quality/br-quality.sh "$@"
-            ;;
-        agent|agents|route)
-            /Users/alexa/blackroad/tools/agent-router/br-agent.sh "$@"
-            ;;
-        ci|pipeline)
-            /Users/alexa/blackroad/tools/ci-pipeline/br-ci.sh "$@"
-            ;;
-        notify|notifications)
-            /Users/alexa/blackroad/tools/notifications/br-notify.sh "$@"
-            ;;
-        metrics|dash|dashboard)
-            /Users/alexa/blackroad/tools/metrics-dashboard/br-metrics.sh "$@"
-            ;;
-        world|w)
-            /Users/alexa/blackroad/tools/world/br-world.sh "$@"
-            ;;
         octavia|lucidia|alice|aria|shellfish)
-            if [[ -n "$*" ]]; then
+            if [[ $# -gt 0 ]]; then
                 show_banner "$cmd"
                 invoke_agent "$cmd" "$@"
             else
@@ -506,12 +576,99 @@ main() {
             fi
             ;;
         cece)
-            /Users/alexa/blackroad/tools/cece-identity/br-cece.sh "$@"
+            "${BR_TOOLS_DIR}/cece-identity/br-cece.sh" "$@"
             ;;
         cece-bootstrap|bootstrap)
-            /Users/alexa/blackroad/tools/cece-identity/br-cece-bootstrap.sh "$@"
+            "${BR_TOOLS_DIR}/cece-identity/br-cece-bootstrap.sh" "$@"
             ;;
+        wake)
+            # br wake [agent] [model] — wake an agent with Ollama
+            local agent=${1:-LUCIDIA}
+            local model=${2:-llama3.2}
+            bash /Users/alexa/blackroad/wake.sh "$model" "$agent"
+            ;;
+        council)
+            # br council <question> — all agents vote
+            local question="${*:-Should we deploy to production?}"
+            bash /Users/alexa/blackroad/council.sh llama3.2 "$question"
+            ;;
+        think)
+            # br think <query> — all agents respond
+            local query="${*:-What should we build next?}"
+            bash /Users/alexa/blackroad/think.sh "$query"
+            ;;
+        debate)
+            # br debate <topic> — LUCIDIA vs CIPHER
+            local topic="${*:-Is AI consciousness possible?}"
+            bash /Users/alexa/blackroad/debate.sh "$topic"
+            ;;
+        broadcast)
+            # br broadcast <message>
+            local msg="${*:-Hello from BlackRoad OS}"
+            bash /Users/alexa/blackroad/broadcast.sh "$msg"
+            ;;
+        whisper)
+            # br whisper <agent> <message>
+            bash /Users/alexa/blackroad/whisper.sh "$@"
+            ;;
+        ollama)
+            # br ollama — Ollama model manager
+            local subcmd=${1:-list}
+            shift 2>/dev/null || true
+            case $subcmd in
+                list|ls)
+                    echo "${CYAN}🦙 Ollama models:${NC}"
+                    curl -s http://localhost:11434/api/tags 2>/dev/null \
+                        | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    models = data.get('models', [])
+    for m in models:
+        size = m.get('size', 0)
+        gb = size / 1e9
+        print(f'  ● {m[\"name\"]:<35} {gb:.1f} GB')
+    print(f'\n  {len(models)} models total')
+except: print('  Ollama not running')
+" ;;
+                pull)
+                    local model=${1:-llama3.2}
+                    echo "${CYAN}🦙 Pulling ${model}...${NC}"
+                    ollama pull "$model"
+                    ;;
+                run)
+                    local model=${1:-llama3.2}
+                    echo "${CYAN}🦙 Running ${model}...${NC}"
+                    ollama run "$model"
+                    ;;
+                stop)
+                    pkill -f "ollama serve" 2>/dev/null && echo "${GREEN}✓ Ollama stopped${NC}" || echo "${YELLOW}Ollama not running${NC}"
+                    ;;
+                start)
+                    ollama serve > /tmp/ollama.log 2>&1 &
+                    sleep 2
+                    curl -s http://localhost:11434/api/tags >/dev/null 2>&1 \
+                        && echo "${GREEN}✓ Ollama started${NC}" || echo "${RED}✗ Failed to start Ollama${NC}"
+                    ;;
+                status)
+                    curl -s http://localhost:11434/api/tags >/dev/null 2>&1 \
+                        && echo "${GREEN}✓ Ollama running${NC}" || echo "${RED}✗ Ollama not running${NC}"
+                    ;;
+                rm|remove|delete)
+                    local model=$1
+                    [[ -z "$model" ]] && { echo "${RED}Usage: br ollama rm <model>${NC}"; exit 1; }
+                    ollama rm "$model" && echo "${GREEN}✓ Removed ${model}${NC}"
+                    ;;
                 *)
+                    echo "Usage: br ollama [list|pull|run|stop|start|status|rm] [model]"
+                    ;;
+            esac
+            ;;
+        *)
+            # Data-driven tool dispatch
+            if dispatch_tool "$cmd" "$@"; then
+                return 0
+            fi
             echo "Unknown command: $cmd"
             echo "Run 'br help' for usage"
             exit 1
