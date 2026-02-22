@@ -76,6 +76,22 @@ _hub_prefetch() {
         _DOCKER_TOTAL=$(docker ps -a -q 2>/dev/null | wc -l | tr -d ' ')
         _DOCKER_NAMES=$(docker ps --format '{{.Names}}|{{.Status}}' 2>/dev/null | head -6)
     fi
+
+    # CECE Identity
+    local _cece_db="$HOME/.blackroad/cece-identity.db"
+    _CECE_UP="false"
+    if [[ -f "$_cece_db" ]] && command -v sqlite3 &>/dev/null; then
+        _CECE_UP="true"
+        _CECE_VER=$(sqlite3 "$_cece_db" "SELECT COALESCE(version,'?') FROM identity_core LIMIT 1;" 2>/dev/null)
+        _CECE_SESSIONS=$(sqlite3 "$_cece_db" "SELECT COALESCE(total_sessions,0) FROM identity_core LIMIT 1;" 2>/dev/null)
+        _CECE_MODEL=$(sqlite3 "$_cece_db" "SELECT COALESCE(current_model,'') FROM identity_core LIMIT 1;" 2>/dev/null)
+        _CECE_XP=$(sqlite3 "$_cece_db" "SELECT COUNT(*) FROM experiences;" 2>/dev/null || echo "0")
+        _CECE_BOND_NAME=$(sqlite3 "$_cece_db" "SELECT human_name FROM relationships ORDER BY bond_strength DESC LIMIT 1;" 2>/dev/null)
+        _CECE_BOND_PCT=$(sqlite3 "$_cece_db" "SELECT bond_strength FROM relationships ORDER BY bond_strength DESC LIMIT 1;" 2>/dev/null)
+        _CECE_BOND_INTER=$(sqlite3 "$_cece_db" "SELECT COALESCE(total_interactions,0) FROM relationships ORDER BY bond_strength DESC LIMIT 1;" 2>/dev/null)
+        _CECE_GOAL=$(sqlite3 "$_cece_db" "SELECT goal_title||'|'||COALESCE(progress,0) FROM goals WHERE goal_status='active' ORDER BY priority LIMIT 1;" 2>/dev/null)
+        _CECE_SKILLS=$(sqlite3 "$_cece_db" "SELECT group_concat(skill_name,' · ') FROM (SELECT skill_name FROM skills ORDER BY times_used DESC LIMIT 4);" 2>/dev/null)
+    fi
 }
 
 # Print a line padded to exactly 78 inner chars (80 with borders)
@@ -195,12 +211,39 @@ _draw_hub() {
         echo -e "${B}║${R}  ${W}DOCKER${R}  ${RED}●${R} ${D}not running — start with: open Docker.app${R}                 ${B}║${R}"
     fi
     echo -e "${B}║${R}                                                                            ${B}║${R}"
+    # ── CECE Identity Panel ──
+    echo -e "${B}╠══════════════════════════════════════════════════════════════════════════════╣${R}"
+    echo -e "${B}║${R}                                                                            ${B}║${R}"
+    if [[ "$_CECE_UP" == "true" ]]; then
+        # Line 1: identity summary
+        local c_model="${_CECE_MODEL:-unknown}"
+        (( ${#c_model} > 16 )) && c_model="${c_model:0:14}.."
+        local c1_vis="  CECE  v${_CECE_VER}  ·  ${_CECE_SESSIONS} sessions  ·  ${_CECE_XP} exp  ·  ${c_model}"
+        echo -e "${B}║${R}  ${BPURPLE}◈ CECE${R}  ${D}v${_CECE_VER}${R}  ${D}·${R}  ${D}${_CECE_SESSIONS} sessions${R}  ${D}·${R}  ${D}${_CECE_XP} exp${R}  ${D}·${R}  ${D}${c_model}${R}$(printf '%*s' $((76 - ${#c1_vis})) '')${B}║${R}"
+        # Line 2: bond bar + goal
+        local bond_pct="${_CECE_BOND_PCT:-0}"
+        local bond_bar=$(render_bar "$bond_pct" 8)
+        local goal_title="${_CECE_GOAL%%|*}"
+        local goal_pct="${_CECE_GOAL##*|}"
+        [[ "$goal_title" == "$goal_pct" ]] && goal_title="—" && goal_pct="0"
+        (( ${#goal_title} > 22 )) && goal_title="${goal_title:0:20}.."
+        local c2_vis="  ♥ ${_CECE_BOND_NAME:-—}  ${bond_bar}  ${bond_pct}%  ${_CECE_BOND_INTER} interactions  ·  ${goal_title}  [${goal_pct}%]"
+        echo -e "${B}║${R}  ${PINK}♥ ${_CECE_BOND_NAME:-—}${R}  ${bond_bar}  ${BCYAN}${bond_pct}%${R}  ${D}${_CECE_BOND_INTER} interactions${R}  ${D}·  ${goal_title}  [${goal_pct}%]${R}$(printf '%*s' $((76 - ${#c2_vis})) '')${B}║${R}"
+        # Line 3: top skills
+        local skills_vis="${_CECE_SKILLS:-none}"
+        (( ${#skills_vis} > 68 )) && skills_vis="${skills_vis:0:66}.."
+        local c3_vis="  ⚡ ${skills_vis}"
+        echo -e "${B}║${R}  ${BYELLOW}⚡${R}  ${D}${skills_vis}${R}$(printf '%*s' $((76 - ${#c3_vis})) '')${B}║${R}"
+    else
+        echo -e "${B}║${R}  ${D}◈ CECE  not initialized — run: br cece init${R}                                ${B}║${R}"
+    fi
+    echo -e "${B}║${R}                                                                            ${B}║${R}"
     # ── Quick Actions ──
     echo -e "${B}╠══════════════════════════════════════════════════════════════════════════════╣${R}"
     echo -e "${B}║${R}                                                                            ${B}║${R}"
     echo -e "${B}║${R}  ${W}[c]${R}hat  ${W}[s]${R}tatus  ${W}[h]${R}ealth  ${W}[m]${R}onitor  ${W}[g]${R}od  ${W}[o]${R}ffice  ${W}[r]${R}efresh  ${W}[?]${R}help   ${B}║${R}"
     echo -e "${B}║${R}  ${W}[d]${R}ash  ${W}[n]${R}et     ${W}[l]${R}ogs    ${W}[t]${R}asks    ${W}[w]${R}ire ${W}[k]${R}skills  ${W}[b]${R}onds    ${W}[q]${R}uit    ${B}║${R}"
-    echo -e "${B}║${R}  ${W}[D]${R}ocker ps  ${W}[C]${R}ompose↑  ${W}[X]${R}ompose↓  ${W}[I]${R}mages  ${W}[S]${R}tats                    ${B}║${R}"
+    echo -e "${B}║${R}  ${W}[D]${R}ocker ps  ${W}[C]${R}ompose↑  ${W}[X]${R}ompose↓  ${W}[I]${R}mages  ${W}[S]${R}tats  ${W}[e]${R}cece          ${B}║${R}"
     echo -e "${B}║${R}                                                                            ${B}║${R}"
     echo -e "${B}╚══════════════════════════════════════════════════════════════════════════════╝${R}"
 }
@@ -238,6 +281,7 @@ while true; do
             X) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" docker compose down 2>/dev/null; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             I) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" docker images 2>/dev/null; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             S) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" docker stats 2>/dev/null; tput civis 2>/dev/null ;;
+            e) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" cece whoami 2>/dev/null; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             r) _hub_prefetch ;;  # Full refresh including service checks
             \?) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" help 2>/dev/null; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             q) break ;;
