@@ -1,78 +1,65 @@
 #!/bin/bash
+#===============================================================================
+# BlackRoad OS — Branded Splash (fast version of boot)
+#===============================================================================
 
-tput civis
-trap 'tput cnorm; exit' INT
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+AM='\033[38;5;214m'   # amber
+PK='\033[38;5;205m'   # pink
+VL='\033[38;5;135m'   # violet
+BL='\033[38;5;69m'    # blue
+W='\033[1;37m'        # white bold
+D='\033[2m'           # dim
+G='\033[1;32m'        # green
+CY='\033[0;36m'       # cyan
+YL='\033[1;33m'       # yellow
+RD='\033[1;31m'       # red
+PU='\033[1;35m'       # purple
+NC='\033[0m'
+
+tput civis 2>/dev/null
+trap 'tput cnorm 2>/dev/null; exit' INT TERM
+
+_tw() {
+    local text="$1" delay="${2:-0.03}" color="${3:-}"
+    for (( i=0; i<${#text}; i++ )); do
+        echo -ne "${color}${text:$i:1}${NC}"
+        sleep "$delay"
+    done
+    echo ""
+}
 
 clear
+echo ""; echo ""; echo ""; echo ""
 
-# Fade in logo
-sleep 0.5
-
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-sleep 0.1
-echo -e "                    \033[2m██████\033[0m"
-sleep 0.1
-echo -e "                    \033[2m██   ██\033[0m"
-sleep 0.1
-echo -e "                    \033[2m██████\033[0m"
-sleep 0.1
-echo -e "                    \033[2m██   ██\033[0m"
-sleep 0.1
-echo -e "                    \033[2m██████\033[0m"
-
-sleep 0.5
-clear
-
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo -e "             \033[1;35m██████  ██       █████   ██████ ██   ██\033[0m"
-sleep 0.1
-echo -e "             \033[1;35m██   ██ ██      ██   ██ ██      ██  ██\033[0m"
-sleep 0.1
-echo -e "             \033[1;35m██████  ██      ███████ ██      █████\033[0m"
-sleep 0.1
-echo -e "             \033[1;35m██   ██ ██      ██   ██ ██      ██  ██\033[0m"
-sleep 0.1
-echo -e "             \033[1;35m██████  ███████ ██   ██  ██████ ██   ██\033[0m"
-
-sleep 0.3
-
-echo ""
-echo -e "             \033[1;35m██████   ██████   █████  ██████\033[0m"
-sleep 0.1
-echo -e "             \033[1;35m██   ██ ██    ██ ██   ██ ██   ██\033[0m"
-sleep 0.1
-echo -e "             \033[1;35m██████  ██    ██ ███████ ██   ██\033[0m"
-sleep 0.1
-echo -e "             \033[1;35m██   ██ ██    ██ ██   ██ ██   ██\033[0m"
-sleep 0.1
-echo -e "             \033[1;35m██   ██  ██████  ██   ██ ██████\033[0m"
-
-sleep 0.5
-
-echo ""
-echo ""
-echo -e "                       \033[2m◆ OPERATING SYSTEM ◆\033[0m"
-
-sleep 1
-
-echo ""
-echo ""
-echo -e "          \033[1;31m●\033[0m \033[2mLUCIDIA\033[0m   \033[1;36m●\033[0m \033[2mALICE\033[0m   \033[1;32m●\033[0m \033[2mOCTAVIA\033[0m   \033[1;33m●\033[0m \033[2mPRISM\033[0m   \033[1;35m●\033[0m \033[2mECHO\033[0m   \033[1;34m●\033[0m \033[2mCIPHER\033[0m"
-
-sleep 1.5
-
-echo ""
-echo ""
-echo -e "                         \033[1;32m[ SYSTEM READY ]\033[0m"
+# Logo — single color, fast
+echo -e "    ${AM}██████╗ ██╗      █████╗  ██████╗██╗  ██╗██████╗  ██████╗  █████╗ ██████╗${NC}"
+echo -e "    ${AM}██╔══██╗██║     ██╔══██╗██╔════╝██║ ██╔╝██╔══██╗██╔═══██╗██╔══██╗██╔══██╗${NC}"
+echo -e "    ${PK}██████╔╝██║     ███████║██║     █████╔╝ ██████╔╝██║   ██║███████║██║  ██║${NC}"
+echo -e "    ${PK}██╔══██╗██║     ██╔══██║██║     ██╔═██╗ ██╔══██╗██║   ██║██╔══██║██║  ██║${NC}"
+echo -e "    ${VL}██████╔╝███████╗██║  ██║╚██████╗██║  ██╗██║  ██║╚██████╔╝██║  ██║██████╔╝${NC}"
+echo -e "    ${VL}╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝${NC}"
 echo ""
 
-sleep 1
-tput cnorm
+# Tagline typewriter
+printf "    "
+_tw "Your AI. Your Hardware. Your Rules." 0.03 "${AM}"
+echo ""
+
+# Agent dots
+echo -e "    ${RD}●${NC} ${D}LUCIDIA${NC}   ${CY}●${NC} ${D}ALICE${NC}   ${G}●${NC} ${D}OCTAVIA${NC}   ${YL}●${NC} ${D}PRISM${NC}   ${PU}●${NC} ${D}ECHO${NC}   ${BL}●${NC} ${D}CIPHER${NC}"
+echo ""
+
+# Divider + CTA
+echo -e "    ${D}──────────────────────────────────────────────────────────────────────────${NC}"
+echo ""
+printf "    "
+_tw "Type  br  to begin." 0.04 "${W}"
+echo ""
+printf "    "
+_tw "Build something impossible." 0.035 "${D}"
+echo ""
+
+sleep 0.8
+tput cnorm 2>/dev/null
