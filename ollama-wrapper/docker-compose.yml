@@ -1,0 +1,38 @@
+# 🌌 BlackRoad AI - Ollama Runtime
+version: '3.8'
+
+services:
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blackroad-ai-ollama
+    image: blackroad-ai-ollama:latest
+    ports:
+      - "11434:11434"  # Ollama API
+      - "8001:8001"    # BlackRoad wrapper
+    volumes:
+      - ollama-models:/root/.ollama/models
+      - /Users/alexa:/host-home:ro
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - BLACKROAD_MEMORY_ENABLED=true
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    labels:
+      - "com.blackroad.service=ai-runtime"
+      - "com.blackroad.runtime=ollama"
+
+volumes:
+  ollama-models:
+
+networks:
+  default:
+    name: blackroad-ai-network
+    external: true
