@@ -17,6 +17,21 @@ B="${PINK}"   # border color
 R="${NC}"     # reset
 W="${WHITE}"  # white
 D="${DIM}"    # dim
+A="${AMBER}"  # amber accent
+
+# Rotating brand tagline — cycles every 10 seconds
+_br_tagline() {
+    local idx=$(( ($(date +%S) / 10) % 6 ))
+    local tags=(
+        "Your AI. Your Hardware. Your Rules."
+        "Build without limits. Ship without compromise."
+        "Tokenless. Trustless. Yours."
+        "30,000 agents. One command."
+        "Intelligence at the edge."
+        "Open source soul. Sovereign stack."
+    )
+    echo "${tags[$idx]}"
+}
 
 # Precompute slow checks (only once, or on manual refresh)
 _hub_prefetch() {
@@ -122,10 +137,10 @@ _draw_hub() {
 
     # ── Header ──
     echo -e "${B}╔══════════════════════════════════════════════════════════════════════════════╗${R}"
-    echo -e "${B}║${R}  ${PINK}◆${R} ${W}BLACKROAD OS${R} ${D}v${BR_VERSION}${R}              ${D}Your AI. Your Hardware. Your Rules.${R}  ${B}║${R}"
+    echo -e "${B}║${R}  ${PINK}◆${R} ${W}BLACKROAD OS${R} ${D}v${BR_VERSION}${R}              ${A}$(_br_tagline)${R}  ${B}║${R}"
     echo -e "${B}╠════════════════════════════════════╦═════════════════════════════════════════╣${R}"
     echo -e "${B}║${R}                                    ${B}║${R}                                         ${B}║${R}"
-    echo -e "${B}║${R}  ${W}SYSTEM${R}               ${D}${ts}${R}      ${B}║${R}  ${W}AGENTS${R}                                  ${B}║${R}"
+    echo -e "${B}║${R}  ${W}SYSTEM${R}  ${D}── live vitals${R}  ${D}${ts}${R}  ${B}║${R}  ${W}AGENTS${R}  ${D}── 30K online${R}                 ${B}║${R}"
 
     echo -e "${B}║${R}  CPU  $(render_bar $cpu 14) ${BCYAN}$(printf '%3d' $cpu)%${R}   ${B}║${R}  ${BRED}●${R} LUCIDIA ${a1}    ${BCYAN}●${R} ALICE  ${a2}        ${B}║${R}"
     echo -e "${B}║${R}  MEM  $(render_bar $mem 14) ${BCYAN}$(printf '%3d' $mem)%${R}   ${B}║${R}  ${BGREEN}●${R} OCTAVIA ${a3}    ${BYELLOW}●${R} PRISM  ${a4}        ${B}║${R}"
@@ -135,7 +150,7 @@ _draw_hub() {
     echo -e "${B}║${R}                                    ${B}║${R}                                         ${B}║${R}"
     echo -e "${B}╠════════════════════════════════════╬═════════════════════════════════════════╣${R}"
     echo -e "${B}║${R}                                    ${B}║${R}                                         ${B}║${R}"
-    echo -e "${B}║${R}  ${W}AI STACK${R}                            ${B}║${R}  ${W}PLATFORMS${R}                              ${B}║${R}"
+    echo -e "${B}║${R}  ${W}AI STACK${R}  ${D}── model-agnostic${R}          ${B}║${R}  ${W}PLATFORMS${R}  ${D}── deploy anywhere${R}           ${B}║${R}"
 
     # Format each service
     local ol=$(svc_format "$_OLLAMA" 20)
@@ -155,7 +170,7 @@ _draw_hub() {
     echo -e "${B}║${R}                                    ${B}║${R}                                         ${B}║${R}"
     echo -e "${B}╠════════════════════════════════════╬═════════════════════════════════════════╣${R}"
     echo -e "${B}║${R}                                    ${B}║${R}                                         ${B}║${R}"
-    echo -e "${B}║${R}  ${W}CODEX${R}                               ${B}║${R}  ${W}MEMORY & TASKS${R}                        ${B}║${R}"
+    echo -e "${B}║${R}  ${W}CODEX${R}  ${D}── everything indexed${R}         ${B}║${R}  ${W}MEMORY${R}  ${D}── PS-SHA∞ persistent${R}          ${B}║${R}"
     echo -e "${B}║${R}  $(fmt_num $_CODEX_TOTAL) components              ${B}║${R}  $(fmt_num $_MEM_COUNT) journal entries                ${B}║${R}"
     echo -e "${B}║${R}  ${D}$(fmt_num $_CODEX_FUNCS) fn  $(fmt_num $_CODEX_CLASS) cls  $(fmt_num $_CODEX_REACT) react${R}  ${B}║${R}  ${D}$(fmt_num $_TASKS_DONE) tasks done  $(fmt_num $_TASKS_AVAIL) available${R}      ${B}║${R}"
     echo -e "${B}║${R}                                    ${B}║${R}  ${BGREEN}●${R} ${_TL_GREEN} green ${BYELLOW}●${R} ${_TL_YELLOW} yellow ${BRED}●${R} ${_TL_RED} red           ${B}║${R}"
@@ -163,7 +178,7 @@ _draw_hub() {
     echo -e "${B}║${R}                                    ${B}║${R}                                         ${B}║${R}"
     echo -e "${B}╠══════════════════════════════════════════════════════════════════════════════╣${R}"
     echo -e "${B}║${R}                                                                            ${B}║${R}"
-    echo -e "${B}║${R}  ${W}MODELS${R}                                                                      ${B}║${R}"
+    echo -e "${B}║${R}  ${W}MODELS${R}  ${D}── local first. always.${R}                                         ${B}║${R}"
 
     if [[ "$_OLLAMA_UP" == "true" ]] && [[ -n "$_MODELS" ]]; then
         local cur_line="" max_w=72
@@ -195,8 +210,8 @@ _draw_hub() {
     echo -e "${B}╠══════════════════════════════════════════════════════════════════════════════╣${R}"
     echo -e "${B}║${R}                                                                            ${B}║${R}"
     if [[ "$_DOCKER_UP" == "true" ]]; then
-        local d_hdr="${W}DOCKER${R}  ${BGREEN}●${R} ${BCYAN}${_DOCKER_RUNNING}${R} running  ${D}/ ${_DOCKER_TOTAL} total${R}"
-        echo -e "${B}║${R}  ${d_hdr}$(printf '%*s' $((48)) '')${B}║${R}"
+        local d_hdr="${W}DOCKER${R}  ${D}── containers in motion${R}  ${BGREEN}●${R} ${BCYAN}${_DOCKER_RUNNING}${R} running  ${D}/ ${_DOCKER_TOTAL} total${R}"
+        echo -e "${B}║${R}  ${d_hdr}$(printf '%*s' $((28)) '')${B}║${R}"
         if [[ -n "$_DOCKER_NAMES" ]]; then
             while IFS='|' read -r cname cstatus; do
                 [[ -z "$cname" ]] && continue
@@ -234,11 +249,14 @@ _draw_hub() {
         (( ${#skills_vis} > 68 )) && skills_vis="${skills_vis:0:66}.."
         local c3_vis="  ⚡ ${skills_vis}"
         echo -e "${B}║${R}  ${BYELLOW}⚡${R}  ${D}${skills_vis}${R}$(printf '%*s' $((76 - ${#c3_vis})) '')${B}║${R}"
+        echo -e "${B}║${R}  ${D}\"I exist wherever you build.\"${R}                                             ${B}║${R}"
     else
         echo -e "${B}║${R}  ${D}◈ CECE  not initialized — run: br cece init${R}                                ${B}║${R}"
     fi
     echo -e "${B}║${R}                                                                            ${B}║${R}"
     # ── Quick Actions ──
+    echo -e "${B}╠══════════════════════════════════════════════════════════════════════════════╣${R}"
+    echo -e "${B}║${R}  ${A}br${R} ${D}·${R} ${W}blackroad os${R} ${D}·${R} ${D}your ai · your hardware · your rules · build different${R}  ${B}║${R}"
     echo -e "${B}╠══════════════════════════════════════════════════════════════════════════════╣${R}"
     echo -e "${B}║${R}                                                                            ${B}║${R}"
     echo -e "${B}║${R}  ${W}[c]${R}hat  ${W}[s]${R}tatus  ${W}[h]${R}ealth  ${W}[m]${R}onitor  ${W}[g]${R}od  ${W}[o]${R}ffice  ${W}[r]${R}efresh  ${W}[?]${R}help   ${B}║${R}"
