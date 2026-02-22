@@ -6,7 +6,7 @@
 #===============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BR_LIB="${SCRIPT_DIR}/lib"
+BR_LIB="${SCRIPT_DIR}/../lib"
 source "${BR_LIB}/colors.sh"
 source "${BR_LIB}/system.sh"
 source "${BR_LIB}/config.sh"
