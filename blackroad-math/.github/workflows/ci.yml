@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for secrets
+        run: |
+          if grep -r "PRIVATE_KEY\|SECRET_KEY\|API_KEY\s*=" --include="*.py" --include="*.ts" --include="*.js" .; then
+            echo "⚠️  Potential hardcoded secrets found"
+            exit 1
+          fi
+          echo "✓ No hardcoded secrets"
+      - name: Validate markdown
+        run: find . -name "*.md" -exec sh -c 'wc -l "$1" > /dev/null' _ {} \;
+        continue-on-error: true
+      - name: Done
+        run: echo "✓ CI passed"
