@@ -640,8 +640,10 @@ main() {
             bash /Users/alexa/blackroad/broadcast.sh "$msg"
             ;;
         agents|fleet)
-            # br agents — show live agent status (shortcut for br runtime status)
-            "${BR_TOOLS_DIR}/agent-runtime/br-runtime.sh" status
+            # br fleet / br agents — live fleet dashboard
+            local fleet_cmd="${1:-once}"
+            shift 2>/dev/null || true
+            zsh "${BR_TOOLS_DIR}/agent-runtime/br-fleet.sh" "$fleet_cmd" "$@"
             ;;
         whisper)
             # br whisper <agent> <message>
