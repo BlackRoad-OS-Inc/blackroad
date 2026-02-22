@@ -101,6 +101,9 @@ BR_TOOLS=(
     certs       "${BR_TOOLS_DIR}/ssl-manager/br-ssl.sh"
     vercel      "${BR_TOOLS_DIR}/vercel-pro/br-vercel.sh"
     vc          "${BR_TOOLS_DIR}/vercel-pro/br-vercel.sh"
+    runtime     "${BR_TOOLS_DIR}/agent-runtime/br-runtime.sh"
+    task        "${BR_TOOLS_DIR}/agent-tasks/br-tasks.sh"
+    tasks       "${BR_TOOLS_DIR}/agent-tasks/br-tasks.sh"
 )
 
 dispatch_tool() {
@@ -582,10 +585,10 @@ main() {
             "${BR_TOOLS_DIR}/cece-identity/br-cece-bootstrap.sh" "$@"
             ;;
         wake)
-            # br wake [agent] [model] — wake an agent with Ollama
+            # br wake [agent] [model] — wake agent and persist state
             local agent=${1:-LUCIDIA}
-            local model=${2:-llama3.2}
-            bash /Users/alexa/blackroad/wake.sh "$model" "$agent"
+            local model=$2
+            "${BR_TOOLS_DIR}/agent-runtime/br-runtime.sh" start "$agent" "$model"
             ;;
         council)
             # br council <question> — all agents vote
@@ -606,6 +609,10 @@ main() {
             # br broadcast <message>
             local msg="${*:-Hello from BlackRoad OS}"
             bash /Users/alexa/blackroad/broadcast.sh "$msg"
+            ;;
+        agents|fleet)
+            # br agents — show live agent status (shortcut for br runtime status)
+            "${BR_TOOLS_DIR}/agent-runtime/br-runtime.sh" status
             ;;
         whisper)
             # br whisper <agent> <message>
