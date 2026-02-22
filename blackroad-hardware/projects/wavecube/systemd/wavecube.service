@@ -1,0 +1,20 @@
+[Unit]
+Description=WaveQube DLP Projector
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/wavecube
+ExecStart=/home/pi/wavecube/wavecube-launcher.sh robot
+ExecStop=/home/pi/wavecube/wavecube-launcher.sh off
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+Environment=SDL_VIDEODRIVER=fbcon
+Environment=SDL_FBDEV=/dev/fb0
+
+[Install]
+WantedBy=multi-user.target
