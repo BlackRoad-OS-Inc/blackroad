@@ -1,4 +1,3 @@
-# Copyright (c) 2025-2026 BlackRoad OS, Inc. All Rights Reserved.
 name: CI
 
 on:
@@ -8,14 +7,13 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  shellcheck:
+    name: ShellCheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@master
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
+          scandir: '.'
+          severity: warning

@@ -1,49 +1,64 @@
-# @blackroad/operator
+# blackroad-operator
 
-The `br` CLI for BlackRoad OS. Talks to the gateway, manages agents, and deploys services.
+> CLI tooling, node bootstrap scripts, and operational control for BlackRoad OS.
 
-## Install
+[![CI](https://github.com/BlackRoad-OS-Inc/blackroad-operator/actions/workflows/ci.yml/badge.svg)](https://github.com/BlackRoad-OS-Inc/blackroad-operator/actions/workflows/ci.yml)
 
-```bash
-npm install
-npm run build
-npm link    # Makes `br` available globally
-```
+## Overview
 
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `br status` | Show system status |
-| `br agents` | List all agents |
-| `br invoke <agent> <task>` | Invoke an agent |
-| `br gateway health` | Check gateway health |
-| `br deploy [service]` | Trigger deployment |
-| `br logs` | Tail gateway logs |
-| `br config [key] [value]` | View/set config |
-| `br init [name]` | Initialize a project |
-
-## Development
-
-```bash
-npm run dev         # Watch mode (tsx)
-npm run typecheck   # Type-check
-npm test            # Run tests
-npm run format      # Prettier
-```
+The `br` CLI dispatcher and all operational tooling. Routes `br <command>` to the right tool script. Also includes the MCP bridge server for remote AI agent access.
 
 ## Structure
 
 ```
-src/
-  bin/            # Entry point (br.ts)
-  cli/commands/   # Commander subcommands
-  core/           # HTTP client, config, logger, spinner
-  bootstrap/      # Pre-flight checks, setup wizard, templates
-  formatters/     # Table, JSON, brand colors
-test/             # Vitest test suites
+blackroad-operator/
+├── br                # Main CLI entry point (zsh dispatcher)
+├── src/              # TypeScript source
+├── tools/            # 37 tool scripts (br <tool>)
+├── cli-scripts/      # Standalone CLI utilities
+├── mcp-bridge/       # MCP bridge server (localhost:8420)
+│   ├── server.py     # FastAPI MCP server
+│   └── start.sh      # Start script
+├── scripts/          # Bootstrap & setup scripts
+├── templates/        # Project templates
+└── test/             # Tests
 ```
 
-## License
+## Quick Start
 
-Copyright (c) 2025-2026 BlackRoad OS, Inc. All Rights Reserved.
+```bash
+# Make br executable
+chmod +x br
+./br help
+
+# Or install globally
+ln -s $(pwd)/br /usr/local/bin/br
+br help
+```
+
+## Key Commands
+
+```bash
+br radar             # Context-aware suggestions
+br git               # Smart git commits
+br deploy            # Multi-cloud deploy
+br agent             # Agent routing
+br cece              # CECE identity
+br help              # All 37 commands
+```
+
+## MCP Bridge
+
+Local MCP server for remote AI agent access:
+
+```bash
+cd mcp-bridge && ./start.sh   # Starts on 127.0.0.1:8420
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
+© BlackRoad OS, Inc. — All rights reserved. Proprietary.

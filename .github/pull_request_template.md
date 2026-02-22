@@ -1,14 +1,23 @@
 ## Summary
-<!-- What does this PR change? -->
+<!-- What does this PR do? -->
 
 ## Type
-- [ ] New command
-- [ ] Bug fix
-- [ ] Enhancement
-- [ ] Documentation
+- [ ] 🚀 Feature
+- [ ] 🐛 Bug Fix
+- [ ] 🔧 Chore / Refactor
+- [ ] 📚 Documentation
+- [ ] 🔒 Security
+
+## Changes
+<!-- List key changes -->
+-
+
+## Testing
+- [ ] Unit tests pass
+- [ ] Manual testing done
+- [ ] No regressions
 
 ## Checklist
-- [ ] `npm run typecheck` passes
-- [ ] Tests pass
-- [ ] New command has help text
-- [ ] Documentation updated
+- [ ] CHANGELOG.md updated
+- [ ] No secrets committed
+- [ ] CI passes
