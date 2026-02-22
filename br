@@ -101,6 +101,16 @@ BR_TOOLS=(
     certs       "${BR_TOOLS_DIR}/ssl-manager/br-ssl.sh"
     vercel      "${BR_TOOLS_DIR}/vercel-pro/br-vercel.sh"
     vc          "${BR_TOOLS_DIR}/vercel-pro/br-vercel.sh"
+    runtime     "${BR_TOOLS_DIR}/agent-runtime/br-runtime.sh"
+    task        "${BR_TOOLS_DIR}/agent-tasks/br-tasks.sh"
+    tasks       "${BR_TOOLS_DIR}/agent-tasks/br-tasks.sh"
+    vault       "${BR_TOOLS_DIR}/secrets-vault/br-vault.sh"
+    secret      "${BR_TOOLS_DIR}/secrets-vault/br-vault.sh"
+    secrets     "${BR_TOOLS_DIR}/secrets-vault/br-vault.sh"
+    harden      "${BR_TOOLS_DIR}/security-hardening/br-harden.sh"
+    hardening   "${BR_TOOLS_DIR}/security-hardening/br-harden.sh"
+    comply      "${BR_TOOLS_DIR}/compliance-scanner/br-comply.sh"
+    compliance  "${BR_TOOLS_DIR}/compliance-scanner/br-comply.sh"
 )
 
 dispatch_tool() {
@@ -297,6 +307,28 @@ show_help() {
     echo "║    br ssl scan <domain>     - Scan subdomains                     ║"
     echo "║    br ssl watch <domain>    - Add to expiry watchlist             ║"
     echo "║    br ssl list              - Show watchlist with status          ║"
+    echo "║                                                                   ║"
+    echo "║  SECRETS VAULT (🔐 Encrypted storage):                           ║"
+    echo "║    br vault add <name>      - Store an encrypted secret           ║"
+    echo "║    br vault get <name>      - Retrieve a secret                   ║"
+    echo "║    br vault list            - List all secrets (names only)       ║"
+    echo "║    br vault rotate <name>   - Rotate a secret                     ║"
+    echo "║    br vault audit           - Show access audit log               ║"
+    echo "║    br vault delete <name>   - Remove a secret                     ║"
+    echo "║                                                                   ║"
+    echo "║  SECURITY HARDENING (🛡️  System hardening):                      ║"
+    echo "║    br harden check          - Run all hardening checks            ║"
+    echo "║    br harden ssh            - Check SSH configuration             ║"
+    echo "║    br harden firewall       - Check firewall rules                ║"
+    echo "║    br harden perms          - Check file permissions              ║"
+    echo "║    br harden report         - Full hardening report               ║"
+    echo "║                                                                   ║"
+    echo "║  COMPLIANCE SCANNER (✅ Regulatory):                             ║"
+    echo "║    br comply pci            - PCI-DSS compliance scan             ║"
+    echo "║    br comply hipaa          - HIPAA compliance scan               ║"
+    echo "║    br comply soc2           - SOC 2 compliance scan               ║"
+    echo "║    br comply gdpr           - GDPR compliance scan                ║"
+    echo "║    br comply report         - Full compliance report              ║"
     echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
@@ -582,10 +614,10 @@ main() {
             "${BR_TOOLS_DIR}/cece-identity/br-cece-bootstrap.sh" "$@"
             ;;
         wake)
-            # br wake [agent] [model] — wake an agent with Ollama
+            # br wake [agent] [model] — wake agent and persist state
             local agent=${1:-LUCIDIA}
-            local model=${2:-llama3.2}
-            bash /Users/alexa/blackroad/wake.sh "$model" "$agent"
+            local model=$2
+            "${BR_TOOLS_DIR}/agent-runtime/br-runtime.sh" start "$agent" "$model"
             ;;
         council)
             # br council <question> — all agents vote
@@ -606,6 +638,10 @@ main() {
             # br broadcast <message>
             local msg="${*:-Hello from BlackRoad OS}"
             bash /Users/alexa/blackroad/broadcast.sh "$msg"
+            ;;
+        agents|fleet)
+            # br agents — show live agent status (shortcut for br runtime status)
+            "${BR_TOOLS_DIR}/agent-runtime/br-runtime.sh" status
             ;;
         whisper)
             # br whisper <agent> <message>
