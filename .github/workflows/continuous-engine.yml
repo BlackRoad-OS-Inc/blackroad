@@ -42,7 +42,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   health:
     name: "🔍 Node Health Check"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     timeout-minutes: 5
     outputs:
       nodes_healthy: ${{ steps.check.outputs.healthy }}
@@ -68,7 +68,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   perpetual-loop:
     name: "♾️ Perpetual Work Loop"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     needs: health
     timeout-minutes: 360  # 6 hour GitHub limit — we exit at 5h55m and re-chain
     steps:
@@ -133,7 +133,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   sync-tasks:
     name: "🔄 Sync + Deploy Tasks"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     needs: health
     steps:
       - uses: actions/checkout@v4
