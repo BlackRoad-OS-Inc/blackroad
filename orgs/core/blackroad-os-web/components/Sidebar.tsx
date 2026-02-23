@@ -20,6 +20,8 @@ import {
   BarChart2,
   Network,
   Send,
+  Rocket,
+  Terminal,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWorkspaceStore } from '@/stores/workspace-store';
@@ -42,7 +44,10 @@ export default function Sidebar() {
     { name: 'Network',        href: '/network',        icon: Network },
     { name: 'Mesh',           href: '/mesh',           icon: Send },
     { name: 'Workers',        href: '/workers',        icon: Zap },
+    { name: 'Deployments',    href: '/deployments',    icon: Rocket },
+    { name: 'DNS',            href: '/dns',            icon: Globe },
     { name: 'Analytics',      href: '/analytics',      icon: BarChart2 },
+    { name: 'Logs',           href: '/logs',           icon: Terminal },
     { name: 'Onboarding',     href: '/onboarding',     icon: Sparkles },
     { name: 'Settings',       href: '/settings',       icon: Settings },
   ];

@@ -1,170 +1,143 @@
 #!/bin/zsh
-# BR GIT — Smart Git operations with AI assistance
-export PATH="/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+# BR Git Smart - Intelligent git operations
+GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
+BLUE='\033[0;34m'; BOLD='\033[1m'
 
-GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'
-BLUE='\033[0;34m'; GRAY='\033[0;37m'; BOLD='\033[1m'; NC='\033[0m'
-
-GIT="/usr/bin/git"
-
-# Generate a smart commit message from diff
-smart_message() {
-  local diff; diff=$($GIT --no-pager diff --cached --stat 2>/dev/null)
-  [[ -z "$diff" ]] && diff=$($GIT --no-pager diff --stat 2>/dev/null)
-  local files; files=$($GIT --no-pager diff --cached --name-only 2>/dev/null)
-  [[ -z "$files" ]] && files=$($GIT --no-pager diff --name-only 2>/dev/null)
-
-  # Detect type from files changed
-  local type="chore"
-  echo "$files" | grep -qE "\.(tsx?|jsx?)$" && type="feat"
-  echo "$files" | grep -qE "test|spec" && type="test"
-  echo "$files" | grep -qE "fix|bug" && type="fix"
-  echo "$files" | grep -qE "\.sh$" && type="build"
-  echo "$files" | grep -qE "route\.ts|api/" && type="feat(api)"
-  echo "$files" | grep -qE "README|\.md$" && type="docs"
-  echo "$files" | grep -qE "package\.json|requirements" && type="build(deps)"
-
-  # Count files
-  local nf; nf=$(echo "$files" | grep -c . 2>/dev/null || echo "0")
-
-  # Pick key file for scope
-  local scope; scope=$(echo "$files" | head -1 | xargs basename 2>/dev/null | sed 's/\..*//')
-
-  # Build message
-  local msg="${type}(${scope}): update ${nf} file$([ "$nf" -ne 1 ] && echo 's' || true)"
-
-  # Check for specific patterns
-  echo "$files" | grep -q "br-" && msg="build: add $(echo "$files" | grep 'br-' | head -1 | xargs basename | sed 's/\.sh//')"
-  echo "$files" | grep -q "route.ts" && msg="feat(api): update $(echo "$files" | grep 'route' | head -1 | sed 's|.*/api/||' | sed 's|/.*||') endpoint"
-  echo "$files" | grep -q "page.tsx" && msg="feat(ui): update $(echo "$files" | grep 'page.tsx' | head -1 | sed 's|.*/\(app\)/||' | sed 's|/.*||') page"
-
-  printf '%s' "$msg"
-}
-
-cmd_status() {
-  echo -e "\n${CYAN}${BOLD}  GIT STATUS${NC}\n"
-  $GIT --no-pager status --short
-  echo ""
-  local branch; branch=$($GIT --no-pager rev-parse --abbrev-ref HEAD 2>/dev/null)
-  local ahead; ahead=$($GIT --no-pager rev-list @{u}..HEAD --count 2>/dev/null || echo "0")
-  echo -e "  ${GRAY}Branch:${NC} ${BOLD}$branch${NC}  ${GRAY}ahead by${NC} $ahead"
-  echo ""
-}
-
-cmd_commit() {
-  local staged; staged=$($GIT --no-pager diff --cached --name-only 2>/dev/null)
+cmd_smart_commit() {
+  # Get staged diff summary
+  local staged
+  staged=$(git --no-pager diff --cached --stat 2>/dev/null)
   if [[ -z "$staged" ]]; then
-    echo -e "${YELLOW}  No staged files. Staging all changes...${NC}"
-    $GIT add -A
+    echo -e "${YELLOW}⚠ No staged changes. Running git add -A first…${NC}"
+    git add -A
+    staged=$(git --no-pager diff --cached --stat 2>/dev/null)
   fi
+  [[ -z "$staged" ]] && { echo -e "${RED}Nothing to commit${NC}"; exit 0; }
 
-  local msg
-  if [[ -n "$1" ]]; then
-    msg="$*"
+  # Count changed files
+  local files_changed
+  files_changed=$(git --no-pager diff --cached --name-only | wc -l | tr -d ' ')
+  
+  # Detect what changed
+  local has_new has_modified has_deleted has_ts has_sh has_md msg_parts=()
+  git --no-pager diff --cached --name-only | grep -q "^tools/" && msg_parts+=("CLI tools")
+  git --no-pager diff --cached --name-only | grep -q "app/api/" && msg_parts+=("API routes")
+  git --no-pager diff --cached --name-only | grep -q "app/(app)/" && msg_parts+=("pages")
+  git --no-pager diff --cached --name-only | grep -q "components/" && msg_parts+=("components")
+  git --no-pager diff --cached --name-only | grep -q "shared/" && msg_parts+=("agent mesh")
+  git --no-pager diff --cached --name-only | grep -q "\.md$" && msg_parts+=("docs")
+  git --no-pager diff --cached --name-only | grep -q "br$" && msg_parts+=("br CLI")
+  git --no-pager diff --cached --name-only | grep -q "\.sh$" && msg_parts+=("scripts")
+
+  # Build auto commit message
+  local parts_str="${msg_parts[*]}"
+  local auto_msg
+  if [[ "${#msg_parts[@]}" -eq 0 ]]; then
+    auto_msg="chore: update ${files_changed} file(s)"
   else
-    msg=$(smart_message)
-    echo -e "\n${CYAN}  Suggested:${NC} ${BOLD}${msg}${NC}"
-    echo -e "${GRAY}  Press enter to use, or type a new message:${NC} "
-    read -r custom
-    [[ -n "$custom" ]] && msg="$custom"
+    auto_msg="feat: update ${parts_str// /, } (${files_changed} files)"
   fi
 
-  msg="${msg}
+  # Try Ollama for better message if available
+  local ollama_msg=""
+  if curl -s http://localhost:11434/api/tags &>/dev/null; then
+    local diff_summary
+    diff_summary=$(git --no-pager diff --cached --stat | head -20)
+    ollama_msg=$(curl -s -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" \
+      -d "{\"model\":\"llama3.2\",\"prompt\":\"Write a concise git commit message (max 72 chars, conventional commits format) for these changes:\\n${diff_summary}\\nReply with ONLY the commit message line, nothing else.\",\"stream\":false}" 2>/dev/null | \
+      python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('response','').strip().split('\n')[0])" 2>/dev/null)
+  fi
 
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-
-  $GIT commit -m "$msg"
-  echo -e "\n${GREEN}  ✓ Committed${NC}"
-}
-
-cmd_push() {
-  local branch; branch=$($GIT --no-pager rev-parse --abbrev-ref HEAD 2>/dev/null)
-  echo -e "${CYAN}  Pushing ${BOLD}$branch${NC}${CYAN}...${NC}"
-  $GIT push origin "$branch" 2>&1
-}
-
-cmd_save() {
-  # Stage + smart commit + push in one shot
-  $GIT add -A
-  local msg=$(smart_message)
-  echo -e "${CYAN}  → ${BOLD}$msg${NC}"
-  local full_msg="${msg}
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-  $GIT commit -m "$full_msg" && $GIT push origin "$($GIT --no-pager rev-parse --abbrev-ref HEAD)" 2>&1 | tail -3
-  echo -e "${GREEN}  ✓ Saved & pushed${NC}"
-}
-
-cmd_log() {
-  echo -e "\n${CYAN}${BOLD}  RECENT COMMITS${NC}\n"
-  $GIT --no-pager log --oneline --color -${1:-15} | sed 's/^/  /'
+  local final_msg="${ollama_msg:-$auto_msg}"
+  echo -e "\n${CYAN}${BOLD}Auto-generated commit message:${NC}"
+  echo -e "  ${GREEN}${final_msg}${NC}\n"
+  echo -e "${YELLOW}Files staged (${files_changed}):${NC}"
+  echo "$staged" | head -15
   echo ""
-}
+  
+  printf "${CYAN}Use this message? [Y/n/edit]: ${NC}"
+  read -r choice
+  
+  case "${choice:-Y}" in
+    [Yy]*|"")
+      git commit -m "${final_msg}
 
-cmd_branch() {
-  case "$1" in
-    list|ls|"")
-      echo -e "\n${CYAN}${BOLD}  BRANCHES${NC}\n"
-      $GIT --no-pager branch -a --color | sed 's/^/  /'
-      echo "" ;;
-    new|create)
-      [[ -z "$2" ]] && { echo -e "${RED}x${NC} Usage: br git branch new <name>"; exit 1; }
-      $GIT checkout -b "$2" && echo -e "${GREEN}  ✓ Created & switched to $2${NC}" ;;
-    switch|checkout)
-      $GIT checkout "$2" 2>&1 ;;
-    delete)
-      $GIT branch -d "$2" 2>&1 ;;
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>" && echo -e "${GREEN}✓ Committed${NC}"
+      ;;
+    [Ee]*)
+      printf "${CYAN}Enter message: ${NC}"
+      read -r custom_msg
+      git commit -m "${custom_msg}
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>" && echo -e "${GREEN}✓ Committed${NC}"
+      ;;
+    [Nn]*)
+      echo -e "${YELLOW}Aborted${NC}"
+      ;;
   esac
 }
 
-cmd_pr() {
-  local branch; branch=$($GIT --no-pager rev-parse --abbrev-ref HEAD 2>/dev/null)
-  local title="${1:-$(smart_message)}"
-  echo -e "${CYAN}  Creating PR: ${BOLD}$title${NC}"
-  gh pr create --title "$title" --body "Auto-generated PR from br git pr" --base master 2>&1
+cmd_log() {
+  local n="${1:-10}"
+  echo -e "${CYAN}${BOLD}Recent commits (${n}):${NC}\n"
+  git --no-pager log --oneline --graph --decorate --color=always -"$n" | while IFS= read -r line; do
+    local hash="${line:2:7}"
+    local rest="${line:9}"
+    echo -e "  ${BLUE}${line}${NC}"
+  done
 }
 
-cmd_diff() {
-  echo -e "\n${CYAN}${BOLD}  DIFF${NC}\n"
-  $GIT --no-pager diff --color "$@" | head -100
-  echo ""
+cmd_status() {
+  echo -e "${CYAN}${BOLD}Git Status${NC}\n"
+  local branch
+  branch=$(git --no-pager rev-parse --abbrev-ref HEAD 2>/dev/null)
+  local remote
+  remote=$(git --no-pager remote -v | head -1 | awk '{print $2}')
+  echo -e "  Branch: ${GREEN}${branch}${NC}"
+  echo -e "  Remote: ${CYAN}${remote}${NC}\n"
+  
+  local staged=$(git --no-pager diff --cached --name-only | wc -l | tr -d ' ')
+  local unstaged=$(git --no-pager diff --name-only | wc -l | tr -d ' ')
+  local untracked=$(git --no-pager ls-files --others --exclude-standard | wc -l | tr -d ' ')
+  
+  echo -e "  ${GREEN}●${NC} Staged:    ${staged} files"
+  echo -e "  ${YELLOW}●${NC} Unstaged:  ${unstaged} files"
+  echo -e "  ${BLUE}●${NC} Untracked: ${untracked} files\n"
+  
+  if [[ $((staged + unstaged + untracked)) -gt 0 ]]; then
+    git --no-pager status --short | head -20
+  else
+    echo -e "  ${GREEN}✓ Clean working tree${NC}"
+  fi
 }
 
-cmd_undo() {
-  $GIT reset HEAD~1 --soft 2>&1 && echo -e "${GREEN}  ✓ Last commit undone (changes kept staged)${NC}"
+cmd_push() {
+  local branch
+  branch=$(git --no-pager rev-parse --abbrev-ref HEAD 2>/dev/null)
+  echo -e "${CYAN}Pushing to origin/${branch}…${NC}"
+  git push origin "$branch" && echo -e "${GREEN}✓ Pushed${NC}"
 }
 
-cmd_suggest() {
-  local msg=$(smart_message)
-  echo -e "\n${CYAN}  Smart commit message:${NC}\n"
-  echo -e "  ${BOLD}${msg}${NC}\n"
+cmd_pull() {
+  echo -e "${CYAN}Pulling latest…${NC}"
+  git pull --rebase && echo -e "${GREEN}✓ Up to date${NC}"
 }
 
 show_help() {
-  echo -e "\n${BOLD}  BR GIT${NC}  Smart Git operations\n"
-  echo -e "  ${CYAN}br git status${NC}              Short status + branch info"
-  echo -e "  ${CYAN}br git commit [msg]${NC}        Smart commit (suggests message if none)"
-  echo -e "  ${CYAN}br git push${NC}                Push current branch"
-  echo -e "  ${CYAN}br git save${NC}                Stage + commit + push in one shot ⚡"
-  echo -e "  ${CYAN}br git log [n]${NC}             Last N commits (default 15)"
-  echo -e "  ${CYAN}br git diff${NC}                Show current diff"
-  echo -e "  ${CYAN}br git branch [list|new|switch|delete]${NC}"
-  echo -e "  ${CYAN}br git pr [title]${NC}          Create GitHub PR"
-  echo -e "  ${CYAN}br git undo${NC}                Undo last commit (keep changes)"
-  echo -e "  ${CYAN}br git suggest${NC}             Show AI-suggested commit message"
-  echo ""
+  echo -e "${CYAN}${BOLD}BR Git Smart — Intelligent Git Operations${NC}\n"
+  echo -e "  ${GREEN}br git smart${NC}      Auto-commit with AI-generated message"
+  echo -e "  ${GREEN}br git log [n]${NC}    Pretty log (default 10)"
+  echo -e "  ${GREEN}br git status${NC}     Enhanced status with counts"
+  echo -e "  ${GREEN}br git push${NC}       Push current branch"
+  echo -e "  ${GREEN}br git pull${NC}       Pull with rebase"
 }
 
-case "$1" in
-  status|st)      cmd_status ;;
-  commit|ci)      shift; cmd_commit "$@" ;;
-  push)           cmd_push ;;
-  save|sync)      cmd_save ;;
-  log|history)    cmd_log "$2" ;;
-  branch|br)      shift; cmd_branch "$@" ;;
-  pr)             shift; cmd_pr "$@" ;;
-  diff)           shift; cmd_diff "$@" ;;
-  undo)           cmd_undo ;;
-  suggest|msg)    cmd_suggest ;;
-  *)              show_help ;;
+case "${1:-help}" in
+  smart|commit|auto) cmd_smart_commit ;;
+  log|history) cmd_log "${2:-10}" ;;
+  status|st) cmd_status ;;
+  push) cmd_push ;;
+  pull) cmd_pull ;;
+  *) show_help ;;
 esac
