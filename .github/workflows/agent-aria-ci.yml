@@ -1,0 +1,20 @@
+name: "ARIA Agent CI"
+on:
+  push:
+    branches: ["aria"]
+  pull_request:
+    branches: ["aria"]
+  workflow_dispatch:
+
+jobs:
+  agent-work:
+    name: "💜 ARIA Agent"
+    runs-on: [self-hosted, aria,pi5]
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Agent Identity Check"
+        run: |
+          cat .agent/identity.json
+          echo "Running as: ARIA on 192.168.4.82"
+      - name: "Agent Health"
+        run: echo "✅ ARIA online"
