@@ -26,22 +26,19 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (email: string, password: string) => {
-        // TODO: Replace with actual API call
-        const mockUser: User = {
-          id: '1',
-          email,
-          name: email.split('@')[0],
-          workspaceId: 'default-workspace',
-          role: 'admin',
-        };
-
-        const mockToken = 'mock-jwt-token';
-
-        set({
-          user: mockUser,
-          token: mockToken,
-          isAuthenticated: true,
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
         });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as any).error || 'Login failed');
+        }
+
+        const { token, user } = await res.json();
+        set({ user, token, isAuthenticated: true });
       },
 
       logout: () => {
@@ -53,22 +50,19 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signup: async (email: string, password: string, name: string) => {
-        // TODO: Replace with actual API call
-        const mockUser: User = {
-          id: '1',
-          email,
-          name,
-          workspaceId: 'default-workspace',
-          role: 'admin',
-        };
-
-        const mockToken = 'mock-jwt-token';
-
-        set({
-          user: mockUser,
-          token: mockToken,
-          isAuthenticated: true,
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, name }),
         });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as any).error || 'Signup failed');
+        }
+
+        const { token, user } = await res.json();
+        set({ user, token, isAuthenticated: true });
       },
     }),
     {
