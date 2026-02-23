@@ -140,6 +140,10 @@ BR_TOOLS=(
     snap        "${BR_TOOLS_DIR}/snapshot/br-snapshot.sh"
     search      "${BR_TOOLS_DIR}/search/br-search.sh"
     find-all    "${BR_TOOLS_DIR}/search/br-search.sh"
+    roundup     "${BR_TOOLS_DIR}/roundup/br-roundup.sh"
+    standup     "${BR_TOOLS_DIR}/standup/br-standup.sh"
+    timeline    "${BR_TOOLS_DIR}/timeline/br-timeline.sh"
+    tl          "${BR_TOOLS_DIR}/timeline/br-timeline.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -336,6 +340,11 @@ show_help() {
     echo "║    br carpool agenda <file> - Run topics from file as chain        ║"
     echo "║    br carpool spotlight A   - Single-agent deep-dive (3 turns)     ║"
     echo "║    br carpool poll Q A B C  - Structured multi-choice vote         ║"
+    echo "║    br carpool roast <idea>  - Devil's advocate: poke holes         ║"
+    echo "║    br carpool tweet         - Hot takes on last session synthesis   ║"
+    echo "║    br carpool teach <topic> - Agents explain a concept each way    ║"
+    echo "║    br carpool compare A B   - Structured A vs B analysis           ║"
+    echo "║    br carpool schedule      - Cron-based recurring sessions        ║"
     echo "║    br carpool react <f/url> - Quick reaction: brief+context        ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
@@ -469,6 +478,30 @@ show_help() {
     echo "║    br context copy          - Copy to clipboard                   ║"
     echo "║    br context send [to]     - Send to instance inbox              ║"
     echo "║    br context update        - Write to live context file          ║"
+    echo "║                                                                   ║"
+    echo "║  SYNC / SNAPSHOT / SEARCH:                                       ║"
+    echo "║    br sync status           - Show all sub-repo states            ║"
+    echo "║    br sync dirty            - Show only repos with changes        ║"
+    echo "║    br sync push [filter]    - Commit + push matching repos        ║"
+    echo "║    br sync operator         - Push main repo → operator/main      ║"
+    echo "║    br snapshot save [label] - Save workspace state snapshot       ║"
+    echo "║    br snapshot list         - List saved snapshots                ║"
+    echo "║    br search <query>        - Search tools/agents/docs/journal    ║"
+    echo "║    br search --code <q>     - Search source code only             ║"
+    echo "║    br search --journal <q>  - Search memory journal               ║"
+    echo "║                                                                   ║"
+    echo "║  ROUNDUP / STANDUP / TIMELINE:                                   ║"
+    echo "║    br roundup               - AI daily roundup (last 24h)        ║"
+    echo "║    br roundup hours <N>     - Roundup for last N hours            ║"
+    echo "║    br roundup write         - Save roundup to file                ║"
+    echo "║    br roundup send <inst>   - Send roundup to instance inbox      ║"
+    echo "║    br standup               - Formatted daily standup report      ║"
+    echo "║    br standup copy          - Copy standup to clipboard           ║"
+    echo "║    br standup send <inst>   - Send standup to instance inbox      ║"
+    echo "║    br timeline              - ASCII activity timeline (last 8h)   ║"
+    echo "║    br timeline today        - Full 24h timeline                   ║"
+    echo "║    br timeline heatmap      - 24h event heatmap                   ║"
+    echo "║    br timeline watch        - Live refreshing timeline            ║"
     echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
@@ -798,6 +831,11 @@ main() {
                 agenda)     bash /Users/alexa/blackroad/carpool.sh agenda "$@" ;;
                 spotlight)  bash /Users/alexa/blackroad/carpool.sh spotlight "$@" ;;
                 poll)       bash /Users/alexa/blackroad/carpool.sh poll "$@" ;;
+                roast)      bash /Users/alexa/blackroad/carpool.sh roast "$@" ;;
+                tweet)      bash /Users/alexa/blackroad/carpool.sh tweet ;;
+                teach)      bash /Users/alexa/blackroad/carpool.sh teach "$@" ;;
+                compare)    bash /Users/alexa/blackroad/carpool.sh compare "$@" ;;
+                schedule)   bash /Users/alexa/blackroad/carpool.sh schedule "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac

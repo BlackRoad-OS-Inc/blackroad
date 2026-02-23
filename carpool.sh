@@ -1417,7 +1417,150 @@ if [[ "$1" == "poll" ]]; then
   echo ""
   exec bash "$SCRIPT_PATH" --brief "$_poll_topic"
 fi
-# br carpool last → open most recent saved session
+
+# ── ROAST — devil's advocate: agents poke holes ──────────────
+if [[ "$1" == "roast" ]]; then
+  _idea="${2:-}"
+  [[ -z "$_idea" ]] && echo -ne "${CYAN}What idea should we roast? ${NC}" && read -r _idea
+  [[ -z "$_idea" ]] && echo "Need an idea to roast." && exit 1
+
+  _roast_topic="DEVIL'S ADVOCATE SESSION: '${_idea}'
+Your job is to be skeptical, critical, and contrarian — from YOUR specific domain lens.
+Find the fatal flaws, hidden assumptions, worst-case scenarios, and things everyone is ignoring.
+Be direct, specific, and unflinching. No cheerleading. End with your single biggest concern."
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  echo -e "\n${RED}🔥 CarPool Roast${NC}  ${DIM}${_idea}${NC}\n"
+  exec bash "$SCRIPT_PATH" --brief --crew "CIPHER,SHELLFISH,PRISM,LUCIDIA,OCTAVIA" "$_roast_topic"
+fi
+
+# ── TWEET — each agent's hot take on last synthesis ──────────
+if [[ "$1" == "tweet" ]]; then
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  # Get last synthesis block
+  if [[ -f "$MEMORY_FILE" ]]; then
+    last_block=$(awk '/^---/{block=""} {block=block"\n"$0} END{print block}' "$MEMORY_FILE")
+    last_topic=$(echo "$last_block" | grep "^TOPIC:" | head -1 | sed 's/^TOPIC: //')
+    last_verdict=$(echo "$last_block" | grep "^VERDICT:" | head -1 | sed 's/^VERDICT: //')
+    last_synth=$(echo "$last_block" | grep -v "^---\|^DATE:\|^TOPIC:\|^VERDICT:" | head -10)
+  else
+    last_topic="AI and the future of software development"
+    last_verdict="APPROVED"
+    last_synth="Teams should lean into AI tooling while preserving human judgment."
+  fi
+
+  echo -e "${WHITE}🐦 CarPool Tweets${NC}  ${DIM}${last_topic}${NC}\n"
+
+  for name in LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER; do
+    agent_meta "$name"
+    _c="\033[${COLOR_CODE}m"
+    echo -ne "  ${_c}${EMOJI} ${name}${NC}  ${DIM}thinking...${NC}"
+
+    _tw_prompt="You are ${name}, ${ROLE}.
+Recent team verdict on '${last_topic}': ${last_verdict}
+Key insight: ${last_synth}
+
+Write ONE tweet (max 240 chars) — your hot take, from your ${ROLE} perspective.
+Be bold, sharp, specific. No hashtags. No fluff. Just the take."
+
+    _tw_payload=$(python3 -c "
+import json,sys
+print(json.dumps({
+  'model':'tinyllama','prompt':sys.stdin.read(),'stream':False,
+  'options':{'num_predict':60,'temperature':0.8,'stop':['\n\n']}
+}))" <<< "$_tw_prompt")
+
+    _tw=$(curl -s -m 30 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_tw_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+
+    printf "\r\033[K"
+    echo -e "  ${_c}${EMOJI} ${name}${NC}\n  ${_tw}\n"
+  done
+  exit 0
+fi
+
+# ── TEACH — agents explain a concept from their lens ─────────
+if [[ "$1" == "teach" ]]; then
+  _concept="${2:-}"
+  [[ -z "$_concept" ]] && echo -ne "${CYAN}What concept to explain? ${NC}" && read -r _concept
+  [[ -z "$_concept" ]] && _concept="How the internet actually works"
+
+  _teach_topic="TEACHING SESSION: '${_concept}'
+Explain this concept clearly from YOUR specific domain and perspective.
+Give the most important insight a non-expert would miss.
+Use one concrete example or analogy. Keep it under 80 words. No jargon."
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  echo -e "\n${WHITE}📚 CarPool Teach${NC}  ${DIM}${_concept}${NC}\n"
+  exec bash "$SCRIPT_PATH" --brief --crew "LUCIDIA,ALICE,OCTAVIA,CIPHER,PRISM,ECHO" "$_teach_topic"
+fi
+
+# ── COMPARE — structured A vs B analysis ─────────────────────
+if [[ "$1" == "compare" ]]; then
+  _a="${2:-}"; _b="${3:-}"
+  if [[ -z "$_a" || -z "$_b" ]]; then
+    echo -ne "${CYAN}Compare A: ${NC}"; read -r _a
+    echo -ne "${CYAN}    vs B: ${NC}"; read -r _b
+  fi
+
+  _cmp_topic="STRUCTURED COMPARISON: '${_a}' vs '${_b}'
+Analyze BOTH from YOUR domain perspective. Be specific about:
+- Where '${_a}' wins  
+- Where '${_b}' wins  
+- Which you would choose and why (one sentence)
+No fence-sitting. Pick a side."
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  echo -e "\n${WHITE}⚖️  CarPool Compare${NC}"
+  echo -e "  ${CYAN}${_a}${NC}  vs  ${CYAN}${_b}${NC}\n"
+  exec bash "$SCRIPT_PATH" --brief "$_cmp_topic"
+fi
+
+# ── SCHEDULE — cron-based recurring sessions ─────────────────
+if [[ "$1" == "schedule" ]]; then
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  case "${2:-list}" in
+    list)
+      echo -e "${WHITE}⏰ CarPool Schedule${NC}\n"
+      existing=$(crontab -l 2>/dev/null | grep "br carpool\|carpool.sh")
+      if [[ -z "$existing" ]]; then
+        echo -e "  ${DIM}No scheduled sessions. Add one:${NC}"
+        echo -e "  ${CYAN}br carpool schedule daily \"topic\"${NC}"
+        echo -e "  ${CYAN}br carpool schedule weekly \"topic\"${NC}"
+        echo -e "  ${CYAN}br carpool schedule remove${NC}"
+      else
+        echo "$existing" | while IFS= read -r line; do
+          echo -e "  ${CYAN}•${NC} $line"
+        done
+      fi
+      ;;
+    daily)
+      _t="${3:-What should the team focus on today?}"
+      _cron="0 9 * * 1-5 bash '${SCRIPT_PATH}' --brief --memory '${_t}' >> \$HOME/.blackroad/carpool/cron.log 2>&1"
+      (crontab -l 2>/dev/null; echo "$_cron") | crontab -
+      echo -e "${GREEN}✓ Daily 9am Mon-Fri:${NC} ${_t}"
+      ;;
+    weekly)
+      _t="${3:-Weekly team sync: what went well, what to change, what to ship?}"
+      _cron="0 9 * * 1 bash '${SCRIPT_PATH}' --brief --memory '${_t}' >> \$HOME/.blackroad/carpool/cron.log 2>&1"
+      (crontab -l 2>/dev/null; echo "$_cron") | crontab -
+      echo -e "${GREEN}✓ Weekly Monday 9am:${NC} ${_t}"
+      ;;
+    remove)
+      crontab -l 2>/dev/null | grep -v "carpool.sh\|br carpool" | crontab -
+      echo -e "${GREEN}✓ Removed all CarPool cron jobs${NC}"
+      ;;
+    log)
+      _log="$HOME/.blackroad/carpool/cron.log"
+      [[ -f "$_log" ]] && tail -50 "$_log" || echo "No cron log yet."
+      ;;
+    *)
+      echo -e "${RED}Usage: br carpool schedule [list|daily|weekly|remove|log]${NC}"
+      ;;
+  esac
+  exit 0
+fi
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
