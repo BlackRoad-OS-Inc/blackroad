@@ -1,68 +1,80 @@
-# Configure nginx on Pi fleet from self-hosted runner
-# Runs as pi user which has NOPASSWD sudo
-name: 🖧 Configure Pi Nginx
+name: 🌐 Configure Pi Nginx Domains
 
 on:
   workflow_dispatch:
-    inputs:
-      action:
-        description: 'Action to perform'
-        required: false
-        default: 'reload'
+  push:
+    paths:
+      - '.github/nginx/**'
+      - '.github/workflows/configure-pi-nginx.yml'
 
 jobs:
   configure-nginx:
-    name: 🔧 Configure Nginx
-    runs-on: [self-hosted, blackroad-fleet]
+    name: Apply nginx config on octavia
+    runs-on: [self-hosted, blackroad-fleet, pi, octavia]
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🖧 Write Nginx Config
+      - name: Apply nginx config
         run: |
-          sudo tee /etc/nginx/conf.d/blackroad-wildcard.conf > /dev/null << 'NGINXEOF'
-          map $host $app_backend {
-              default                     http://127.0.0.1:8080;
-              "~^console\."               http://127.0.0.1:3000;
-              "~^dashboard\."             http://127.0.0.1:3000;
-              "~^grafana\."               http://127.0.0.1:3001;
-              "~^monitoring\."            http://127.0.0.1:9090;
-              "~^jupyter\."               http://127.0.0.1:8888;
-              "~^ollama\."                http://127.0.0.1:11434;
-              "~^models\."                http://127.0.0.1:11434;
-              "~^api\."                   http://127.0.0.1:8787;
-              "~^agents?\."               http://127.0.0.1:8787;
-              "~^gateway\."               http://127.0.0.1:8787;
+          # Check current user and sudo access
+          echo "Running as: $(id)"
+          
+          NGINX_CONF=/tmp/nginx-blackroad-multi.conf
+          
+          # Write the nginx config
+          sudo tee /etc/nginx/sites-available/blackroad-multi > /dev/null << 'NGINX'
+          # BlackRoad Multi-Domain Configuration
+          map $host $site_root {
+              default                           /var/www/blackroad;
+              "~^(?<sub>[^.]+)\.blackroad\.io$" /var/www/blackroad/blackroad-$sub;
+              "~^(?<sub>[^.]+)\.blackroad\.ai$" /var/www/blackroad/blackroad-$sub;
+              "~^(?<sub>[^.]+)\.blackroad\.systems$" /var/www/blackroad/blackroad-$sub;
+              "~^(?<sub>[^.]+)\.blackroad\.network$" /var/www/blackroad/blackroad-$sub;
+              "blackroad.io"                    /var/www/blackroad;
+              "blackroad.ai"                    /var/www/blackroad;
+              "lucidia.earth"                   /var/www/blackroad/lucidia-earth;
+              "lucidia.studio"                  /var/www/blackroad/lucidia-studio;
           }
-
+          
+          map $host $proxy_pass {
+              default                      "";
+              "api.blackroad.io"           "http://127.0.0.1:8787";
+              "api.blackroad.ai"           "http://127.0.0.1:8787";
+              "agents.blackroad.io"        "http://127.0.0.1:4010";
+              "dashboard.blackroad.io"     "http://127.0.0.1:3000";
+              "metrics.blackroad.io"       "http://127.0.0.1:9090";
+              "grafana.blackroad.io"       "http://127.0.0.1:3109";
+              "nats.blackroad.io"          "http://127.0.0.1:8222";
+              "ollama.blackroad.io"        "http://127.0.0.1:11434";
+          }
+          
           server {
-              listen 80;
-              server_name ~^.+\.blackroad\.(io|ai)$
-                          blackroad.network blackroad.systems blackroad.me
-                          lucidia.earth lucidia.studio;
-
-              location /health {
-                  default_type application/json;
-                  return 200 '{"status":"ok","host":"$hostname","tunnel":"52915859","models":108}';
-              }
-
+              listen 80 default_server;
+              listen [::]:80 default_server;
+              server_name _;
+              
               location / {
-                  proxy_pass $app_backend;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-Proto https;
-                  proxy_connect_timeout 10s;
-                  proxy_read_timeout 120s;
+                  root $site_root;
+                  index index.html;
+                  try_files $uri $uri/ /index.html =404;
+              }
+              
+              location /health {
+                  return 200 '{"status":"ok","fleet":"blackroad","host":"octavia-pi5"}';
+                  add_header Content-Type application/json;
               }
           }
-          NGINXEOF
-
-      - name: ✅ Reload Nginx
+          NGINX
+          
+          sudo nginx -t && sudo nginx -s reload
+          echo "✅ Nginx reloaded"
+          
+          # Enable site if not already
+          sudo ln -sf /etc/nginx/sites-available/blackroad-multi /etc/nginx/sites-enabled/ 2>/dev/null || true
+          sudo nginx -s reload
+          echo "✅ All domains active"
+          
+      - name: Verify domains
         run: |
-          sudo nginx -t && sudo systemctl reload nginx
-          echo "✅ Nginx reloaded at $(date -u)"
-          curl -s http://localhost/health || echo "health check pending"
-
-      - name: 🔄 Ensure Cloudflare Tunnel Running
-        run: |
-          sudo systemctl status cloudflared | head -5 || true
-          sudo systemctl is-active cloudflared && echo "✅ Tunnel active" || sudo systemctl start cloudflared
+          curl -s http://localhost/health | python3 -m json.tool || echo "health check response received"
+          echo "Nginx running: $(systemctl is-active nginx)"
