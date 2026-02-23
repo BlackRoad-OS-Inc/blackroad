@@ -3595,6 +3595,139 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── DIAGRAM — ASCII architecture diagram from agents ──────────────────
+if [[ "$1" == "diagram" ]]; then
+  shift
+  SYSTEM="$*"
+  [[ -z "$SYSTEM" ]] && echo "Usage: br carpool diagram <system or component>" && exit 1
+  echo ""
+  echo -e "\033[1;36m📐 ARCHITECTURE DIAGRAM: $SYSTEM\033[0m"
+  echo ""
+  DIAG_FILE="$HOME/.blackroad/carpool/diagrams/$(echo "$SYSTEM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/diagrams"
+  printf "# Diagram: %s\nDate: %s\n\n" "$SYSTEM" "$(date '+%Y-%m-%d')" > "$DIAG_FILE"
+  for entry in "OCTAVIA|SYSTEM OVERVIEW|Draw the top-level components and how data flows between them. Use ASCII boxes and arrows." "ALICE|DEPLOYMENT VIEW|Show how this is deployed: servers, containers, networks, load balancers." "CIPHER|TRUST BOUNDARIES|Mark auth zones, encrypted channels, public vs private surfaces."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Draw an ASCII diagram for: \"${SYSTEM}\"
+Section: ${section}
+${lens}
+Use ASCII art: boxes with +--+, arrows with --> or -->, labels inline.
+Keep it under 25 lines. No explanation before or after — just the diagram then a 2-line legend.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n\`\`\`\n%s\n\`\`\`\n" "$section" "$resp" >> "$DIAG_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $DIAG_FILE\033[0m"
+  exit 0
+fi
+
+# ── STORIES — generate user stories for a feature ─────────────────────
+if [[ "$1" == "stories" ]]; then
+  shift
+  FEATURE="$*"
+  [[ -z "$FEATURE" ]] && echo "Usage: br carpool stories <feature>" && exit 1
+  echo ""
+  echo -e "\033[1;33m📖 USER STORIES: $FEATURE\033[0m"
+  echo ""
+  STORIES_FILE="$HOME/.blackroad/carpool/stories/$(echo "$FEATURE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/stories"
+  printf "# Stories: %s\n\n" "$FEATURE" > "$STORIES_FILE"
+  for entry in "ARIA|USER STORIES|As a <user>, I want <goal>, so that <reason>. Write 5 stories for different user types." "OCTAVIA|TECHNICAL TASKS|Break each story into 2-3 concrete engineering tasks. Format: - [ ] <task>" "CIPHER|SECURITY STORIES|As a <attacker/admin/auditor>... Edge cases, auth checks, data validation stories." "PRISM|ACCEPTANCE CRITERIA|For the top 3 stories, write Given/When/Then acceptance criteria."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Write the \"${section}\" for this feature: \"${FEATURE}\"
+${lens}
+Be specific, not generic. Use real-world details.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$STORIES_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $STORIES_FILE\033[0m"
+  exit 0
+fi
+
+# ── CONTRACT — generate API contract / interface spec ─────────────────
+if [[ "$1" == "contract" ]]; then
+  shift
+  API="$*"
+  [[ -z "$API" ]] && echo "Usage: br carpool contract <api or service name>" && exit 1
+  echo ""
+  echo -e "\033[1;35m📜 API CONTRACT: $API\033[0m"
+  echo ""
+  CONTRACT_FILE="$HOME/.blackroad/carpool/contracts/$(echo "$API" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/contracts"
+  printf "# API Contract: %s\nDate: %s\n\n" "$API" "$(date '+%Y-%m-%d')" > "$CONTRACT_FILE"
+  for entry in "OCTAVIA|ENDPOINTS|Design the REST endpoints. Method, path, request body, response shape, status codes." "ALICE|ERROR HANDLING|All error codes this API should return with message format and retry guidance." "CIPHER|AUTH & SECURITY|Auth method, rate limits, required headers, what data must be encrypted." "PRISM|SLAs & LIMITS|Latency targets, rate limits, payload size limits, pagination approach." "SHELLFISH|EDGE CASES|The weird inputs, race conditions, and abuse patterns this contract must handle."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing an API contract for: \"${API}\"
+Section: ${section}
+${lens}
+Use concrete examples with real field names and values. Format as markdown code blocks where appropriate.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$CONTRACT_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $CONTRACT_FILE\033[0m"
+  exit 0
+fi
+
+# ── DEBUG — systematic multi-agent debugging session ──────────────────
+if [[ "$1" == "debug" ]]; then
+  shift
+  SYMPTOM="$*"
+  [[ -z "$SYMPTOM" ]] && echo "Usage: br carpool debug <symptom or behavior>" && exit 1
+  echo ""
+  echo -e "\033[1;31m🐛 DEBUG SESSION\033[0m"
+  echo -e "\033[0;36mSymptom: $SYMPTOM\033[0m"
+  echo ""
+  hypotheses=""
+  for entry in "SHELLFISH|HYPOTHESIS|Assume nothing works as intended. What is the most likely root cause?" "OCTAVIA|SYSTEM STATE|What system state / environment condition could produce this? Check list." "PRISM|PATTERN MATCH|Have you seen this class of bug before? What pattern does it match?" "ALICE|REPRODUCTION|Step-by-step: how would you reliably reproduce this in under 5 minutes?" "CIPHER|SECURITY ANGLE|Could this be an exploit, timing attack, or auth bypass masquerading as a bug?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} debugging: \"${SYMPTOM}\"
+Your angle: ${section} — ${lens}
+Give 3-4 specific diagnostic steps or hypotheses.
+Format: STEP/HYPOTHESIS: <text>
+End with: MOST LIKELY: <one line root cause guess>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    likely=$(echo "$resp" | grep "^MOST LIKELY:" | head -1 | sed 's/MOST LIKELY: *//')
+    [[ -n "$likely" ]] && hypotheses="${hypotheses}\n  ${ag}: $likely"
+    echo ""
+  done
+  echo -e "\033[1;33m──────────────────────────────────────────\033[0m"
+  echo -e "\033[1;33m🔍 ROOT CAUSE CANDIDATES\033[0m"
+  printf "%b\n" "$hypotheses"
+  echo ""
+  echo -e "\033[0;36mTip: Run 'br carpool fix <error>' once you have an error message\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
