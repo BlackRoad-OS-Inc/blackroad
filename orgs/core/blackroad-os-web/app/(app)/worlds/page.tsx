@@ -52,12 +52,33 @@ export default function WorldsPage() {
   const generateWorld = async () => {
     setGenerating(true);
     try {
-      await fetch('/api/chat', {
+      // Ask the chat API to generate a world
+      const chatRes = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'Generate a new BlackRoad world artifact — give it a unique name, a 2-sentence description, and 3 key features. Format as JSON with fields: name, description, features.' }),
+        body: JSON.stringify({
+          message: 'Generate a new BlackRoad world artifact. Return ONLY valid JSON with fields: name (string), type (one of: world|lore|code|artifact), description (2 sentences), lore (one evocative sentence), tags (array of 3 strings).',
+        }),
       });
-      await new Promise(r => setTimeout(r, 1500));
+
+      if (chatRes.ok) {
+        const chatData = await chatRes.json();
+        // Try to parse JSON from the response text
+        const text: string = chatData.text || chatData.message || '';
+        const match = text.match(/\{[\s\S]*\}/);
+        if (match) {
+          try {
+            const parsed = JSON.parse(match[0]);
+            // POST to /api/worlds to persist it
+            await fetch('/api/worlds', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...parsed, agent: 'lucidia' }),
+            });
+          } catch { /* JSON parse failed — still reload */ }
+        }
+      }
+
       await load();
     } finally {
       setGenerating(false);
