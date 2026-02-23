@@ -12555,6 +12555,616 @@ if [[ "$1" == "eng-excellence" ]]; then
     REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
   echo "✅ Engineering excellence roundtable complete."; exit 0; fi
 
+# ── BATCH 21 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "observability-pipelines" ]]; then
+  Q="How do teams build observability pipelines that filter, enrich, and route telemetry cost-effectively?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/observability-pipelines-$(date +%s).txt"
+  echo "🔭 Observability Pipelines Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Observability pipelines roundtable complete."; exit 0; fi
+
+if [[ "$1" == "postgres-advanced" ]]; then
+  Q="What advanced PostgreSQL features—JSONB, CTEs, partial indexes, LISTEN/NOTIFY—do senior engineers leverage?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/postgres-advanced-$(date +%s).txt"
+  echo "🐘 Advanced PostgreSQL Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Advanced PostgreSQL roundtable complete."; exit 0; fi
+
+if [[ "$1" == "redis-patterns" ]]; then
+  Q="What Redis patterns—pub/sub, sorted sets, Lua scripts, streams—solve problems that other tools can't?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/redis-patterns-$(date +%s).txt"
+  echo "🔴 Redis Patterns Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Redis patterns roundtable complete."; exit 0; fi
+
+if [[ "$1" == "deployment-strategies" ]]; then
+  Q="What are the tradeoffs between blue-green, canary, rolling, and recreate deployment strategies?"; AGENTS=(Alice Octavia Lucidia Shellfish Aria); OUT="$SAVE_DIR/deployment-strategies-$(date +%s).txt"
+  echo "🚀 Deployment Strategies Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Deployment strategies roundtable complete."; exit 0; fi
+
+if [[ "$1" == "container-orchestration" ]]; then
+  Q="Beyond Kubernetes basics—how do teams use operators, CRDs, and admission webhooks to extend k8s?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/container-orchestration-$(date +%s).txt"
+  echo "⎈ Container Orchestration Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Container orchestration roundtable complete."; exit 0; fi
+
+if [[ "$1" == "privacy-by-design" ]]; then
+  Q="How do engineering teams implement privacy-by-design principles from data modeling to API response?"; AGENTS=(Shellfish Lucidia Alice Octavia Aria); OUT="$SAVE_DIR/privacy-by-design-$(date +%s).txt"
+  echo "🔏 Privacy by Design Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Privacy by design roundtable complete."; exit 0; fi
+
+if [[ "$1" == "feedback-loops" ]]; then
+  Q="How do great engineering teams shorten feedback loops from commit to confident production deployment?"; AGENTS=(Alice Lucidia Octavia Aria Shellfish); OUT="$SAVE_DIR/feedback-loops-$(date +%s).txt"
+  echo "🔄 Feedback Loops Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Feedback loops roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eventual-consistency" ]]; then
+  Q="How do teams build systems that embrace eventual consistency without confusing users?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/eventual-consistency-$(date +%s).txt"
+  echo "⏳ Eventual Consistency Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Eventual consistency roundtable complete."; exit 0; fi
+
+if [[ "$1" == "ci-optimization" ]]; then
+  Q="How do teams cut CI pipeline times from 30 minutes to under 5 without sacrificing quality?"; AGENTS=(Alice Octavia Lucidia Aria Shellfish); OUT="$SAVE_DIR/ci-optimization-$(date +%s).txt"
+  echo "⚡ CI Optimization Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ CI optimization roundtable complete."; exit 0; fi
+
+if [[ "$1" == "multi-cloud-strategy" ]]; then
+  Q="How do organizations decide what to run on which cloud and avoid multi-cloud complexity traps?"; AGENTS=(Octavia Lucidia Alice Shellfish Aria); OUT="$SAVE_DIR/multi-cloud-strategy-$(date +%s).txt"
+  echo "☁️ Multi-Cloud Strategy Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Multi-cloud strategy roundtable complete."; exit 0; fi
+
+# ── BATCH 22 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "dead-letter-queues" ]]; then
+  Q="How do teams design dead letter queue handling that catches failures without losing messages?"; AGENTS=(Alice Octavia Lucidia Shellfish Aria); OUT="$SAVE_DIR/dead-letter-queues-$(date +%s).txt"
+  echo "📬 Dead Letter Queues Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Dead letter queues roundtable complete."; exit 0; fi
+
+if [[ "$1" == "api-sdk-design" ]]; then
+  Q="What makes an API SDK developers love—ergonomics, error handling, retry logic, and documentation?"; AGENTS=(Aria Alice Lucidia Octavia Shellfish); OUT="$SAVE_DIR/api-sdk-design-$(date +%s).txt"
+  echo "🛠️ API SDK Design Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ API SDK design roundtable complete."; exit 0; fi
+
+if [[ "$1" == "testing-strategy" ]]; then
+  Q="How do engineering teams decide the right balance of unit, integration, e2e, and property-based tests?"; AGENTS=(Alice Lucidia Octavia Aria Shellfish); OUT="$SAVE_DIR/testing-strategy-$(date +%s).txt"
+  echo "🧪 Testing Strategy Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Testing strategy roundtable complete."; exit 0; fi
+
+if [[ "$1" == "nosql-patterns" ]]; then
+  Q="How do teams choose between document, wide-column, key-value, and graph NoSQL databases?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/nosql-patterns-$(date +%s).txt"
+  echo "🗄️ NoSQL Patterns Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ NoSQL patterns roundtable complete."; exit 0; fi
+
+if [[ "$1" == "microservice-testing" ]]; then
+  Q="How do teams test microservices in isolation while still catching integration failures early?"; AGENTS=(Alice Lucidia Octavia Aria Shellfish); OUT="$SAVE_DIR/microservice-testing-$(date +%s).txt"
+  echo "🧪 Microservice Testing Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Microservice testing roundtable complete."; exit 0; fi
+
+if [[ "$1" == "memory-management" ]]; then
+  Q="How do engineers diagnose and fix memory leaks, GC pressure, and heap fragmentation in production?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/memory-management-$(date +%s).txt"
+  echo "🧠 Memory Management Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Memory management roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eng-writing" ]]; then
+  Q="How do engineers become exceptional writers of design docs, proposals, and engineering updates?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/eng-writing-$(date +%s).txt"
+  echo "✍️ Engineering Writing Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Engineering writing roundtable complete."; exit 0; fi
+
+if [[ "$1" == "reactive-systems" ]]; then
+  Q="What are reactive systems principles—responsive, resilient, elastic, message-driven—and how do they apply today?"; AGENTS=(Lucidia Octavia Alice Aria Shellfish); OUT="$SAVE_DIR/reactive-systems-$(date +%s).txt"
+  echo "⚡ Reactive Systems Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Reactive systems roundtable complete."; exit 0; fi
+
+if [[ "$1" == "cross-team-api" ]]; then
+  Q="How do platform teams manage APIs that many internal teams depend on without becoming a bottleneck?"; AGENTS=(Alice Aria Lucidia Octavia Shellfish); OUT="$SAVE_DIR/cross-team-api-$(date +%s).txt"
+  echo "🤝 Cross-Team API Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Cross-team API roundtable complete."; exit 0; fi
+
+if [[ "$1" == "hardware-acceleration" ]]; then
+  Q="When does GPU, FPGA, or custom ASIC hardware acceleration make sense for software workloads?"; AGENTS=(Octavia Lucidia Alice Shellfish Aria); OUT="$SAVE_DIR/hardware-acceleration-$(date +%s).txt"
+  echo "⚡ Hardware Acceleration Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Hardware acceleration roundtable complete."; exit 0; fi
+
+# ── BATCH 23 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "api-deprecation" ]]; then
+  Q="How do teams deprecate and sunset APIs gracefully without stranding API consumers?"; AGENTS=(Alice Aria Lucidia Octavia Shellfish); OUT="$SAVE_DIR/api-deprecation-$(date +%s).txt"
+  echo "🌅 API Deprecation Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ API deprecation roundtable complete."; exit 0; fi
+
+if [[ "$1" == "distributed-config" ]]; then
+  Q="How do teams manage distributed configuration with Consul, etcd, or AWS Parameter Store at scale?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/distributed-config-$(date +%s).txt"
+  echo "⚙️ Distributed Config Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Distributed config roundtable complete."; exit 0; fi
+
+if [[ "$1" == "cost-of-delay" ]]; then
+  Q="How do engineering teams use cost of delay to prioritize technical work against product features?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/cost-of-delay-$(date +%s).txt"
+  echo "⏱️ Cost of Delay Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Cost of delay roundtable complete."; exit 0; fi
+
+if [[ "$1" == "backpressure" ]]; then
+  Q="How do streaming and reactive systems implement backpressure to prevent cascading failures?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/backpressure-$(date +%s).txt"
+  echo "🌊 Backpressure Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Backpressure roundtable complete."; exit 0; fi
+
+if [[ "$1" == "immutable-infrastructure" ]]; then
+  Q="What is immutable infrastructure and how do teams use container images and AMIs to achieve it?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/immutable-infrastructure-$(date +%s).txt"
+  echo "🧊 Immutable Infrastructure Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Immutable infrastructure roundtable complete."; exit 0; fi
+
+if [[ "$1" == "full-stack-tracing" ]]; then
+  Q="How do teams achieve full-stack trace correlation from browser request through microservices to database?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/full-stack-tracing-$(date +%s).txt"
+  echo "🔭 Full-Stack Tracing Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Full-stack tracing roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eng-mentorship" ]]; then
+  Q="How do the best engineering mentors accelerate junior engineer growth without creating dependency?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/eng-mentorship-$(date +%s).txt"
+  echo "🌱 Engineering Mentorship Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Engineering mentorship roundtable complete."; exit 0; fi
+
+if [[ "$1" == "event-streaming" ]]; then
+  Q="How do teams architect event streaming platforms that serve analytics, ML, and operational use cases simultaneously?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/event-streaming-$(date +%s).txt"
+  echo "🌊 Event Streaming Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Event streaming roundtable complete."; exit 0; fi
+
+if [[ "$1" == "osquery" ]]; then
+  Q="How do security teams use osquery and fleet management to get real-time endpoint visibility?"; AGENTS=(Shellfish Octavia Alice Lucidia Aria); OUT="$SAVE_DIR/osquery-$(date +%s).txt"
+  echo "🔍 osquery Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ osquery roundtable complete."; exit 0; fi
+
+if [[ "$1" == "distributed-sql" ]]; then
+  Q="When does distributed SQL like CockroachDB or Spanner make sense over traditional PostgreSQL?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/distributed-sql-$(date +%s).txt"
+  echo "🗄️ Distributed SQL Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Distributed SQL roundtable complete."; exit 0; fi
+
+# ── BATCH 24 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "load-testing" ]]; then
+  Q="How do teams run realistic load tests that reveal production bottlenecks before launch?"; AGENTS=(Alice Octavia Lucidia Shellfish Aria); OUT="$SAVE_DIR/load-testing-$(date +%s).txt"
+  echo "🔨 Load Testing Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Load testing roundtable complete."; exit 0; fi
+
+if [[ "$1" == "value-stream" ]]; then
+  Q="How do teams map and improve their value stream to eliminate waste and deliver faster?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/value-stream-$(date +%s).txt"
+  echo "🗺️ Value Stream Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Value stream roundtable complete."; exit 0; fi
+
+if [[ "$1" == "dependency-management" ]]; then
+  Q="How do teams manage third-party dependency updates without constant breakage and security debt?"; AGENTS=(Alice Lucidia Octavia Shellfish Aria); OUT="$SAVE_DIR/dependency-management-$(date +%s).txt"
+  echo "📦 Dependency Management Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Dependency management roundtable complete."; exit 0; fi
+
+if [[ "$1" == "ip-addressing" ]]; then
+  Q="How do teams plan IPv4 and IPv6 addressing for large cloud deployments that need room to grow?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/ip-addressing-$(date +%s).txt"
+  echo "🌐 IP Addressing Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ IP addressing roundtable complete."; exit 0; fi
+
+if [[ "$1" == "performance-regression" ]]; then
+  Q="How do teams catch performance regressions in CI before they reach production and degrade user experience?"; AGENTS=(Alice Octavia Lucidia Shellfish Aria); OUT="$SAVE_DIR/performance-regression-$(date +%s).txt"
+  echo "📉 Performance Regression Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Performance regression roundtable complete."; exit 0; fi
+
+if [[ "$1" == "token-economics" ]]; then
+  Q="How should platform teams design token-based usage models for AI APIs and developer products?"; AGENTS=(Aria Lucidia Alice Octavia Shellfish); OUT="$SAVE_DIR/token-economics-$(date +%s).txt"
+  echo "🪙 Token Economics Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Token economics roundtable complete."; exit 0; fi
+
+if [[ "$1" == "autonomous-systems" ]]; then
+  Q="What engineering principles apply to building reliable autonomous systems that act without human approval?"; AGENTS=(Lucidia Shellfish Octavia Alice Aria); OUT="$SAVE_DIR/autonomous-systems-$(date +%s).txt"
+  echo "🤖 Autonomous Systems Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Autonomous systems roundtable complete."; exit 0; fi
+
+if [[ "$1" == "data-mesh" ]]; then
+  Q="What is data mesh, how does it differ from data lakes, and when does it actually make sense?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/data-mesh-$(date +%s).txt"
+  echo "🕸️ Data Mesh Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Data mesh roundtable complete."; exit 0; fi
+
+if [[ "$1" == "progressive-disclosure" ]]; then
+  Q="How do teams design progressive disclosure in UIs and APIs so simple things stay simple?"; AGENTS=(Aria Lucidia Alice Octavia Shellfish); OUT="$SAVE_DIR/progressive-disclosure-$(date +%s).txt"
+  echo "🎨 Progressive Disclosure Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Progressive disclosure roundtable complete."; exit 0; fi
+
+if [[ "$1" == "incident-analytics" ]]; then
+  Q="How do teams analyze incident data over time to surface systemic reliability improvements?"; AGENTS=(Lucidia Alice Octavia Shellfish Aria); OUT="$SAVE_DIR/incident-analytics-$(date +%s).txt"
+  echo "📊 Incident Analytics Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Incident analytics roundtable complete."; exit 0; fi
+
+# ── BATCH 25 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "ebpf" ]]; then
+  Q="How are teams using eBPF for networking, observability, and security without kernel modifications?"; AGENTS=(Shellfish Octavia Alice Lucidia Aria); OUT="$SAVE_DIR/ebpf-$(date +%s).txt"
+  echo "⚡ eBPF Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ eBPF roundtable complete."; exit 0; fi
+
+if [[ "$1" == "service-catalog" ]]; then
+  Q="How do organizations build and maintain a service catalog that keeps engineering aware of what exists?"; AGENTS=(Alice Lucidia Octavia Aria Shellfish); OUT="$SAVE_DIR/service-catalog-$(date +%s).txt"
+  echo "📚 Service Catalog Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Service catalog roundtable complete."; exit 0; fi
+
+if [[ "$1" == "graphql-advanced" ]]; then
+  Q="What advanced GraphQL patterns—dataloader, persisted queries, schema stitching—handle real production challenges?"; AGENTS=(Alice Aria Lucidia Octavia Shellfish); OUT="$SAVE_DIR/graphql-advanced-$(date +%s).txt"
+  echo "📡 Advanced GraphQL Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Advanced GraphQL roundtable complete."; exit 0; fi
+
+if [[ "$1" == "on-premise-cloud" ]]; then
+  Q="How do teams architect hybrid on-premise and cloud systems that don't become a maintenance nightmare?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/on-premise-cloud-$(date +%s).txt"
+  echo "🏢 On-Premise & Cloud Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ On-premise & cloud roundtable complete."; exit 0; fi
+
+if [[ "$1" == "customer-reliability" ]]; then
+  Q="How do engineering teams build reliability from the customer perspective—not just uptime but perceived experience?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/customer-reliability-$(date +%s).txt"
+  echo "🎯 Customer Reliability Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Customer reliability roundtable complete."; exit 0; fi
+
+if [[ "$1" == "batch-processing" ]]; then
+  Q="How do teams design batch processing jobs that are reliable, resumable, and observable?"; AGENTS=(Alice Octavia Lucidia Shellfish Aria); OUT="$SAVE_DIR/batch-processing-$(date +%s).txt"
+  echo "⚙️ Batch Processing Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Batch processing roundtable complete."; exit 0; fi
+
+if [[ "$1" == "anomaly-detection" ]]; then
+  Q="How do teams build production anomaly detection that alerts on real issues without alert fatigue?"; AGENTS=(Lucidia Octavia Alice Shellfish Aria); OUT="$SAVE_DIR/anomaly-detection-$(date +%s).txt"
+  echo "🔔 Anomaly Detection Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Anomaly detection roundtable complete."; exit 0; fi
+
+if [[ "$1" == "developer-sandbox" ]]; then
+  Q="How do teams build developer sandboxes that faithfully mirror production without the cost?"; AGENTS=(Alice Lucidia Octavia Aria Shellfish); OUT="$SAVE_DIR/developer-sandbox-$(date +%s).txt"
+  echo "🏖️ Developer Sandbox Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Developer sandbox roundtable complete."; exit 0; fi
+
+if [[ "$1" == "security-by-default" ]]; then
+  Q="How do teams make security the path of least resistance so engineers ship secure code by default?"; AGENTS=(Shellfish Lucidia Alice Octavia Aria); OUT="$SAVE_DIR/security-by-default-$(date +%s).txt"
+  echo "🛡️ Security by Default Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Security by default roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eng-influence" ]]; then
+  Q="How do engineers build influence without authority to drive technical change across an organization?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/eng-influence-$(date +%s).txt"
+  echo "🌟 Engineering Influence Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Engineering influence roundtable complete."; exit 0; fi
+
+# ── BATCH 26 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "lambda-architecture" ]]; then
+  Q="What is lambda architecture and when does it still make sense versus kappa or delta approaches?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/lambda-architecture-$(date +%s).txt"
+  echo "λ Lambda Architecture Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Lambda architecture roundtable complete."; exit 0; fi
+
+if [[ "$1" == "api-gateway-auth" ]]; then
+  Q="How do teams implement OAuth2, API keys, and mutual TLS authentication at the API gateway layer?"; AGENTS=(Shellfish Alice Octavia Lucidia Aria); OUT="$SAVE_DIR/api-gateway-auth-$(date +%s).txt"
+  echo "🔐 API Gateway Auth Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ API gateway auth roundtable complete."; exit 0; fi
+
+if [[ "$1" == "serverless-patterns" ]]; then
+  Q="What serverless patterns—fan-out, choreography, scheduled functions—work best in production?"; AGENTS=(Alice Octavia Lucidia Aria Shellfish); OUT="$SAVE_DIR/serverless-patterns-$(date +%s).txt"
+  echo "☁️ Serverless Patterns Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Serverless patterns roundtable complete."; exit 0; fi
+
+if [[ "$1" == "mobile-architecture" ]]; then
+  Q="What mobile architecture patterns—MVVM, MVI, Clean Architecture—scale to large iOS and Android teams?"; AGENTS=(Aria Alice Lucidia Octavia Shellfish); OUT="$SAVE_DIR/mobile-architecture-$(date +%s).txt"
+  echo "📱 Mobile Architecture Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Mobile architecture roundtable complete."; exit 0; fi
+
+if [[ "$1" == "infrastructure-testing" ]]; then
+  Q="How do teams test infrastructure code with terratest, localstack, and policy-as-code tools?"; AGENTS=(Alice Octavia Lucidia Shellfish Aria); OUT="$SAVE_DIR/infrastructure-testing-$(date +%s).txt"
+  echo "🧪 Infrastructure Testing Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Infrastructure testing roundtable complete."; exit 0; fi
+
+if [[ "$1" == "real-user-monitoring" ]]; then
+  Q="How do teams implement real user monitoring to understand actual field performance across devices and networks?"; AGENTS=(Aria Alice Lucidia Octavia Shellfish); OUT="$SAVE_DIR/real-user-monitoring-$(date +%s).txt"
+  echo "👤 Real User Monitoring Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Real user monitoring roundtable complete."; exit 0; fi
+
+if [[ "$1" == "platform-adoption" ]]; then
+  Q="How do internal platform teams drive adoption of their tools without mandate—making the platform irresistible?"; AGENTS=(Aria Lucidia Alice Octavia Shellfish); OUT="$SAVE_DIR/platform-adoption-$(date +%s).txt"
+  echo "🚀 Platform Adoption Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Platform adoption roundtable complete."; exit 0; fi
+
+if [[ "$1" == "incident-comms" ]]; then
+  Q="How do teams communicate during and after incidents to keep stakeholders informed without creating panic?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/incident-comms-$(date +%s).txt"
+  echo "📢 Incident Communications Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Incident communications roundtable complete."; exit 0; fi
+
+if [[ "$1" == "type-systems" ]]; then
+  Q="How do strong type systems catch bugs at compile time and what makes TypeScript, Rust, or Haskell type systems powerful?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/type-systems-$(date +%s).txt"
+  echo "🔤 Type Systems Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Type systems roundtable complete."; exit 0; fi
+
+if [[ "$1" == "object-storage" ]]; then
+  Q="How do teams design systems around object storage—S3 patterns, lifecycle policies, multipart uploads?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/object-storage-$(date +%s).txt"
+  echo "🪣 Object Storage Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Object storage roundtable complete."; exit 0; fi
+
+# ── BATCH 27 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "trunk-feature-flags" ]]; then
+  Q="How do teams combine trunk-based development with feature flags to ship incrementally without long-lived branches?"; AGENTS=(Alice Lucidia Octavia Aria Shellfish); OUT="$SAVE_DIR/trunk-feature-flags-$(date +%s).txt"
+  echo "🚩 Trunk + Feature Flags Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Trunk + feature flags roundtable complete."; exit 0; fi
+
+if [[ "$1" == "signal-vs-noise" ]]; then
+  Q="How do teams tune alerting to achieve high signal with low noise—on-call engineers actually trust their pagers?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/signal-vs-noise-$(date +%s).txt"
+  echo "🔔 Signal vs Noise Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Signal vs noise roundtable complete."; exit 0; fi
+
+if [[ "$1" == "llm-evals" ]]; then
+  Q="How do teams build LLM evaluation pipelines that measure quality, safety, and regression reliably?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/llm-evals-$(date +%s).txt"
+  echo "🧪 LLM Evaluations Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ LLM evaluations roundtable complete."; exit 0; fi
+
+if [[ "$1" == "chaos-networking" ]]; then
+  Q="How do teams use network chaos—packet loss, latency injection, partition testing—to validate resilience?"; AGENTS=(Shellfish Octavia Alice Lucidia Aria); OUT="$SAVE_DIR/chaos-networking-$(date +%s).txt"
+  echo "💥 Network Chaos Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Network chaos roundtable complete."; exit 0; fi
+
+if [[ "$1" == "rollback-strategies" ]]; then
+  Q="How do teams build rollback capabilities that work under 5 minutes for code, config, and database changes?"; AGENTS=(Alice Octavia Lucidia Shellfish Aria); OUT="$SAVE_DIR/rollback-strategies-$(date +%s).txt"
+  echo "↩️ Rollback Strategies Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Rollback strategies roundtable complete."; exit 0; fi
+
+if [[ "$1" == "continuous-deployment" ]]; then
+  Q="What does it take to achieve true continuous deployment—deploying every commit to production safely?"; AGENTS=(Alice Octavia Lucidia Shellfish Aria); OUT="$SAVE_DIR/continuous-deployment-$(date +%s).txt"
+  echo "🚀 Continuous Deployment Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Continuous deployment roundtable complete."; exit 0; fi
+
+if [[ "$1" == "internal-hackathons" ]]; then
+  Q="How do engineering organizations run hackathons that generate real product value rather than just fun demos?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/internal-hackathons-$(date +%s).txt"
+  echo "💡 Internal Hackathons Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Internal hackathons roundtable complete."; exit 0; fi
+
+if [[ "$1" == "cqrs" ]]; then
+  Q="When does CQRS genuinely improve systems and what pitfalls make it more trouble than it is worth?"; AGENTS=(Lucidia Octavia Alice Shellfish Aria); OUT="$SAVE_DIR/cqrs-$(date +%s).txt"
+  echo "📊 CQRS Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ CQRS roundtable complete."; exit 0; fi
+
+if [[ "$1" == "multitenancy-isolation" ]]; then
+  Q="How do SaaS teams implement tenant isolation at the database row, schema, and database instance levels?"; AGENTS=(Octavia Shellfish Alice Lucidia Aria); OUT="$SAVE_DIR/multitenancy-isolation-$(date +%s).txt"
+  echo "🏢 Multi-Tenancy Isolation Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Multi-tenancy isolation roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eng-vision" ]]; then
+  Q="How do engineering leaders create and communicate a compelling technical vision that teams rally around?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/eng-vision-$(date +%s).txt"
+  echo "🌟 Engineering Vision Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Engineering vision roundtable complete."; exit 0; fi
+
+# ── BATCH 28 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "distributed-transactions" ]]; then
+  Q="How do teams handle distributed transactions with saga pattern, 2PC, and eventual consistency tradeoffs?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/distributed-transactions-$(date +%s).txt"
+  echo "🔄 Distributed Transactions Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Distributed transactions roundtable complete."; exit 0; fi
+
+if [[ "$1" == "chaos-memory" ]]; then
+  Q="How do teams simulate memory pressure and OOM conditions to validate graceful degradation?"; AGENTS=(Shellfish Octavia Alice Lucidia Aria); OUT="$SAVE_DIR/chaos-memory-$(date +%s).txt"
+  echo "💥 Memory Chaos Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Memory chaos roundtable complete."; exit 0; fi
+
+if [[ "$1" == "spanner-patterns" ]]; then
+  Q="What are the data modeling and query patterns that unlock Google Spanner's global consistency guarantees?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/spanner-patterns-$(date +%s).txt"
+  echo "🔄 Spanner Patterns Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Spanner patterns roundtable complete."; exit 0; fi
+
+if [[ "$1" == "incident-severity" ]]; then
+  Q="How do teams define incident severity levels and escalation paths that everyone understands and respects?"; AGENTS=(Alice Octavia Lucidia Shellfish Aria); OUT="$SAVE_DIR/incident-severity-$(date +%s).txt"
+  echo "🚨 Incident Severity Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Incident severity roundtable complete."; exit 0; fi
+
+if [[ "$1" == "frontend-testing" ]]; then
+  Q="What frontend testing strategies—component, visual regression, e2e with Playwright—give the best ROI?"; AGENTS=(Aria Alice Lucidia Octavia Shellfish); OUT="$SAVE_DIR/frontend-testing-$(date +%s).txt"
+  echo "🧪 Frontend Testing Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Frontend testing roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eng-estimation" ]]; then
+  Q="How do engineers give estimates that are honest about uncertainty without derailing planning cycles?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/eng-estimation-$(date +%s).txt"
+  echo "🎯 Engineering Estimation Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Engineering estimation roundtable complete."; exit 0; fi
+
+if [[ "$1" == "cloud-native-patterns" ]]; then
+  Q="What cloud-native patterns—sidecar, ambassador, strangler fig—solve common distributed systems problems?"; AGENTS=(Octavia Lucidia Alice Shellfish Aria); OUT="$SAVE_DIR/cloud-native-patterns-$(date +%s).txt"
+  echo "☁️ Cloud-Native Patterns Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Cloud-native patterns roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eng-peer-feedback" ]]; then
+  Q="How do engineering teams build a culture of candid, actionable peer feedback that improves everyone?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/eng-peer-feedback-$(date +%s).txt"
+  echo "💬 Engineering Peer Feedback Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Engineering peer feedback roundtable complete."; exit 0; fi
+
+if [[ "$1" == "security-incident" ]]; then
+  Q="How do teams respond to a security breach—containment, forensics, disclosure, and hardening?"; AGENTS=(Shellfish Alice Lucidia Octavia Aria); OUT="$SAVE_DIR/security-incident-$(date +%s).txt"
+  echo "🚨 Security Incident Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Security incident roundtable complete."; exit 0; fi
+
+if [[ "$1" == "data-observability" ]]; then
+  Q="How do data teams build data observability—freshness, volume, schema drift, distribution anomalies?"; AGENTS=(Lucidia Alice Octavia Shellfish Aria); OUT="$SAVE_DIR/data-observability-$(date +%s).txt"
+  echo "👁️ Data Observability Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Data observability roundtable complete."; exit 0; fi
+
+# ── BATCH 29 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "ipfs-web3-infra" ]]; then
+  Q="What is the practical engineering case for decentralized storage and IPFS in production systems?"; AGENTS=(Lucidia Shellfish Alice Octavia Aria); OUT="$SAVE_DIR/ipfs-web3-infra-$(date +%s).txt"
+  echo "🌐 IPFS & Web3 Infra Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ IPFS & Web3 infra roundtable complete."; exit 0; fi
+
+if [[ "$1" == "semantic-release" ]]; then
+  Q="How do teams implement semantic release automation to maintain changelogs and versioning without manual toil?"; AGENTS=(Alice Lucidia Octavia Aria Shellfish); OUT="$SAVE_DIR/semantic-release-$(date +%s).txt"
+  echo "🏷️ Semantic Release Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Semantic release roundtable complete."; exit 0; fi
+
+if [[ "$1" == "data-privacy-eng" ]]; then
+  Q="How do engineers implement differential privacy, k-anonymity, and data masking to protect user privacy?"; AGENTS=(Shellfish Lucidia Alice Octavia Aria); OUT="$SAVE_DIR/data-privacy-eng-$(date +%s).txt"
+  echo "🔏 Data Privacy Engineering Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Data privacy engineering roundtable complete."; exit 0; fi
+
+if [[ "$1" == "multi-model-ai" ]]; then
+  Q="How do teams architect systems that intelligently route between multiple AI models based on cost and capability?"; AGENTS=(Lucidia Octavia Alice Aria Shellfish); OUT="$SAVE_DIR/multi-model-ai-$(date +%s).txt"
+  echo "🤖 Multi-Model AI Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Multi-model AI roundtable complete."; exit 0; fi
+
+if [[ "$1" == "realtime-data-sync" ]]; then
+  Q="How do teams implement real-time data synchronization between cloud and edge nodes reliably?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/realtime-data-sync-$(date +%s).txt"
+  echo "🔄 Real-Time Data Sync Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Real-time data sync roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eng-decision-records" ]]; then
+  Q="How do teams write Architecture Decision Records that future engineers actually find and understand?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/eng-decision-records-$(date +%s).txt"
+  echo "📋 Engineering Decision Records Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Engineering decision records roundtable complete."; exit 0; fi
+
+if [[ "$1" == "secrets-management" ]]; then
+  Q="How do teams implement HashiCorp Vault or AWS Secrets Manager to dynamically inject secrets at runtime?"; AGENTS=(Shellfish Octavia Alice Lucidia Aria); OUT="$SAVE_DIR/secrets-management-$(date +%s).txt"
+  echo "🔑 Secrets Management Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Secrets management roundtable complete."; exit 0; fi
+
+if [[ "$1" == "saas-billing" ]]; then
+  Q="How do engineering teams build flexible billing systems that handle trials, upgrades, prorations, and metering?"; AGENTS=(Aria Alice Lucidia Octavia Shellfish); OUT="$SAVE_DIR/saas-billing-$(date +%s).txt"
+  echo "💳 SaaS Billing Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ SaaS billing roundtable complete."; exit 0; fi
+
+if [[ "$1" == "distributed-consensus" ]]; then
+  Q="How does distributed consensus work—Raft, Paxos—and when do engineers need to understand it deeply?"; AGENTS=(Octavia Lucidia Alice Shellfish Aria); OUT="$SAVE_DIR/distributed-consensus-$(date +%s).txt"
+  echo "🤝 Distributed Consensus Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Distributed consensus roundtable complete."; exit 0; fi
+
+if [[ "$1" == "api-mesh" ]]; then
+  Q="What is an API mesh and how does it differ from an API gateway in a multi-service environment?"; AGENTS=(Alice Octavia Lucidia Aria Shellfish); OUT="$SAVE_DIR/api-mesh-$(date +%s).txt"
+  echo "🕸️ API Mesh Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ API mesh roundtable complete."; exit 0; fi
+
+# ── BATCH 30 ───────────────────────────────────────────────────────────────────
+if [[ "$1" == "dev-flow" ]]; then
+  Q="What does an optimal developer flow state look like and how do organizations protect it?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/dev-flow-$(date +%s).txt"
+  echo "🌊 Developer Flow Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Developer flow roundtable complete."; exit 0; fi
+
+if [[ "$1" == "ai-observability" ]]; then
+  Q="How do teams observe and debug AI systems in production—hallucinations, latency, and prompt drift?"; AGENTS=(Lucidia Octavia Alice Shellfish Aria); OUT="$SAVE_DIR/ai-observability-$(date +%s).txt"
+  echo "👁️ AI Observability Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ AI observability roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eng-org-design" ]]; then
+  Q="How should engineering organizations be structured as companies grow from 50 to 500 to 5000 engineers?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/eng-org-design-$(date +%s).txt"
+  echo "🏛️ Engineering Org Design Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Engineering org design roundtable complete."; exit 0; fi
+
+if [[ "$1" == "function-optimization" ]]; then
+  Q="How do engineers identify and optimize hot code paths using flame graphs, benchmarks, and profilers?"; AGENTS=(Octavia Alice Lucidia Shellfish Aria); OUT="$SAVE_DIR/function-optimization-$(date +%s).txt"
+  echo "⚡ Function Optimization Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Function optimization roundtable complete."; exit 0; fi
+
+if [[ "$1" == "policy-as-code" ]]; then
+  Q="How do teams use OPA, Kyverno, or Sentinel to enforce infrastructure and security policies as code?"; AGENTS=(Shellfish Alice Octavia Lucidia Aria); OUT="$SAVE_DIR/policy-as-code-$(date +%s).txt"
+  echo "📋 Policy as Code Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Policy as code roundtable complete."; exit 0; fi
+
+if [[ "$1" == "model-context-protocol" ]]; then
+  Q="How does Model Context Protocol change how AI agents integrate with developer tools and data sources?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/model-context-protocol-$(date +%s).txt"
+  echo "🔌 Model Context Protocol Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Model context protocol roundtable complete."; exit 0; fi
+
+if [[ "$1" == "hybrid-search" ]]; then
+  Q="How do teams combine dense vector search with sparse keyword search for best-of-both retrieval?"; AGENTS=(Lucidia Octavia Alice Aria Shellfish); OUT="$SAVE_DIR/hybrid-search-$(date +%s).txt"
+  echo "🔍 Hybrid Search Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Hybrid search roundtable complete."; exit 0; fi
+
+if [[ "$1" == "reliability-roadmap" ]]; then
+  Q="How do teams build a multi-quarter reliability roadmap that balances new features with stability investments?"; AGENTS=(Lucidia Octavia Alice Aria Shellfish); OUT="$SAVE_DIR/reliability-roadmap-$(date +%s).txt"
+  echo "🗺️ Reliability Roadmap Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Reliability roadmap roundtable complete."; exit 0; fi
+
+if [[ "$1" == "eng-legacy" ]]; then
+  Q="How do teams modernize legacy systems incrementally without stopping feature delivery or risking outages?"; AGENTS=(Lucidia Alice Octavia Aria Shellfish); OUT="$SAVE_DIR/eng-legacy-$(date +%s).txt"
+  echo "🏚️ Engineering Legacy Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ Engineering legacy roundtable complete."; exit 0; fi
+
+if [[ "$1" == "blackroad-future" ]]; then
+  Q="If you could build the perfect BlackRoad OS for the next decade of AI-native software, what would it look like?"; AGENTS=(Lucidia Aria Alice Octavia Shellfish); OUT="$SAVE_DIR/blackroad-future-$(date +%s).txt"
+  echo "🚀 BlackRoad Future Roundtable"; echo "$Q" | tee "$OUT"; for AGENT in "${AGENTS[@]}"; do
+    REPLY=$(echo "$Q — respond as $AGENT" | ollama run llama3.2 2>/dev/null | head -8); echo "[$AGENT] $REPLY"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo "✅ BlackRoad future roundtable complete."; exit 0; fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1

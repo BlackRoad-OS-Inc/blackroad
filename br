@@ -175,8 +175,8 @@ BR_TOOLS=(
     wifi        "${BR_TOOLS_DIR}/wifi-scanner/br-wifi.sh"
     lan         "${BR_TOOLS_DIR}/wifi-scanner/br-wifi.sh"
     net-scan    "${BR_TOOLS_DIR}/wifi-scanner/br-wifi.sh"
-    ai          "${BR_TOOLS_DIR}/ai/br-ai.sh"
-    ask         "${BR_TOOLS_DIR}/ai/br-ai.sh"
+    ai          "${BR_TOOLS_DIR}/ai-hub/br-ai.sh"
+    ask         "${BR_TOOLS_DIR}/ai-hub/br-ai.sh"
     journal     "${BR_TOOLS_DIR}/journal/br-journal.sh"
     mem         "${BR_TOOLS_DIR}/journal/br-journal.sh"
     memory      "${BR_TOOLS_DIR}/journal/br-journal.sh"
@@ -1690,6 +1690,106 @@ main() {
                 autoscaling-strategies|hpa|keda) bash /Users/alexa/blackroad/carpool.sh autoscaling-strategies "$@" ;;
                 api-gateway-security|jwt-gateway|rbac-gateway) bash /Users/alexa/blackroad/carpool.sh api-gateway-security "$@" ;;
                 eng-excellence|engineering-excellence|eng-quality) bash /Users/alexa/blackroad/carpool.sh eng-excellence "$@" ;;
+                observability-pipelines|otel-pipeline|telemetry-pipeline) bash /Users/alexa/blackroad/carpool.sh observability-pipelines "$@" ;;
+                postgres-advanced|advanced-postgres|jsonb) bash /Users/alexa/blackroad/carpool.sh postgres-advanced "$@" ;;
+                redis-patterns|redis-advanced|redis-streams) bash /Users/alexa/blackroad/carpool.sh redis-patterns "$@" ;;
+                deployment-strategies|blue-green|rolling-deploy) bash /Users/alexa/blackroad/carpool.sh deployment-strategies "$@" ;;
+                container-orchestration|k8s-operators|crds) bash /Users/alexa/blackroad/carpool.sh container-orchestration "$@" ;;
+                privacy-by-design|pbd|privacy-arch) bash /Users/alexa/blackroad/carpool.sh privacy-by-design "$@" ;;
+                feedback-loops|short-loops|commit-to-prod) bash /Users/alexa/blackroad/carpool.sh feedback-loops "$@" ;;
+                eventual-consistency|ec|consistency-models) bash /Users/alexa/blackroad/carpool.sh eventual-consistency "$@" ;;
+                ci-optimization|fast-ci|pipeline-speed) bash /Users/alexa/blackroad/carpool.sh ci-optimization "$@" ;;
+                multi-cloud-strategy|cloud-strategy|provider-strategy) bash /Users/alexa/blackroad/carpool.sh multi-cloud-strategy "$@" ;;
+                dead-letter-queues|dlq|poison-messages) bash /Users/alexa/blackroad/carpool.sh dead-letter-queues "$@" ;;
+                api-sdk-design|sdk-design|client-library) bash /Users/alexa/blackroad/carpool.sh api-sdk-design "$@" ;;
+                testing-strategy|test-balance|test-pyramid-adv) bash /Users/alexa/blackroad/carpool.sh testing-strategy "$@" ;;
+                nosql-patterns|nosql|document-db) bash /Users/alexa/blackroad/carpool.sh nosql-patterns "$@" ;;
+                microservice-testing|service-testing|consumer-contracts) bash /Users/alexa/blackroad/carpool.sh microservice-testing "$@" ;;
+                memory-management|gc-tuning|heap-management) bash /Users/alexa/blackroad/carpool.sh memory-management "$@" ;;
+                eng-writing|design-docs|proposal-writing) bash /Users/alexa/blackroad/carpool.sh eng-writing "$@" ;;
+                reactive-systems|reactive|reactive-manifesto) bash /Users/alexa/blackroad/carpool.sh reactive-systems "$@" ;;
+                cross-team-api|internal-api|shared-api) bash /Users/alexa/blackroad/carpool.sh cross-team-api "$@" ;;
+                hardware-acceleration|gpu-computing|fpga) bash /Users/alexa/blackroad/carpool.sh hardware-acceleration "$@" ;;
+                api-deprecation|sunset-api|api-eol) bash /Users/alexa/blackroad/carpool.sh api-deprecation "$@" ;;
+                distributed-config|consul|etcd-config) bash /Users/alexa/blackroad/carpool.sh distributed-config "$@" ;;
+                cost-of-delay|cod|prioritization-cost) bash /Users/alexa/blackroad/carpool.sh cost-of-delay "$@" ;;
+                backpressure|flow-control|reactive-backpressure) bash /Users/alexa/blackroad/carpool.sh backpressure "$@" ;;
+                immutable-infrastructure|immutable-infra|baked-amis) bash /Users/alexa/blackroad/carpool.sh immutable-infrastructure "$@" ;;
+                full-stack-tracing|e2e-tracing|browser-to-db) bash /Users/alexa/blackroad/carpool.sh full-stack-tracing "$@" ;;
+                eng-mentorship|mentoring|junior-growth) bash /Users/alexa/blackroad/carpool.sh eng-mentorship "$@" ;;
+                event-streaming|kafka-streaming|kinesis-streaming) bash /Users/alexa/blackroad/carpool.sh event-streaming "$@" ;;
+                osquery|fleet-mgmt|endpoint-visibility) bash /Users/alexa/blackroad/carpool.sh osquery "$@" ;;
+                distributed-sql|cockroachdb|spanner) bash /Users/alexa/blackroad/carpool.sh distributed-sql "$@" ;;
+                load-testing|stress-testing|k6) bash /Users/alexa/blackroad/carpool.sh load-testing "$@" ;;
+                value-stream|vsm|lean-eng) bash /Users/alexa/blackroad/carpool.sh value-stream "$@" ;;
+                dependency-management|dependabot|renovate) bash /Users/alexa/blackroad/carpool.sh dependency-management "$@" ;;
+                ip-addressing|vpc-cidr|ipv6) bash /Users/alexa/blackroad/carpool.sh ip-addressing "$@" ;;
+                performance-regression|perf-regression|benchmark-ci) bash /Users/alexa/blackroad/carpool.sh performance-regression "$@" ;;
+                token-economics|usage-tokens|ai-tokens) bash /Users/alexa/blackroad/carpool.sh token-economics "$@" ;;
+                autonomous-systems|agentic-loops|self-driving-software) bash /Users/alexa/blackroad/carpool.sh autonomous-systems "$@" ;;
+                data-mesh|data-domains|data-products) bash /Users/alexa/blackroad/carpool.sh data-mesh "$@" ;;
+                progressive-disclosure|ux-disclosure|api-discovery) bash /Users/alexa/blackroad/carpool.sh progressive-disclosure "$@" ;;
+                incident-analytics|incident-trends|mttr-analysis) bash /Users/alexa/blackroad/carpool.sh incident-analytics "$@" ;;
+                ebpf|xdp|kernel-tracing) bash /Users/alexa/blackroad/carpool.sh ebpf "$@" ;;
+                service-catalog|service-registry|service-inventory) bash /Users/alexa/blackroad/carpool.sh service-catalog "$@" ;;
+                graphql-advanced|dataloader|persisted-queries) bash /Users/alexa/blackroad/carpool.sh graphql-advanced "$@" ;;
+                on-premise-cloud|hybrid-cloud|on-prem) bash /Users/alexa/blackroad/carpool.sh on-premise-cloud "$@" ;;
+                customer-reliability|perceived-reliability|user-reliability) bash /Users/alexa/blackroad/carpool.sh customer-reliability "$@" ;;
+                batch-processing|batch-jobs|bulk-processing) bash /Users/alexa/blackroad/carpool.sh batch-processing "$@" ;;
+                anomaly-detection|alert-anomaly|statistical-alerts) bash /Users/alexa/blackroad/carpool.sh anomaly-detection "$@" ;;
+                developer-sandbox|dev-sandbox|local-prod) bash /Users/alexa/blackroad/carpool.sh developer-sandbox "$@" ;;
+                security-by-default|secure-defaults|shift-left-security) bash /Users/alexa/blackroad/carpool.sh security-by-default "$@" ;;
+                eng-influence|influence-without-authority|technical-influence) bash /Users/alexa/blackroad/carpool.sh eng-influence "$@" ;;
+                lambda-architecture|lambda-arch|kappa-arch) bash /Users/alexa/blackroad/carpool.sh lambda-architecture "$@" ;;
+                api-gateway-auth|oauth-gateway|mtls) bash /Users/alexa/blackroad/carpool.sh api-gateway-auth "$@" ;;
+                serverless-patterns|lambda-patterns|function-patterns) bash /Users/alexa/blackroad/carpool.sh serverless-patterns "$@" ;;
+                mobile-architecture|mvvm|mvi) bash /Users/alexa/blackroad/carpool.sh mobile-architecture "$@" ;;
+                infrastructure-testing|terratest|localstack) bash /Users/alexa/blackroad/carpool.sh infrastructure-testing "$@" ;;
+                real-user-monitoring|rum|field-data) bash /Users/alexa/blackroad/carpool.sh real-user-monitoring "$@" ;;
+                platform-adoption|idp-adoption|golden-path-adoption) bash /Users/alexa/blackroad/carpool.sh platform-adoption "$@" ;;
+                incident-comms|status-page|stakeholder-update) bash /Users/alexa/blackroad/carpool.sh incident-comms "$@" ;;
+                type-systems|typescript-types|rust-types) bash /Users/alexa/blackroad/carpool.sh type-systems "$@" ;;
+                object-storage|s3-patterns|blob-storage) bash /Users/alexa/blackroad/carpool.sh object-storage "$@" ;;
+                trunk-feature-flags|tbd-flags|incremental-shipping) bash /Users/alexa/blackroad/carpool.sh trunk-feature-flags "$@" ;;
+                signal-vs-noise|alert-tuning|pagerduty-health) bash /Users/alexa/blackroad/carpool.sh signal-vs-noise "$@" ;;
+                llm-evals|llm-evaluation|model-evals) bash /Users/alexa/blackroad/carpool.sh llm-evals "$@" ;;
+                chaos-networking|network-chaos|partition-testing) bash /Users/alexa/blackroad/carpool.sh chaos-networking "$@" ;;
+                rollback-strategies|fast-rollback|deploy-rollback) bash /Users/alexa/blackroad/carpool.sh rollback-strategies "$@" ;;
+                continuous-deployment|cd|deploy-every-commit) bash /Users/alexa/blackroad/carpool.sh continuous-deployment "$@" ;;
+                internal-hackathons|hackathon|innovation-sprint) bash /Users/alexa/blackroad/carpool.sh internal-hackathons "$@" ;;
+                cqrs|command-query|read-write-separation) bash /Users/alexa/blackroad/carpool.sh cqrs "$@" ;;
+                multitenancy-isolation|tenant-isolation-adv|row-schema-db) bash /Users/alexa/blackroad/carpool.sh multitenancy-isolation "$@" ;;
+                eng-vision|technical-vision|future-state) bash /Users/alexa/blackroad/carpool.sh eng-vision "$@" ;;
+                distributed-transactions|saga|two-phase-commit) bash /Users/alexa/blackroad/carpool.sh distributed-transactions "$@" ;;
+                chaos-memory|oom-testing|memory-pressure) bash /Users/alexa/blackroad/carpool.sh chaos-memory "$@" ;;
+                spanner-patterns|spanner-modeling|global-db) bash /Users/alexa/blackroad/carpool.sh spanner-patterns "$@" ;;
+                incident-severity|sev-levels|escalation-path) bash /Users/alexa/blackroad/carpool.sh incident-severity "$@" ;;
+                frontend-testing|playwright|visual-regression) bash /Users/alexa/blackroad/carpool.sh frontend-testing "$@" ;;
+                eng-estimation|estimation|story-points) bash /Users/alexa/blackroad/carpool.sh eng-estimation "$@" ;;
+                cloud-native-patterns|strangler-fig|ambassador-pattern) bash /Users/alexa/blackroad/carpool.sh cloud-native-patterns "$@" ;;
+                eng-peer-feedback|peer-review|360-feedback) bash /Users/alexa/blackroad/carpool.sh eng-peer-feedback "$@" ;;
+                security-incident|breach-response|forensics) bash /Users/alexa/blackroad/carpool.sh security-incident "$@" ;;
+                data-observability|data-freshness|schema-drift) bash /Users/alexa/blackroad/carpool.sh data-observability "$@" ;;
+                ipfs-web3-infra|ipfs|decentralized-storage) bash /Users/alexa/blackroad/carpool.sh ipfs-web3-infra "$@" ;;
+                semantic-release|release-automation|changelog-automation) bash /Users/alexa/blackroad/carpool.sh semantic-release "$@" ;;
+                data-privacy-eng|differential-privacy|k-anonymity) bash /Users/alexa/blackroad/carpool.sh data-privacy-eng "$@" ;;
+                multi-model-ai|model-routing|ai-routing) bash /Users/alexa/blackroad/carpool.sh multi-model-ai "$@" ;;
+                realtime-data-sync|edge-sync|cloud-edge-sync) bash /Users/alexa/blackroad/carpool.sh realtime-data-sync "$@" ;;
+                eng-decision-records|adr|architecture-decisions) bash /Users/alexa/blackroad/carpool.sh eng-decision-records "$@" ;;
+                secrets-management|vault|aws-secrets-mgr) bash /Users/alexa/blackroad/carpool.sh secrets-management "$@" ;;
+                saas-billing|billing-eng|metered-billing) bash /Users/alexa/blackroad/carpool.sh saas-billing "$@" ;;
+                distributed-consensus|raft|paxos) bash /Users/alexa/blackroad/carpool.sh distributed-consensus "$@" ;;
+                api-mesh|graphql-mesh|mesh-gateway) bash /Users/alexa/blackroad/carpool.sh api-mesh "$@" ;;
+                dev-flow|flow-state|deep-work-eng) bash /Users/alexa/blackroad/carpool.sh dev-flow "$@" ;;
+                ai-observability|llm-monitoring|hallucination-detection) bash /Users/alexa/blackroad/carpool.sh ai-observability "$@" ;;
+                eng-org-design|org-structure|reporting-structure) bash /Users/alexa/blackroad/carpool.sh eng-org-design "$@" ;;
+                function-optimization|flame-graphs|hot-path) bash /Users/alexa/blackroad/carpool.sh function-optimization "$@" ;;
+                policy-as-code|opa|kyverno) bash /Users/alexa/blackroad/carpool.sh policy-as-code "$@" ;;
+                model-context-protocol|mcp|ai-tools-protocol) bash /Users/alexa/blackroad/carpool.sh model-context-protocol "$@" ;;
+                hybrid-search|dense-sparse|bm25-vector) bash /Users/alexa/blackroad/carpool.sh hybrid-search "$@" ;;
+                reliability-roadmap|rel-roadmap|stability-planning) bash /Users/alexa/blackroad/carpool.sh reliability-roadmap "$@" ;;
+                eng-legacy|legacy-modernization|strangler-migrate) bash /Users/alexa/blackroad/carpool.sh eng-legacy "$@" ;;
+                blackroad-future|br-future|blackroad-vision) bash /Users/alexa/blackroad/carpool.sh blackroad-future "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
