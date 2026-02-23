@@ -7916,6 +7916,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "sales-playbook" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("Sales" "RevOps" "Marketing" "CS" "Founder")
+  QUESTIONS=(
+    "What does the ideal sales motion look like for $PRODUCT — inbound, outbound, PLG-assisted?"
+    "Define the ICP and qualification criteria (MEDDIC/BANT) for $PRODUCT."
+    "What are the top 3 objections prospects raise about $PRODUCT and how do we handle them?"
+    "Design the demo flow and discovery call structure for $PRODUCT."
+    "What does a repeatable, scalable sales playbook look like for $PRODUCT at 10 reps?"
+  )
+  echo ""
+  echo "🤝 CARPOOL: SALES PLAYBOOK — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Sales playbook roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "devops-culture" ]]; then
+  ORG="${2:-our engineering org}"
+  AGENTS=("DevOps" "Engineering" "Leadership" "HR" "SRE")
+  QUESTIONS=(
+    "What are the core DevOps cultural shifts $ORG needs to make to ship faster?"
+    "How do we break down silos between dev and ops in $ORG?"
+    "What metrics (DORA) should $ORG track to measure DevOps maturity?"
+    "How does $ORG build psychological safety for blameless culture?"
+    "What does a DevOps transformation roadmap look like for $ORG over 12 months?"
+  )
+  echo ""
+  echo "🏗️  CARPOOL: DEVOPS CULTURE — $ORG"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ DevOps culture roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "product-led-growth" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("PLG" "Product" "Growth" "Sales" "Data")
+  QUESTIONS=(
+    "What PLG motions fit $PRODUCT — freemium, free trial, reverse trial?"
+    "How should $PRODUCT define and optimize its activation moment?"
+    "What in-product growth loops can $PRODUCT build to drive viral expansion?"
+    "How does $PRODUCT know when a free user is ready to convert to paid (PQL)?"
+    "How does $PRODUCT layer sales on top of PLG without killing the self-serve motion?"
+  )
+  echo ""
+  echo "🚀 CARPOOL: PRODUCT-LED GROWTH — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Product-led growth strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "chaos-engineering" ]]; then
+  SYSTEM="${2:-our system}"
+  AGENTS=("SRE" "Chaos" "Backend" "Infra" "Security")
+  QUESTIONS=(
+    "What are the riskiest failure modes in $SYSTEM we should test with chaos experiments?"
+    "How do we run a gameday for $SYSTEM safely — scope, rollback, blast radius limits?"
+    "Which chaos tools (Chaos Monkey, LitmusChaos, Gremlin) fit $SYSTEM best?"
+    "How do we measure resilience improvements in $SYSTEM after chaos experiments?"
+    "What steady-state hypotheses should we define before running chaos on $SYSTEM?"
+  )
+  echo ""
+  echo "💥 CARPOOL: CHAOS ENGINEERING — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Chaos engineering plan complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
