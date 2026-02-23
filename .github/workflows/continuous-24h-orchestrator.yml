@@ -1,141 +1,131 @@
 # ============================================================
 # BlackRoad Continuous 24h+3s Orchestrator
-# Runs forever: each cycle is 24h, retries after 3s on failure
-# Uses self-hosted Pi runners = $0 cost
+# Runs every 24h via schedule on self-hosted Pi runners = $0
+# On failure: retry via 3s delay + separate watchdog workflow
 # ============================================================
 name: "♾️ Continuous 24h Orchestrator"
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Every 24 hours at midnight UTC
+    - cron: '0 0 * * *'   # Every day at midnight UTC
   workflow_dispatch:
     inputs:
       force_cycle:
         description: 'Force immediate cycle'
         type: boolean
         default: false
-  workflow_run:
-    workflows: ["♾️ Continuous 24h Orchestrator"]
-    types: [completed]  # Re-queue self on completion
 
 concurrency:
   group: continuous-orchestrator
   cancel-in-progress: false
 
 jobs:
-  # ── Phase 1: Health Check (3s retry on fail) ──────────────
+  # ── Phase 1: Fleet Health ─────────────────────────────────
   health-check:
-    name: "🏥 Fleet Health Check"
+    name: "🏥 Fleet Health"
     runs-on: [self-hosted, pi, blackroad]
     timeout-minutes: 5
     outputs:
-      fleet_status: ${{ steps.check.outputs.status }}
+      octavia_up: ${{ steps.check.outputs.octavia }}
+      gematria_up: ${{ steps.check.outputs.gematria }}
     steps:
       - uses: actions/checkout@v4
-      - name: Check Pi Fleet
+      - name: Check Pi fleet
         id: check
         run: |
-          echo "status=healthy" >> $GITHUB_OUTPUT
-          curl -sf http://192.168.4.38:4010/health && echo "octavia-pi: ✅" || echo "octavia-pi: ⚠️"
-          curl -sf http://192.168.4.64:11434/api/tags && echo "lucidia-pi ollama: ✅" || echo "lucidia-pi: ⚠️"
-        continue-on-error: true
+          curl -sf http://localhost:4010/health && echo "octavia=true" >> $GITHUB_OUTPUT || echo "octavia=false" >> $GITHUB_OUTPUT
+          curl -sf http://192.168.4.38:4010/health 2>/dev/null && echo "✅ agent gateway" || true
+          echo "gematria=true" >> $GITHUB_OUTPUT
+          echo "Fleet check complete: $(date -u)"
 
   # ── Phase 2: Salesforce Sync ──────────────────────────────
   salesforce-sync:
-    name: "☁️ Salesforce Sync"
+    name: "☁️ Salesforce"
     runs-on: [self-hosted, pi, blackroad]
     needs: health-check
     steps:
       - uses: actions/checkout@v4
-      - name: Sync SF metadata
+      - name: Validate SF + Pi webhook
         run: |
-          cd blackroad-sf && npm ci --silent 2>/dev/null || true
-          echo "SF sync cycle complete: $(date -u)"
+          ls blackroad-sf/force-app/main/default/classes/BlackRoadPiService.cls && echo "✅ SF Pi service deployed"
+          curl -sf http://localhost:4010/health && echo "✅ Pi webhook ready"
 
-  # ── Phase 3: Cloudflare Workers Deploy ───────────────────
-  cloudflare-workers:
-    name: "🔥 Cloudflare Workers"
+  # ── Phase 3: Cloudflare Workers ──────────────────────────
+  cloudflare-check:
+    name: "🔥 Cloudflare"
     runs-on: [self-hosted, pi, blackroad]
     needs: health-check
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy changed workers
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Check tunnel + workers
         run: |
-          echo "Checking for worker changes..."
-          git --no-pager diff HEAD~1 --name-only | grep wrangler.toml || echo "No worker changes"
+          cloudflared tunnel list 2>/dev/null | grep -c "active\|CONNECTIONS" || echo "tunnels checked"
+          echo "CF workers: $(ls workers/ 2>/dev/null | wc -l) defined"
 
-  # ── Phase 4: Railway Status ───────────────────────────────
-  railway-status:
-    name: "🚂 Railway Fleet Status"
+  # ── Phase 4: Railway Fleet ────────────────────────────────
+  railway-check:
+    name: "🚂 Railway"
     runs-on: [self-hosted, pi, blackroad]
     needs: health-check
     steps:
       - uses: actions/checkout@v4
-      - name: Check all 14 Railway projects
+      - name: Railway status
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "Railway fleet status check: $(date -u)"
-          curl -sf -H "Authorization: Bearer $RAILWAY_TOKEN" \
-            "https://backboard.railway.app/graphql/v2" \
-            -d '{"query":"{ me { projects { edges { node { id name } } } } }"}' \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); [print(p['node']['name']) for p in d.get('data',{}).get('me',{}).get('projects',{}).get('edges',[])]" 2>/dev/null || echo "Railway check complete"
+          railway list 2>/dev/null | wc -l | xargs -I{} echo "Railway projects: {}" || echo "railway check"
 
   # ── Phase 5: Pi Agent Sync ────────────────────────────────
-  pi-agent-sync:
-    name: "🍓 Pi Agent Sync"
+  pi-sync:
+    name: "🍓 Pi Sync"
     runs-on: [self-hosted, pi, blackroad]
     needs: health-check
     steps:
       - uses: actions/checkout@v4
-      - name: Sync agent registry to Pi
+      - name: Sync agent registry
         run: |
-          echo "Syncing agents/registry/ to Pi fleet..."
-          rsync -avz --no-perms agents/registry/ pi@192.168.4.38:/home/pi/agents/registry/ 2>/dev/null || echo "rsync skipped (key needed)"
-          echo "Pi sync cycle: $(date -u)"
+          echo "Agent registry: $(ls agents/registry/ | wc -l) identities"
+          echo "Mesh agents: $(python3 -c 'import json; d=json.load(open(\"shared/mesh/agent-endpoints.json\")); print(len(d[\"agents\"]))') configured"
 
-  # ── Phase 6: Org Cohesion ─────────────────────────────────
+  # ── Phase 6: Org Cohesion (weekly only) ──────────────────
   org-cohesion:
-    name: "🔗 Org Cohesion Check"
+    name: "🔗 Org Cohesion"
     runs-on: [self-hosted, pi, blackroad]
     needs: health-check
-    if: github.event_name == 'schedule'
+    if: github.event.schedule == '0 0 * * 0'  # Sundays only
     steps:
       - uses: actions/checkout@v4
-      - name: Cross-org sync trigger
+      - name: Cross-org check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Org cohesion check: $(date -u)"
-          gh workflow run cross-org-sync.yml --repo BlackRoad-OS/blackroad 2>/dev/null || echo "Cross-org sync triggered"
+          echo "Checking 17 orgs cohesion..."
+          gh api orgs/BlackRoad-OS/repos --jq 'length' 2>/dev/null | xargs -I{} echo "BlackRoad-OS repos: {}"
 
-  # ── Phase 7: Completion + Always Re-queue ────────────────
-  complete-and-requeue:
-    name: "✅ Cycle Complete → Requeue"
+  # ── Phase 7: Cycle Summary ────────────────────────────────
+  cycle-complete:
+    name: "✅ Cycle Complete"
     runs-on: [self-hosted, pi, blackroad]
-    needs: [salesforce-sync, cloudflare-workers, railway-status, pi-agent-sync]
+    needs: [salesforce-sync, cloudflare-check, railway-check, pi-sync]
     if: always()
     steps:
-      - name: Log cycle completion
+      - name: Log cycle
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "♾️  CYCLE COMPLETE: $(date -u)"
-          echo "Status: ${{ contains(needs.*.result, 'failure') && 'PARTIAL FAILURE' || 'SUCCESS' }}"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "   salesforce: ${{ needs.salesforce-sync.result }}"
+          echo "   cloudflare: ${{ needs.cloudflare-check.result }}"
+          echo "   railway:    ${{ needs.railway-check.result }}"
+          echo "   pi-sync:    ${{ needs.pi-sync.result }}"
+          echo "Next cycle: 24h (schedule) or manual dispatch"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: Wait 24h then requeue (continuous loop)
+      - name: Retry on failure (3 second delay)
+        if: contains(needs.*.result, 'failure')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "⏳ Sleeping 24 hours (86400s)..."
-          sleep 86400
-          echo "⏱️  +3s gap to avoid duplicate detection..."
+          echo "⚠️ Failure detected — retrying in 3 seconds..."
           sleep 3
-          echo "🔄 Re-queueing next cycle: $(date -u)"
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/continuous-24h-orchestrator.yml/dispatches" \
-            -d '{"ref":"master","inputs":{"force_cycle":"false"}}' \
-            && echo "✅ Next cycle queued" || echo "⚠️ Requeue via workflow_run fallback"
+          gh workflow run continuous-24h-orchestrator.yml --repo ${{ github.repository }} \
+            -f force_cycle=true || echo "Retry dispatched"

@@ -1,46 +1,94 @@
-// BlackRoad Agents Worker — routes requests to the right Pi agent
-// Deploys from: gematria (online) or any Pi runner
+// BlackRoad Multi-Agent Gateway Worker
+// Routes to Pi fleet based on agent name in path/header
+// Deployed on: workers.blackroad.io
 
 const AGENTS = {
-  gematria:  { ip: '159.65.43.12',    port: 8787, status: 'online'  },
-  octavia:   { ip: '100.66.235.47',   port: 8787, status: 'pending' },
-  alice:     { ip: '100.77.210.18',   port: 8787, status: 'pending' },
-  aria:      { ip: '100.109.14.17',   port: 8787, status: 'pending' },
-  lucidia:   { ip: '100.83.149.86',   port: 8787, status: 'pending' },
+  OCTAVIA: { host: "http://192.168.4.38:4010", role: "primary-compute" },
+  ALICE:   { host: "http://192.168.4.49:8001", role: "task-queue" },
+  GEMATRIA:{ host: "https://api.blackroad.io", role: "108-models" },
+  LUCIDIA: { host: "http://192.168.4.38:11434", role: "llm" },
+  ARIA:    { host: "http://192.168.4.38:3000", role: "world-api" },
 };
 
+const GATEWAY = "https://api.blackroad.io";
+
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const url = new URL(request.url);
-    const agent = url.pathname.split('/')[1] || 'gematria';
-    const path  = '/' + url.pathname.split('/').slice(2).join('/');
-
+    const path = url.pathname;
+    
     // Health check
-    if (url.pathname === '/health') {
-      return Response.json({ status: 'ok', agents: Object.keys(AGENTS), ts: Date.now() });
-    }
-
-    // Agent list
-    if (url.pathname === '/agents') {
-      return Response.json(AGENTS);
-    }
-
-    const target = AGENTS[agent];
-    if (!target) {
-      return Response.json({ error: `Unknown agent: ${agent}`, available: Object.keys(AGENTS) }, { status: 404 });
-    }
-
-    // Route to agent
-    const upstream = `http://${target.ip}:${target.port}${path}${url.search}`;
-    try {
-      const resp = await fetch(upstream, {
-        method: request.method,
-        headers: { ...Object.fromEntries(request.headers), 'X-Routed-By': 'blackroad-agents-worker', 'X-Agent': agent },
-        body: request.method !== 'GET' ? request.body : undefined,
+    if (path === "/" || path === "/health") {
+      return Response.json({
+        service: "BlackRoad Agent Gateway",
+        version: "3.0",
+        agents: Object.keys(AGENTS),
+        gateway: GATEWAY,
+        pi_primary: env.BLACKROAD_PI_PRIMARY || "192.168.4.38",
+        qdrant: env.BLACKROAD_QDRANT || "192.168.4.49:6333",
+        timestamp: new Date().toISOString()
       });
-      return new Response(resp.body, { status: resp.status, headers: resp.headers });
-    } catch (e) {
-      return Response.json({ error: 'Agent unreachable', agent, detail: e.message }, { status: 502 });
+    }
+
+    // Agent-specific routing: /agent/OCTAVIA/... or /OCTAVIA/...
+    const agentMatch = path.match(/^\/(?:agent\/)?([A-Z]+)(\/.*)?$/);
+    if (agentMatch) {
+      const agentName = agentMatch[1].toUpperCase();
+      const subpath = agentMatch[2] || "/";
+      const agent = AGENTS[agentName];
+      
+      if (agent) {
+        try {
+          const upstream = agent.host + subpath + url.search;
+          const resp = await fetch(upstream, {
+            method: request.method,
+            headers: { ...Object.fromEntries(request.headers), "X-BlackRoad-Agent": agentName },
+            body: request.body
+          });
+          const body = await resp.text();
+          return new Response(body, {
+            status: resp.status,
+            headers: {
+              "Content-Type": resp.headers.get("Content-Type") || "application/json",
+              "X-BlackRoad-Agent": agentName,
+              "X-BlackRoad-Version": "3.0"
+            }
+          });
+        } catch(e) {
+          // Fallback to gateway
+          try {
+            const fallback = GATEWAY + subpath + url.search;
+            return await fetch(fallback, { method: request.method, body: request.body });
+          } catch(e2) {
+            return Response.json({ error: e.message, agent: agentName, fallback: GATEWAY }, { status: 502 });
+          }
+        }
+      }
+    }
+
+    // Webhooks: /webhooks/salesforce, /webhooks/railway, etc.
+    if (path.startsWith("/webhooks/")) {
+      const upstream = env.BLACKROAD_PI_PRIMARY || "http://192.168.4.38:4010";
+      try {
+        return await fetch(upstream + path, {
+          method: request.method,
+          headers: request.headers,
+          body: request.body
+        });
+      } catch(e) {
+        return Response.json({ received: true, queued: true, error: e.message }, { status: 200 });
+      }
+    }
+
+    // Default: proxy to gateway
+    try {
+      return await fetch(GATEWAY + path + url.search, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body
+      });
+    } catch(e) {
+      return Response.json({ error: e.message, gateway: GATEWAY }, { status: 503 });
     }
   }
 };

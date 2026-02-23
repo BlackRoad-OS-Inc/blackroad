@@ -1,6 +1,6 @@
 {
   "mesh_version": "2.0",
-  "updated_at": "2026-02-23T20:43:07Z",
+  "updated_at": "2026-02-23T00:00:00Z",
   "coordinator": "CECE",
   "session": "copilot-master-integration-20260223",
   "agents": {
@@ -32,7 +32,8 @@
         5000,
         5001,
         11435
-      ]
+      ],
+      "qdrant_peer": "192.168.4.49:6333"
     },
     "LUCIDIA": {
       "host": "192.168.4.64",
@@ -111,51 +112,70 @@
       "status": "REGISTERED"
     },
     "ALICE": {
+      "id": "alice-pi-node",
+      "name": "ALICE",
       "host": "192.168.4.49",
-      "ports": {
-        "api": 4010
+      "hostname": "alice",
+      "role": "task-queue-worker",
+      "status": "online",
+      "services": {
+        "task_queue_v2": 8001,
+        "qdrant_vector_db": 6333,
+        "nginx": 80,
+        "node_server": 8083
       },
-      "role": "devops-automation",
-      "status": "OPERATIONAL"
+      "capabilities": [
+        "task-queue",
+        "vector-search",
+        "qdrant"
+      ],
+      "disk_note": "99% full \u2014 no runner, task worker only",
+      "cloudflare_tunnel": {
+        "tunnel_id": "52915859-da18-4aa6-add5-7bd9fcac2e0b",
+        "tunnel_name": "blackroad",
+        "role": "PRIMARY DOMAIN TUNNEL",
+        "routes": [
+          "blackroad.io \u2192 :80",
+          "api.blackroad.io \u2192 :8001",
+          "agents.blackroad.io \u2192 :80",
+          "gateway.blackroad.io \u2192 :8001",
+          "qdrant.blackroad.io \u2192 :6333",
+          "tasks.blackroad.io \u2192 :8001",
+          "vector.blackroad.io \u2192 :6333"
+        ]
+      },
+      "critical_note": "PRIMARY BLACKROAD.IO TUNNEL NODE"
     }
   },
-  "backup_hierarchy": [
-    {
-      "tier": 1,
-      "name": "Pi Fleet",
-      "hosts": [
-        "192.168.4.38",
-        "192.168.4.64",
-        "192.168.4.49"
-      ]
+  "backup_hierarchy": {
+    "primary_domain": {
+      "host": "192.168.4.49",
+      "tunnel": "52915859-blackroad",
+      "routes": "blackroad.io, api.blackroad.io, agents.blackroad.io"
     },
-    {
-      "tier": 2,
-      "name": "DigitalOcean",
-      "hosts": [
-        "159.65.43.12"
-      ]
+    "primary_compute": {
+      "host": "192.168.4.38",
+      "tunnel": "0447556b-blackroad-octavia",
+      "routes": "world.blackroad.io, tts.blackroad.io, pi.blackroad.io"
     },
-    {
-      "tier": 3,
-      "name": "Cloudflare",
-      "hosts": [
-        "*.blackroad.workers.dev"
-      ]
-    },
-    {
-      "tier": 4,
-      "name": "GitHub Pages",
-      "hosts": [
-        "blackroad-os.github.io"
-      ]
-    },
-    {
-      "tier": 5,
-      "name": "Railway",
-      "hosts": [
-        "*.railway.app"
-      ]
+    "model_server": {
+      "host": "159.65.43.12",
+      "tunnels": "aria, cecilia, codex-infinity, lucidia",
+      "routes": "aria/cecilia/codex/lucidia subdomains"
     }
-  ]
+  },
+  "pi_fleet_summary": {
+    "octavia_pi": {
+      "ip": "192.168.4.38",
+      "role": "primary-compute-runner"
+    },
+    "alice_pi": {
+      "ip": "192.168.4.49",
+      "role": "task-queue-qdrant"
+    },
+    "gematria_do": {
+      "ip": "159.65.43.12",
+      "role": "108-model-server-runner"
+    }
+  }
 }
