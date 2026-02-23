@@ -194,26 +194,18 @@ export default function LandingPage() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 via-hot-pink to-violet-600" />
               <span className="font-semibold">BlackRoad OS</span>
             </div>
+            <div className="flex items-center gap-6 text-sm text-gray-500">
+              <Link href="/workspace" className="hover:text-white transition-colors">Dashboard</Link>
+              <Link href="/agents" className="hover:text-white transition-colors">Agents</Link>
+              <a href="https://blackroad.io" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Website</a>
+              <a href="https://github.com/BlackRoad-OS-Inc" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">GitHub</a>
+            </div>
             <p className="text-gray-500 text-sm">
               © 2026 BlackRoad OS, Inc. All rights reserved.
             </p>
           </div>
         </div>
       </footer>
-
-      <style jsx>{`
-        .text-hot-pink { color: #FF1D6C; }
-        .bg-hot-pink { background-color: #FF1D6C; }
-        .from-hot-pink { --tw-gradient-from: #FF1D6C; }
-        .to-hot-pink { --tw-gradient-to: #FF1D6C; }
-        .via-hot-pink { --tw-gradient-via: #FF1D6C; }
-        .shadow-hot-pink\\/25 { --tw-shadow-color: rgba(255, 29, 108, 0.25); }
-        .shadow-hot-pink\\/30 { --tw-shadow-color: rgba(255, 29, 108, 0.30); }
-        .text-electric-blue { color: #2979FF; }
-        .from-electric-blue { --tw-gradient-from: #2979FF; }
-        .to-electric-blue { --tw-gradient-to: #2979FF; }
-        .delay-1000 { animation-delay: 1000ms; }
-      `}</style>
     </div>
   );
 }
