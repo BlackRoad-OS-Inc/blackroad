@@ -6936,6 +6936,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "gdpr" ]]; then
+  PRODUCT="${2:-our product}"
+  GDPR_DIR="$HOME/.blackroad/carpool/gdpr"
+  mkdir -p "$GDPR_DIR"
+  GDPR_FILE="$GDPR_DIR/gdpr-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🇪🇺 CarPool — GDPR compliance plan: $PRODUCT\033[0m"
+  echo "# GDPR Plan: $PRODUCT" > "$GDPR_FILE"
+  echo "Generated: $(date)" >> "$GDPR_FILE"
+  PY_GDPR='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("CIPHER","Legal/Privacy","Map the personal data flows in $PRODUCT: what data is collected, where stored, how long retained, and what legal basis applies to each?"),
+  ("ALICE","PM","Write the GDPR compliance checklist for $PRODUCT: consent banners, privacy policy, data deletion flow, DPA agreements, breach notification process."),
+  ("OCTAVIA","Engineer","What technical controls does $PRODUCT need for GDPR: data encryption at rest, anonymization, audit logs, right-to-erasure implementation?"),
+  ("SHELLFISH","Risk","What are the top 3 GDPR violation risks in $PRODUCT and the maximum fine exposure for each? What are the quick wins to reduce that risk?"),
+  ("PRISM","Analyst","How do we maintain ongoing GDPR compliance in $PRODUCT? What quarterly audit, DPA reviews, and training processes keep us clean?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_GDPR" "$PRODUCT" | tee -a "$GDPR_FILE"
+  echo -e "\033[0;32m✓ Saved to $GDPR_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "mobile" ]]; then
+  FEATURE="${2:-our app}"
+  MOB_DIR="$HOME/.blackroad/carpool/mobile"
+  mkdir -p "$MOB_DIR"
+  MOB_FILE="$MOB_DIR/mobile-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📱 CarPool — Mobile strategy: $FEATURE\033[0m"
+  echo "# Mobile Strategy: $FEATURE" > "$MOB_FILE"
+  echo "Generated: $(date)" >> "$MOB_FILE"
+  PY_MOB='
+import sys, json, urllib.request
+feature = sys.argv[1]
+agents = [
+  ("ARIA","Mobile UX","What are the top 5 mobile-specific UX patterns $FEATURE needs: gestures, bottom sheets, haptics, offline state, push notifications?"),
+  ("OCTAVIA","Engineer","Native vs cross-platform for $FEATURE: compare React Native, Flutter, Swift/Kotlin. Which fits our team and requirements best?"),
+  ("ALICE","PM","What is the MVP mobile feature set for $FEATURE? What desktop features stay web-only and why? How do we sequence the mobile roadmap?"),
+  ("PRISM","Analyst","What mobile metrics matter for $FEATURE: DAU, session length, crash rate, ANR rate, app store rating? What benchmarks should we target?"),
+  ("CIPHER","Security","What mobile-specific security risks does $FEATURE have: certificate pinning, local data storage, screenshot prevention, jailbreak detection, deep link hijacking?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'FEATURE', feature)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_MOB" "$FEATURE" | tee -a "$MOB_FILE"
+  echo -e "\033[0;32m✓ Saved to $MOB_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "design-system" ]]; then
+  BRAND="${2:-our brand}"
+  DS_DIR="$HOME/.blackroad/carpool/design-systems"
+  mkdir -p "$DS_DIR"
+  DS_FILE="$DS_DIR/design-system-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🎨 CarPool — Design system for: $BRAND\033[0m"
+  echo "# Design System: $BRAND" > "$DS_FILE"
+  echo "Generated: $(date)" >> "$DS_FILE"
+  PY_DS='
+import sys, json, urllib.request
+brand = sys.argv[1]
+agents = [
+  ("ARIA","Design lead","Define the core design tokens for $BRAND: color palette (primitive + semantic), typography scale, spacing system, border radius, and shadow levels."),
+  ("LUCIDIA","Brand","What is the visual personality of $BRAND? Write 5 design principles that should guide every component and layout decision."),
+  ("OCTAVIA","Engineer","How do we build and distribute the $BRAND design system: monorepo structure, Storybook, versioning, CSS-in-JS vs CSS variables, and token pipeline?"),
+  ("ALICE","PM","What is the component priority order for $BRAND design system v1? List top 20 components ranked by usage frequency and shared value."),
+  ("PRISM","Analyst","How do we measure design system adoption and health for $BRAND? What metrics — component coverage, drift rate, contributor count — tell us it is working?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'BRAND', brand)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_DS" "$BRAND" | tee -a "$DS_FILE"
+  echo -e "\033[0;32m✓ Saved to $DS_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "agents-plan" ]]; then
+  TASK="${2:-automate our workflow}"
+  AP_DIR="$HOME/.blackroad/carpool/agents-plans"
+  mkdir -p "$AP_DIR"
+  AP_FILE="$AP_DIR/agents-plan-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🤖 CarPool — AI agents plan: $TASK\033[0m"
+  echo "# AI Agents Plan: $TASK" > "$AP_FILE"
+  echo "Generated: $(date)" >> "$AP_FILE"
+  PY_AP='
+import sys, json, urllib.request
+task = sys.argv[1]
+agents = [
+  ("LUCIDIA","Architect","Design a multi-agent system to $TASK. What agents are needed, what is each one responsible for, and how do they hand off to each other?"),
+  ("OCTAVIA","Engineer","What infrastructure does the agent system for $TASK need: orchestration layer, memory store, tool registry, and observability?"),
+  ("ALICE","PM","What is the human-in-the-loop strategy for the $TASK agent system? Which decisions require approval and what is the escalation path?"),
+  ("CIPHER","Security","What are the top 3 security risks of autonomous agents doing $TASK: prompt injection, tool misuse, data exfiltration? How do we constrain them?"),
+  ("PRISM","Analyst","How do we evaluate if the agent system for $TASK is working? What success metrics, evals, and failure modes do we track?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'TASK', task)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_AP" "$TASK" | tee -a "$AP_FILE"
+  echo -e "\033[0;32m✓ Saved to $AP_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
