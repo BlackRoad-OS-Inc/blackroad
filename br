@@ -408,6 +408,14 @@ show_help() {
     echo "║    br carpool postmortem <i>- Blameless incident postmortem doc     ║"
     echo "║    br carpool stack <prob>  - Tech stack recommendation by layer    ║"
     echo "║    br carpool manifesto     - Team manifesto from theme + history   ║"
+    echo "║    br carpool hypothesis <c>- Agents SUPPORT/REFUTE/NEEDS_DATA      ║"
+    echo "║    br carpool learning <t>  - Curated learning path for a topic     ║"
+    echo "║    br carpool standup-bot   - AI standup → post to webhook          ║"
+    echo "║    br carpool onboard <r>   - Onboarding plan for a new hire        ║"
+    echo "║    br carpool retro         - Sprint retro (well/delta/debt/ideas)  ║"
+    echo "║    br carpool pitch <idea>  - Elevator pitch + investor Q&A         ║"
+    echo "║    br carpool risk <plan>   - 5-agent risk analysis (security+ops)  ║"
+    echo "║    br carpool compare A vs B- Side-by-side option comparison        ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
     echo "║    br carpool ask <q>       - Inject follow-up into live session   ║"
@@ -1013,6 +1021,10 @@ main() {
                 learning|learn) bash /Users/alexa/blackroad/carpool.sh learning "$@" ;;
                 standup-bot|standup-post) bash /Users/alexa/blackroad/carpool.sh standup-bot "$@" ;;
                 onboard)    bash /Users/alexa/blackroad/carpool.sh onboard "$@" ;;
+                retro)      bash /Users/alexa/blackroad/carpool.sh retro ;;
+                pitch)      bash /Users/alexa/blackroad/carpool.sh pitch "$@" ;;
+                risk)       bash /Users/alexa/blackroad/carpool.sh risk "$@" ;;
+                compare)    bash /Users/alexa/blackroad/carpool.sh compare "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
@@ -1071,8 +1083,8 @@ main() {
             zsh "${BR_TOOLS_DIR}/talk/br-talk.sh" "$@"
             ;;
         ssh)
-            # br ssh <node> — jump to any fleet node by name
-            zsh "${BR_TOOLS_DIR}/nodes/br-nodes.sh" ssh "$@"
+            # br ssh — fleet SSH manager (br-ssh.sh); delegates node ssh via subcommand
+            zsh "${BR_TOOLS_DIR}/ssh/br-ssh.sh" "$@"
             ;;
         email|emails|mail)
             # br mail — agent email at @blackroad.io

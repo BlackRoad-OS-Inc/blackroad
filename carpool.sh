@@ -3317,6 +3317,154 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── RETRO — sprint retrospective: went well / delta / ideas ───────────
+if [[ "$1" == "retro" ]]; then
+  echo ""
+  echo -e "\033[1;36m🔄 SPRINT RETROSPECTIVE\033[0m"
+  echo ""
+  HIST=""
+  [[ -f "$HOME/.blackroad/carpool/memory.txt" ]] && HIST=$(tail -30 "$HOME/.blackroad/carpool/memory.txt")
+  RETRO_FILE="$HOME/.blackroad/carpool/retros/retro-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/retros"
+  echo "# Retro $(date '+%Y-%m-%d')" > "$RETRO_FILE"
+  for entry in "ARIA|WENT WELL|Celebrate what worked. Be specific, name the wins." "ALICE|DELTA|What should change next sprint? Concrete improvements, not complaints." "OCTAVIA|TECH DEBT|What technical shortcuts are slowing us down? Rank by impact." "PRISM|METRICS|What numbers moved? What should we track next sprint?" "LUCIDIA|BIG IDEA|One bold experiment to try next sprint. Unconventional OK."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+hist = '''${HIST}'''
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} running a sprint retrospective.
+Session history: {hist}
+Your section: ${section}
+${lens}
+Give 3-4 specific bullets. Format: - <item>
+No preamble.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$RETRO_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $RETRO_FILE\033[0m"
+  exit 0
+fi
+
+# ── PITCH — elevator pitch + investor Q&A from 4 agent lenses ─────────
+if [[ "$1" == "pitch" ]]; then
+  shift
+  IDEA="$*"
+  [[ -z "$IDEA" ]] && echo "Usage: br carpool pitch <idea>" && exit 1
+  echo ""
+  echo -e "\033[1;33m🎤 PITCH ROOM: $IDEA\033[0m"
+  echo ""
+  # Step 1: ARIA writes the pitch
+  IFS='|' read -r _ col _ emoji <<< "$(agent_meta "ARIA")"
+  echo -e "${col}${emoji} ARIA — ELEVATOR PITCH${NC}"
+  PITCH=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ARIA, a sharp product communicator.
+Write a 30-second elevator pitch for: \"${IDEA}\"
+Format:
+HOOK: <one punchy sentence>
+PROBLEM: <what pain it solves>
+SOLUTION: <what it does>
+TRACTION: <made-up but plausible metric>
+ASK: <what you want from investors>
+Be bold and specific.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[ARIA offline]")
+  echo "$PITCH"
+  echo ""
+  # Step 2: Tough investor Q&A
+  for entry in "CIPHER|SKEPTIC|Poke holes. What is the biggest risk, moat problem, or execution gap?" "PRISM|DATA ANALYST|What metrics are missing? What would you need to see to believe this?" "OCTAVIA|TECHNICAL|Is this technically feasible? What is the hardest engineering challenge?"; do
+    IFS='|' read -r ag role lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${role} QUESTIONS${NC}"
+    python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are a tough ${role} investor interrogating this pitch: \"${IDEA}\"
+${lens}
+Ask 2 hard questions then give a brief verdict (PASS/CONDITIONAL/NO).
+Format:
+Q1: <question>
+Q2: <question>
+VERDICT: <PASS|CONDITIONAL|NO> — <one line reason>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  exit 0
+fi
+
+# ── RISK — CIPHER + SHELLFISH surface risks for a plan/feature ────────
+if [[ "$1" == "risk" ]]; then
+  shift
+  PLAN="$*"
+  [[ -z "$PLAN" ]] && echo "Usage: br carpool risk <plan or feature>" && exit 1
+  echo ""
+  echo -e "\033[1;31m⚠️  RISK ANALYSIS: $PLAN\033[0m"
+  echo ""
+  for entry in "CIPHER|SECURITY RISKS|Auth, data exposure, supply chain, secrets, access control." "SHELLFISH|EXPLOIT VECTORS|What would an attacker do with this? Think adversarially." "OCTAVIA|OPERATIONAL RISKS|Failures, scaling cliffs, single points of failure, runbooks." "PRISM|BUSINESS RISKS|Market, regulatory, dependency, reputational risks." "ALICE|MITIGATION PLAN|For the top 3 risks above, give a concrete mitigation step each."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} doing a risk analysis on: \"${PLAN}\"
+Focus: ${lens}
+List 3-4 specific risks.
+Format each: RISK: <name> | SEVERITY: HIGH/MED/LOW | DETAIL: <one line>
+No preamble.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  exit 0
+fi
+
+# ── COMPARE — side-by-side comparison of two options ──────────────────
+if [[ "$1" == "compare" ]]; then
+  shift
+  INPUT="$*"
+  [[ -z "$INPUT" ]] && echo 'Usage: br carpool compare "<A>" vs "<B>"' && exit 1
+  # Parse A vs B
+  OPT_A=$(echo "$INPUT" | sed 's/ [Vv][Ss]\.* .*//')
+  OPT_B=$(echo "$INPUT" | sed 's/.*[Vv][Ss]\.* //')
+  [[ "$OPT_A" == "$OPT_B" ]] && OPT_A=$(echo "$INPUT" | awk '{print $1}') && OPT_B=$(echo "$INPUT" | awk '{print $NF}')
+  echo ""
+  echo -e "\033[1;36m⚖️  COMPARE\033[0m"
+  echo -e "  \033[1;32mA: $OPT_A\033[0m  vs  \033[1;31mB: $OPT_B\033[0m"
+  echo ""
+  for entry in "OCTAVIA|TECHNICAL FIT|Performance, complexity, maintainability, scalability." "ALICE|OPERATIONAL FIT|Deployment, monitoring, team skills, tooling." "PRISM|DATA & METRICS|Ecosystem maturity, benchmarks, adoption trends." "LUCIDIA|PHILOSOPHY|Which aligns better with long-term principles and vision?" "CIPHER|RISK DELTA|Which carries more security, reliability, or compliance risk?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    python3 -c "
+import urllib.request, json
+a = '${OPT_A}'
+b = '${OPT_B}'
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Compare \"{a}\" vs \"{b}\" from a ${section} perspective.
+Focus: ${lens}
+Format:
+A WINS: <reason>
+B WINS: <reason>
+EDGE: A or B (one word pick)''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  # Tally edges
+  echo -e "\033[1;33m──────────────────────────────────────────\033[0m"
+  echo -e "\033[1;33m📊 Run 'br carpool decision \"${OPT_A}\" vs \"${OPT_B}\"' for full decision matrix\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
