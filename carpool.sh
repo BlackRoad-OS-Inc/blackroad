@@ -3728,6 +3728,139 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── GOAL — decompose a goal into projects, milestones, and next actions ─
+if [[ "$1" == "goal" ]]; then
+  shift
+  GOAL="$*"
+  [[ -z "$GOAL" ]] && echo "Usage: br carpool goal <your goal>" && exit 1
+  echo ""
+  echo -e "\033[1;32m🎯 GOAL DECOMPOSITION: $GOAL\033[0m"
+  echo ""
+  GOAL_FILE="$HOME/.blackroad/carpool/goals/$(echo "$GOAL" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/goals"
+  printf "# Goal: %s\nDate: %s\n\n" "$GOAL" "$(date '+%Y-%m-%d')" > "$GOAL_FILE"
+  for entry in "LUCIDIA|WHY IT MATTERS|The deeper purpose. What does achieving this unlock? Why now?" "ALICE|FIRST 3 ACTIONS|The 3 immediate next actions you can do today. Concrete, no vague steps." "OCTAVIA|PROJECTS & MILESTONES|Break this into 3-5 sub-projects, each with a measurable milestone." "PRISM|SUCCESS METRICS|How will you know when done? 3-5 specific measurable outcomes." "SHELLFISH|OBSTACLES|Top 3 things that will kill this goal. Be brutally honest."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Help decompose this goal: \"${GOAL}\"
+Section: ${section}
+${lens}
+Be concrete and direct. 3-5 items max.
+Format: - <item>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$GOAL_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $GOAL_FILE\033[0m"
+  exit 0
+fi
+
+# ── MIGRATE — plan a migration (db, infra, API version, language) ─────
+if [[ "$1" == "migrate" || "$1" == "migration" ]]; then
+  shift
+  MIGRATION="$*"
+  [[ -z "$MIGRATION" ]] && echo "Usage: br carpool migrate <what you are migrating>" && exit 1
+  echo ""
+  echo -e "\033[1;33m🚚 MIGRATION PLAN: $MIGRATION\033[0m"
+  echo ""
+  MIG_FILE="$HOME/.blackroad/carpool/migrations/$(echo "$MIGRATION" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/migrations"
+  printf "# Migration: %s\nDate: %s\n\n" "$MIGRATION" "$(date '+%Y-%m-%d')" > "$MIG_FILE"
+  for entry in "OCTAVIA|TECHNICAL STEPS|The exact sequence of steps to execute this migration safely." "ALICE|ROLLBACK PLAN|How to undo every step if something goes wrong. No migration without rollback." "CIPHER|RISK SURFACE|What secrets, permissions, or access controls change? What could leak?" "PRISM|VALIDATION CHECKS|How to verify each step succeeded. Tests, queries, and health checks." "SHELLFISH|FAILURE MODES|The 3 most likely ways this migration fails. Murphy's Law applied."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} planning a migration: \"${MIGRATION}\"
+Section: ${section}
+${lens}
+Be specific. Numbered steps where applicable.
+Format: numbered list or bullets with clear action verbs.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$MIG_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $MIG_FILE\033[0m"
+  exit 0
+fi
+
+# ── INTERVIEW-PREP — prep for a technical interview on a topic ────────
+if [[ "$1" == "interview-prep" || "$1" == "prep" ]]; then
+  shift
+  TOPIC="$*"
+  TOPIC="${TOPIC:-software engineering}"
+  echo ""
+  echo -e "\033[1;36m🎓 INTERVIEW PREP: $TOPIC\033[0m"
+  echo ""
+  for entry in "PRISM|LIKELY QUESTIONS|5 questions most likely to be asked. Include one curveball." "OCTAVIA|TECHNICAL DEPTH|2 hard deep-dive questions with what a great answer looks like." "ALICE|BEHAVIORAL|3 STAR-format behavioral questions tailored to this topic." "LUCIDIA|WHAT INTERVIEWERS REALLY WANT|What signals separate a good answer from a great one?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} prepping a candidate for a \"${TOPIC}\" interview.
+Section: ${section}
+${lens}
+Be specific to the topic. Give real, substantive content — not generic advice.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  exit 0
+fi
+
+# ── REFACTOR — multi-agent code refactor plan for a file or module ────
+if [[ "$1" == "refactor" ]]; then
+  shift
+  TARGET="$1"
+  [[ -z "$TARGET" ]] && echo "Usage: br carpool refactor <file or module>" && exit 1
+  CODE=""
+  if [[ -f "$TARGET" ]]; then
+    CODE=$(head -80 "$TARGET")
+    LABEL="$TARGET"
+  else
+    LABEL="$TARGET (module)"
+  fi
+  echo ""
+  echo -e "\033[1;35m♻️  REFACTOR PLAN: $LABEL\033[0m"
+  echo ""
+  RF_FILE="$HOME/.blackroad/carpool/refactors/$(basename "$TARGET" | tr '.' '-')-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/refactors"
+  printf "# Refactor: %s\nDate: %s\n\n" "$LABEL" "$(date '+%Y-%m-%d')" > "$RF_FILE"
+  for entry in "OCTAVIA|STRUCTURE|Split, extract, consolidate. What modules/functions should exist?" "SHELLFISH|DEAD CODE|What can be deleted outright? Be ruthless." "PRISM|COMPLEXITY|Cyclomatic complexity hotspots. What is hardest to understand?" "ALICE|QUICK WINS|Changes that can ship in under 30 minutes with immediate improvement." "CIPHER|HIDDEN BUGS|Refactor risks — what could break silently if changed?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json, sys
+code = sys.argv[1]
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} doing a refactor review of: \"${LABEL}\"
+${\"Code preview:\" + chr(10) + code if code else \"\"}
+Section: ${section}
+${lens}
+Give 3-4 specific, actionable items. Format: - <item>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" "$CODE" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$RF_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $RF_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
