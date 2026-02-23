@@ -9456,6 +9456,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "monorepo" ]]; then
+  CODEBASE="${2:-our codebase}"
+  AGENTS=("Architect" "DevEx" "Build" "Engineering" "Platform")
+  QUESTIONS=(
+    "Should $CODEBASE move to a monorepo or stay polyrepo — what are the real tradeoffs?"
+    "What tooling (Nx, Turborepo, Bazel, Pants) fits $CODEBASE best for a monorepo?"
+    "How do we manage dependency versioning and avoid diamond deps inside $CODEBASE monorepo?"
+    "How do we keep CI fast in $CODEBASE monorepo as it grows to hundreds of packages?"
+    "What does the migration path from polyrepo to monorepo look like for $CODEBASE?"
+  )
+  echo ""
+  echo "📦 CARPOOL: MONOREPO — $CODEBASE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Monorepo strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "customer-success" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("CS" "Sales" "Product" "Support" "Data")
+  QUESTIONS=(
+    "What does a proactive customer success motion look like for $PRODUCT at scale?"
+    "How do we identify at-risk accounts in $PRODUCT before they churn?"
+    "What does a great QBR (quarterly business review) look like for $PRODUCT customers?"
+    "How should $PRODUCT segment customers for high-touch vs tech-touch CS coverage?"
+    "What health score signals predict expansion and churn for $PRODUCT accounts?"
+  )
+  echo ""
+  echo "🤝 CARPOOL: CUSTOMER SUCCESS — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Customer success strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "ai-safety" ]]; then
+  SYSTEM="${2:-our AI system}"
+  AGENTS=("Safety" "AI" "Legal" "Ethics" "Engineering")
+  QUESTIONS=(
+    "What are the biggest failure modes and harms $SYSTEM could cause and how do we prevent them?"
+    "What evals and red-teaming process should $SYSTEM have before shipping to users?"
+    "How does $SYSTEM handle jailbreaks, prompt injection, and adversarial inputs?"
+    "What human oversight and kill-switch mechanisms does $SYSTEM need in production?"
+    "How does $SYSTEM stay aligned with user intent as it becomes more capable over time?"
+  )
+  echo ""
+  echo "🛡️  CARPOOL: AI SAFETY — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ AI safety review complete."
+  exit 0
+fi
+
+if [[ "$1" == "design-sprint" ]]; then
+  PROBLEM="${2:-our problem}"
+  AGENTS=("Facilitator" "Design" "Engineering" "Product" "Customer")
+  QUESTIONS=(
+    "How do we frame $PROBLEM as a sprint question that is scoped enough to answer in 5 days?"
+    "What does the map and target phase of a design sprint for $PROBLEM look like?"
+    "How do we sketch and decide on the best solution for $PROBLEM on day 2 and 3?"
+    "What prototype fidelity is right to test $PROBLEM assumptions in a design sprint?"
+    "How do we recruit the right users and run Friday testing for $PROBLEM to get real signal?"
+  )
+  echo ""
+  echo "🎨 CARPOOL: DESIGN SPRINT — $PROBLEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Design sprint plan complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
