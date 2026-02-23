@@ -1,7 +1,11 @@
 /**
  * BlackRoad OS API Worker
- * Public-facing API + branded dashboard
- * https://blackroad-os-api.blackroad.workers.dev
+ * Public-facing API + branded dashboard + Railway + GitHub integration
+ * https://blackroad-os-api.amundsonalexa.workers.dev
+ *
+ * Secrets (set via: wrangler secret put <NAME>):
+ *   RAILWAY_TOKEN   — Railway API token
+ *   GITHUB_TOKEN    — GitHub personal access token
  */
 
 const AGENTS = [
@@ -176,6 +180,10 @@ function renderDashboard(req) {
       <div class="endpoint"><span class="method">GET</span><span class="path">/agents</span><span class="desc">Agent registry JSON</span></div>
       <div class="endpoint"><span class="method">GET</span><span class="path">/agents/:id</span><span class="desc">Single agent</span></div>
       <div class="endpoint"><span class="method">GET</span><span class="path">/status</span><span class="desc">Platform status</span></div>
+      <div class="endpoint"><span class="method">GET</span><span class="path">/railway</span><span class="desc">Railway projects live status</span></div>
+      <div class="endpoint"><span class="method">GET</span><span class="path">/railway/deployments?project=ID</span><span class="desc">Railway deployments</span></div>
+      <div class="endpoint"><span class="method">GET</span><span class="path">/github/runs</span><span class="desc">GitHub Actions runs</span></div>
+      <div class="endpoint"><span class="method">GET</span><span class="path">/github/repo</span><span class="desc">Repo stats</span></div>
     </div>
   </div>
 
@@ -261,9 +269,151 @@ export default {
           email_router: "operational",
           agent_mesh: "operational",
           kv_store: "operational",
+          railway: env.RAILWAY_TOKEN ? "connected" : "no_token",
+          github: env.GITHUB_TOKEN ? "connected" : "no_token",
         },
         timestamp: new Date().toISOString(),
       });
+    }
+
+    // ── Railway ──────────────────────────────────────────────
+    if (path === "/railway" || path.startsWith("/railway/")) {
+      if (!env.RAILWAY_TOKEN) {
+        return json({ error: "RAILWAY_TOKEN not set", hint: "wrangler secret put RAILWAY_TOKEN" }, 503);
+      }
+      const sub = path.split("/")[2] || "projects";
+
+      // Railway GraphQL API
+      const gql = async (query, vars = {}) => {
+        const r = await fetch("https://backboard.railway.app/graphql/v2", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${env.RAILWAY_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query, variables: vars }),
+        });
+        return r.json();
+      };
+
+      if (sub === "projects" || sub === "") {
+        const data = await gql(`query {
+          me {
+            projects {
+              edges {
+                node {
+                  id name createdAt updatedAt
+                  services { edges { node { id name } } }
+                  environments { edges { node { id name } } }
+                }
+              }
+            }
+          }
+        }`);
+        const projects = data?.data?.me?.projects?.edges?.map(e => ({
+          id: e.node.id,
+          name: e.node.name,
+          services: e.node.services?.edges?.length || 0,
+          environments: e.node.environments?.edges?.length || 0,
+          updated: e.node.updatedAt,
+        })) || [];
+        return json({ source: "railway", total: projects.length, projects });
+      }
+
+      if (sub === "deployments") {
+        const projectId = url.searchParams.get("project");
+        const data = await gql(`query($projectId: String) {
+          deployments(input: { projectId: $projectId }) {
+            edges {
+              node {
+                id status createdAt
+                meta { branch commitMessage author }
+                service { id name }
+              }
+            }
+          }
+        }`, { projectId });
+        const deploys = data?.data?.deployments?.edges?.map(e => ({
+          id: e.node.id,
+          status: e.node.status,
+          service: e.node.service?.name,
+          branch: e.node.meta?.branch,
+          message: e.node.meta?.commitMessage,
+          author: e.node.meta?.author,
+          created: e.node.createdAt,
+        })) || [];
+        return json({ source: "railway", total: deploys.length, deployments: deploys });
+      }
+
+      return json({ error: "unknown railway path", available: ["/railway", "/railway/deployments?project=ID"] }, 404);
+    }
+
+    // ── GitHub ────────────────────────────────────────────────
+    if (path === "/github" || path.startsWith("/github/")) {
+      if (!env.GITHUB_TOKEN) {
+        return json({ error: "GITHUB_TOKEN not set", hint: "wrangler secret put GITHUB_TOKEN" }, 503);
+      }
+      const sub = path.split("/")[2] || "runs";
+      const org  = url.searchParams.get("org")  || env.GITHUB_ORG  || "BlackRoad-OS-Inc";
+      const repo = url.searchParams.get("repo") || env.GITHUB_REPO || "blackroad";
+
+      const ghFetch = async (endpoint) => {
+        const r = await fetch(`https://api.github.com${endpoint}`, {
+          headers: {
+            "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "BlackRoad-OS-Worker/2.0",
+          },
+        });
+        return r.json();
+      };
+
+      if (sub === "runs" || sub === "") {
+        const data = await ghFetch(`/repos/${org}/${repo}/actions/runs?per_page=10`);
+        const runs = (data.workflow_runs || []).map(r => ({
+          id: r.id,
+          name: r.name,
+          status: r.status,
+          conclusion: r.conclusion,
+          branch: r.head_branch,
+          commit: r.head_sha?.slice(0, 8),
+          actor: r.actor?.login,
+          created: r.created_at,
+          updated: r.updated_at,
+          url: r.html_url,
+        }));
+        return json({ source: "github", repo: `${org}/${repo}`, total: runs.length, runs });
+      }
+
+      if (sub === "repo") {
+        const data = await ghFetch(`/repos/${org}/${repo}`);
+        return json({
+          source: "github",
+          name: data.full_name,
+          description: data.description,
+          stars: data.stargazers_count,
+          forks: data.forks_count,
+          open_issues: data.open_issues_count,
+          default_branch: data.default_branch,
+          updated: data.updated_at,
+          url: data.html_url,
+        });
+      }
+
+      if (sub === "orgs") {
+        const data = await ghFetch(`/users/${org}/repos?type=owner&per_page=10&sort=updated`);
+        const repos = (Array.isArray(data) ? data : []).map(r => ({
+          name: r.name,
+          description: r.description,
+          stars: r.stargazers_count,
+          updated: r.updated_at,
+          url: r.html_url,
+        }));
+        return json({ source: "github", org, total: repos.length, repos });
+      }
+
+      return json({ error: "unknown github path", available: ["/github/runs", "/github/repo", "/github/orgs"] }, 404);
     }
 
     // 404

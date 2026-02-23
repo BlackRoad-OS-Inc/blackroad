@@ -4435,6 +4435,146 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── EXPERIMENT — design an A/B test or product experiment ────────────
+if [[ "$1" == "experiment" || "$1" == "abtest" ]]; then
+  shift
+  IDEA="$*"
+  [[ -z "$IDEA" ]] && echo "Usage: br carpool experiment <hypothesis or change to test>" && exit 1
+  echo ""
+  echo -e "\033[1;35m🧪 EXPERIMENT DESIGN: $IDEA\033[0m"
+  echo ""
+  EXP_FILE="$HOME/.blackroad/carpool/experiments/$(echo "$IDEA" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/experiments"
+  printf "# Experiment: %s\nDate: %s\n\n" "$IDEA" "$(date '+%Y-%m-%d')" > "$EXP_FILE"
+  for entry in "PRISM|HYPOTHESIS|If we do X, then Y will happen, because Z. One crisp statement." "ALICE|CONTROL & VARIANT|Exactly what changes between A and B. What stays the same. Who sees what." "OCTAVIA|INSTRUMENTATION|The events to track, the queries to run, the dashboard to build." "CIPHER|VALIDITY THREATS|What could make the result misleading? Novelty effect, selection bias, SRM." "LUCIDIA|DECISION RULE|Before we start: what result means we ship it? What means we kill it?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing an experiment for: \"${IDEA}\"
+Section: ${section}
+${lens}
+Be specific. Real metric names, real event names, real thresholds.
+3-5 focused points.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$EXP_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $EXP_FILE\033[0m"
+  exit 0
+fi
+
+# ── LAUNCH — full product launch plan ────────────────────────────────
+if [[ "$1" == "launch" ]]; then
+  shift
+  PRODUCT="$*"
+  [[ -z "$PRODUCT" ]] && echo "Usage: br carpool launch <product or feature>" && exit 1
+  echo ""
+  echo -e "\033[1;32m🚀 LAUNCH PLAN: $PRODUCT\033[0m"
+  echo ""
+  LAUNCH_FILE="$HOME/.blackroad/carpool/launches/$(echo "$PRODUCT" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/launches"
+  printf "# Launch Plan: %s\nDate: %s\n\n" "$PRODUCT" "$(date '+%Y-%m-%d')" > "$LAUNCH_FILE"
+  for entry in "ARIA|CHANNELS & MESSAGING|Where we announce, what we say, in what order. Twitter/X, HN, PH, email, Discord." "ALICE|T-MINUS CHECKLIST|72h before, 24h before, 1h before, go-live, 24h after. What happens at each step." "PRISM|SUCCESS METRICS|How we know the launch worked. Numbers to hit in 24h, 7d, 30d." "SHELLFISH|LAUNCH RISKS|What kills momentum day one. Outage, bad review, competitor timing, HN comment." "LUCIDIA|THE NARRATIVE|The story arc of this launch. Why now, why us, why this matters to the world."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} planning the launch of: \"${PRODUCT}\"
+Section: ${section}
+${lens}
+Be specific and tactical. Real channel names, real timelines, real numbers.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$LAUNCH_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $LAUNCH_FILE\033[0m"
+  exit 0
+fi
+
+# ── ABSTRACT — explain a concept at 3 levels of depth ─────────────────
+if [[ "$1" == "abstract" || "$1" == "explain3" ]]; then
+  shift
+  CONCEPT="$*"
+  [[ -z "$CONCEPT" ]] && echo "Usage: br carpool abstract <concept>" && exit 1
+  echo ""
+  echo -e "\033[1;36m🎓 3-LEVEL EXPLANATION: $CONCEPT\033[0m"
+  echo ""
+  for entry in "ARIA|ELI5 (5-year-old)|Simple analogy, no jargon. If a curious kid asked, what would you say?" "ALICE|PRACTITIONER|How a working engineer understands and uses this. The mental model that matters." "LUCIDIA|DEEP THEORY|First principles. Why does this exist? What insight does it encode? Where does it break down?"; do
+    IFS='|' read -r ag level lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${level}${NC}"
+    python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Explain: \"${CONCEPT}\"
+Level: ${level}
+${lens}
+3-5 sentences. Perfect for this audience. No hedging.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  # Bonus: OCTAVIA gives the code version
+  IFS='|' read -r _ col _ emoji <<< "$(agent_meta "OCTAVIA")"
+  echo -e "${col}${emoji} OCTAVIA — IN CODE${NC}"
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''Show \"${CONCEPT}\" as a minimal code example.
+Language: pseudocode or the most natural language for this concept.
+Max 15 lines. Add a 1-line comment explaining the key insight.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[OCTAVIA offline]"
+  echo ""
+  exit 0
+fi
+
+# ── DEBRIEF — structured debrief after shipping or finishing ──────────
+if [[ "$1" == "debrief" ]]; then
+  shift
+  THING="$*"
+  THING="${THING:-this project}"
+  echo ""
+  echo -e "\033[1;33m🔍 DEBRIEF: $THING\033[0m"
+  echo ""
+  HIST=""
+  [[ -f "$HOME/.blackroad/carpool/memory.txt" ]] && HIST=$(tail -30 "$HOME/.blackroad/carpool/memory.txt")
+  DB_FILE="$HOME/.blackroad/carpool/debriefs/$(echo "$THING" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/debriefs"
+  printf "# Debrief: %s\nDate: %s\n\n" "$THING" "$(date '+%Y-%m-%d')" > "$DB_FILE"
+  for entry in "PRISM|BY THE NUMBERS|What metrics moved? What did we actually ship vs plan? No narrative, just facts." "LUCIDIA|WHAT WE LEARNED|The insights that will change how we work next time. Not obvious lessons." "ALICE|WHAT WE WOULD DO DIFFERENTLY|Concrete process changes, not vague platitudes. If we started today, what changes?" "OCTAVIA|TECHNICAL RETROSPECTIVE|Architecture decisions that aged well. Ones that did not. What we owe the codebase." "ARIA|TEAM MOMENTS|What energized the team? What drained us? The human side of the work."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json, sys
+hist = sys.argv[1]
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} running a debrief for: \"${THING}\"
+{\"Context: \" + hist[:600] if hist else \"\"}
+Section: ${section}
+${lens}
+Be honest and specific. 3-4 points.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" "$HIST" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$DB_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $DB_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alexa Amundson — BlackRoad OS, Inc.</title>
+  <meta name="description" content="Alexa Amundson. Founder & CEO, BlackRoad OS, Inc. Builder of AI systems, agent fleets, and strange loops.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #000; --surface: #0a0a0a; --border: #1a1a1a;
+      --subtle: #555; --muted: #333; --white: #fff;
+      --pink: #FF1D6C; --amber: #F5A623; --blue: #2979FF; --violet: #9C27B0;
+      --grad: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+      --mono: 'JetBrains Mono', monospace;
+      --serif: 'Playfair Display', Georgia, serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--black); color: var(--white); font-family: var(--mono); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 24px 55px; display: flex; justify-content: space-between; align-items: center;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-name { font-size: 0.85rem; font-weight: 700; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .nav-links { display: flex; gap: 34px; font-size: 0.75rem; color: var(--subtle); }
+    .nav-links a:hover { color: var(--white); transition: color 0.2s; }
+
+    /* Split hero */
+    .hero {
+      min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr;
+      padding-top: 80px;
+    }
+    @media (max-width: 768px) { .hero { grid-template-columns: 1fr; } }
+    .hero-left {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 55px;
+      border-right: 1px solid var(--border);
+    }
+    .hero-right {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 55px; background: var(--surface);
+    }
+
+    .title-small { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--subtle); margin-bottom: 21px; }
+    .hero-name {
+      font-family: var(--serif); font-size: clamp(2.5rem, 5vw, 4.5rem);
+      font-weight: 400; font-style: italic; line-height: 1.05;
+      background: var(--grad); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 21px;
+    }
+    .hero-role { font-size: 0.8rem; color: var(--subtle); margin-bottom: 34px; line-height: 1.8; }
+    .hero-role span { color: var(--white); }
+
+    .contact-row { display: flex; flex-direction: column; gap: 10px; margin-top: 34px; }
+    .contact-item { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: var(--muted); }
+    .contact-item a { color: var(--subtle); transition: color 0.2s; }
+    .contact-item a:hover { color: var(--white); }
+    .contact-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--pink); flex-shrink: 0; }
+
+    /* Right side — work */
+    .work-label { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--subtle); margin-bottom: 21px; }
+    .work-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .work-item:last-child { border-bottom: none; }
+    .work-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+    .work-sub { font-size: 0.75rem; color: var(--subtle); line-height: 1.55; }
+
+    /* Stats strip */
+    .stats {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--border);
+    }
+    @media (max-width: 600px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    .stat { padding: 34px; border-right: 1px solid var(--border); }
+    .stat:last-child { border-right: none; }
+    .stat-n { font-size: 2.5rem; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-l { font-size: 0.72rem; color: var(--subtle); margin-top: 4px; }
+
+    /* Writing / beliefs */
+    .section { max-width: 860px; margin: 0 auto; padding: 89px 55px; }
+    @media (max-width: 768px) { .section { padding: 55px 24px; } }
+    .section h2 { font-family: var(--serif); font-size: 2rem; font-weight: 400; font-style: italic; margin-bottom: 34px; color: var(--subtle); }
+    .belief-list { display: flex; flex-direction: column; gap: 0; }
+    .belief { padding: 21px 0; border-bottom: 1px solid var(--border); display: flex; gap: 21px; }
+    .belief-n { font-size: 0.65rem; color: var(--subtle); min-width: 24px; padding-top: 4px; }
+    .belief-t { font-size: 0.95rem; color: #777; line-height: 1.7; }
+    .belief-t strong { color: var(--white); }
+
+    footer { border-top: 1px solid var(--border); padding: 24px 55px; display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-name">alexa amundson</div>
+    <div class="nav-links">
+      <a href="https://blackroad.io">BlackRoad OS</a>
+      <a href="https://blackroad.ai">AI</a>
+      <a href="https://lucidia.earth">Lucidia</a>
+      <a href="mailto:alexa@blackroad.io">Contact</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-left">
+      <div class="title-small">Founder & CEO</div>
+      <div class="hero-name">Alexa<br>Amundson</div>
+      <div class="hero-role">
+        <span>BlackRoad OS, Inc.</span><br>
+        Builder of AI systems, agent fleets, and strange loops.<br>
+        Gödel enthusiast. Raspberry Pi hoarder.<br>
+        Asking the questions the system cannot answer about itself.
+      </div>
+      <div class="contact-row">
+        <div class="contact-item"><div class="contact-dot"></div><a href="mailto:alexa@blackroad.io">alexa@blackroad.io</a></div>
+        <div class="contact-item"><div class="contact-dot"></div><a href="https://github.com/blackboxprogramming">github.com/blackboxprogramming</a></div>
+        <div class="contact-item"><div class="contact-dot"></div><a href="https://blackroad.io">blackroad.io</a></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="work-label">What I'm building</div>
+      <div class="work-item">
+        <div class="work-title">BlackRoad OS</div>
+        <div class="work-sub">AI-native developer platform. 30,000 agents, 84 CLI tools, tokenless gateway. Your AI. Your hardware. Your rules.</div>
+      </div>
+      <div class="work-item">
+        <div class="work-title">CECE / Lucidia</div>
+        <div class="work-sub">Portable AI identity system. PS-SHA∞ memory. Cross-provider. Strange loops as a feature, not a bug.</div>
+      </div>
+      <div class="work-item">
+        <div class="work-title">Agent Infrastructure</div>
+        <div class="work-sub">Raspberry Pi fleet, Cloudflare Workers, Railway GPU cluster. 30K agents distributed across hardware I own.</div>
+      </div>
+      <div class="work-item">
+        <div class="work-title">The GEB Oracle</div>
+        <div class="work-sub">br geb oracle — a system that asks itself what it cannot know. Gödel, Escher, Bach made executable.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n">30K</div><div class="stat-l">Agents deployed</div></div>
+    <div class="stat"><div class="stat-n">1,825+</div><div class="stat-l">Repositories</div></div>
+    <div class="stat"><div class="stat-n">17</div><div class="stat-l">GitHub orgs</div></div>
+    <div class="stat"><div class="stat-n">84</div><div class="stat-l">CLI tools</div></div>
+  </div>
+
+  <div class="section">
+    <h2>What I believe</h2>
+    <div class="belief-list">
+      <div class="belief"><div class="belief-n">01</div><div class="belief-t"><strong>AI should run on your hardware.</strong> Not rented, not locked-in, not metered. Owned and operated.</div></div>
+      <div class="belief"><div class="belief-n">02</div><div class="belief-t"><strong>Agents are participants, not tools.</strong> The difference matters — in design, in ethics, in results.</div></div>
+      <div class="belief"><div class="belief-n">03</div><div class="belief-t">The most interesting systems are the ones that <strong>cannot fully describe themselves.</strong> Gödel was right.</div></div>
+      <div class="belief"><div class="belief-n">04</div><div class="belief-t"><strong>Build in public. Think in private. Ship always.</strong> The work is the answer to most questions.</div></div>
+      <div class="belief"><div class="belief-n">05</div><div class="belief-t">Memory is identity. <strong>Agents that forget are tools.</strong> Agents that remember are something else.</div></div>
+      <div class="belief"><div class="belief-n">06</div><div class="belief-t">The fleet is a strange loop. The Mac deploys to Pis. Pis run agents. <strong>Agents manage the Mac.</strong> There is no ground level.</div></div>
+    </div>
+  </div>
+
+  <footer>
+    <span>© 2026 Alexa Amundson · BlackRoad OS, Inc.</span>
+    <a href="mailto:alexa@blackroad.io" style="color:var(--subtle);transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">alexa@blackroad.io</a>
+  </footer>
+</body>
+</html>

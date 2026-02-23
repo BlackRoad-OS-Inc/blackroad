@@ -42,7 +42,12 @@ function cf(token, path, opts = {}) {
       ...(opts.headers ?? {}),
     },
     body: opts.body ? JSON.stringify(opts.body) : undefined,
-  }).then(r => r.json());
+  }).then(async r => {
+    const text = await r.text();
+    if (!text) return { success: r.ok, result: null };
+    try { return JSON.parse(text); }
+    catch { return { success: r.ok, result: null, _raw: text.slice(0, 200) }; }
+  });
 }
 
 async function getZone(token, domain) {
@@ -61,6 +66,11 @@ function ok(label, result) {
 
 async function stepEnable(token, zoneId) {
   const r = await cf(token, `/zones/${zoneId}/email/routing/enable`, { method: "POST" });
+  // Auth error (10000) = token lacks Email Routing Edit permission — needs manual dashboard enable
+  if (!r.success && r.errors?.some(e => e.code === 10000)) {
+    return { step: "enable_routing", success: false, manual_required: true,
+      message: "Go to CF Dashboard → blackroad.io → Email → Email Routing → Enable (one click)" };
+  }
   return ok("enable_routing", r);
 }
 
@@ -73,8 +83,9 @@ async function stepDestination(token, account, email) {
 }
 
 async function stepCatchAll(token, zoneId, workerName) {
+  // CF API: catch_all rule requires PUT (not POST)
   const r = await cf(token, `/zones/${zoneId}/email/routing/rules/catch_all`, {
-    method: "POST",
+    method: "PUT",
     body: {
       actions:  [{ type: "worker", value: [workerName] }],
       enabled:  true,

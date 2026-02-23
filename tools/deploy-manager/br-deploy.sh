@@ -212,6 +212,10 @@ case ${1:-detect} in
     cf|cloudflare|wrangler) wrangler deploy 2>&1 ;;
     docker) deploy_docker "$2" ;;
     status|s|history) deploy_status ;;
+    edge|worker)
+        # Live railway deployments via edge worker
+        exec "$(dirname "$0")/../worker-bridge/br-worker.sh" railway deployments "${@:2}"
+        ;;
     help|--help|-h) show_help ;;
     *) show_help ;;
 esac

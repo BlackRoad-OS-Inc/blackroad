@@ -477,6 +477,10 @@ case "${1:-help}" in
     list|ls|l) cmd_list ;;
     status|stat|s) cmd_status "${@:2}" ;;
     watch|w|live) cmd_watch "${@:2}" ;;
+    edge|worker)
+        # Shortcut: delegate to br-worker github runs
+        exec "$(dirname "$0")/../worker-bridge/br-worker.sh" github runs "${@:2}"
+        ;;
     add-stage|add) cmd_add_stage "${@:2}" ;;
     remove-stage|rm) cmd_remove_stage "${@:2}" ;;
     history|hist) cmd_history "${@:2}" ;;
