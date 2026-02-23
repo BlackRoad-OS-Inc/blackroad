@@ -14,16 +14,16 @@ ENDPOINTS=(
 
 check_url() {
   local url="$1"
-  local start=$(date +%s%3N)
+  local start=$SECONDS
   local code=$(curl -o /dev/null -s -w "%{http_code}" --max-time 5 "https://$url" 2>/dev/null)
-  local end=$(date +%s%3N)
-  local ms=$((end - start))
+  local elapsed=$((SECONDS - start))
+  local ms="${elapsed}s"
   if [[ "$code" == "200" ]]; then
-    printf "  ${GREEN}✓${NC} %-45s ${GREEN}%s${NC} ${CYAN}%dms${NC}\n" "$url" "$code" "$ms"
+    printf "  ${GREEN}✓${NC} %-45s ${GREEN}%s${NC} ${CYAN}%s${NC}\n" "$url" "$code" "$ms"
   elif [[ "$code" == "000" ]]; then
     printf "  ${RED}✗${NC} %-45s ${RED}timeout${NC}\n" "$url"
   else
-    printf "  ${YELLOW}~${NC} %-45s ${YELLOW}%s${NC} ${CYAN}%dms${NC}\n" "$url" "$code" "$ms"
+    printf "  ${YELLOW}~${NC} %-45s ${YELLOW}%s${NC} ${CYAN}%s${NC}\n" "$url" "$code" "$ms"
   fi
 }
 
