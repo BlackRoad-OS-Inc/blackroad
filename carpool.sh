@@ -5262,6 +5262,138 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── SEED — craft an investor seed round narrative ────────────────────
+if [[ "$1" == "seed" || "$1" == "fundraise" ]]; then
+  shift
+  STARTUP="$*"
+  [[ -z "$STARTUP" ]] && echo "Usage: br carpool seed <startup or product>" && exit 1
+  echo ""
+  echo -e "\033[1;33m💸 SEED ROUND NARRATIVE: $STARTUP\033[0m"
+  echo ""
+  SD_FILE="$HOME/.blackroad/carpool/fundraising/$(echo "$STARTUP" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/fundraising"
+  printf "# Seed Round: %s\nDate: %s\n\n" "$STARTUP" "$(date '+%Y-%m-%d')" > "$SD_FILE"
+  for entry in "LUCIDIA|THE STORY|The origin, the insight, the why-now. What the world looks like if this works. 3 paragraphs, no buzzwords." "PRISM|THE MARKET|TAM/SAM/SOM with honest reasoning. Why this market is big AND why incumbents can't own it." "ARIA|THE PITCH DECK FLOW|10-slide structure with one sentence per slide. What each slide must prove to the investor." "OCTAVIA|THE ASK|How much, at what valuation, what it buys in runway. Use-of-funds breakdown by category." "SHELLFISH|INVESTOR OBJECTIONS|The 5 hardest questions a sharp investor will ask. Honest answers, not spin."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} preparing a seed round for: \"${STARTUP}\"
+Section: ${section}
+${lens}
+Be honest and compelling. Real numbers, real reasoning, no startup clichés.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$SD_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $SD_FILE\033[0m"
+  exit 0
+fi
+
+# ── SECURITY-MODEL — threat model + attack surface for a feature ──────
+if [[ "$1" == "security-model" || "$1" == "threatmodel" ]]; then
+  shift
+  FEATURE="$*"
+  [[ -z "$FEATURE" ]] && echo "Usage: br carpool security-model <feature or system>" && exit 1
+  echo ""
+  echo -e "\033[1;31m🛡️  SECURITY MODEL: $FEATURE\033[0m"
+  echo ""
+  SM_FILE="$HOME/.blackroad/carpool/security-models/$(echo "$FEATURE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/security-models"
+  printf "# Security Model: %s\nDate: %s\n\n" "$FEATURE" "$(date '+%Y-%m-%d')" > "$SM_FILE"
+  for entry in "CIPHER|ATTACK SURFACE|Every entry point an attacker could use. Input fields, APIs, file uploads, webhooks, third-party deps." "SHELLFISH|THREAT ACTORS|Who would attack this and why? Script kiddie, insider threat, nation state, competitor. Motivation per actor." "OCTAVIA|TRUST BOUNDARIES|Where data crosses trust zones. Each boundary needs auth, validation, and logging." "ALICE|MITIGATIONS|STRIDE mitigations for the top 5 threats: Spoofing, Tampering, Repudiation, Info Disclosure, DoS, Elevation." "PRISM|RESIDUAL RISK|What risk remains after mitigations. Accept, transfer, or monitor. Priority order to address next sprint."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} building a security model for: \"${FEATURE}\"
+Section: ${section}
+${lens}
+Use real threat modeling terminology (STRIDE, OWASP, CVE categories).
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$SM_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $SM_FILE\033[0m"
+  exit 0
+fi
+
+# ── CONTENT — content marketing plan + editorial calendar ─────────────
+if [[ "$1" == "content" ]]; then
+  shift
+  TOPIC="$*"
+  [[ -z "$TOPIC" ]] && echo "Usage: br carpool content <product or topic>" && exit 1
+  echo ""
+  echo -e "\033[1;35m✍️  CONTENT PLAN: $TOPIC\033[0m"
+  echo ""
+  CT_FILE="$HOME/.blackroad/carpool/content/$(echo "$TOPIC" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/content"
+  printf "# Content Plan: %s\nDate: %s\n\n" "$TOPIC" "$(date '+%Y-%m-%d')" > "$CT_FILE"
+  for entry in "ARIA|CONTENT PILLARS|3-4 themes this content always reinforces. What the brand stands for in every post/article/video." "LUCIDIA|FLAGSHIP CONTENT IDEAS|5 long-form pieces worth building an audience on. Each with a hook, angle, and why now." "PRISM|DISTRIBUTION CHANNELS|Where to publish each content type. SEO, Twitter/X, HN, YouTube, LinkedIn — honest reach estimate per channel." "ALICE|30-DAY CALENDAR|Week 1-4 publishing schedule. Content type, platform, topic, and repurpose path for each piece." "SHELLFISH|WHAT MOST BRANDS GET WRONG|The content mistakes to avoid: posting cadence traps, vanity engagement, copying competitors, SEO farming."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} building a content plan for: \"${TOPIC}\"
+Section: ${section}
+${lens}
+Specific titles, specific platforms, specific angles. No generic advice.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$CT_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $CT_FILE\033[0m"
+  exit 0
+fi
+
+# ── PROTOCOL — design an internal team protocol or process ────────────
+if [[ "$1" == "protocol" || "$1" == "process" ]]; then
+  shift
+  PROC="$*"
+  [[ -z "$PROC" ]] && echo "Usage: br carpool protocol <process, e.g. 'on-call handoff' or 'deploy freeze'>" && exit 1
+  echo ""
+  echo -e "\033[1;36m📋 PROTOCOL: $PROC\033[0m"
+  echo ""
+  PR_FILE="$HOME/.blackroad/carpool/protocols/$(echo "$PROC" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/protocols"
+  printf "# Protocol: %s\nDate: %s\n\n" "$PROC" "$(date '+%Y-%m-%d')" > "$PR_FILE"
+  for entry in "ALICE|TRIGGER & SCOPE|When does this protocol activate? Who does it apply to? What is explicitly out of scope?" "OCTAVIA|STEP-BY-STEP|The exact sequence of steps. Owner per step. Input/output for each. No ambiguity." "CIPHER|EXCEPTION HANDLING|What to do when a step fails or conditions are unusual. Who has override authority." "PRISM|METRICS|How do we know this protocol is working? Compliance rate, time-to-complete, error rate." "LUCIDIA|WHY THIS EXISTS|The incident or failure that made this protocol necessary. Keeps it from becoming zombie process."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing a team protocol for: \"${PROC}\"
+Section: ${section}
+${lens}
+Concrete and unambiguous. A new team member can follow this on day one.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$PR_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $PR_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
