@@ -1648,14 +1648,149 @@ if [[ "$1" == "personas" ]]; then
   exit 0
 fi
 
+# ── THEME — persistent project context injected into every session ──
+if [[ "$1" == "theme" ]]; then
+  THEME_FILE="$HOME/.blackroad/carpool/theme.txt"
+  mkdir -p "$(dirname "$THEME_FILE")"
+  case "${2:-show}" in
+    set)
+      shift 2
+      if [[ $# -gt 0 ]]; then
+        echo "$*" > "$THEME_FILE"
+        echo -e "${GREEN}✓ Theme set:${NC} $*"
+      else
+        echo -ne "${CYAN}Project theme (context injected into every session):\n> ${NC}"
+        read -r _theme_input
+        echo "$_theme_input" > "$THEME_FILE"
+        echo -e "${GREEN}✓ Theme set${NC}"
+      fi
+      ;;
+    show)
+      if [[ -f "$THEME_FILE" ]]; then
+        echo -e "${WHITE}🎯 Current theme:${NC}\n"
+        cat "$THEME_FILE"
+      else
+        echo -e "${DIM}No theme set. Use: br carpool theme set <description>${NC}"
+      fi
+      ;;
+    clear) rm -f "$THEME_FILE" && echo -e "${GREEN}✓ Theme cleared${NC}" ;;
+    edit)  "${EDITOR:-nano}" "$THEME_FILE" ;;
+    *)     echo -e "${RED}Usage: br carpool theme [set|show|clear|edit]${NC}" ;;
+  esac
+  exit 0
+fi
+
+# ── CRITIQUE — deep review of any local file ─────────────────
+if [[ "$1" == "critique" ]]; then
+  _file="${2:-}"
+  [[ -z "$_file" ]] && echo -e "${RED}Usage: br carpool critique <file>${NC}" && exit 1
+  [[ ! -f "$_file" ]] && echo -e "${RED}File not found: ${_file}${NC}" && exit 1
+
+  _ext="${_file##*.}"
+  _size=$(wc -c < "$_file" | tr -d ' ')
+  _lang=""
+  case "$_ext" in
+    py)           _lang="Python" ;;
+    js|ts|jsx|tsx) _lang="JavaScript/TypeScript" ;;
+    sh|zsh|bash)  _lang="Shell script" ;;
+    md)           _lang="Markdown document" ;;
+    json)         _lang="JSON config" ;;
+    yaml|yml)     _lang="YAML config" ;;
+    go)           _lang="Go" ;;
+    rs)           _lang="Rust" ;;
+    *)            _lang="$_ext file" ;;
+  esac
+
+  _critique_ctx=$(mktemp /tmp/carpool_crit_XXXX.txt)
+  echo "=== FILE: $(basename "$_file") (${_lang}) ===" > "$_critique_ctx"
+  head -c 4000 "$_file" >> "$_critique_ctx"
+  [[ $_size -gt 4000 ]] && echo "... [truncated at 4KB of ${_size}B total]" >> "$_critique_ctx"
+
+  _q="Critique this ${_lang}: what is good, what is broken or risky, and your single highest-priority fix."
+  echo -e "${WHITE}🔍 CarPool Critique${NC}  ${DIM}$(basename "$_file") · ${_lang} · ${_size}B${NC}\n"
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" --brief --crew "OCTAVIA,CIPHER,SHELLFISH,PRISM,ALICE" --context "$_critique_ctx" "$_q"
+fi
+
+# ── PITCH — agents as skeptical investors evaluate your idea ──
+if [[ "$1" == "pitch" ]]; then
+  _idea="${2:-}"
+  [[ -z "$_idea" ]] && echo -ne "${CYAN}Pitch your idea: ${NC}" && read -r _idea
+  [[ -z "$_idea" ]] && exit 1
+
+  _pitch_topic="INVESTOR PITCH EVALUATION: '${_idea}'
+You are a skeptical but fair investor/stakeholder evaluating this pitch from YOUR domain expertise.
+Give: SIGNAL (what excites you), CONCERN (your biggest doubt), QUESTION (one thing you need answered).
+End with: FUND: YES / MAYBE / NO — and why in one sentence."
+
+  echo -e "\n${WHITE}💰 CarPool Pitch${NC}  ${DIM}${_idea}${NC}\n"
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" --brief "$_pitch_topic"
+fi
+
+# ── WHAT-IF — counterfactual/hypothetical reasoning ──────────
+if [[ "$1" == "what-if" || "$1" == "whatif" ]]; then
+  _scenario="${2:-}"
+  [[ -z "$_scenario" ]] && echo -ne "${CYAN}What if... ${NC}" && read -r _scenario
+  [[ -z "$_scenario" ]] && exit 1
+
+  _wi_topic="COUNTERFACTUAL: 'What if ${_scenario}?'
+Reason through this hypothetical from YOUR domain. Be specific:
+- What changes immediately in your area?
+- What second-order effects emerge in 6 months?
+- What is the biggest opportunity OR risk this creates?
+Think boldly. This is a thought experiment."
+
+  echo -e "\n${WHITE}🤔 CarPool What-If${NC}  ${DIM}what if ${_scenario}?${NC}\n"
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" --brief "$_wi_topic"
+fi
+
+# ── OFFICE-HOURS — interactive Q&A with one agent (no tmux) ──
+if [[ "$1" == "office-hours" || "$1" == "oh" ]]; then
+  _agent="${2:-LUCIDIA}"
+  _valid="LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER ARIA SHELLFISH"
+  echo "$_valid" | grep -qw "$_agent" || { echo -e "${RED}Unknown agent: ${_agent}${NC}"; exit 1; }
+
+  agent_meta "$_agent"
+  _c="\033[${COLOR_CODE}m"
+  echo -e "\n${WHITE}🎓 Office Hours${NC}  ${_c}${EMOJI} ${_agent}${NC}  ${DIM}${PERSONA}${NC}"
+  echo -e "${DIM}Type your question. 'quit' to exit.${NC}\n"
+
+  _oh_system="You are ${_agent}, ${ROLE} on the BlackRoad team. ${PERSONA}
+Keep answers under 80 words. Be direct and specific. Stay in character."
+
+  while true; do
+    echo -ne "${_c}❯ ${NC}"
+    read -r _q
+    [[ "$_q" == "quit" || "$_q" == "exit" || -z "$_q" ]] && echo -e "${DIM}bye${NC}" && break
+
+    _oh_payload=$(python3 -c "
+import json,sys
+system,q=sys.argv[1],sys.argv[2]
+print(json.dumps({
+  'model':'tinyllama',
+  'prompt':system+'\n\nQ: '+q+'\n\nAnswer:',
+  'stream':False,
+  'options':{'num_predict':120,'temperature':0.7,'stop':['\n\n','Q:']}
+}))" "$_oh_system" "$_q" 2>/dev/null)
+
+    echo -ne "${DIM}thinking...${NC}"
+    _ans=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_oh_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_c}${EMOJI} ${_agent}:${NC} ${_ans}\n"
+  done
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
   less "$SAVE_DIR/$f"
   exit 0
 fi
-
-# ── PARSE SPEED FLAGS ──────────────────────────────────────────
 SESSION_NAME=""
 BRIEF=0
 CONTEXT_FILE=""
@@ -1792,6 +1927,16 @@ if [[ $USE_MEMORY -eq 1 && -f "$MEMORY_FILE" ]]; then
     [[ -n "$existing" ]] && echo "" && echo "$existing"; } > "$WORK_DIR/context.txt"
   echo "🧠 memory" > "$WORK_DIR/context.label"
   echo -e "${CYAN}🧠 memory:${NC} last $(grep -c "^---" "$MEMORY_FILE" 2>/dev/null) sessions injected"
+fi
+
+# Auto-inject theme if set
+THEME_FILE="$HOME/.blackroad/carpool/theme.txt"
+if [[ -f "$THEME_FILE" ]]; then
+  theme_text=$(cat "$THEME_FILE")
+  existing=$(cat "$WORK_DIR/context.txt" 2>/dev/null)
+  { echo "=== PROJECT THEME ==="; echo "$theme_text"; echo "=== END THEME ===";
+    [[ -n "$existing" ]] && echo "" && echo "$existing"; } > "$WORK_DIR/context.txt"
+  echo -e "${CYAN}🎯 theme:${NC} $(head -1 "$THEME_FILE")"
 fi
 
 # ── PER-AGENT MODEL ASSIGNMENT ────────────────────────────────
