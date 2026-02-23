@@ -25,6 +25,7 @@ import {
   Brain,
   Database,
   Lock,
+  CheckSquare,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWorkspaceStore } from '@/stores/workspace-store';
@@ -51,6 +52,8 @@ export default function Sidebar() {
     { name: 'Memory',         href: '/memory',         icon: Brain },
     { name: 'KV Browser',     href: '/kv',             icon: Database },
     { name: 'Terminal',       href: '/terminal',       icon: Terminal },
+    { name: 'Vault',          href: '/vault',          icon: Lock },
+    { name: 'Tasks',          href: '/agents-tasks',   icon: CheckSquare },
     { name: 'Worlds',         href: '/worlds',         icon: Globe },
     { name: 'Verify',         href: '/verify',         icon: ShieldCheck },
     { name: 'Governance',     href: '/governance',     icon: Shield },
