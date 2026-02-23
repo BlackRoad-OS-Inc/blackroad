@@ -9176,6 +9176,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "prompt-engineering" ]]; then
+  USECASE="${2:-our AI feature}"
+  AGENTS=("AI" "Product", "Engineer" "UX" "Safety")
+  QUESTIONS=(
+    "What prompt patterns (chain-of-thought, few-shot, ReAct) work best for $USECASE?"
+    "How do we version, test, and deploy prompts for $USECASE like production code?"
+    "What guardrails and evals should $USECASE have to catch bad model outputs?"
+    "How do we reduce token cost and latency for $USECASE without losing quality?"
+    "What does a systematic prompt iteration and improvement workflow look like for $USECASE?"
+  )
+  echo ""
+  echo "🤖 CARPOOL: PROMPT ENGINEERING — $USECASE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Prompt engineering strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "data-governance" ]]; then
+  ORG="${2:-our organization}"
+  AGENTS=("Data" "Legal" "Security" "Engineering" "Leadership")
+  QUESTIONS=(
+    "What data classification scheme does $ORG need — public, internal, confidential, restricted?"
+    "How does $ORG build a data catalog and ownership model that teams actually use?"
+    "What retention, deletion, and lineage policies does $ORG need for compliance?"
+    "How do we enforce data access controls in $ORG without slowing down data teams?"
+    "What does a privacy-by-design culture look like in $ORG from eng to product to ops?"
+  )
+  echo ""
+  echo "🗄️  CARPOOL: DATA GOVERNANCE — $ORG"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Data governance strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "sprint-planning" ]]; then
+  TEAM="${2:-our team}"
+  AGENTS=("PM" "Engineering" "Design" "EM" "QA")
+  QUESTIONS=(
+    "How does $TEAM decide what goes into the sprint vs the backlog each cycle?"
+    "What is the right sprint length and ceremony cadence for $TEAM right now?"
+    "How does $TEAM estimate work accurately without spending all day on planning poker?"
+    "How does $TEAM protect sprint scope without becoming rigid to urgent reality?"
+    "What does $TEAM do when a sprint derails mid-cycle — triage, reprioritize, or push through?"
+  )
+  echo ""
+  echo "🏃 CARPOOL: SPRINT PLANNING — $TEAM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Sprint planning roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "market-sizing" ]]; then
+  MARKET="${2:-our market}"
+  AGENTS=("Strategy" "VC" "Analyst" "Founder" "Sales")
+  QUESTIONS=(
+    "What is the TAM, SAM, and SOM for $MARKET and how do we calculate each rigorously?"
+    "What bottom-up market sizing approach gives the most credible estimate for $MARKET?"
+    "What market signals tell us $MARKET is growing faster than consensus estimates?"
+    "How do we identify and size the beachhead segment within $MARKET to win first?"
+    "How do we present $MARKET sizing to investors without overselling or underselling?"
+  )
+  echo ""
+  echo "🌍 CARPOOL: MARKET SIZING — $MARKET"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Market sizing analysis complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
