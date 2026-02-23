@@ -5532,6 +5532,150 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+if [[ "$1" == "localization" ]]; then
+  TOPIC="${2:-our app}"
+  LOCALE_DIR="$HOME/.blackroad/carpool/localization"
+  mkdir -p "$LOCALE_DIR"
+  LOCALE_FILE="$LOCALE_DIR/locale-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🌐 CarPool — Localization plan for: $TOPIC\033[0m"
+  echo "# Localization: $TOPIC" > "$LOCALE_FILE"
+  echo "Generated: $(date)" >> "$LOCALE_FILE"
+  PY_LOCALE='
+import sys, json, urllib.request
+topic = sys.argv[1]
+agents = [
+  ("ARIA","UI/UX lead","Which strings and UI components need localization? List top 10 with i18n key names."),
+  ("ALICE","Engineer","What i18n library and file format (JSON/PO/XLIFF) would you recommend? Show folder structure."),
+  ("PRISM","Data analyst","Which locales/markets should we prioritize? What does the data say about user distribution?"),
+  ("OCTAVIA","Platform","What build pipeline changes are needed for locale bundles? How do we handle RTL layouts?"),
+  ("LUCIDIA","Strategist","What are the 3 biggest cultural adaptation risks beyond just translation?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}), for localizing {topic}: {question}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except Exception as e:
+    print(f"### {name}: [offline]")
+    print()
+'
+  python3 -c "$PY_LOCALE" "$TOPIC" | tee -a "$LOCALE_FILE"
+  echo -e "\033[0;32m✓ Saved to $LOCALE_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "cost-analysis" ]]; then
+  SYSTEM="${2:-our infrastructure}"
+  COST_DIR="$HOME/.blackroad/carpool/cost-analysis"
+  mkdir -p "$COST_DIR"
+  COST_FILE="$COST_DIR/cost-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m💰 CarPool — Cost analysis for: $SYSTEM\033[0m"
+  echo "# Cost Analysis: $SYSTEM" > "$COST_FILE"
+  echo "Generated: $(date)" >> "$COST_FILE"
+  PY_COST='
+import sys, json, urllib.request
+system = sys.argv[1]
+agents = [
+  ("PRISM","FinOps analyst","Break down likely monthly cloud costs for $SYSTEM by service category (compute, storage, network, data transfer). Estimate ranges."),
+  ("OCTAVIA","Platform engineer","What are the top 3 over-provisioned or wasteful resources in a typical $SYSTEM setup? How much could we save?"),
+  ("ALICE","DevOps","List 5 concrete cost optimization actions we can take this sprint with estimated savings each."),
+  ("CIPHER","Security","Which cost-cutting measures could create security risks? Flag any corner-cutting to avoid."),
+  ("SHELLFISH","Chaos engineer","What happens to cost if traffic spikes 10x unexpectedly? Are there runaway cost scenarios?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SYSTEM', system)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except Exception as e:
+    print(f"### {name}: [offline]")
+    print()
+'
+  python3 -c "$PY_COST" "$SYSTEM" | tee -a "$COST_FILE"
+  echo -e "\033[0;32m✓ Saved to $COST_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "user-research" ]]; then
+  QUESTION="${2:-what do users really want}"
+  UR_DIR="$HOME/.blackroad/carpool/user-research"
+  mkdir -p "$UR_DIR"
+  UR_FILE="$UR_DIR/research-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🔬 CarPool — User research plan: $QUESTION\033[0m"
+  echo "# User Research: $QUESTION" > "$UR_FILE"
+  echo "Generated: $(date)" >> "$UR_FILE"
+  PY_UR='
+import sys, json, urllib.request
+question = sys.argv[1]
+agents = [
+  ("ARIA","UX researcher","Design a 5-question interview guide to explore: $QUESTION. Include probing follow-ups."),
+  ("PRISM","Data analyst","What quantitative signals (analytics, funnels, NPS) should we look at alongside qualitative research for: $QUESTION?"),
+  ("LUCIDIA","Strategist","What underlying jobs-to-be-done or emotional needs might drive the answer to: $QUESTION?"),
+  ("ALICE","PM","How would you recruit 8 participants, run 30-min sessions, and synthesize findings in a week for: $QUESTION?"),
+  ("SHELLFISH","Devil advocate","What biases or leading assumptions might skew the research on: $QUESTION? How do we guard against them?")
+]
+for name, role, question_template in agents:
+  prompt = f"{name} ({role}): {question_template.replace(chr(36)+'QUESTION', question)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except Exception as e:
+    print(f"### {name}: [offline]")
+    print()
+'
+  python3 -c "$PY_UR" "$QUESTION" | tee -a "$UR_FILE"
+  echo -e "\033[0;32m✓ Saved to $UR_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "sla" ]]; then
+  SERVICE="${2:-our API}"
+  SLA_DIR="$HOME/.blackroad/carpool/slas"
+  mkdir -p "$SLA_DIR"
+  SLA_FILE="$SLA_DIR/sla-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📋 CarPool — SLA definition for: $SERVICE\033[0m"
+  echo "# SLA: $SERVICE" > "$SLA_FILE"
+  echo "Generated: $(date)" >> "$SLA_FILE"
+  PY_SLA='
+import sys, json, urllib.request
+service = sys.argv[1]
+agents = [
+  ("PRISM","Reliability analyst","Propose concrete SLI metrics and SLO targets (uptime, latency p99, error rate) for $SERVICE. Show the math for monthly error budget."),
+  ("ALICE","PM","What customer-facing SLA tiers (free/pro/enterprise) would you offer for $SERVICE? What are the consequences for each breach?"),
+  ("OCTAVIA","Platform","What alerting thresholds, runbooks, and on-call rotation support these SLOs for $SERVICE?"),
+  ("CIPHER","Security","Which security SLAs matter here — RTO, RPO, data retention guarantees for $SERVICE? Define them."),
+  ("LUCIDIA","Strategist","How do we communicate SLA commitments and breaches to customers in a way that builds trust for $SERVICE?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SERVICE', service)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except Exception as e:
+    print(f"### {name}: [offline]")
+    print()
+'
+  python3 -c "$PY_SLA" "$SERVICE" | tee -a "$SLA_FILE"
+  echo -e "\033[0;32m✓ Saved to $SLA_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1

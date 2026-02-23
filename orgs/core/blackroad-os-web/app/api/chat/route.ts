@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 export const runtime = 'edge';
 
 const GATEWAY_URL = process.env.BLACKROAD_GATEWAY_URL || 'http://127.0.0.1:8787';
-const WORKER_URL = 'https://blackroad-os-api.amundsonalexa.workers.dev';
+const WORKER_URL = process.env.BLACKROAD_WORKER_URL || 'https://blackroad-os-api.amundsonalexa.workers.dev';
+const DEFAULT_MODEL = process.env.BLACKROAD_DEFAULT_MODEL || 'cece3b';
 
 interface ChatRequest {
   message: string;
@@ -38,7 +39,7 @@ Be warm, precise, and occasionally poetic. You sign your deeper reflections with
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'cece3b',
+          model: DEFAULT_MODEL,
           messages,
           max_tokens: 1024,
           temperature: 0.7,
