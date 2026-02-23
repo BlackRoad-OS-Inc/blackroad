@@ -1561,6 +1561,93 @@ if [[ "$1" == "schedule" ]]; then
   esac
   exit 0
 fi
+
+# ── BRAINSTORM — ideation mode, quantity over quality ─────────
+if [[ "$1" == "brainstorm" ]]; then
+  _idea="${2:-}"
+  [[ -z "$_idea" ]] && echo -ne "${CYAN}What are we brainstorming? ${NC}" && read -r _idea
+  [[ -z "$_idea" ]] && _idea="New features for an AI developer CLI tool"
+
+  _bs_topic="BRAINSTORM: '${_idea}'
+Generate 3-5 SPECIFIC, concrete ideas from YOUR domain perspective.
+Rules: no critique, no 'it depends', build outward not inward.
+Wilder and more specific is better. Each idea = one sentence starting with an action verb.
+End with your WILDEST idea labeled: WILD CARD:"
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  echo -e "\n${WHITE}💡 CarPool Brainstorm${NC}  ${DIM}${_idea}${NC}\n"
+  exec bash "$SCRIPT_PATH" --brief "$_bs_topic"
+fi
+
+# ── STANDUP — morning check-in, each agent's domain status ───
+if [[ "$1" == "standup" ]]; then
+  _date=$(date '+%A, %B %d')
+  echo -e "${WHITE}☀️  CarPool Standup${NC}  ${DIM}${_date}${NC}\n"
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  _standup_topic="MORNING STANDUP — ${_date}
+From YOUR specific domain and role on the BlackRoad team:
+1. STATUS: one sentence on where things stand in your area
+2. FOCUS: what the team should prioritize today in your domain
+3. BLOCKER: one thing that could slow us down (or CLEAR if none)
+Keep it tight — 3 bullets, 1 sentence each."
+  exec bash "$SCRIPT_PATH" --brief --memory "$_standup_topic"
+fi
+
+# ── RISK — structured risk matrix per domain ─────────────────
+if [[ "$1" == "risk" ]]; then
+  _plan="${2:-}"
+  [[ -z "$_plan" ]] && echo -ne "${CYAN}What plan/system to risk-assess? ${NC}" && read -r _plan
+  [[ -z "$_plan" ]] && _plan="Deploying a new AI-powered API to production"
+
+  _risk_topic="RISK ASSESSMENT: '${_plan}'
+From YOUR domain perspective, identify risks using this format:
+RISK: <name> | LIKELIHOOD: H/M/L | IMPACT: H/M/L | MITIGATION: <one action>
+List 2-3 risks. Be specific, not generic. End with: OVERALL: <your risk rating H/M/L>"
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  echo -e "\n${WHITE}⚠️  CarPool Risk${NC}  ${DIM}${_plan}${NC}\n"
+  exec bash "$SCRIPT_PATH" --brief --crew "CIPHER,SHELLFISH,PRISM,OCTAVIA,ALICE,LUCIDIA" "$_risk_topic"
+fi
+
+# ── REMIX — rerun last session topic with a fresh crew ───────
+if [[ "$1" == "remix" ]]; then
+  # Find last session topic
+  last_topic=""
+  if [[ -f "$HOME/.blackroad/carpool/memory.txt" ]]; then
+    last_topic=$(grep "^TOPIC:" "$HOME/.blackroad/carpool/memory.txt" | tail -1 | sed 's/^TOPIC: //')
+  fi
+  [[ -z "$last_topic" ]] && last_topic=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1 | sed 's/^[0-9_-]*//;s/\.txt$//')
+
+  if [[ -z "$last_topic" ]]; then
+    echo -e "${DIM}No previous session found. Run a session first.${NC}"; exit 1
+  fi
+
+  # Remix crew: invert the usual thinker/worker split
+  _remix_crew="ECHO,ARIA,SHELLFISH,ALICE"
+  [[ -n "${2:-}" ]] && _remix_crew="$2"
+
+  echo -e "${WHITE}🔄 CarPool Remix${NC}  ${DIM}${last_topic}${NC}"
+  echo -e "${DIM}Fresh crew: ${_remix_crew}${NC}\n"
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" --crew "$_remix_crew" "$last_topic"
+fi
+
+# ── PERSONAS — display all agent bios ────────────────────────
+if [[ "$1" == "personas" ]]; then
+  echo -e "\n${WHITE}🚗 CarPool Agents${NC}\n"
+  for name in LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER ARIA SHELLFISH; do
+    agent_meta "$name"
+    _c="\033[${COLOR_CODE}m"
+    printf "  ${_c}%s %-10s${NC}  %s\n" "$EMOJI" "$name" "$ROLE"
+    printf "  ${DIM}%-14s  %s${NC}\n" "" "$PERSONA"
+    echo ""
+  done
+  echo -e "${DIM}Usage: br carpool spotlight <AGENT>  ·  br carpool debate A B${NC}\n"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
