@@ -8056,6 +8056,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "hiring-pipeline" ]]; then
+  ROLE="${2:-engineering}"
+  AGENTS=("Recruiter" "Hiring Mgr" "HR" "Candidate" "Culture")
+  QUESTIONS=(
+    "What does an efficient, bias-reduced hiring pipeline look like for $ROLE?"
+    "What are the most predictive interview signals for $ROLE candidates?"
+    "How do we write a job description that attracts top $ROLE talent?"
+    "How should we structure the take-home vs live coding debate for $ROLE?"
+    "What does a world-class candidate experience look like when hiring for $ROLE?"
+  )
+  echo ""
+  echo "👥 CARPOOL: HIRING PIPELINE — $ROLE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Hiring pipeline roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "zero-to-one" ]]; then
+  IDEA="${2:-our idea}"
+  AGENTS=("Founder" "VC" "Customer" "Builder" "Skeptic")
+  QUESTIONS=(
+    "What makes $IDEA a zero-to-one insight rather than an incremental improvement?"
+    "Who is the first customer for $IDEA and why would they take a bet on it today?"
+    "What is the smallest possible version of $IDEA that proves the core thesis?"
+    "What would have to be true for $IDEA to become a 10x better solution than anything existing?"
+    "What are the strongest arguments against $IDEA and how do we stress-test them?"
+  )
+  echo ""
+  echo "⚡ CARPOOL: ZERO TO ONE — $IDEA"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Zero-to-one analysis complete."
+  exit 0
+fi
+
+if [[ "$1" == "platform-strategy" ]]; then
+  PLATFORM="${2:-our platform}"
+  AGENTS=("Platform" "Ecosystem" "BD" "Product" "Developer")
+  QUESTIONS=(
+    "What makes $PLATFORM a platform vs a product — where is the leverage?"
+    "How should $PLATFORM attract and retain third-party developers and partners?"
+    "What APIs, SDKs, and marketplace features does $PLATFORM need to win?"
+    "How does $PLATFORM avoid the cold-start problem for its ecosystem?"
+    "What governance model keeps $PLATFORM healthy as the ecosystem grows?"
+  )
+  echo ""
+  echo "🌐 CARPOOL: PLATFORM STRATEGY — $PLATFORM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Platform strategy roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "mlops" ]]; then
+  MODEL="${2:-our ML model}"
+  AGENTS=("MLOps" "Data Sci" "Backend" "Infra" "QA")
+  QUESTIONS=(
+    "What does the full MLOps lifecycle look like for $MODEL from training to production?"
+    "How should $MODEL handle data drift, model drift, and retraining triggers?"
+    "What CI/CD pipeline should $MODEL use for safe, testable model deployments?"
+    "How do we monitor $MODEL in production — latency, accuracy, bias, fairness?"
+    "What feature store and experiment tracking setup fits $MODEL best?"
+  )
+  echo ""
+  echo "🤖 CARPOOL: MLOPS — $MODEL"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ MLOps strategy complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
