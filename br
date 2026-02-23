@@ -117,6 +117,11 @@ BR_TOOLS=(
     template    "${BR_TOOLS_DIR}/brand/br-brand.sh"
 )
 
+# Stream shortcut — delegates to gateway stream sub-command
+stream_events() {
+    zsh "${BR_TOOLS_DIR}/agent-gateway/br-gateway.sh" stream
+}
+
 dispatch_tool() {
     local tool=$1
     shift
@@ -289,6 +294,7 @@ show_help() {
     echo "║  AGENT INTERACTIONS (🤖 Talk to the Fleet):                     ║"
     echo "║    br wake [agent] [model]  - Wake an agent with morning thoughts ║"
     echo "║    br council <question>    - All agents vote on a question       ║"
+    echo "║    br carpool <topic>       - Agents CarPool a topic together 🚗  ║"
     echo "║    br think <query>         - All agents respond to a query       ║"
     echo "║    br debate <topic>        - LUCIDIA vs CIPHER debate            ║"
     echo "║    br broadcast <msg>       - Broadcast to all agents             ║"
@@ -340,6 +346,7 @@ show_help() {
     echo "║    br gateway status        - Show status + health                ║"
     echo "║    br gateway test          - Run API test suite                  ║"
     echo "║    br gateway logs          - Tail gateway logs                   ║"
+    echo "║    br stream                - Watch live agent event stream (SSE) ║"
     echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
@@ -655,6 +662,10 @@ main() {
             local fleet_cmd="${1:-once}"
             shift 2>/dev/null || true
             zsh "${BR_TOOLS_DIR}/agent-runtime/br-fleet.sh" "$fleet_cmd" "$@"
+            ;;
+        stream|events)
+            # br stream — live SSE event feed from gateway
+            stream_events
             ;;
         whisper)
             # br whisper <agent> <message>
