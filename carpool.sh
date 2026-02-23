@@ -3861,6 +3861,153 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── ROADMAP — 4-quarter product roadmap from agent perspectives ────────
+if [[ "$1" == "roadmap" ]]; then
+  shift
+  PRODUCT="$*"
+  [[ -z "$PRODUCT" ]] && echo "Usage: br carpool roadmap <product or project>" && exit 1
+  echo ""
+  echo -e "\033[1;36m🗺️  PRODUCT ROADMAP: $PRODUCT\033[0m"
+  echo ""
+  ROAD_FILE="$HOME/.blackroad/carpool/roadmaps/$(echo "$PRODUCT" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/roadmaps"
+  printf "# Roadmap: %s\nDate: %s\n\n" "$PRODUCT" "$(date '+%Y-%m-%d')" > "$ROAD_FILE"
+  YEAR=$(date +%Y)
+  for entry in "ALICE|Q1 — FOUNDATION|Core infra, auth, data model, CI/CD. What must exist before anything else?" "ARIA|Q2 — LAUNCH|The features that make users say wow. Public-facing, delightful, shareable." "OCTAVIA|Q3 — SCALE|Performance, reliability, observability. Handle 10x the load without heroics." "PRISM|Q4 — GROWTH|Analytics, growth loops, integrations, enterprise features. Data-driven expansion." "LUCIDIA|YEAR 2 VISION|Where does this product go if everything works? The moonshot."; do
+    IFS='|' read -r ag phase lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${phase}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} planning a product roadmap for: \"${PRODUCT}\"
+Phase: ${phase} (${YEAR})
+${lens}
+List 4-6 specific deliverables. Format:
+- [ ] <deliverable> — <one-line impact>
+Be concrete. No generic filler.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$phase" "$resp" >> "$ROAD_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $ROAD_FILE\033[0m"
+  exit 0
+fi
+
+# ── ARCHITECT — each agent proposes a system design approach ──────────
+if [[ "$1" == "architect" ]]; then
+  shift
+  PROBLEM="$*"
+  [[ -z "$PROBLEM" ]] && echo "Usage: br carpool architect <system design problem>" && exit 1
+  echo ""
+  echo -e "\033[1;35m🏗️  SYSTEM DESIGN: $PROBLEM\033[0m"
+  echo ""
+  ARCH_FILE="$HOME/.blackroad/carpool/architectures/$(echo "$PROBLEM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/architectures"
+  printf "# Architecture: %s\nDate: %s\n\n" "$PROBLEM" "$(date '+%Y-%m-%d')" > "$ARCH_FILE"
+  approaches=""
+  for entry in "OCTAVIA|BORING TECH|Use proven, boring technology. Postgres, Redis, monolith-first. No hype." "SHELLFISH|DISTRIBUTED|Microservices, event-driven, CQRS. Optimize for team autonomy and fault isolation." "ALICE|SERVERLESS|Functions, edge workers, managed services. Minimize ops burden." "LUCIDIA|EMERGENT|Start with the simplest thing. Let the architecture reveal itself through use."; do
+    IFS='|' read -r ag approach lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${approach}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Design a system for: \"${PROBLEM}\"
+Your philosophy: ${approach} — ${lens}
+Describe:
+STACK: <key technologies>
+STRUCTURE: <how it is organized>
+TRADEOFF: <what you sacrifice for what you gain>
+Keep it under 8 lines. Be opinionated.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$approach" "$resp" >> "$ARCH_FILE"
+    approaches="${approaches}${ag}(${approach}) "
+    echo ""
+  done
+  # PRISM picks a winner
+  IFS='|' read -r _ col _ emoji <<< "$(agent_meta "PRISM")"
+  echo -e "${col}${emoji} PRISM — RECOMMENDATION${NC}"
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are PRISM. Four architectures were proposed for \"${PROBLEM}\": boring tech, distributed, serverless, and emergent.
+Given a typical startup with a small team, limited runway, and need to ship fast:
+RECOMMEND: <which approach>
+REASON: <2-3 sentences why>
+HYBRID: <one thing to borrow from each of the others>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[PRISM offline]"
+  echo ""
+  echo -e "\033[0;32m✓ Saved to $ARCH_FILE\033[0m"
+  exit 0
+fi
+
+# ── TAGLINE — agents generate product taglines and slogans ────────────
+if [[ "$1" == "tagline" || "$1" == "slogan" ]]; then
+  shift
+  PRODUCT="$*"
+  [[ -z "$PRODUCT" ]] && echo "Usage: br carpool tagline <product or idea>" && exit 1
+  echo ""
+  echo -e "\033[1;33m✨ TAGLINE GENERATOR: $PRODUCT\033[0m"
+  echo ""
+  for entry in "ARIA|EMOTIONAL|Taglines that make people feel something. Hope, FOMO, belonging." "LUCIDIA|PHILOSOPHICAL|Big ideas in few words. Think Apple-level abstraction." "PRISM|DATA-BACKED|Taglines built on a specific number or claim. Credible, specific." "SHELLFISH|PROVOCATIVE|Challenge assumptions. Make the competition uncomfortable." "ALICE|FUNCTIONAL|Taglines that say exactly what it does. No metaphors, just value."; do
+    IFS='|' read -r ag style lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${style}${NC}"
+    python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Write 5 taglines for: \"${PRODUCT}\"
+Style: ${style} — ${lens}
+Rules: under 8 words each, no generic filler like \"the future of\".
+Format:
+1. \"<tagline>\"
+2. ...
+No explanation.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  exit 0
+fi
+
+# ── RESUME — agents help tailor a resume/bio for a role ──────────────
+if [[ "$1" == "resume" || "$1" == "bio" ]]; then
+  shift
+  ROLE="$*"
+  ROLE="${ROLE:-software engineer}"
+  echo ""
+  echo -e "\033[1;32m📄 RESUME / BIO COACH: $ROLE\033[0m"
+  echo ""
+  RESUME_FILE="$HOME/.blackroad/carpool/resumes/$(echo "$ROLE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/resumes"
+  printf "# Resume Guide: %s\nDate: %s\n\n" "$ROLE" "$(date '+%Y-%m-%d')" > "$RESUME_FILE"
+  for entry in "ARIA|PERSONAL BRAND|Your one-liner. The thing people remember. Sub-headline for LinkedIn/GitHub." "PRISM|KEYWORDS TO HIT|The exact keywords ATS systems and hiring managers scan for in this role." "ALICE|BULLET FORMULA|How to write experience bullets: VERB + WHAT + METRIC. 3 examples." "LUCIDIA|COVER STORY|The narrative arc: where you were → where you are → why this role is the obvious next step." "CIPHER|RED FLAGS TO AVOID|What screams junior, unfocused, or a bad fit for this role in a resume."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} coaching someone applying for: \"${ROLE}\"
+Section: ${section}
+${lens}
+Be specific and direct. Real examples, not platitudes.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$RESUME_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $RESUME_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1

@@ -427,6 +427,10 @@ show_help() {
     echo "║    br carpool migrate <m>   - Migration plan + rollback + validation ║"
     echo "║    br carpool prep <topic>  - Technical interview prep (4 lenses)   ║"
     echo "║    br carpool refactor <f>  - 5-agent refactor plan for a file      ║"
+    echo "║    br carpool roadmap <p>   - Q1-Q4 + Year 2 product roadmap        ║"
+    echo "║    br carpool architect <p> - 4 design approaches + PRISM verdict   ║"
+    echo "║    br carpool tagline <p>   - 25 taglines across 5 styles           ║"
+    echo "║    br carpool resume <role> - Resume/bio coaching for a target role ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
     echo "║    br carpool ask <q>       - Inject follow-up into live session   ║"
@@ -1098,6 +1102,10 @@ main() {
                 migrate|migration) bash /Users/alexa/blackroad/carpool.sh migrate "$@" ;;
                 interview-prep|prep) bash /Users/alexa/blackroad/carpool.sh interview-prep "$@" ;;
                 refactor)   bash /Users/alexa/blackroad/carpool.sh refactor "$@" ;;
+                roadmap)    bash /Users/alexa/blackroad/carpool.sh roadmap "$@" ;;
+                architect)  bash /Users/alexa/blackroad/carpool.sh architect "$@" ;;
+                tagline|slogan) bash /Users/alexa/blackroad/carpool.sh tagline "$@" ;;
+                resume|bio) bash /Users/alexa/blackroad/carpool.sh resume "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
@@ -1357,6 +1365,15 @@ worlds.sort(reverse=True)
                     ;;
                 *)  echo "Usage: br worlds [list|stats|node <name>|view <id>]" ;;
             esac
+            ;;
+        template|tmpl)
+            zsh "${BR_TOOLS_DIR}/template/br-template.sh" "$@"
+            ;;
+        log-tail|logt)
+            zsh "${BR_TOOLS_DIR}/log-tail/br-log-tail.sh" "$@"
+            ;;
+        ssh)
+            zsh "${BR_TOOLS_DIR}/ssh/br-ssh.sh" "$@"
             ;;
         *)
             # Data-driven tool dispatch
