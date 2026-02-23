@@ -4707,6 +4707,162 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── SPRINT — plan a sprint with stories, capacity, and goals ─────────
+if [[ "$1" == "sprint" ]]; then
+  shift
+  GOAL="$*"
+  [[ -z "$GOAL" ]] && echo "Usage: br carpool sprint <sprint goal>" && exit 1
+  echo ""
+  echo -e "\033[1;36m🏃 SPRINT PLAN: $GOAL\033[0m"
+  echo ""
+  SP_FILE="$HOME/.blackroad/carpool/sprints/$(echo "$GOAL" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/sprints"
+  printf "# Sprint: %s\nDate: %s\n\n" "$GOAL" "$(date '+%Y-%m-%d')" > "$SP_FILE"
+  for entry in "ALICE|SPRINT GOAL & COMMITMENT|One crisp sprint goal sentence. What done looks like at the end of the sprint. The commitment the team makes." "PRISM|STORY BREAKDOWN|5-7 user stories scoped for one sprint. Each with a t-shirt size (S/M/L) and acceptance criteria." "OCTAVIA|TECHNICAL TASKS|The engineering tasks behind those stories. Subtasks, spikes, and tech debt items to include." "CIPHER|RISKS & BLOCKERS|What could derail this sprint? Dependencies, unknowns, scope creep. Mitigation per risk." "LUCIDIA|DEFINITION OF DONE|The team-wide quality bar. What must be true for ANY story to be marked done."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} planning a sprint for: \"${GOAL}\"
+Section: ${section}
+${lens}
+Be concrete and actionable. Real story titles, real task names.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$SP_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $SP_FILE\033[0m"
+  exit 0
+fi
+
+# ── OKR — generate OKRs with key results and initiatives ─────────────
+if [[ "$1" == "okr" ]]; then
+  shift
+  TEAM="$*"
+  [[ -z "$TEAM" ]] && echo "Usage: br carpool okr <team or product>" && exit 1
+  echo ""
+  echo -e "\033[1;33m🎯 OKR WORKSHOP: $TEAM\033[0m"
+  echo ""
+  OKR_FILE="$HOME/.blackroad/carpool/okrs/$(echo "$TEAM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/okrs"
+  printf "# OKRs: %s\nDate: %s\n\n" "$TEAM" "$(date '+%Y-%m-%d')" > "$OKR_FILE"
+  # Each agent proposes one O with 3 KRs
+  for ag in LUCIDIA PRISM ARIA ALICE; do
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — PROPOSED OBJECTIVE${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} proposing OKRs for: \"${TEAM}\"
+Write ONE Objective and exactly 3 Key Results.
+
+Rules:
+- Objective: inspiring, qualitative, ≤12 words
+- Each KR: measurable, has a number, has a deadline
+- KRs should be outcomes not outputs
+
+Format:
+O: <objective>
+KR1: <measurable result>
+KR2: <measurable result>
+KR3: <measurable result>
+
+Be ambitious but realistic. Real metrics, real targets.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n### %s\n%s\n" "$ag" "$resp" >> "$OKR_FILE"
+    echo ""
+  done
+  # OCTAVIA picks the strongest and explains why
+  IFS='|' read -r _ col _ emoji <<< "$(agent_meta "OCTAVIA")"
+  echo -e "${col}${emoji} OCTAVIA — FINAL PICK & WHY${NC}"
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are OCTAVIA reviewing OKR proposals for: \"${TEAM}\"
+Which single objective is most likely to drive real progress this quarter?
+Which KR is hardest to game?
+What initiative (project or experiment) should start this week to move toward it?
+Be decisive. One answer each. No hedging.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[OCTAVIA offline]"
+  echo ""
+  echo -e "\033[0;32m✓ Saved to $OKR_FILE\033[0m"
+  exit 0
+fi
+
+# ── HIRING — job description, interview questions, eval rubric ────────
+if [[ "$1" == "hiring" || "$1" == "hire" ]]; then
+  shift
+  ROLE="$*"
+  [[ -z "$ROLE" ]] && echo "Usage: br carpool hiring <role>" && exit 1
+  echo ""
+  echo -e "\033[1;35m👥 HIRING PLAN: $ROLE\033[0m"
+  echo ""
+  H_FILE="$HOME/.blackroad/carpool/hiring/$(echo "$ROLE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/hiring"
+  printf "# Hiring: %s\nDate: %s\n\n" "$ROLE" "$(date '+%Y-%m-%d')" > "$H_FILE"
+  for entry in "ARIA|JOB DESCRIPTION|The 3 things this person will own, the 2 must-have skills, the 1 thing that makes this role special. Max 200 words." "LUCIDIA|INTERVIEW QUESTIONS|5 questions that reveal thinking, not trivia. Include one values question, one ambiguity question, one failure question." "PRISM|EVAL RUBRIC|A scoring matrix: what does WEAK / GOOD / EXCEPTIONAL look like for the top 4 skills needed?" "ALICE|HIRING PROCESS|Stages, who interviews at each stage, what each stage is testing. Max 5 stages." "SHELLFISH|RED FLAGS|The 5 interview signals that mean pass immediately. Behaviors, not demographics."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} helping hire a: \"${ROLE}\"
+Section: ${section}
+${lens}
+Be specific. Real questions, real rubric items, real process steps.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$H_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $H_FILE\033[0m"
+  exit 0
+fi
+
+# ── API-DESIGN — design REST API endpoints with shapes ────────────────
+if [[ "$1" == "api-design" || "$1" == "apidesign" ]]; then
+  shift
+  RESOURCE="$*"
+  [[ -z "$RESOURCE" ]] && echo "Usage: br carpool api-design <resource or feature>" && exit 1
+  echo ""
+  echo -e "\033[1;34m🔌 API DESIGN: $RESOURCE\033[0m"
+  echo ""
+  AD_FILE="$HOME/.blackroad/carpool/api-designs/$(echo "$RESOURCE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/api-designs"
+  printf "# API Design: %s\nDate: %s\n\n" "$RESOURCE" "$(date '+%Y-%m-%d')" > "$AD_FILE"
+  for entry in "OCTAVIA|ENDPOINTS|All routes with method, path, and one-line purpose. Noun-based, consistent, RESTful." "ALICE|REQUEST & RESPONSE SHAPES|JSON body for the 2 most important endpoints. Include required fields, types, and example values." "CIPHER|AUTH & PERMISSIONS|How auth works. Which endpoints need which permissions. Rate limits per tier." "PRISM|ERROR RESPONSES|The error codes this API returns, what each means, and what the client should do." "SHELLFISH|WHAT COULD GO WRONG|Top 5 ways to misuse or break this API. How to prevent each."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing an API for: \"${RESOURCE}\"
+Section: ${section}
+${lens}
+Real endpoint paths, real JSON shapes, real HTTP status codes.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$AD_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $AD_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
