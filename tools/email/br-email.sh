@@ -187,8 +187,10 @@ show_help() {
   echo "  ${CYAN}br email <agent>${NC}        show agent card"
   echo "  ${CYAN}br email me${NC}             show alexa@blackroad.io"
   echo "  ${CYAN}br email cloudflare${NC}     print Cloudflare routing rules"
+  echo "  ${CYAN}br email setup${NC}          configure Cloudflare Email Routing via API"
+  echo "  ${CYAN}br email status${NC}         check routing + catch-all rule status"
   echo "  ${CYAN}br email deploy${NC}         deploy the Cloudflare Email Worker"
-  echo "  ${CYAN}br email api${NC}            query worker API (inbox)"
+  echo "  ${CYAN}br email api [agent]${NC}    query worker inbox API"
   echo ""
   echo "  ${DIM}Agents: lucidia alice octavia aria cecilia cipher${NC}"
   echo "  ${DIM}        prism echo oracle atlas shellfish gematria anastasia${NC}"
@@ -219,9 +221,152 @@ cmd_api() {
   echo ""
 }
 
+# ─── Setup Cloudflare Email Routing via API ───────────────────────────────────
+cmd_setup() {
+  local TOKEN="${CLOUDFLARE_API_TOKEN:-}"
+  local ACCOUNT="848cf0b18d51e0170e0d1537aec3505a"
+  local DOMAIN="blackroad.io"
+  local WORKER="blackroad-email"
+  local DEST="alexa@blackroad.io"
+  local BASE="https://api.cloudflare.com/client/v4"
+
+  if [[ -z "$TOKEN" ]]; then
+    echo "${RED}✗ CLOUDFLARE_API_TOKEN not set${NC}"
+    echo "  ${DIM}export CLOUDFLARE_API_TOKEN=your_token${NC}"
+    exit 1
+  fi
+
+  _cf() { curl -sf -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" "$@"; }
+
+  echo "${BOLD}${CYAN}━━ BlackRoad Email Routing Setup ━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+  # 1. Get zone ID
+  echo "${CYAN}→ Looking up zone for ${DOMAIN}…${NC}"
+  local zone_id
+  zone_id=$(_cf "${BASE}/zones?name=${DOMAIN}&account.id=${ACCOUNT}" | python3 -c "import sys,json; z=json.load(sys.stdin)['result']; print(z[0]['id'] if z else '')" 2>/dev/null)
+  if [[ -z "$zone_id" ]]; then
+    echo "${RED}✗ Zone not found for ${DOMAIN}${NC}"; exit 1
+  fi
+  echo "  ${GREEN}✓ zone_id: ${zone_id}${NC}"
+
+  # 2. Enable email routing
+  echo "${CYAN}→ Enabling Email Routing…${NC}"
+  local enable_out
+  enable_out=$(_cf -X POST "${BASE}/zones/${zone_id}/email/routing/enable" 2>&1)
+  if echo "$enable_out" | python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('success') else 'fail')" 2>/dev/null | grep -q ok; then
+    echo "  ${GREEN}✓ Email Routing enabled${NC}"
+  else
+    echo "  ${YELLOW}⚠ Enable returned: $(echo "$enable_out" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('errors',d))" 2>/dev/null || echo "$enable_out")${NC}"
+    echo "  ${DIM}(may already be enabled — continuing)${NC}"
+  fi
+
+  # 3. Add alexa@blackroad.io as verified destination
+  echo "${CYAN}→ Adding destination: ${DEST}…${NC}"
+  local dest_out
+  dest_out=$(_cf -X POST "${BASE}/accounts/${ACCOUNT}/email/routing/addresses" \
+    -d "{\"email\":\"${DEST}\"}" 2>&1)
+  local dest_status
+  dest_status=$(echo "$dest_out" | python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('success') else d.get('errors',d))" 2>/dev/null)
+  if [[ "$dest_status" == "ok" ]]; then
+    echo "  ${GREEN}✓ Destination added (check email to verify)${NC}"
+  else
+    echo "  ${YELLOW}⚠ Destination: ${dest_status}${NC}"
+    echo "  ${DIM}(may already be verified — continuing)${NC}"
+  fi
+
+  # 4. Create catch-all rule → Worker
+  echo "${CYAN}→ Creating catch-all rule → worker ${WORKER}…${NC}"
+  local rule_payload
+  rule_payload=$(python3 -c "
+import json
+print(json.dumps({
+  'actions': [{'type': 'worker', 'value': ['${WORKER}']}],
+  'enabled': True,
+  'matchers': [{'field': 'to', 'type': 'all'}],
+  'name': 'BlackRoad catch-all → ${WORKER}',
+  'priority': 0
+}))
+")
+  local rule_out
+  rule_out=$(_cf -X POST "${BASE}/zones/${zone_id}/email/routing/rules/catch_all" \
+    -d "$rule_payload" 2>&1)
+  local rule_status
+  rule_status=$(echo "$rule_out" | python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('success') else d.get('errors',d))" 2>/dev/null)
+  if [[ "$rule_status" == "ok" ]]; then
+    echo "  ${GREEN}✓ Catch-all rule created${NC}"
+  else
+    echo "  ${YELLOW}⚠ Rule: ${rule_status}${NC}"
+    echo "  ${DIM}(may already exist — run 'br email status' to check)${NC}"
+  fi
+
+  echo ""
+  echo "${BOLD}${GREEN}━━ Done ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo "  All *@blackroad.io → ${WORKER} worker → forwarded to ${DEST}"
+  echo ""
+  echo "  ${DIM}Test: send an email to lucidia@blackroad.io${NC}"
+  echo "  ${DIM}Check: br email api lucidia${NC}"
+}
+
+# ─── Check Email Routing status ───────────────────────────────────────────────
+cmd_status() {
+  local TOKEN="${CLOUDFLARE_API_TOKEN:-}"
+  local ACCOUNT="848cf0b18d51e0170e0d1537aec3505a"
+  local DOMAIN="blackroad.io"
+  local BASE="https://api.cloudflare.com/client/v4"
+
+  if [[ -z "$TOKEN" ]]; then
+    echo "${RED}✗ CLOUDFLARE_API_TOKEN not set${NC}"; exit 1
+  fi
+
+  _cf() { curl -sf -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" "$@"; }
+
+  echo "${BOLD}${CYAN}━━ Email Routing Status: ${DOMAIN} ━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+  # zone
+  local zone_id
+  zone_id=$(_cf "${BASE}/zones?name=${DOMAIN}&account.id=${ACCOUNT}" | python3 -c "import sys,json; z=json.load(sys.stdin)['result']; print(z[0]['id'] if z else '')" 2>/dev/null)
+  if [[ -z "$zone_id" ]]; then
+    echo "${RED}✗ Zone not found${NC}"; exit 1
+  fi
+
+  # routing status
+  local routing
+  routing=$(_cf "${BASE}/zones/${zone_id}/email/routing" 2>/dev/null)
+  echo "$routing" | python3 -c "
+import sys, json
+d = json.load(sys.stdin).get('result', {})
+enabled = d.get('enabled', False)
+status  = d.get('status', 'unknown')
+GREEN  = '\033[0;32m'; YELLOW = '\033[1;33m'; NC = '\033[0m'; DIM = '\033[2m'
+sym = (GREEN + '✓') if enabled else (YELLOW + '⚠')
+print(f'  {sym} Email Routing: {status}{NC}')
+print(f'  {DIM}  enabled: {enabled}{NC}')
+" 2>/dev/null
+
+  # catch-all rule
+  local catchall
+  catchall=$(_cf "${BASE}/zones/${zone_id}/email/routing/rules/catch_all" 2>/dev/null)
+  echo "$catchall" | python3 -c "
+import sys, json
+d = json.load(sys.stdin).get('result', {})
+actions = d.get('actions', [])
+GREEN  = '\033[0;32m'; YELLOW = '\033[1;33m'; NC = '\033[0m'; DIM = '\033[2m'
+if actions:
+    a = actions[0]
+    print(f\"  {GREEN}✓ Catch-all: {a.get('type')} → {a.get('value', [])}{NC}\")
+else:
+    print(f'  {YELLOW}⚠ No catch-all rule set{NC}')
+    print(f'  {DIM}  run: br email setup{NC}')
+" 2>/dev/null
+
+  echo ""
+}
+
 case "${1:-list}" in
   list|ls|"")             cmd_list ;;
   cloudflare|cf|routing)  cmd_cloudflare ;;
+  setup)                  cmd_setup ;;
+  status|check)           cmd_status ;;
   deploy)                 cmd_deploy ;;
   api|inbox)              cmd_api "${2:-}" ;;
   help|--help|-h)         show_help ;;
