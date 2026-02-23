@@ -4,7 +4,7 @@ const http = require('http')
 const { randomUUID } = require('crypto')
 const fs = require('fs/promises')
 const path = require('path')
-const { getProvider } = require('./providers')
+const { getProvider, listProviders } = require('./providers')
 
 const DEFAULT_CONFIG = {
   bind: '127.0.0.1',
@@ -348,6 +348,35 @@ async function start() {
           return send(200, { status: 'ok', worlds: data })
         } catch (e) {
           return send(502, { status: 'error', error: 'worlds feed unavailable' })
+        }
+      }
+
+
+      // ---------------------------------------------------------------
+      // Providers list endpoint
+      // ---------------------------------------------------------------
+      if (req.method === 'GET' && req.url === '/v1/providers') {
+        if (!config.allowRemote && !isLoopback(req)) {
+          return send(403, { status: 'error', error: 'Remote access denied' })
+        }
+        return send(200, { status: 'ok', providers: listProviders() })
+      }
+
+      // ---------------------------------------------------------------
+      // Verify endpoint - proxy to verify.blackroad.io
+      // ---------------------------------------------------------------
+      if (req.method === 'POST' && req.url === '/v1/verify') {
+        try {
+          const verBody = await readBody(req, 65536)
+          const vr = await fetch('https://verify.blackroad.io/verify/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: verBody
+          })
+          const vd = await vr.json()
+          return send(200, { status: 'ok', ...vd })
+        } catch (e) {
+          return send(502, { status: 'error', error: 'verify service unavailable' })
         }
       }
 
