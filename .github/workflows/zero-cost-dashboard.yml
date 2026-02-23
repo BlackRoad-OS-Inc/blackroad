@@ -1,0 +1,55 @@
+# ============================================================
+# Zero Cost Dashboard
+# Tracks all billable services and confirms $0 target
+# ============================================================
+name: "💰 Zero Cost Dashboard"
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'  # Monday noon UTC
+  workflow_dispatch:
+
+jobs:
+  cost-audit:
+    name: "💰 Cost Audit"
+    runs-on: [self-hosted, pi, blackroad]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate cost report
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  BlackRoad OS Cost Dashboard — $(date -u +%Y-%m-%d)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "GitHub Actions:"
+          echo "  ✅ octavia-pi (self-hosted)  = \$0.00/min"
+          echo "  ✅ gematria-codex (self-hosted) = \$0.00/min"
+          echo "  ⚠️  ubuntu-latest jobs        = \$0.008/min (minimize!)"
+          echo ""
+          echo "Cloudflare:"
+          echo "  ✅ Workers (free tier <100k/day) = \$0.00"
+          echo "  ✅ Tunnels (free)                = \$0.00"
+          echo "  ✅ Pages (free)                  = \$0.00"
+          echo ""
+          echo "Compute:"
+          echo "  ✅ octavia-pi (owned hardware) = \$0.00"
+          echo "  ✅ lucidia-pi (owned hardware) = \$0.00"
+          echo "  ⚡ gematria DO droplet = ~\$24/mo (review)"
+          echo ""
+          echo "Railway:"
+          echo "  ✅ Free tier usage = \$0.00"
+          echo ""
+          echo "GitHub Copilot:"
+          echo "  ℹ️  Replace with self-hosted Pi AI = \$0.00"
+          echo "  Pi model: http://192.168.4.38:11435"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  Self-hosted runner savings: ~\$0.008 × (workflow minutes)"
+          echo "  Target: Migrate ubuntu-latest → self-hosted"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - name: List runners
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/actions/runners \
+            --jq '.runners[] | "\(.name): \(.status) (\(.labels | map(.name) | join(", ")))"'

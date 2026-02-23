@@ -1,0 +1,49 @@
+# HuggingFace Model Sync to Pi Fleet — Cost: $0
+name: �� HuggingFace Model Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Model ID to pull (e.g., meta-llama/Llama-3.2-3B)'
+        required: true
+      target:
+        description: 'Target Pi (octavia/alice/all)'
+        required: false
+        default: 'octavia'
+
+jobs:
+  sync-model:
+    name: 🚀 Pull Model to ${{ github.event.inputs.target }}
+    runs-on: [self-hosted, blackroad-fleet, octavia]
+    steps:
+      - name: 🤗 Pull from HuggingFace
+        env:
+          HF_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+        run: |
+          MODEL="${{ github.event.inputs.model }}"
+          echo "Pulling $MODEL from HuggingFace..."
+          
+          # Use huggingface-cli if available
+          if which huggingface-cli; then
+            huggingface-cli download "$MODEL" --local-dir ~/models/$(basename $MODEL)
+          else
+            python3 -c "
+from huggingface_hub import snapshot_download
+import os
+token = os.environ.get('HF_TOKEN')
+path = snapshot_download('$MODEL', token=token, local_dir=os.path.expanduser('~/models/$(basename $MODEL)'))
+print(f'Downloaded to: {path}')
+"
+          fi
+          
+      - name: 🤖 Convert to Ollama (if GGUF)
+        run: |
+          MODEL_DIR=~/models/$(basename ${{ github.event.inputs.model }})
+          # Check if there's a GGUF file
+          GGUF=$(find $MODEL_DIR -name "*.gguf" 2>/dev/null | head -1)
+          if [ -n "$GGUF" ]; then
+            MODEL_NAME=$(basename ${{ github.event.inputs.model }} | tr '[:upper:]' '[:lower:]')
+            ollama create "hf-$MODEL_NAME" -f <(echo "FROM $GGUF")
+            echo "✅ Model registered in ollama as hf-$MODEL_NAME"
+          fi
