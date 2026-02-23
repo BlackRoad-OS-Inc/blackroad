@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   Sparkles,
   Cpu,
+  Server,
+  Zap,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWorkspaceStore } from '@/stores/workspace-store';
@@ -33,6 +35,8 @@ export default function Sidebar() {
     { name: 'Worlds',         href: '/worlds',         icon: Globe },
     { name: 'Verify',         href: '/verify',         icon: ShieldCheck },
     { name: 'Governance',     href: '/governance',     icon: Shield },
+    { name: 'Fleet',          href: '/fleet',          icon: Server },
+    { name: 'Workers',        href: '/workers',        icon: Zap },
     { name: 'Onboarding',     href: '/onboarding',     icon: Sparkles },
     { name: 'Settings',       href: '/settings',       icon: Settings },
   ];

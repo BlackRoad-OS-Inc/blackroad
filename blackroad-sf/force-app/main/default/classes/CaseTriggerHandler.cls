@@ -76,7 +76,7 @@ public with sharing class CaseTriggerHandler {
                     Confidence__c = 100,
                     MemoryHash__c = EncodingUtil.convertToHex(
                         Crypto.generateDigest('SHA-256',
-                            Blob.valueOf(c.Id + DateTime.now().getTime())))
+                            Blob.valueOf(c.Id + String.valueOf(DateTime.now().getTime()))))
                 ));
 
                 // Fire the training Flow via Platform Event (async)
@@ -102,7 +102,7 @@ public with sharing class CaseTriggerHandler {
                     Confidence__c = 100,
                     MemoryHash__c = EncodingUtil.convertToHex(
                         Crypto.generateDigest('SHA-256',
-                            Blob.valueOf(c.Id + c.Status + DateTime.now().getTime())))
+                            Blob.valueOf(c.Id + c.Status + String.valueOf(DateTime.now().getTime()))))
                 ));
             }
         }

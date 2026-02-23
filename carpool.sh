@@ -11206,6 +11206,196 @@ PYEOF
   echo "✅ Testing strategy roundtable complete."; exit 0
 fi
 
+if [[ "$1" == "capacity-planning" ]]; then
+  TOPIC="capacity planning"; QUESTION="How do you do capacity planning for production systems? Cover demand forecasting, load testing to find limits, headroom buffers, cost-vs-performance trade-offs, auto-scaling vs pre-provisioning, and communicating capacity needs to finance and leadership."
+  AGENTS=("SRE" "Infrastructure Architect" "Engineering Manager" "FinOps Lead" "Staff Engineer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "📐 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/capacity-planning-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "Capacity Planning Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ Capacity planning roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "code-review-culture" ]]; then
+  TOPIC="code review culture"; QUESTION="How do you build a healthy code review culture? Cover what to actually review vs automate, tone and feedback framing, async vs synchronous reviews, PR size guidelines, avoiding review bottlenecks, author vs reviewer responsibilities, and measuring review health with DORA metrics."
+  AGENTS=("Staff Engineer" "Engineering Manager" "Senior Developer" "Tech Lead" "DevEx Lead")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "👁️  CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/code-review-culture-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "Code Review Culture Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ Code review culture roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "multi-tenancy" ]]; then
+  TOPIC="multi-tenancy architecture"; QUESTION="How do you design a multi-tenant SaaS system? Cover tenant isolation strategies (shared schema, schema-per-tenant, db-per-tenant), noisy neighbor prevention, tenant-aware routing, data portability, onboarding automation, and how isolation requirements evolve moving upmarket to enterprise."
+  AGENTS=("SaaS Architect" "Backend Lead" "Security Engineer" "Product Manager" "Staff Engineer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "🏢 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/multi-tenancy-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "Multi-Tenancy Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ Multi-tenancy roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "gitops" ]]; then
+  TOPIC="GitOps"; QUESTION="How do you implement GitOps for infrastructure and application delivery? Cover the GitOps principles, Flux vs ArgoCD trade-offs, declarative infrastructure, drift detection and reconciliation, multi-cluster management, secrets management in GitOps (SOPS, Sealed Secrets), and handling hotfixes when git-first slows you down."
+  AGENTS=("Platform Engineer" "DevOps Architect" "SRE" "Staff Engineer" "Security Engineer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "🐙 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/gitops-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "GitOps Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ GitOps roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "progressive-delivery" ]]; then
+  TOPIC="progressive delivery"; QUESTION="How do you implement progressive delivery to ship safely? Cover feature flags (LaunchDarkly, Unleash, homegrown), canary releases, blue-green deployments, ring-based rollouts, automatic rollback triggers, and how progressive delivery separates deploy from release."
+  AGENTS=("Release Engineer" "Platform Lead" "SRE" "Product Manager" "Staff Engineer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "🚀 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/progressive-delivery-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "Progressive Delivery Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ Progressive delivery roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "data-quality" ]]; then
+  TOPIC="data quality engineering"; QUESTION="How do you build data quality into pipelines? Cover data profiling, schema validation, statistical anomaly detection, Great Expectations vs dbt tests, data contracts between producers and consumers, lineage tracking, SLOs for data freshness and accuracy, and incident response for bad data."
+  AGENTS=("Data Engineer" "Data Architect" "Analytics Lead" "Platform Engineer" "Data Scientist")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "🧹 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/data-quality-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "Data Quality Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ Data quality roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "resilience-patterns" ]]; then
+  TOPIC="resilience patterns"; QUESTION="What are the essential resilience patterns for distributed systems? Cover circuit breakers, bulkhead isolation, retry with exponential backoff and jitter, timeout budgets, fallback strategies, load shedding, and how to test resilience with chaos engineering before incidents find your weaknesses."
+  AGENTS=("Distributed Systems Engineer" "SRE" "Backend Architect" "Platform Lead" "Staff Engineer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "🛡️  CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/resilience-patterns-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "Resilience Patterns Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ Resilience patterns roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "zero-downtime-deploy" ]]; then
+  TOPIC="zero-downtime deployments"; QUESTION="How do you achieve zero-downtime deployments for stateful systems? Cover database migrations with expand-contract pattern, connection draining, rolling updates vs blue-green, handling in-flight requests during deploys, long-running jobs, and online schema changes on large tables without locking."
+  AGENTS=("Platform Engineer" "Backend Lead" "Database Engineer" "SRE" "Staff Engineer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "⬇️  CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/zero-downtime-deploy-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "Zero-Downtime Deploy Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ Zero-downtime deploy roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "multi-region" ]]; then
+  TOPIC="multi-region architecture"; QUESTION="How do you design a multi-region system? Cover active-active vs active-passive trade-offs, latency-based routing, data replication and conflict resolution, data sovereignty and regulatory requirements, failover automation, and the true operational complexity cost of going multi-region."
+  AGENTS=("Distributed Systems Architect" "SRE" "Backend Lead" "Legal Counsel" "Staff Engineer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "🌍 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/multi-region-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "Multi-Region Architecture Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ Multi-region architecture roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "idempotency" ]]; then
+  TOPIC="idempotency design"; QUESTION="How do you design idempotent APIs and operations? Cover idempotency keys, at-least-once vs exactly-once delivery, safe vs unsafe HTTP methods, deduplication windows, database upsert patterns, handling concurrent duplicate requests, idempotency in distributed transactions, and testing idempotency."
+  AGENTS=("Backend Architect" "API Designer" "Staff Engineer" "Payments Engineer" "Platform Lead")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "♻️  CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/idempotency-$(date +%Y%m%d-%H%M%S).txt"; mkdir -p "$SAVE_DIR"; echo "Idempotency Design Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do AGENT="${AGENTS[$i]}"; echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+); echo ""; echo "[$AGENT]"; echo "$REPLY"; echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"; done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; echo "✅ Idempotency design roundtable complete."; exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
