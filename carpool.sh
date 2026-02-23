@@ -2589,6 +2589,182 @@ print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
   exit 0
 fi
 
+# ── DRAFT — agents co-write a doc (RFC/ADR/README/email/relnotes) ──
+if [[ "$1" == "draft" ]]; then
+  _type="${2:-rfc}"
+  _topic="${*:3}"
+  [[ -z "$_topic" ]] && echo -e "${RED}Usage: br carpool draft <rfc|adr|readme|email|release> <topic>${NC}" && exit 1
+  DRAFT_DIR="$HOME/.blackroad/carpool/drafts"
+  mkdir -p "$DRAFT_DIR"
+  _slug=$(echo "$_topic" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-' | cut -c1-30)
+  _out="${DRAFT_DIR}/$(date '+%Y-%m-%d')-${_type}-${_slug}.md"
+
+  case "${_type,,}" in
+    rfc)   _struct="# RFC: {topic}\n\n## Summary\n## Motivation\n## Proposal\n## Alternatives\n## Risks" ;;
+    adr)   _struct="# ADR: {topic}\n\n## Status\n## Context\n## Decision\n## Consequences" ;;
+    readme) _struct="# {topic}\n\n## What\n## Why\n## Quick Start\n## Usage\n## Contributing" ;;
+    email) _struct="Subject: {topic}\n\nContext, ask, timeline, CTA" ;;
+    release|relnotes) _struct="# Release Notes — {topic}\n\n## What's New\n## Bug Fixes\n## Breaking Changes\n## Upgrade Guide" ;;
+    *)     _struct="# {topic}\n\nIntro, body, conclusion" ;;
+  esac
+
+  echo -e "\n${WHITE}📝 Draft: ${_type^^}${NC}  ${DIM}${_topic}${NC}\n"
+
+  # Section agents: LUCIDIA writes, PRISM adds data, CIPHER adds risks, ARIA polishes
+  _sections=("full first draft" "data points & evidence" "risks & caveats" "clarity & tone polish")
+  _sagents=(LUCIDIA PRISM CIPHER ARIA)
+
+  _running=""
+  for i in 0 1 2 3; do
+    _sa="${_sagents[$i]}"
+    _ss="${_sections[$i]}"
+    agent_meta "$_sa"
+    _sc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,sec,typ,topic,prev,struct=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7]
+prev_str=f'PREVIOUS DRAFT:\n{prev}\n\n' if prev else ''
+prompt=f'''You are {agent}, {role}. Task: {sec} for a {typ} document.
+Topic: \"{topic}\"
+Structure hint: {struct}
+{prev_str}Write or improve the draft. Output the full document text only, no meta-commentary.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':300,'temperature':0.6,'stop':['---END---']}}))" \
+    "$_sa" "$ROLE" "$_ss" "$_type" "$_topic" "$_running" "$_struct" 2>/dev/null)
+    echo -ne "${_sc}${EMOJI} ${_sa}${NC}  ${DIM}${_ss}...${NC}"
+    _running=$(curl -s -m 60 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_sc}${EMOJI} ${_sa}${NC}  ${DIM}${_ss} ✓${NC}"
+  done
+
+  echo -e "\n${WHITE}── Final Draft ──────────────────${NC}\n"
+  echo "$_running"
+  echo "$_running" > "$_out"
+  echo -e "\n${DIM}Saved → ${_out}${NC}"
+  exit 0
+fi
+
+# ── REFRAME — agents attack a problem from radical angles ────
+if [[ "$1" == "reframe" ]]; then
+  _prob="${*:2}"
+  [[ -z "$_prob" ]] && echo -e "${RED}Usage: br carpool reframe <problem>${NC}" && exit 1
+  echo -e "\n${WHITE}🔄 Reframe${NC}  ${DIM}${_prob}${NC}\n"
+  RF_AGENTS=(LUCIDIA    SHELLFISH   ARIA      ECHO      PRISM)
+  RF_LENS=(
+    "invert it — what if the problem IS the solution"
+    "10x it — what if the constraint was 100x harder"
+    "user lens — who actually suffers and why"
+    "historical lens — has this been solved before, differently"
+    "data lens — what if your assumptions are wrong"
+  )
+  for i in 0 1 2 3 4; do
+    _ra="${RF_AGENTS[$i]}"
+    _rl="${RF_LENS[$i]}"
+    agent_meta "$_ra"
+    _rc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,prob=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}.
+Reframe this problem through this lens: {lens}
+Problem: \"{prob}\"
+Give ONE sharp reframe in 2-3 sentences. Start with the reframe, not an explanation of what you are doing.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':100,'temperature':0.9,'stop':['---']}}))" \
+    "$_ra" "$ROLE" "$_rl" "$_prob" 2>/dev/null)
+    echo -ne "${_rc}${EMOJI} ${_ra}${NC}  ${DIM}${_rl:0:45}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_rc}${EMOJI} ${_ra}${NC}  ${DIM}${_rl}${NC}"
+    echo -e "${_resp}\n"
+  done
+  exit 0
+fi
+
+# ── METRICS — define success metrics / KPIs for a feature ────
+if [[ "$1" == "metrics" ]]; then
+  _feat="${*:2}"
+  THEME_FILE="$HOME/.blackroad/carpool/theme.txt"
+  _ctx=""
+  [[ -f "$THEME_FILE" ]] && _ctx=$(cat "$THEME_FILE")
+  [[ -z "$_feat" && -n "$_ctx" ]] && _feat="$_ctx"
+  [[ -z "$_feat" ]] && echo -e "${RED}Usage: br carpool metrics <feature>${NC}" && exit 1
+  echo -e "\n${WHITE}📊 Metrics Design${NC}  ${DIM}${_feat}${NC}\n"
+  MT_AGENTS=(PRISM OCTAVIA ARIA CIPHER)
+  MT_LENS=("product / business metrics" "technical / performance metrics" "UX / user behavior metrics" "security / reliability metrics")
+  for i in 0 1 2 3; do
+    _mta="${MT_AGENTS[$i]}"
+    _mtl="${MT_LENS[$i]}"
+    agent_meta "$_mta"
+    _mtc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,feat=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Define {lens} for this feature.
+Feature: \"{feat}\"
+List 3 metrics. Format each as:
+METRIC: <name>
+MEASURE: <how to measure it>
+TARGET: <what good looks like>
+Be specific and measurable.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':160,'temperature':0.5,'stop':['---','Note:']}}))" \
+    "$_mta" "$ROLE" "$_mtl" "$_feat" 2>/dev/null)
+    echo -ne "${_mtc}${EMOJI} ${_mta}${NC}  ${DIM}${_mtl}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_mtc}${EMOJI} ${_mta}${NC}  ${DIM}${_mtl}${NC}"
+    echo -e "${_resp}\n"
+  done
+  exit 0
+fi
+
+# ── PAIR — pair programming on a local file ───────────────────
+if [[ "$1" == "pair" ]]; then
+  _file="${2:-}"
+  [[ -z "$_file" ]] && echo -e "${RED}Usage: br carpool pair <file>${NC}" && exit 1
+  [[ ! -f "$_file" ]] && echo -e "${RED}File not found: ${_file}${NC}" && exit 1
+  _ext="${_file##*.}"
+  _code=$(head -80 "$_file")
+  _lines=$(wc -l < "$_file" | tr -d ' ')
+  echo -e "\n${WHITE}👯 Pair Programming${NC}  ${DIM}${_file}  (${_lines} lines, .${_ext})${NC}\n"
+  PAIR_AGENTS=(OCTAVIA SHELLFISH PRISM)
+  PAIR_LENS=("architecture & next steps" "bugs & edge cases" "refactor opportunities")
+  for i in 0 1 2; do
+    _pra="${PAIR_AGENTS[$i]}"
+    _prl="${PAIR_LENS[$i]}"
+    agent_meta "$_pra"
+    _prc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,ext,code=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5]
+prompt=f'''You are {agent}, {role}. Pair programming session.
+File type: .{ext}
+Focus: {lens}
+CODE (first 80 lines):
+{code}
+
+Give 2-3 specific, actionable observations. Reference actual line content when possible.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':160,'temperature':0.5,'stop':['---']}}))" \
+    "$_pra" "$ROLE" "$_prl" "$_ext" "$_code" 2>/dev/null)
+    echo -ne "${_prc}${EMOJI} ${_pra}${NC}  ${DIM}${_prl}...${NC}"
+    _resp=$(curl -s -m 60 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_prc}${EMOJI} ${_pra}${NC}  ${DIM}${_prl}${NC}"
+    echo -e "${_resp}\n"
+  done
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
