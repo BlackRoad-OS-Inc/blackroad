@@ -2,7 +2,7 @@
 # BR Dashboard — live single-pane terminal dashboard
 # br dashboard [refresh-secs]  (default: 5s, Ctrl-C to exit)
 
-AMBER=$'\033[38;5;214m'; PINK=$'\033[38;5;205m'; VIOLET=$'\033[38;5;135m'
+AMBER=$'\033[38;5;214m'; PINK=$'\033[38;5;205m'; VIOLET=$'\033[38;5;135m'; PURPLE=$'\033[0;35m'
 CYAN=$'\033[0;36m'; GREEN=$'\033[0;32m'; RED=$'\033[0;31m'
 YELLOW=$'\033[1;33m'; BOLD=$'\033[1m'; DIM=$'\033[2m'; NC=$'\033[0m'
 
@@ -99,6 +99,24 @@ except: print('?')
   echo ""
 }
 
+section_worlds() {
+  printf "  ${BOLD}%-20s${NC}" "WORLDS"
+  local aria=$(ssh -o ConnectTimeout=2 alexa@192.168.4.38 "ls /home/alexa/blackroad-repos/blackroad-agents/worlds/*.md 2>/dev/null | wc -l" 2>/dev/null | tr -d ' ')
+  local alice=$(ssh -o ConnectTimeout=2 blackroad@192.168.4.49 "ls /home/blackroad/.blackroad/worlds/*.md 2>/dev/null | wc -l" 2>/dev/null | tr -d ' ')
+  local total=$(( ${aria:-0} + ${alice:-0} ))
+  printf "${PURPLE}aria64 %s${NC}  ${CYAN}alice %s${NC}  ${BOLD}total ${GREEN}%s${NC}" "${aria:-?}" "${alice:-?}" "$total"
+  echo ""
+}
+
+section_workers() {
+  printf "  ${BOLD}%-20s${NC}" "CF WORKERS"
+  for W in worlds verify agents-status models worlds-feed studio; do
+    local ok=$(curl -sf --max-time 2 "https://${W}.blackroad.io/health" 2>/dev/null && echo "1" || echo "0")
+    [ "$ok" = "1" ] && printf "${GREEN}●${NC}${W} " || printf "${DIM}○${NC}${W} "
+  done
+  echo ""
+}
+
 section_collab() {
   printf "  ${BOLD}%-20s${NC}" "MESH"
   local online=0 standby=0 total=0
@@ -143,6 +161,8 @@ run_once() {
   echo ""
   section_health
   section_pis
+  section_worlds
+  section_workers
   section_system
   section_git
   section_journal
