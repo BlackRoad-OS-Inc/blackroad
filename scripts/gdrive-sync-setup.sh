@@ -1,68 +1,81 @@
 #!/bin/bash
-# Google Drive sync via rclone
-# Run once interactively to auth, then sets up automated sync
-
+# Google Drive Sync for BlackRoad local files
+# Uses rclone with service account (no OAuth prompt)
 set -e
-GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
+GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
-echo -e "${CYAN}📁 Setting up Google Drive sync${NC}"
+RCLONE_CONFIG="$HOME/.config/rclone/rclone.conf"
+BLACKROAD_DIR="/Users/alexa/blackroad"
+GDRIVE_REMOTE="gdrive-blackroad"
+GDRIVE_FOLDER="BlackRoad-OS-Backup"
 
-# Install rclone
-which rclone >/dev/null 2>&1 || curl https://rclone.org/install.sh | sudo bash
+install_rclone() {
+    which rclone || curl -s https://rclone.org/install.sh | sudo bash
+    echo "rclone version: $(rclone --version | head -1)"
+}
 
-# Configure remote (interactive - opens browser)
-if ! rclone listremotes 2>/dev/null | grep -q "gdrive:"; then
-  echo -e "${CYAN}🔐 Configuring Google Drive remote (browser auth required)...${NC}"
-  rclone config create gdrive drive scope=drive
-fi
+setup_gdrive() {
+    echo -e "${CYAN}Setting up Google Drive remote...${NC}"
+    mkdir -p "$(dirname $RCLONE_CONFIG)"
+    
+    # Check if already configured
+    if rclone listremotes | grep -q "$GDRIVE_REMOTE:"; then
+        echo "✅ Remote already configured"
+        return
+    fi
+    
+    cat << EOF
+To set up Google Drive sync:
 
-# Create sync script
-cat > ~/blackroad-gdrive-sync.sh << 'SYNC'
-#!/bin/bash
-DATE=$(date +%Y%m%d-%H%M)
-echo "[${DATE}] Starting BlackRoad → Google Drive sync..."
+1. Create a service account at: https://console.cloud.google.com/iam-admin/serviceaccounts
+2. Enable Google Drive API
+3. Download the JSON key
+4. Run: rclone config
+   - Name: $GDRIVE_REMOTE
+   - Storage: drive
+   - Auth: service_account_file
+   - service_account_file: /path/to/key.json
+   - scope: drive
 
-# Sync main repo (exclude large dirs)
-rclone sync /Users/alexa/blackroad gdrive:blackroad-backup/main \
-  --exclude ".git/**" \
-  --exclude "node_modules/**" \
-  --exclude "*.log" \
-  --exclude ".blackroad/backups/**" \
-  --filter "+ *.sh" \
-  --filter "+ *.json" \
-  --filter "+ *.md" \
-  --filter "+ *.ts" \
-  --filter "+ *.js" \
-  --filter "- **" \
-  --transfers 8 \
-  --checkers 16 \
-  --log-level INFO \
-  --log-file ~/.blackroad/logs/gdrive-sync.log
+OR run interactively:
+  rclone config create $GDRIVE_REMOTE drive scope drive
 
-echo "[${DATE}] Sync complete"
-SYNC
-chmod +x ~/blackroad-gdrive-sync.sh
+For headless Pi setup, use service account JSON.
+EOF
+}
 
-# macOS: launchd agent for daily sync
-PLIST="$HOME/Library/LaunchAgents/io.blackroad.gdrive-sync.plist"
-cat > "$PLIST" << PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>io.blackroad.gdrive-sync</string>
-  <key>ProgramArguments</key>
-  <array><string>$HOME/blackroad-gdrive-sync.sh</string></array>
-  <key>StartCalendarInterval</key>
-  <dict><key>Hour</key><integer>2</integer><key>Minute</key><integer>0</integer></dict>
-  <key>RunAtLoad</key><false/>
-  <key>StandardOutPath</key><string>$HOME/.blackroad/logs/gdrive-sync.log</string>
-  <key>StandardErrorPath</key><string>$HOME/.blackroad/logs/gdrive-sync-err.log</string>
-</dict>
-</plist>
-PLIST
+sync_to_gdrive() {
+    local DRY_RUN=${1:-"--dry-run"}
+    echo -e "${CYAN}Syncing $BLACKROAD_DIR → $GDRIVE_REMOTE:$GDRIVE_FOLDER${NC}"
+    
+    rclone sync "$BLACKROAD_DIR" "$GDRIVE_REMOTE:$GDRIVE_FOLDER" \
+        $DRY_RUN \
+        --exclude ".git/**" \
+        --exclude "node_modules/**" \
+        --exclude "*.save" \
+        --exclude "orgs/**" \
+        --exclude "repos/**" \
+        --exclude "cece-logs/**" \
+        --exclude "*.log" \
+        --progress \
+        --transfers 8 \
+        --checkers 16
+}
 
-mkdir -p ~/.blackroad/logs
-launchctl load "$PLIST" 2>/dev/null || launchctl bootstrap gui/$(id -u) "$PLIST" 2>/dev/null || true
-echo -e "${GREEN}✅ Google Drive sync scheduled daily at 2am${NC}"
-echo -e "${CYAN}Run manually: ~/blackroad-gdrive-sync.sh${NC}"
+create_cron() {
+    # Run sync every hour
+    (crontab -l 2>/dev/null; echo "0 * * * * $0 sync >> /tmp/gdrive-sync.log 2>&1") | crontab -
+    echo "✅ Hourly sync cron installed"
+}
+
+case "${1:-help}" in
+    install) install_rclone ;;
+    setup)   setup_gdrive ;;
+    sync)    sync_to_gdrive "--progress" ;;
+    dry-run) sync_to_gdrive "--dry-run" ;;
+    cron)    create_cron ;;
+    *)
+        echo "Usage: $0 {install|setup|sync|dry-run|cron}"
+        echo "Google Drive sync for BlackRoad files"
+        ;;
+esac
