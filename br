@@ -303,6 +303,12 @@ BR_TOOLS=(
     pi-monitor  "${BR_TOOLS_DIR}/pi-monitor/br-pi-monitor.sh"
     pi-health   "${BR_TOOLS_DIR}/pi-monitor/br-pi-monitor.sh"
     fleet-health "${BR_TOOLS_DIR}/pi-monitor/br-pi-monitor.sh"
+    # Wave 18 — mock/trace/db-migrate
+    mock        "${BR_TOOLS_DIR}/mock-server/br-mock-server.sh"
+    mock-server "${BR_TOOLS_DIR}/mock-server/br-mock-server.sh"
+    trace       "${BR_TOOLS_DIR}/trace-http/br-trace-http.sh"
+    trace-http  "${BR_TOOLS_DIR}/trace-http/br-trace-http.sh"
+    http-trace  "${BR_TOOLS_DIR}/trace-http/br-trace-http.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -2083,6 +2089,53 @@ main() {
                 backstage-patterns|backstage|developer-portal) bash /Users/alexa/blackroad/carpool.sh backstage-patterns "$@" ;;
                 service-catalog|service-ownership|dependency-graph) bash /Users/alexa/blackroad/carpool.sh service-catalog "$@" ;;
                 capability-model|dora-metrics|space-framework) bash /Users/alexa/blackroad/carpool.sh capability-model "$@" ;;
+                siem-engineering|sigma-rules|log-correlation) bash /Users/alexa/blackroad/carpool.sh siem-engineering "$@" ;;
+                soar-automation|playbook-automation|alert-triage) bash /Users/alexa/blackroad/carpool.sh soar-automation "$@" ;;
+                red-team-ops|adversary-sim|c2-frameworks) bash /Users/alexa/blackroad/carpool.sh red-team-ops "$@" ;;
+                incident-response|ir-runbooks|postmortem) bash /Users/alexa/blackroad/carpool.sh incident-response "$@" ;;
+                vulnerability-mgmt|cvss-epss|vuln-program) bash /Users/alexa/blackroad/carpool.sh vulnerability-mgmt "$@" ;;
+                btree-internals|b-tree|page-splits) bash /Users/alexa/blackroad/carpool.sh btree-internals "$@" ;;
+                lsm-trees|rocksdb|write-amplification) bash /Users/alexa/blackroad/carpool.sh lsm-trees "$@" ;;
+                mvcc-internals|snapshot-isolation|version-chain) bash /Users/alexa/blackroad/carpool.sh mvcc-internals "$@" ;;
+                query-optimizer|explain-analyze|cost-model) bash /Users/alexa/blackroad/carpool.sh query-optimizer "$@" ;;
+                pg-extensions|postgres-extensions|pgrx) bash /Users/alexa/blackroad/carpool.sh pg-extensions "$@" ;;
+                bgp-engineering|anycast|rpki) bash /Users/alexa/blackroad/carpool.sh bgp-engineering "$@" ;;
+                dpdk-networking|kernel-bypass|userspace-networking) bash /Users/alexa/blackroad/carpool.sh dpdk-networking "$@" ;;
+                ebpf-networking|xdp|cilium-ebpf) bash /Users/alexa/blackroad/carpool.sh ebpf-networking "$@" ;;
+                network-automation|napalm|netconf-yang) bash /Users/alexa/blackroad/carpool.sh network-automation "$@" ;;
+                ipv6-migration|dual-stack|nat64) bash /Users/alexa/blackroad/carpool.sh ipv6-migration "$@" ;;
+                hexagonal-arch|ports-adapters|clean-arch-adv) bash /Users/alexa/blackroad/carpool.sh hexagonal-arch "$@" ;;
+                reactive-systems|backpressure|akka-streams) bash /Users/alexa/blackroad/carpool.sh reactive-systems "$@" ;;
+                choreography-vs-orchestration|saga-adv|workflow-design) bash /Users/alexa/blackroad/carpool.sh choreography-vs-orchestration "$@" ;;
+                distributed-consensus|raft|paxos) bash /Users/alexa/blackroad/carpool.sh distributed-consensus "$@" ;;
+                crdt-patterns|automerge|conflict-free) bash /Users/alexa/blackroad/carpool.sh crdt-patterns "$@" ;;
+                spatial-computing|visionos|room-mapping) bash /Users/alexa/blackroad/carpool.sh spatial-computing "$@" ;;
+                xr-engineering|webxr|vr-ar-eng) bash /Users/alexa/blackroad/carpool.sh xr-engineering "$@" ;;
+                metaverse-infra|persistent-world|avatar-systems) bash /Users/alexa/blackroad/carpool.sh metaverse-infra "$@" ;;
+                ambient-computing|context-aware|always-on) bash /Users/alexa/blackroad/carpool.sh ambient-computing "$@" ;;
+                voice-engineering|asr-tts|dialog-systems) bash /Users/alexa/blackroad/carpool.sh voice-engineering "$@" ;;
+                computer-vision-eng|yolo|object-detection) bash /Users/alexa/blackroad/carpool.sh computer-vision-eng "$@" ;;
+                recommendation-systems|two-tower|collab-filtering) bash /Users/alexa/blackroad/carpool.sh recommendation-systems "$@" ;;
+                nlp-pipelines|ner-pipeline|text-classification) bash /Users/alexa/blackroad/carpool.sh nlp-pipelines "$@" ;;
+                multimodal-eng|vision-language|audio-visual) bash /Users/alexa/blackroad/carpool.sh multimodal-eng "$@" ;;
+                llm-pretraining|data-curation|mfu-training) bash /Users/alexa/blackroad/carpool.sh llm-pretraining "$@" ;;
+                rlhf-engineering|dpo|reward-model) bash /Users/alexa/blackroad/carpool.sh rlhf-engineering "$@" ;;
+                gpu-programming|cuda|triton-gpu) bash /Users/alexa/blackroad/carpool.sh gpu-programming "$@" ;;
+                distributed-training|fsdp|zero-optimizer) bash /Users/alexa/blackroad/carpool.sh distributed-training "$@" ;;
+                kernel-engineering|linux-kernel|syscall-eng) bash /Users/alexa/blackroad/carpool.sh kernel-engineering "$@" ;;
+                lock-free-programming|cas-ops|hazard-pointers) bash /Users/alexa/blackroad/carpool.sh lock-free-programming "$@" ;;
+                memory-allocators|jemalloc|mimalloc) bash /Users/alexa/blackroad/carpool.sh memory-allocators "$@" ;;
+                simd-vectorization|avx512|neon-arm) bash /Users/alexa/blackroad/carpool.sh simd-vectorization "$@" ;;
+                cache-hardware|cache-lines|false-sharing) bash /Users/alexa/blackroad/carpool.sh cache-hardware "$@" ;;
+                storage-engines|wal-design|buffer-pool) bash /Users/alexa/blackroad/carpool.sh storage-engines "$@" ;;
+                protocol-design|framing-protocols|multiplexing) bash /Users/alexa/blackroad/carpool.sh protocol-design "$@" ;;
+                serialization-formats|protobuf|apache-arrow) bash /Users/alexa/blackroad/carpool.sh serialization-formats "$@" ;;
+                chaos-engineering-adv|game-days|fault-injection) bash /Users/alexa/blackroad/carpool.sh chaos-engineering-adv "$@" ;;
+                cost-attribution|showback|cloud-tagging) bash /Users/alexa/blackroad/carpool.sh cost-attribution "$@" ;;
+                sdk-design|api-sdk|idiomatic-api) bash /Users/alexa/blackroad/carpool.sh sdk-design "$@" ;;
+                cli-design|arg-parsing|shell-completion) bash /Users/alexa/blackroad/carpool.sh cli-design "$@" ;;
+                terminal-ui|tui|bubble-tea) bash /Users/alexa/blackroad/carpool.sh terminal-ui "$@" ;;
+                developer-experience|dx-metrics|dx-eng) bash /Users/alexa/blackroad/carpool.sh developer-experience "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
