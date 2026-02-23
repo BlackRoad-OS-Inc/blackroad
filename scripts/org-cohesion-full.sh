@@ -66,11 +66,17 @@ sync_labels() {
 sync_workflow() {
   local org="$1" repo="${ORG_PRIMARY_REPO[$1]:-}"
   [[ -z "$repo" ]] && return
-  local content
+  local content sha
   content=$(base64 < /Users/alexa/blackroad/.github/workflows/continuous-engine.yml 2>/dev/null) || return
+  # Fetch existing SHA if file exists (required for updates)
+  sha=$(gh api "repos/$org/$repo/contents/.github/workflows/continuous-engine.yml" \
+    --jq '.sha' 2>/dev/null || echo "")
+  local extra_args=()
+  [[ -n "$sha" ]] && extra_args=(--field "sha=$sha")
   gh api -X PUT "repos/$org/$repo/contents/.github/workflows/continuous-engine.yml" \
     --field message="chore(cohesion): sync continuous engine [skip ci]" \
-    --field content="$content" 2>/dev/null && echo "  ✅ $org: workflow synced" || true
+    --field content="$content" \
+    "${extra_args[@]}" 2>/dev/null && echo "  ✅ $org/$repo: workflow synced" || echo "  ⚠️ $org/$repo: skipped"
 }
 
 case "${1:-status}" in
