@@ -7,7 +7,7 @@ on:
       model:
         description: 'Pull specific model (e.g., Qwen/Qwen2.5-7B-Instruct)'
         required: false
-        default: ''
+        default: 'none'
 
 jobs:
   sync-registry:
@@ -21,12 +21,7 @@ jobs:
       - name: List models on cecilia
         run: |
           echo "=== Ollama models on cecilia ==="
-          curl -sf http://localhost:11434/api/tags 2>/dev/null | python3 -c "
-          import json,sys
-          d = json.load(sys.stdin)
-          for m in d.get('models', []):
-              print(f\"  {m['name']} ({m['size']//1024//1024}MB)\")
-          " || echo "ollama not running"
+          ollama list 2>/dev/null || curl -sf http://localhost:11434/api/tags 2>/dev/null | python3 -m json.tool || echo "ollama not running"
 
       - name: Pull model if specified
         if: github.event.inputs.model != ''
@@ -39,7 +34,8 @@ jobs:
           MODEL_SHORT=$(echo "$MODEL" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
           # Try ollama pull first (if model is in ollama registry)
           curl -X POST http://localhost:11434/api/pull \
-            -d "{\"name\":\"$MODEL_SHORT\"}" \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"'"$MODEL_SHORT"'"}' \
             --no-buffer 2>/dev/null | tail -2 || true
           echo "✅ Model pull requested"
 
