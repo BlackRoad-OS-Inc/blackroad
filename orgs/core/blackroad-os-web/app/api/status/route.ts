@@ -32,8 +32,9 @@ export async function GET() {
   const checks = await Promise.all([
     checkEndpoint('gateway',  `${gatewayUrl}/health`),
     checkEndpoint('worker',   `${workerUrl}/health`),
-    checkEndpoint('auth',     'https://blackroad-auth.blackroad.workers.dev/health'),
+    checkEndpoint('auth',     'https://blackroad-auth.amundsonalexa.workers.dev/auth/status'),
     checkEndpoint('agents',   'https://agents-status.blackroad.io/api/ping'),
+    checkEndpoint('status',   'https://blackroad-status.amundsonalexa.workers.dev/api/ping'),
     checkEndpoint('status',   'https://blackroad-os-status.blackroad.workers.dev/api/ping'),
   ]);
 
