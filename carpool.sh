@@ -7496,6 +7496,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "rebranding" ]]; then
+  COMPANY="${2:-our company}"
+  RB_DIR="$HOME/.blackroad/carpool/rebranding"
+  mkdir -p "$RB_DIR"
+  RB_FILE="$RB_DIR/rebrand-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🎭 CarPool — Rebranding plan: $COMPANY\033[0m"
+  echo "# Rebranding: $COMPANY" > "$RB_FILE"
+  echo "Generated: $(date)" >> "$RB_FILE"
+  PY_RB='
+import sys, json, urllib.request
+company = sys.argv[1]
+agents = [
+  ("ARIA","Brand designer","What should change vs stay the same in the $COMPANY rebrand? Map: logo, colors, typography, tone of voice, tagline — keep/evolve/replace for each."),
+  ("LUCIDIA","Strategist","What is the strategic reason behind the $COMPANY rebrand? Write the internal narrative (why now) and the external narrative (what this signals to market)."),
+  ("ALICE","PM","Build the $COMPANY rebrand rollout checklist: website, docs, social handles, email signatures, sales decks, swag, legal entity, press announcement — in order."),
+  ("PRISM","Analyst","How do we measure if the $COMPANY rebrand is landing: brand awareness lift, sentiment shift, search volume, domain authority, press mentions?"),
+  ("SHELLFISH","Risk","What can go wrong in the $COMPANY rebrand: SEO collapse, customer confusion, competitor swooping old name, domain squatters, employee resistance? Mitigate each.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'COMPANY', company)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_RB" "$COMPANY" | tee -a "$RB_FILE"
+  echo -e "\033[0;32m✓ Saved to $RB_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "technical-writing" ]]; then
+  TOPIC="${2:-our API}"
+  TW_DIR="$HOME/.blackroad/carpool/technical-writing"
+  mkdir -p "$TW_DIR"
+  TW_FILE="$TW_DIR/techwrite-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m✍️  CarPool — Technical writing guide: $TOPIC\033[0m"
+  echo "# Technical Writing: $TOPIC" > "$TW_FILE"
+  echo "Generated: $(date)" >> "$TW_FILE"
+  PY_TW='
+import sys, json, urllib.request
+topic = sys.argv[1]
+agents = [
+  ("ARIA","Tech writer","Write the style guide for $TOPIC documentation: voice, tense, sentence length, heading style, code block rules, and 10 word pairs (use this / not that)."),
+  ("ALICE","PM","What are the top 5 docs pages $TOPIC needs urgently? Rank by user impact and write a one-paragraph brief for each."),
+  ("LUCIDIA","Educator","Take the most complex concept in $TOPIC and write it two ways: a 3-sentence ELI5 and a 200-word explanation for experienced developers."),
+  ("OCTAVIA","Engineer","What code examples should every $TOPIC doc page include? Define the example structure: language, comments, output shown, error handling shown."),
+  ("PRISM","Analyst","How do we run a docs quality audit for $TOPIC? What signals — broken links, search queries with no results, support tickets citing docs gaps — tell us what to fix?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'TOPIC', topic)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_TW" "$TOPIC" | tee -a "$TW_FILE"
+  echo -e "\033[0;32m✓ Saved to $TW_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "network-design" ]]; then
+  INFRA="${2:-our infrastructure}"
+  ND_DIR="$HOME/.blackroad/carpool/network-design"
+  mkdir -p "$ND_DIR"
+  ND_FILE="$ND_DIR/network-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🌐 CarPool — Network design: $INFRA\033[0m"
+  echo "# Network Design: $INFRA" > "$ND_FILE"
+  echo "Generated: $(date)" >> "$ND_FILE"
+  PY_ND='
+import sys, json, urllib.request
+infra = sys.argv[1]
+agents = [
+  ("OCTAVIA","Network architect","Design the VPC/network topology for $INFRA: public subnets, private subnets, NAT gateways, peering, and egress rules. Draw it in ASCII."),
+  ("CIPHER","Security","What network security controls does $INFRA need: security groups, NACLs, WAF, DDoS protection, private endpoints, and zero-trust segmentation?"),
+  ("ALICE","DevOps","How do we manage $INFRA network config as code: Terraform modules, GitOps flow, change review process, and blast-radius limiting for network changes?"),
+  ("SHELLFISH","Chaos","Design 3 network failure scenarios for $INFRA: AZ outage, misconfigured security group, BGP route leak. Expected impact and detection for each."),
+  ("PRISM","Analyst","What network observability does $INFRA need: flow logs, latency metrics, bandwidth alerts, and anomaly detection for unusual traffic patterns?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'INFRA', infra)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_ND" "$INFRA" | tee -a "$ND_FILE"
+  echo -e "\033[0;32m✓ Saved to $ND_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "acquisition" ]]; then
+  CHANNEL="${2:-our growth channel}"
+  ACQ_DIR="$HOME/.blackroad/carpool/acquisition"
+  mkdir -p "$ACQ_DIR"
+  ACQ_FILE="$ACQ_DIR/acquisition-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📈 CarPool — User acquisition strategy: $CHANNEL\033[0m"
+  echo "# Acquisition Strategy: $CHANNEL" > "$ACQ_FILE"
+  echo "Generated: $(date)" >> "$ACQ_FILE"
+  PY_ACQ='
+import sys, json, urllib.request
+channel = sys.argv[1]
+agents = [
+  ("PRISM","Growth analyst","Model the unit economics of $CHANNEL: CAC, conversion rates at each funnel stage, payback period, and LTV:CAC ratio needed to be viable."),
+  ("ALICE","PM","What is the 90-day experiment plan for $CHANNEL? Define 3 specific tests, their hypotheses, success metrics, and minimum budget to get signal."),
+  ("ARIA","Marketer","What creative and messaging strategy works best for $CHANNEL? Describe the hook, format, audience targeting, and why this resonates."),
+  ("SHELLFISH","Hacker","What are the unconventional or underutilized tactics in $CHANNEL that competitors are not doing yet? List 3 contrarian bets."),
+  ("LUCIDIA","Strategist","How does $CHANNEL fit into the overall acquisition portfolio? What is the ideal channel mix at seed vs Series A vs growth stage?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'CHANNEL', channel)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_ACQ" "$CHANNEL" | tee -a "$ACQ_FILE"
+  echo -e "\033[0;32m✓ Saved to $ACQ_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
