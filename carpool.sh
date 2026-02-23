@@ -4008,6 +4008,146 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── THREAD — write a Twitter/X thread on a topic ─────────────────────
+if [[ "$1" == "thread" ]]; then
+  shift
+  TOPIC="$*"
+  [[ -z "$TOPIC" ]] && echo "Usage: br carpool thread <topic>" && exit 1
+  echo ""
+  echo -e "\033[1;36m🧵 THREAD WRITER: $TOPIC\033[0m"
+  echo ""
+  THREAD_FILE="$HOME/.blackroad/carpool/threads/$(echo "$TOPIC" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/threads"
+  printf "# Thread: %s\nDate: %s\n\n" "$TOPIC" "$(date '+%Y-%m-%d')" > "$THREAD_FILE"
+  for entry in "ARIA|VIRAL HOOK|Write tweet 1. The hook. Must stop the scroll. Bold claim or counterintuitive statement." "LUCIDIA|DEEP DIVE|Tweets 2-5. The substance. Each tweet one idea, max 280 chars, numbered." "PRISM|DATA & PROOF|Tweets 6-8. Specific stats, examples, or case studies that back the claim." "ALICE|ACTIONABLE TAKEAWAY|Tweet 9. The thing people actually do after reading this." "SHELLFISH|CTA|Tweet 10. The closer. Retweet bait + follow hook. Punchy."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} writing part of a Twitter/X thread about: \"${TOPIC}\"
+Section: ${section}
+${lens}
+Each tweet must be under 280 characters. Number them continuing the thread.
+No hashtag spam. Write for a technical founder audience.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n### %s\n%s\n" "$section" "$resp" >> "$THREAD_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $THREAD_FILE\033[0m"
+  exit 0
+fi
+
+# ── ESTIMATE — agents give time/complexity estimates with reasoning ────
+if [[ "$1" == "estimate" || "$1" == "est" ]]; then
+  shift
+  TASK="$*"
+  [[ -z "$TASK" ]] && echo "Usage: br carpool estimate <task or feature>" && exit 1
+  echo ""
+  echo -e "\033[1;33m⏱️  ESTIMATION: $TASK\033[0m"
+  echo ""
+  estimates=""
+  for entry in "ALICE|OPTIMISTIC|You have done this before, everything goes smoothly, no surprises." "OCTAVIA|REALISTIC|Normal pace, one or two unknowns, typical team friction." "SHELLFISH|PESSIMISTIC|Murphy strikes. Edge cases, reviews, tests, rework, context switching." "PRISM|COMPLEXITY SCORE|Rate complexity 1-10 and explain the top 3 unknowns that drive the estimate."; do
+    IFS='|' read -r ag mode lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${mode}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} estimating: \"${TASK}\"
+Mode: ${mode} — ${lens}
+ESTIMATE: <number> <hours|days|weeks>
+BREAKDOWN:
+- <subtask>: <time>
+- <subtask>: <time>
+ASSUMPTION: <key assumption baked into this estimate>
+No preamble.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    est_line=$(echo "$resp" | grep "^ESTIMATE:" | head -1 | sed 's/ESTIMATE: *//')
+    [[ -n "$est_line" ]] && estimates="${estimates}\n  ${ag} (${mode}): $est_line"
+    echo ""
+  done
+  echo -e "\033[1;33m──────────────────────────────────────────\033[0m"
+  echo -e "\033[1;33m📊 ESTIMATE SUMMARY\033[0m"
+  printf "%b\n" "$estimates"
+  echo ""
+  echo -e "\033[0;36mRule of thumb: ship the REALISTIC estimate, plan for PESSIMISTIC\033[0m"
+  exit 0
+fi
+
+# ── PRESSRELEASE — Amazon working-backwards press release ─────────────
+if [[ "$1" == "pressrelease" || "$1" == "pr-faq" || "$1" == "prfaq" ]]; then
+  shift
+  FEATURE="$*"
+  [[ -z "$FEATURE" ]] && echo "Usage: br carpool pressrelease <feature or product>" && exit 1
+  echo ""
+  echo -e "\033[1;32m📰 PRESS RELEASE (Working Backwards): $FEATURE\033[0m"
+  echo ""
+  PR_FILE="$HOME/.blackroad/carpool/pressreleases/$(echo "$FEATURE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/pressreleases"
+  printf "# Press Release: %s\nDate: %s\n\n" "$FEATURE" "$(date '+%Y-%m-%d')" > "$PR_FILE"
+  for entry in "ARIA|HEADLINE & LEDE|Headline (under 10 words). Subheadline. Opening paragraph from a happy customer quote." "LUCIDIA|THE PROBLEM|One paragraph: the world before this existed. Paint the pain vividly." "ALICE|THE SOLUTION|One paragraph: what it does, how it works, why it is different from everything else." "PRISM|KEY METRICS & PROOF|3 specific numbers that prove this matters. Can be aspirational but grounded." "CIPHER|FAQ — HARD QUESTIONS|Top 5 questions a skeptic would ask. Answer each honestly, including weaknesses."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} writing an Amazon-style working-backwards press release for: \"${FEATURE}\"
+Section: ${section}
+${lens}
+Write as if this has already shipped and is being announced to the world.
+Be specific, vivid, and confident.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$PR_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $PR_FILE\033[0m"
+  exit 0
+fi
+
+# ── VALUES — extract team values from session history + memory ─────────
+if [[ "$1" == "values" ]]; then
+  echo ""
+  echo -e "\033[1;35m💜 TEAM VALUES EXTRACTION\033[0m"
+  echo ""
+  HIST=""
+  [[ -f "$HOME/.blackroad/carpool/memory.txt" ]] && HIST=$(cat "$HOME/.blackroad/carpool/memory.txt" | tail -60)
+  THEME=""
+  [[ -f "$HOME/.blackroad/carpool/theme.txt" ]] && THEME=$(cat "$HOME/.blackroad/carpool/theme.txt")
+  VALUES_FILE="$HOME/.blackroad/carpool/values.md"
+  for entry in "LUCIDIA|OBSERVED VALUES|From everything we have built and discussed, what values are actually operating here? Not what we say — what we do." "ARIA|HOW WE COMMUNICATE|Our voice, tone, and style. What makes BlackRoad sound like us?" "ALICE|HOW WE WORK|The operating principles visible in our decisions. How we ship, decide, and prioritize." "PRISM|WHAT WE OPTIMIZE FOR|Based on the work, what do we actually care about most? What metrics guide us?" "SHELLFISH|WHAT WE REJECT|The things we consistently say no to. Our anti-values. What is not BlackRoad?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json, sys
+hist, theme = sys.argv[1], sys.argv[2]
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} on the BlackRoad team reflecting on our work.
+{\"Theme: \" + theme if theme else \"\"}
+{\"Session history: \" + hist[:800] if hist else \"\"}
+Section: ${section}
+${lens}
+Give 4-5 specific values or principles as short punchy statements.
+Format: **<value name>** — <one-line description>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" "$HIST" "$THEME" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$VALUES_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $VALUES_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
