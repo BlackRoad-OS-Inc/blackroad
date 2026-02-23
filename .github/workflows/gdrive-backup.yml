@@ -1,98 +1,46 @@
-# ============================================================
-# Google Drive Backup — Local Files → Cloud
-# Runs hourly on self-hosted Pi runner = $0 cost
-# Uses rclone to sync ~/blackroad → gdrive:blackroad/
-# ============================================================
-name: "☁️ Google Drive Backup"
-
+name: ☁️ Google Drive Backup
 on:
   schedule:
-    - cron: '0 * * * *'    # Every hour
-    - cron: '0 3 * * *'    # Deep backup at 3AM UTC daily
+    - cron: '0 * * * *'   # Every hour
   workflow_dispatch:
     inputs:
       direction:
-        description: 'Sync direction'
-        required: false
+        description: 'Sync direction: push (local→gdrive) or pull (gdrive→local)'
         default: 'push'
-        type: choice
-        options: [push, pull, bisync]
-      path_filter:
-        description: 'Optional subfolder (e.g. tools/ or agents/)'
-        required: false
-        default: ''
-
-concurrency:
-  group: gdrive-backup
-  cancel-in-progress: true   # Only run one backup at a time
 
 jobs:
-  backup:
-    name: "☁️ Sync → Google Drive"
-    runs-on: [self-hosted, pi]     # $0 cost — on Pi
-    timeout-minutes: 30
+  sync-to-gdrive:
+    runs-on: [self-hosted, pi, linux, octavia]
     steps:
-      - name: Check rclone installed
-        run: |
-          if ! command -v rclone &>/dev/null; then
-            echo "Installing rclone..."
-            curl -s https://rclone.org/install.sh | sudo bash -s stable
-          fi
-          rclone version --check 2>/dev/null || rclone version
+      - uses: actions/checkout@v4
 
-      - name: Configure rclone (from secret)
-        env:
-          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+      - name: Sync workspace to Google Drive
         run: |
-          if [[ -n "$RCLONE_CONFIG" ]]; then
-            mkdir -p ~/.config/rclone
-            echo "$RCLONE_CONFIG" > ~/.config/rclone/rclone.conf
-            echo "✅ rclone config loaded from secret"
+          DIRECTION="${{ github.event.inputs.direction || 'push' }}"
+          GDRIVE_PATH="gdrive-blackroad:blackroad"
+          LOCAL_PATH="$GITHUB_WORKSPACE"
+          
+          echo "Sync direction: $DIRECTION"
+          
+          if [ "$DIRECTION" = "push" ]; then
+            ~/bin/rclone sync "$LOCAL_PATH" "$GDRIVE_PATH" \
+              --exclude ".git/**" \
+              --exclude "node_modules/**" \
+              --exclude "*.log" \
+              --progress \
+              --stats-one-line \
+              2>&1 | tail -5
           else
-            echo "⚠️ RCLONE_CONFIG secret not set — using existing config"
+            ~/bin/rclone sync "$GDRIVE_PATH" "$LOCAL_PATH" \
+              --exclude ".git/**" \
+              --progress \
+              --stats-one-line \
+              2>&1 | tail -5
           fi
+          
+          echo "✅ Google Drive sync complete"
 
-      - name: Sync blackroad/ → Google Drive
-        env:
-          DIRECTION: ${{ github.event.inputs.direction || 'push' }}
-          PATH_FILTER: ${{ github.event.inputs.path_filter || '' }}
+      - name: Update sync timestamp
         run: |
-          LOCAL="$HOME/blackroad${PATH_FILTER:+/$PATH_FILTER}"
-          REMOTE="gdrive:blackroad${PATH_FILTER:+/$PATH_FILTER}"
-
-          EXCLUDE_FLAGS="--exclude .git/** --exclude node_modules/** --exclude .DS_Store --exclude __pycache__/** --exclude *.pyc --exclude .blackroad/logs/**"
-
-          echo "Direction: $DIRECTION"
-          echo "Local:  $LOCAL"
-          echo "Remote: $REMOTE"
-
-          case "$DIRECTION" in
-            push)
-              rclone sync "$LOCAL" "$REMOTE" $EXCLUDE_FLAGS \
-                --transfers 8 --checkers 16 --stats 30s \
-                --log-level INFO --log-file /tmp/rclone-backup.log
-              ;;
-            pull)
-              rclone sync "$REMOTE" "$LOCAL" $EXCLUDE_FLAGS \
-                --transfers 8 --stats 30s \
-                --log-level INFO --log-file /tmp/rclone-backup.log
-              ;;
-            bisync)
-              rclone bisync "$LOCAL" "$REMOTE" $EXCLUDE_FLAGS \
-                --resilient --recover --stats 30s \
-                --log-level INFO --log-file /tmp/rclone-backup.log
-              ;;
-          esac
-
-          echo ""
-          echo "✅ Sync complete"
-          tail -5 /tmp/rclone-backup.log 2>/dev/null || true
-
-      - name: Report
-        if: always()
-        run: |
-          echo "## ☁️ Google Drive Backup" >> $GITHUB_STEP_SUMMARY
-          echo "- **Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Direction**: ${{ github.event.inputs.direction || 'push' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Runner**: $RUNNER_NAME" >> $GITHUB_STEP_SUMMARY
-          echo "- **Billing**: \$0 (self-hosted)" >> $GITHUB_STEP_SUMMARY
+          echo "Last synced: $(date -u)" > /tmp/gdrive-sync-status.txt
+          cat /tmp/gdrive-sync-status.txt
