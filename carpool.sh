@@ -783,6 +783,20 @@ print(json.dumps({
     done
   } >> "$session_file"
 
+  # ── PERSIST TO MEMORY ─────────────────────────────────────
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  mkdir -p "$(dirname "$MEMORY_FILE")"
+  {
+    echo "---"
+    echo "DATE: $(date '+%Y-%m-%d %H:%M')"
+    echo "TOPIC: $TOPIC"
+    echo "VERDICT: $verdict"
+    echo "$synthesis"
+  } >> "$MEMORY_FILE"
+
+  # Signal chain/headless waiters
+  echo "$verdict" > "$WORK_DIR/session.complete"
+
   while true; do sleep 60; done
 fi
 
@@ -1005,6 +1019,131 @@ HTMLEOF
   exit 0
 fi
 
+# ── REACT (quick-reaction shorthand) ─────────────────────────
+if [[ "$1" == "react" ]]; then
+  target="${2:-}"
+  question="${3:-What are the key issues, risks, and recommended actions?}"
+  [[ -z "$target" ]] && echo -e "${RED}Usage: br carpool react <file|url> [question]${NC}" && exit 1
+  if echo "$target" | grep -q "^https\?://"; then
+    exec bash "$0" --brief --url "$target" "$question"
+  else
+    exec bash "$0" --brief --context "$target" "$question"
+  fi
+fi
+
+# ── MEMORY management ────────────────────────────────────────
+if [[ "$1" == "memory" ]]; then
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  case "${2:-show}" in
+    show|list)
+      if [[ ! -f "$MEMORY_FILE" ]]; then
+        echo -e "${DIM}No memory yet. Run sessions to build memory.${NC}"; exit 0
+      fi
+      echo -e "${WHITE}🧠 CarPool Memory${NC}  ${DIM}(last sessions)${NC}\n"
+      count=0
+      while IFS= read -r line; do
+        if [[ "$line" == "---" ]]; then
+          ((count++)); echo -e "\n${DIM}── #${count} ──────────────────────────────────────${NC}"
+        elif [[ "$line" =~ ^DATE: ]]; then
+          echo -e "${DIM}${line}${NC}"
+        elif [[ "$line" =~ ^TOPIC: ]]; then
+          echo -e "${CYAN}${line}${NC}"
+        elif [[ "$line" =~ ^VERDICT: ]]; then
+          v="${line#VERDICT: }"
+          c="${GREEN}"; echo "$v" | grep -qi "reject\|split" && c="${YELLOW}"
+          echo -e "${c}${line}${NC}"
+        else
+          echo -e "${DIM}${line}${NC}"
+        fi
+      done < "$MEMORY_FILE"
+      echo ""
+      ;;
+    clear)
+      rm -f "$MEMORY_FILE"
+      echo -e "${GREEN}✓${NC} Memory cleared."
+      ;;
+    stats)
+      [[ ! -f "$MEMORY_FILE" ]] && echo "No memory yet." && exit 0
+      total=$(grep -c "^---" "$MEMORY_FILE" 2>/dev/null || echo 0)
+      approved=$(grep -c "^VERDICT: APPROVED" "$MEMORY_FILE" 2>/dev/null || echo 0)
+      rejected=$(grep -c "^VERDICT: REJECTED" "$MEMORY_FILE" 2>/dev/null || echo 0)
+      echo -e "${WHITE}🧠 Memory Stats${NC}"
+      echo -e "  sessions: ${CYAN}${total}${NC}"
+      echo -e "  approved: ${GREEN}${approved}${NC}  rejected: ${RED}${rejected}${NC}"
+      ;;
+    *)
+      echo -e "${RED}Usage: br carpool memory [show|clear|stats]${NC}" ;;
+  esac
+  exit 0
+fi
+
+# ── CHAIN — sequential topic pipeline ────────────────────────
+if [[ "$1" == "chain" ]]; then
+  shift
+  CHAIN_TOPICS=("$@")
+  [[ ${#CHAIN_TOPICS[@]} -lt 2 ]] && echo -e "${RED}Usage: br carpool chain \"topic1\" \"topic2\" ...${NC}" && exit 1
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  echo -e "${WHITE}🔗 CarPool Chain${NC}  ${DIM}${#CHAIN_TOPICS[@]} topics${NC}\n"
+  for i in "${!CHAIN_TOPICS[@]}"; do
+    echo -e "  ${CYAN}$((i+1))${NC}  ${CHAIN_TOPICS[$i]}"
+  done
+  echo ""
+
+  prev_synthesis=""
+  for i in "${!CHAIN_TOPICS[@]}"; do
+    topic="${CHAIN_TOPICS[$i]}"
+    step=$((i+1)); total_steps=${#CHAIN_TOPICS[@]}
+    echo -e "${WHITE}$(printf '%.0s━' {1..60})${NC}"
+    echo -e "${WHITE}🔗 Step ${step}/${total_steps}:${NC} ${CYAN}${topic}${NC}"
+    echo -e "${WHITE}$(printf '%.0s━' {1..60})${NC}\n"
+
+    # Build args: inject previous synthesis as context
+    extra_args=("--brief")
+    if [[ -n "$prev_synthesis" ]]; then
+      _ctx_tmp=$(mktemp /tmp/carpool_chain_XXXX.txt)
+      echo "=== PREVIOUS SYNTHESIS ===" > "$_ctx_tmp"
+      echo "$prev_synthesis" >> "$_ctx_tmp"
+      echo "=== BUILD ON THIS ===" >> "$_ctx_tmp"
+      extra_args+=("--context" "$_ctx_tmp")
+    fi
+
+    # Launch and wait for session.complete
+    bash "$SCRIPT_PATH" "${extra_args[@]}" "$topic" &
+    _chain_pid=$!
+
+    # Attach to tmux to watch, then background-wait for completion
+    sleep 2
+    if [[ -n "$TMUX" ]]; then
+      tmux switch-client -t "$SESSION" 2>/dev/null
+    else
+      tmux attach -t "$SESSION" 2>/dev/null &
+    fi
+
+    # Poll for session completion (synthesis written)
+    echo -ne "${DIM}waiting for step ${step} to complete...${NC}"
+    waited=0
+    while [[ ! -f "$WORK_DIR/session.complete" && $waited -lt 300 ]]; do
+      sleep 2; ((waited+=2))
+    done
+    printf "\r\033[K"
+
+    prev_synthesis=$(cat "$WORK_DIR/synthesis.txt" 2>/dev/null)
+    [[ -n "$_ctx_tmp" ]] && rm -f "$_ctx_tmp" 2>/dev/null; _ctx_tmp=""
+
+    verdict=$(cat "$WORK_DIR/session.complete" 2>/dev/null)
+    echo -e "${GREEN}✓ Step ${step} complete:${NC} ${verdict}\n"
+
+    # Kill tmux session between steps
+    tmux kill-session -t "$SESSION" 2>/dev/null
+    sleep 1
+  done
+
+  echo -e "${WHITE}🔗 Chain complete — ${#CHAIN_TOPICS[@]} topics processed${NC}"
+  echo -e "${DIM}tip: br carpool memory show${NC}"
+  exit 0
+fi
+
 # ── LAUNCHER ──────────────────────────────────────────────────
 # br carpool last → open most recent saved session
 if [[ "$1" == "last" ]]; then
@@ -1021,6 +1160,8 @@ CONTEXT_FILE=""
 CONTEXT_URL=""
 SPLIT_MODELS=0
 MODELS_MAP=""
+CREW=""
+USE_MEMORY=0
 while [[ "${1:0:2}" == "--" ]]; do
   case "$1" in
     --fast)      MODEL="tinyllama"; TURNS=2; shift ;;
@@ -1034,6 +1175,8 @@ while [[ "${1:0:2}" == "--" ]]; do
     --url)       CONTEXT_URL="$2"; shift 2 ;;
     --split)     SPLIT_MODELS=1; shift ;;
     --models)    MODELS_MAP="$2"; shift 2 ;;
+    --crew)      CREW="$2"; shift 2 ;;
+    --memory)    USE_MEMORY=1; shift ;;
     *) break ;;
   esac
 done
@@ -1088,6 +1231,28 @@ if [[ $(_model_available "$MODEL") != "yes" ]]; then
     fi
   done
 fi
+
+# ── CREW FILTER ───────────────────────────────────────────────
+if [[ -n "$CREW" ]]; then
+  IFS=',' read -ra CREW_LIST <<< "$CREW"
+  NEW_AGENT_LIST=(); NEW_ALL_NAMES=()
+  for entry in "${AGENT_LIST[@]}"; do
+    IFS='|' read -r n _ _ _ <<< "$entry"
+    for cn in "${CREW_LIST[@]}"; do
+      if [[ "$n" == "${cn^^}" ]]; then
+        NEW_AGENT_LIST+=("$entry"); NEW_ALL_NAMES+=("$n"); break
+      fi
+    done
+  done
+  if [[ ${#NEW_AGENT_LIST[@]} -eq 0 ]]; then
+    echo -e "${RED}No valid agents in crew: ${CREW}${NC}"
+    echo -e "${DIM}Valid: LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER ARIA SHELLFISH${NC}"; exit 1
+  fi
+  AGENT_LIST=("${NEW_AGENT_LIST[@]}"); ALL_NAMES=("${NEW_ALL_NAMES[@]}")
+  TOTAL=${#ALL_NAMES[@]}
+  echo -e "${CYAN}👥 crew:${NC} ${CREW^^}"
+fi
+
 rm -rf "$WORK_DIR" && mkdir -p "$WORK_DIR"
 echo "$TOPIC" > "$WORK_DIR/topic.txt"
 > "$WORK_DIR/convo.txt"
@@ -1111,6 +1276,17 @@ elif [[ ! -t 0 ]]; then
   cat > "$WORK_DIR/context.txt"
   echo "📋 stdin" > "$WORK_DIR/context.label"
   echo -e "${CYAN}📋 context:${NC} piped from stdin"
+fi
+
+# ── MEMORY INJECTION ──────────────────────────────────────────
+MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+if [[ $USE_MEMORY -eq 1 && -f "$MEMORY_FILE" ]]; then
+  mem_ctx=$(tail -80 "$MEMORY_FILE")  # last ~5 sessions
+  existing=$(cat "$WORK_DIR/context.txt" 2>/dev/null)
+  { echo "=== PAST SESSION MEMORY ==="; echo "$mem_ctx"; echo "=== END MEMORY ===";
+    [[ -n "$existing" ]] && echo "" && echo "$existing"; } > "$WORK_DIR/context.txt"
+  echo "🧠 memory" > "$WORK_DIR/context.label"
+  echo -e "${CYAN}🧠 memory:${NC} last $(grep -c "^---" "$MEMORY_FILE" 2>/dev/null) sessions injected"
 fi
 
 # ── PER-AGENT MODEL ASSIGNMENT ────────────────────────────────
@@ -1148,6 +1324,8 @@ tmux kill-session -t "$SESSION" 2>/dev/null
 echo -e "${WHITE}🚗 CarPool${NC}  ${DIM}model:${NC} ${MODEL}  ${DIM}turns:${NC} ${TURNS}  ${DIM}agents:${NC} ${TOTAL}"
 [[ -f "$WORK_DIR/context.txt" ]] && echo -e "${CYAN}📎 with context${NC}"
 [[ $SPLIT_MODELS -eq 1 ]] && echo -e "${CYAN}🔀 split-model mode${NC}"
+[[ -n "$CREW" ]] && echo -e "${CYAN}👥 crew: ${CREW^^}${NC}"
+[[ $USE_MEMORY -eq 1 ]] && echo -e "${CYAN}🧠 memory active${NC}"
 echo -e "${DIM}${TOPIC}${NC}\n"
 
 # Tab 0: group panes — all agents with staggered start (1s each)
