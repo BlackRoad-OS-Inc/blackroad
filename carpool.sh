@@ -2251,6 +2251,174 @@ print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
   exit 0
 fi
 
+# ── FIX — paste an error, agents diagnose it ─────────────────
+if [[ "$1" == "fix" ]]; then
+  shift
+  # Accept error from args, stdin, or prompt
+  if [[ $# -gt 0 ]]; then
+    _err="$*"
+  elif [[ ! -t 0 ]]; then
+    _err=$(cat)
+  else
+    echo -e "${CYAN}Paste your error (Ctrl-D when done):${NC}"
+    _err=$(cat)
+  fi
+  [[ -z "$_err" ]] && echo -e "${RED}No error provided.${NC}" && exit 1
+  echo -e "\n${WHITE}🔧 CarPool Fix${NC}  ${DIM}diagnosing...${NC}\n"
+  FIX_AGENTS=(CIPHER SHELLFISH OCTAVIA ALICE)
+  FIX_LENS=("security angle" "root cause & exploit surface" "infra & runtime" "fix & automation")
+  for i in 0 1 2 3; do
+    _fa="${FIX_AGENTS[$i]}"
+    _fl="${FIX_LENS[$i]}"
+    agent_meta "$_fa"
+    _fc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,err=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Focus: {lens}.
+Diagnose this error and give ONE specific fix.
+Format: CAUSE: / FIX: / WATCH:
+ERROR:
+{err}'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':120,'temperature':0.4,'stop':['---','Note:']}}))" \
+    "$_fa" "$ROLE" "$_fl" "$_err" 2>/dev/null)
+    echo -ne "${_fc}${EMOJI} ${_fa}${NC}  ${DIM}${_fl}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_fc}${EMOJI} ${_fa}${NC}  ${DIM}${_fl}${NC}"
+    echo -e "${_resp}\n"
+  done
+  exit 0
+fi
+
+# ── JOURNAL — daily dev reflection with agent responses ───────
+if [[ "$1" == "journal" ]]; then
+  JOURNAL_FILE="$HOME/.blackroad/carpool/journal.md"
+  mkdir -p "$(dirname "$JOURNAL_FILE")"
+
+  if [[ "${2:-}" == "log" || "${2:-}" == "show" || "${2:-}" == "read" ]]; then
+    [[ -f "$JOURNAL_FILE" ]] && less "$JOURNAL_FILE" || echo "No journal yet."
+    exit 0
+  fi
+
+  echo -e "\n${WHITE}📓 Dev Journal${NC}  ${DIM}$(date '+%Y-%m-%d')${NC}"
+  echo -e "${DIM}What did you work on today? What's on your mind? (Ctrl-D when done)${NC}\n"
+  echo -ne "${CYAN}You: ${NC}"
+  _entry=$(cat)
+  [[ -z "$_entry" ]] && exit 0
+
+  echo ""
+  JOURNAL_AGENTS=(LUCIDIA ECHO PRISM)
+  JOURNAL_LENS=("philosophical reflection" "what to remember" "what to measure next")
+  for i in 0 1 2; do
+    _ja="${JOURNAL_AGENTS[$i]}"
+    _jl="${JOURNAL_LENS[$i]}"
+    agent_meta "$_ja"
+    _jc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,entry=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Read this developer's journal entry.
+Respond from the lens of: {lens}
+One short paragraph. Warm, genuine, no corporate speak.
+ENTRY: {entry}'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':100,'temperature':0.8,'stop':['---']}}))" \
+    "$_ja" "$ROLE" "$_jl" "$_entry" 2>/dev/null)
+    echo -ne "${_jc}${EMOJI} ${_ja}${NC}  ${DIM}${_jl}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_jc}${EMOJI} ${_ja}:${NC} ${_resp}\n"
+  done
+
+  # Append to journal
+  { echo ""; echo "## $(date '+%Y-%m-%d %H:%M')"; echo ""; echo "$_entry"; echo ""; } >> "$JOURNAL_FILE"
+  echo -e "${DIM}Saved → ${JOURNAL_FILE}  (br carpool journal show to read)${NC}"
+  exit 0
+fi
+
+# ── TIMELINE — agents propose milestones for a project ───────
+if [[ "$1" == "timeline" ]]; then
+  _project="${*:2}"
+  [[ -z "$_project" ]] && echo -e "${RED}Usage: br carpool timeline <project description>${NC}" && exit 1
+  echo -e "\n${WHITE}📅 CarPool Timeline${NC}  ${DIM}${_project}${NC}\n"
+  TL_AGENTS=(OCTAVIA ALICE PRISM CIPHER)
+  TL_LENS=("technical build phases" "delivery & automation" "metrics & go/no-go gates" "risk checkpoints")
+  for i in 0 1 2 3; do
+    _ta="${TL_AGENTS[$i]}"
+    _tl="${TL_LENS[$i]}"
+    agent_meta "$_ta"
+    _tc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,proj=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Focus: {lens}.
+Project: \"{proj}\"
+Propose 4 timeline milestones. Format:
+W1: <milestone>
+W2: <milestone>
+W4: <milestone>
+W8: <milestone>
+Be specific. No fluff.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':120,'temperature':0.5,'stop':['---','Note:']}}))" \
+    "$_ta" "$ROLE" "$_tl" "$_project" 2>/dev/null)
+    echo -ne "${_tc}${EMOJI} ${_ta}${NC}  ${DIM}${_tl}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_tc}${EMOJI} ${_ta}${NC}  ${DIM}${_tl}${NC}"
+    echo -e "${_resp}\n"
+  done
+  exit 0
+fi
+
+# ── CHALLENGE — agents generate a challenge for you ──────────
+if [[ "$1" == "challenge" ]]; then
+  THEME_FILE="$HOME/.blackroad/carpool/theme.txt"
+  _ctx=""
+  [[ -f "$THEME_FILE" ]] && _ctx=$(cat "$THEME_FILE")
+  _domain="${2:-}"  # optional: code / design / ops / security
+  echo -e "\n${WHITE}⚡ CarPool Challenge${NC}  ${DIM}${_domain:-open domain}${NC}\n"
+  CH_AGENTS=(OCTAVIA SHELLFISH ARIA LUCIDIA)
+  CH_TYPE=("engineering challenge" "security challenge" "design challenge" "philosophical challenge")
+  for i in 0 1 2 3; do
+    _cha="${CH_AGENTS[$i]}"
+    _cht="${CH_TYPE[$i]}"
+    [[ -n "$_domain" ]] && echo "$_cht" | grep -qi "$_domain" || true
+    agent_meta "$_cha"
+    _chc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,ctype,ctx,dom=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5]
+context_str=f'Project context: {ctx}\n' if ctx else ''
+domain_str=f'Domain: {dom}\n' if dom else ''
+prompt=f'''You are {agent}, {role}. Generate a {ctype}.
+{context_str}{domain_str}Format:
+CHALLENGE: <specific, concrete challenge in 1-2 sentences>
+CONSTRAINT: <one hard constraint>
+STRETCH: <harder version if they nail it>
+Make it genuinely interesting and doable in a day.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':130,'temperature':0.85,'stop':['---']}}))" \
+    "$_cha" "$ROLE" "$_cht" "$_ctx" "$_domain" 2>/dev/null)
+    echo -ne "${_chc}${EMOJI} ${_cha}${NC}  ${DIM}${_cht}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_chc}${EMOJI} ${_cha}${NC}  ${DIM}${_cht}${NC}"
+    echo -e "${_resp}\n"
+  done
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
