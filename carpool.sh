@@ -6096,6 +6096,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "retro" ]]; then
+  SPRINT="${2:-last sprint}"
+  RETRO_DIR="$HOME/.blackroad/carpool/retros"
+  mkdir -p "$RETRO_DIR"
+  RETRO_FILE="$RETRO_DIR/retro-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🔄 CarPool — Retrospective for: $SPRINT\033[0m"
+  echo "# Retro: $SPRINT" > "$RETRO_FILE"
+  echo "Generated: $(date)" >> "$RETRO_FILE"
+  PY_RETRO='
+import sys, json, urllib.request
+sprint = sys.argv[1]
+agents = [
+  ("LUCIDIA","Facilitator","For $SPRINT retro — generate 3 thought-provoking questions each for: What went well? What did not? What would we do differently?"),
+  ("ALICE","PM","What are 5 concrete process improvements the team should try next sprint based on common retro pain points from $SPRINT?"),
+  ("PRISM","Analyst","What team health metrics should we track sprint-over-sprint? List 6 signals (velocity, PR cycle time, blocked days, etc) and how to visualize them."),
+  ("ARIA","Culture","How do we run $SPRINT retro in a way that feels psychologically safe and energizing, not a blame session? Give a 60-min agenda."),
+  ("OCTAVIA","Tech","What engineering process experiments (pair programming, mob review, no-meeting blocks) should we trial next sprint based on $SPRINT learnings?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SPRINT', sprint)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_RETRO" "$SPRINT" | tee -a "$RETRO_FILE"
+  echo -e "\033[0;32m✓ Saved to $RETRO_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "documentation" ]]; then
+  FEATURE="${2:-the feature}"
+  DOCS_DIR="$HOME/.blackroad/carpool/documentation"
+  mkdir -p "$DOCS_DIR"
+  DOCS_FILE="$DOCS_DIR/docs-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📝 CarPool — Documentation plan for: $FEATURE\033[0m"
+  echo "# Documentation Plan: $FEATURE" > "$DOCS_FILE"
+  echo "Generated: $(date)" >> "$DOCS_FILE"
+  PY_DOCS='
+import sys, json, urllib.request
+feature = sys.argv[1]
+agents = [
+  ("ARIA","Tech writer","Write a complete outline for the user-facing docs for $FEATURE. Include: overview, quickstart, concepts, how-to guides, reference, and FAQs."),
+  ("ALICE","PM","Write the one-paragraph product description and the 3 key use cases for $FEATURE that should appear at the top of every doc page."),
+  ("OCTAVIA","Engineer","Write the API reference structure for $FEATURE: endpoints or functions, parameters, response shapes, error codes, and a code example."),
+  ("LUCIDIA","Educator","What analogies or mental models make $FEATURE click for a new user? Write an ELI5 explanation and a more advanced conceptual explanation."),
+  ("PRISM","Analyst","How do we measure if our docs for $FEATURE are working? What signals (search queries, support tickets, time-on-page) tell us where docs are failing?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'FEATURE', feature)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_DOCS" "$FEATURE" | tee -a "$DOCS_FILE"
+  echo -e "\033[0;32m✓ Saved to $DOCS_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "vision" ]]; then
+  PRODUCT="${2:-our product}"
+  VIS_DIR="$HOME/.blackroad/carpool/visions"
+  mkdir -p "$VIS_DIR"
+  VIS_FILE="$VIS_DIR/vision-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🌌 CarPool — Long-term vision for: $PRODUCT\033[0m"
+  echo "# Vision: $PRODUCT" > "$VIS_FILE"
+  echo "Generated: $(date)" >> "$VIS_FILE"
+  PY_VIS='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("LUCIDIA","Visionary","Paint a vivid picture of what $PRODUCT looks like in 5 years if everything goes right. Who uses it, how, and why does it matter?"),
+  ("PRISM","Futurist","What macro trends (AI, regulation, demographics, infrastructure) will shape the future of $PRODUCT over the next 5 years?"),
+  ("ARIA","Designer","What does the ideal end-state UX of $PRODUCT look like? Describe the experience in sensory and emotional terms."),
+  ("SHELLFISH","Skeptic","What are the 3 most likely reasons $PRODUCT fails to reach its 5-year vision? What assumptions is the vision making that could be wrong?"),
+  ("ALICE","Operator","What are the 5 biggest organizational and execution challenges to achieving the $PRODUCT vision? How do we sequence them?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_VIS" "$PRODUCT" | tee -a "$VIS_FILE"
+  echo -e "\033[0;32m✓ Saved to $VIS_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "партнер" ]] || [[ "$1" == "partnership" ]]; then
+  PARTNER="${2:-a potential partner}"
+  PART_DIR="$HOME/.blackroad/carpool/partnerships"
+  mkdir -p "$PART_DIR"
+  PART_FILE="$PART_DIR/partner-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🤝 CarPool — Partnership analysis: $PARTNER\033[0m"
+  echo "# Partnership: $PARTNER" > "$PART_FILE"
+  echo "Generated: $(date)" >> "$PART_FILE"
+  PY_PART='
+import sys, json, urllib.request
+partner = sys.argv[1]
+agents = [
+  ("LUCIDIA","Strategist","What is the strategic case for partnering with $PARTNER? What does each side bring and what does each side get?"),
+  ("ALICE","BD","What are the 5 key terms we need to nail in a partnership agreement with $PARTNER? What are our must-haves vs nice-to-haves?"),
+  ("PRISM","Analyst","How do we measure if a partnership with $PARTNER is working? What are the 3 leading and 3 lagging indicators of success?"),
+  ("CIPHER","Risk","What are the top 3 risks of partnering with $PARTNER: data sharing, lock-in, competitive conflict, reputational risk?"),
+  ("SHELLFISH","Devil advocate","Why should we NOT partner with $PARTNER? What are the hidden costs, power imbalances, or strategic traps?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PARTNER', partner)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_PART" "$PARTNER" | tee -a "$PART_FILE"
+  echo -e "\033[0;32m✓ Saved to $PART_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
