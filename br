@@ -157,6 +157,11 @@ BR_TOOLS=(
     review      "${BR_TOOLS_DIR}/review/br-review.sh"
     status-all  "${BR_TOOLS_DIR}/status-all/br-status-all.sh"
     sa          "${BR_TOOLS_DIR}/status-all/br-status-all.sh"
+    env-check   "${BR_TOOLS_DIR}/env-check/br-env-check.sh"
+    envc        "${BR_TOOLS_DIR}/env-check/br-env-check.sh"
+    port        "${BR_TOOLS_DIR}/port/br-port.sh"
+    task        "${BR_TOOLS_DIR}/task-manager/br-task-manager.sh"
+    tasks       "${BR_TOOLS_DIR}/task-manager/br-task-manager.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -390,7 +395,10 @@ show_help() {
     echo "║    br carpool prompt <task> - Agents write AI prompts for a task   ║"
     echo "║    br carpool interview [r] - Mock interview: 5 Qs with feedback   ║"
     echo "║    br carpool sprint <goal> - Break goal into sprint backlog       ║"
-    echo "║    br carpool react <f/url> - Quick reaction: brief+context        ║"
+    echo "║    br carpool review <text> - Writing/doc review: clarity+logic    ║"
+    echo "║    br carpool okr <goal>    - Generate OKRs + PRISM grades them    ║"
+    echo "║    br carpool explain <c>   - Socratic explanation + follow-up Q&A ║"
+    echo "║    br carpool email <subj>  - 3 agents draft email in 3 tones      ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
     echo "║    br carpool ask <q>       - Inject follow-up into live session   ║"
@@ -591,6 +599,20 @@ show_help() {
     echo "║    br status-all            - Full system health snapshot        ║"
     echo "║    br status-all quick      - One-line system summary            ║"
     echo "║    br status-all watch [N]  - Live refresh every N seconds       ║"
+    echo "║                                                                   ║"
+    echo "║  ENV / PORT / TASKS:                                             ║"
+    echo "║    br env-check scan [dir]  - Scan .env files for exposed secrets║"
+    echo "║    br env-check check       - Verify required env vars set       ║"
+    echo "║    br env-check diff        - Compare .env.example vs .env       ║"
+    echo "║    br port list             - All listening ports + processes     ║"
+    echo "║    br port check <port>     - Is this port free?                 ║"
+    echo "║    br port services         - BlackRoad service ports status     ║"
+    echo "║    br port kill <port>      - Stop process on port               ║"
+    echo "║    br task post <title>     - Post a task to mesh queue          ║"
+    echo "║    br task list [status]    - List tasks (available/all/done)    ║"
+    echo "║    br task claim <id>       - Claim a task                       ║"
+    echo "║    br task complete <id>    - Mark task complete                 ║"
+    echo "║    br task assign <inst> <t>- Assign task to instance inbox      ║"
     echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
@@ -957,6 +979,10 @@ main() {
                 prompt)     bash /Users/alexa/blackroad/carpool.sh prompt "$@" ;;
                 interview)  bash /Users/alexa/blackroad/carpool.sh interview "$@" ;;
                 sprint)     bash /Users/alexa/blackroad/carpool.sh sprint "$@" ;;
+                review)     bash /Users/alexa/blackroad/carpool.sh review "$@" ;;
+                okr)        bash /Users/alexa/blackroad/carpool.sh okr "$@" ;;
+                explain)    bash /Users/alexa/blackroad/carpool.sh explain "$@" ;;
+                email)      bash /Users/alexa/blackroad/carpool.sh email "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac

@@ -2765,6 +2765,209 @@ print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
   exit 0
 fi
 
+# ── REVIEW — writing/doc review: clarity, tone, structure ────
+if [[ "$1" == "review" ]]; then
+  shift
+  # Accept: file arg, stdin, or prompt
+  _text=""
+  if [[ $# -gt 0 && -f "$1" ]]; then
+    _text=$(cat "$1"); _src="$1"
+  elif [[ $# -gt 0 ]]; then
+    _text="$*"; _src="inline"
+  elif [[ ! -t 0 ]]; then
+    _text=$(cat); _src="stdin"
+  else
+    echo -e "${CYAN}Paste text to review (Ctrl-D when done):${NC}"; _text=$(cat); _src="pasted"
+  fi
+  [[ -z "$_text" ]] && echo -e "${RED}No text provided.${NC}" && exit 1
+  _preview="${_text:0:60}..."
+  echo -e "\n${WHITE}✏️  Writing Review${NC}  ${DIM}${_preview}${NC}\n"
+
+  RV_AGENTS=(ARIA      LUCIDIA       PRISM          CIPHER)
+  RV_LENS=("clarity & structure" "argument & logic" "data & evidence" "assumptions & risks")
+  for i in 0 1 2 3; do
+    _rva="${RV_AGENTS[$i]}"
+    _rvl="${RV_LENS[$i]}"
+    agent_meta "$_rva"
+    _rvc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,text=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Review this writing from the lens of: {lens}
+Give 2-3 specific observations. Be direct. Note what works AND what to improve.
+Format: STRONG: / IMPROVE: / SUGGEST:
+TEXT:
+{text[:1500]}'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':140,'temperature':0.6,'stop':['---']}}))" \
+    "$_rva" "$ROLE" "$_rvl" "$_text" 2>/dev/null)
+    echo -ne "${_rvc}${EMOJI} ${_rva}${NC}  ${DIM}${_rvl}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_rvc}${EMOJI} ${_rva}${NC}  ${DIM}${_rvl}${NC}"
+    echo -e "${_resp}\n"
+  done
+  exit 0
+fi
+
+# ── OKR — generate Objectives + Key Results ───────────────────
+if [[ "$1" == "okr" ]]; then
+  _goal="${*:2}"
+  THEME_FILE="$HOME/.blackroad/carpool/theme.txt"
+  [[ -z "$_goal" && -f "$THEME_FILE" ]] && _goal=$(head -1 "$THEME_FILE")
+  [[ -z "$_goal" ]] && echo -e "${RED}Usage: br carpool okr <goal>${NC}" && exit 1
+  OKR_FILE="$HOME/.blackroad/carpool/okrs.md"
+  echo -e "\n${WHITE}🎯 OKR Generator${NC}  ${DIM}${_goal}${NC}\n"
+
+  _okr_payload=$(python3 -c "
+import json,sys
+goal=sys.argv[1]
+prompt=f'''Generate quarterly OKRs for this goal: \"{goal}\"
+
+Format:
+OBJECTIVE: <inspiring, qualitative outcome>
+
+KEY RESULTS:
+1. KR: <specific measurable result> — TARGET: <number/date>
+2. KR: <specific measurable result> — TARGET: <number/date>
+3. KR: <specific measurable result> — TARGET: <number/date>
+4. KR: <specific measurable result> — TARGET: <number/date>
+
+HEALTH METRIC: <one metric that tells you if you are on track>
+
+Be specific and measurable. No vague KRs.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':260,'temperature':0.5,'stop':['---','Note:']}}))" \
+  "$_goal" 2>/dev/null)
+  _okrs=$(curl -s -m 60 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_okr_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  echo -e "${_okrs}\n"
+
+  # PRISM grades the KRs
+  agent_meta "PRISM"
+  _grade_payload=$(python3 -c "
+import json,sys
+okrs=sys.argv[1]
+prompt=f'You are PRISM. Grade each Key Result: MEASURABLE? (yes/no) AMBITIOUS? (yes/no). One line per KR.\n{okrs}'
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':80,'temperature':0.3}}))" "$_okrs" 2>/dev/null)
+  _grade=$(curl -s -m 30 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_grade_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  echo -e "${EMOJI} ${DIM}PRISM grades:${NC}\n${_grade}\n"
+
+  { echo ""; echo "## $(date '+%Y-%m-%d') — ${_goal}"; echo ""; echo "$_okrs"; echo ""; } >> "$OKR_FILE"
+  echo -e "${DIM}Saved → ${OKR_FILE}${NC}"
+  exit 0
+fi
+
+# ── EXPLAIN — Socratic explanation with follow-up ─────────────
+if [[ "$1" == "explain" ]]; then
+  _concept="${*:2}"
+  [[ -z "$_concept" ]] && echo -e "${RED}Usage: br carpool explain <concept>${NC}" && exit 1
+  _agent="${EXPLAIN_AGENT:-LUCIDIA}"
+  agent_meta "$_agent"
+  _ec="\033[${COLOR_CODE}m"
+  echo -e "\n${WHITE}🧠 Explain: ${_concept}${NC}  ${DIM}with ${_agent}${NC}\n"
+
+  # Initial explanation
+  _exp_payload=$(python3 -c "
+import json,sys
+agent,role,persona,concept=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''{persona}
+Explain \"{concept}\" clearly.
+Start with the core idea in one sentence.
+Then give 3 layers of depth (ELI5 → intermediate → expert insight).
+End with one question that would deepen understanding further.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':260,'temperature':0.7,'stop':['---']}}))" \
+  "$_agent" "$ROLE" "$PERSONA" "$_concept" 2>/dev/null)
+  echo -ne "${_ec}${EMOJI} ${_agent}${NC}  ${DIM}explaining...${NC}"
+  _exp=$(curl -s -m 60 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_exp_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  printf "\r\033[K"
+  echo -e "${_ec}${EMOJI} ${_agent}:${NC}\n${_exp}\n"
+
+  # Interactive follow-up loop
+  echo -e "${DIM}── ask follow-up questions (or 'done' to exit) ──${NC}\n"
+  _history="$_exp"
+  while true; do
+    echo -ne "${CYAN}You: ${NC}"; read -r _q
+    [[ "$_q" == "done" || "$_q" == "q" || -z "$_q" ]] && break
+    _fup_payload=$(python3 -c "
+import json,sys
+agent,persona,hist,q=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''{persona}
+Previous explanation: {hist[:800]}
+Follow-up question: {q}
+Answer directly and build on what was said. Stay concise.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':180,'temperature':0.7,'stop':['---']}}))" \
+    "$_agent" "$PERSONA" "$_history" "$_q" 2>/dev/null)
+    echo -ne "${_ec}${EMOJI} ${_agent}${NC}  ${DIM}thinking...${NC}"
+    _ans=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_fup_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_ec}${EMOJI} ${_agent}:${NC} ${_ans}\n"
+    _history="${_history} Q: ${_q} A: ${_ans}"
+  done
+  exit 0
+fi
+
+# ── EMAIL — draft a professional email collaboratively ─────────
+if [[ "$1" == "email" ]]; then
+  _subj="${*:2}"
+  [[ -z "$_subj" ]] && echo -e "${RED}Usage: br carpool email <subject or situation>${NC}" && exit 1
+  EMAIL_DIR="$HOME/.blackroad/carpool/emails"
+  mkdir -p "$EMAIL_DIR"
+  _slug=$(echo "$_subj" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-' | cut -c1-25)
+  _out="${EMAIL_DIR}/$(date '+%Y-%m-%d')-${_slug}.txt"
+
+  echo -e "\n${WHITE}📧 Email Drafter${NC}  ${DIM}${_subj}${NC}\n"
+
+  # 3 agents, 3 tones
+  EM_AGENTS=(ARIA       LUCIDIA        OCTAVIA)
+  EM_TONES=("warm & collaborative" "strategic & thought-leader" "direct & executive")
+  for i in 0 1 2; do
+    _ema="${EM_AGENTS[$i]}"
+    _emt="${EM_TONES[$i]}"
+    agent_meta "$_ema"
+    _emc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,tone,subj=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Write a professional email.
+Subject/situation: \"{subj}\"
+Tone: {tone}
+Format:
+Subject: <subject line>
+---
+<email body, 3-4 short paragraphs>
+---
+Sign off appropriately. No filler phrases.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':220,'temperature':0.7,'stop':['===','---END']}}))" \
+    "$_ema" "$ROLE" "$_emt" "$_subj" 2>/dev/null)
+    echo -ne "${_emc}${EMOJI} ${_ema}${NC}  ${DIM}${_emt}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_emc}${EMOJI} ${_ema}${NC}  ${DIM}${_emt}${NC}"
+    echo -e "${_resp}\n"
+    echo "── ${_ema} (${_emt}) ──" >> "$_out"
+    echo "$_resp" >> "$_out"
+    echo "" >> "$_out"
+  done
+  echo -e "${DIM}All 3 drafts saved → ${_out}${NC}"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
