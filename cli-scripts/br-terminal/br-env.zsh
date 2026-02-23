@@ -28,14 +28,13 @@ setopt CORRECT               # Suggest command corrections
 setopt INTERACTIVE_COMMENTS  # Allow comments in interactive mode
 
 # ── BlackRoad Paths ──
-export BLACKROAD_HOME="$HOME/blackroad-sandbox"
-export BLACKROAD_OPERATOR="$HOME/blackroad-os-operator"
-export BLACKROAD_DOCS="$HOME/blackroad-os-docs"
+export BLACKROAD_HOME="$HOME/blackroad"
+export BLACKROAD_OPERATOR="$HOME/blackroad/blackroad-operator"
+export BLACKROAD_DOCS="$HOME/blackroad/blackroad-docs"
 
-# Add BlackRoad binaries to PATH
+# Add br CLI to PATH
 export PATH="$BLACKROAD_HOME:$PATH"
-export PATH="$BLACKROAD_HOME/scripts:$PATH"
-export PATH="$BLACKROAD_OPERATOR/scripts:$PATH"
+export PATH="$BLACKROAD_OPERATOR/cli-scripts:$PATH"
 
 # ── Python ──
 export PYTHONPATH="$BLACKROAD_HOME/src:$PYTHONPATH"
