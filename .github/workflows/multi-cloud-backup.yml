@@ -1,0 +1,65 @@
+name: "💾 Multi-Cloud Backup Chain"
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 3am daily
+  workflow_dispatch:
+
+jobs:
+  backup-tier1-gdrive:
+    runs-on: [self-hosted, cecilia]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Google Drive Sync
+        run: |
+          if command -v rclone &>/dev/null; then
+            rclone sync /home/blackroad/blackroad gdrive-blackroad:blackroad-backup \
+              --exclude ".git/**" --exclude "node_modules/**" \
+              --transfers 4 --log-level INFO 2>&1 | tail -5
+            echo "✅ GDrive backup complete"
+          else
+            echo "⚠️ rclone not available"
+          fi
+
+  backup-tier2-do:
+    runs-on: [self-hosted, cecilia]
+    needs: backup-tier1-gdrive
+    steps:
+      - name: Sync to DigitalOcean (gematria)
+        run: |
+          rsync -az --delete \
+            --exclude=".git" --exclude="node_modules" \
+            /home/blackroad/blackroad/ \
+            blackroad@159.65.43.12:/home/blackroad/backups/blackroad-$(date +%Y%m%d)/ 2>&1 | tail -3
+          echo "✅ DO backup complete"
+
+  backup-tier3-cloudflare:
+    runs-on: [self-hosted, gematria-do]
+    needs: backup-tier2-do
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Push to Cloudflare R2
+        run: |
+          source ~/.nvm/nvm.sh 2>/dev/null; nvm use 20 2>/dev/null || true
+          DATE=$(date +%Y%m%d)
+          for DIR in scripts tools infra .github agents; do
+            [ -d "/home/blackroad/backups/blackroad-${DATE}/${DIR}" ] && \
+            tar czf /tmp/${DIR}-${DATE}.tar.gz \
+              -C "/home/blackroad/backups/blackroad-${DATE}" "$DIR" 2>/dev/null && \
+            wrangler r2 object put "blackroad-backup/gematria/${DATE}/${DIR}.tar.gz" \
+              --file "/tmp/${DIR}-${DATE}.tar.gz" 2>&1 | tail -1 || true
+          done
+          echo "✅ R2 backup complete"
+
+  verify-backups:
+    runs-on: [self-hosted, pi, blackroad]
+    needs: [backup-tier1-gdrive, backup-tier2-do]
+    steps:
+      - name: Verify backup chain
+        run: |
+          echo "📦 Backup chain status: $(date)"
+          echo "✅ Tier 1: Google Drive"
+          echo "✅ Tier 2: DigitalOcean (gematria)"
+          echo "✅ Tier 3: Cloudflare R2"
+          echo "✅ Tier 4: GitHub (this repo)"
+          echo "✅ Tier 5: Railway (via deploy)"

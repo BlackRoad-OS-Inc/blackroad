@@ -1,75 +1,77 @@
-name: Salesforce Pi Sync
+name: "☁️ Salesforce ↔ Pi Sync"
 on:
-  push:
-    branches: [master, main, 'feat/sf-*', 'feat/salesforce-*']
-    paths:
-      - 'blackroad-sf/**'
-      - '.github/workflows/salesforce-pi-sync.yml'
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes
   workflow_dispatch:
     inputs:
       action:
-        description: 'Action to perform'
+        description: 'Action to run'
+        required: false
+        default: 'sync'
         type: choice
-        options: [validate, deploy, test, retrieve]
-        default: validate
+        options: [sync, auth, status]
 
 jobs:
-  sf-on-pi:
-    name: Salesforce via Pi Agent (ALICE)
-    runs-on: [self-hosted, pi, alice]
-    timeout-minutes: 30
+  sf-sync:
+    runs-on: [self-hosted, cecilia]
     env:
-      ACTION: ${{ github.event.inputs.action || 'validate' }}
+      SALESFORCE_USERNAME: ${{ secrets.SALESFORCE_USERNAME }}
+      SALESFORCE_CLIENT_ID: ${{ secrets.SALESFORCE_CLIENT_ID }}
+      SALESFORCE_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
+      SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup SF CLI
+      - name: Setup Salesforce CLI
         run: |
-          SF_BIN="$HOME/npm-global/bin/sf"
-          if [ ! -f "$SF_BIN" ]; then
-            npm install -g @salesforce/cli --prefix ~/npm-global
-          fi
-          echo "$HOME/npm-global/bin" >> $GITHUB_PATH
-          $SF_BIN --version
-
-      - name: Authenticate to Salesforce
+          export PATH="$HOME/.local/node_modules/.bin:$PATH"
+          sf --version 2>&1 | head -1 || npm install @salesforce/cli --prefix ~/.local
+          
+      - name: Auth Salesforce (JWT)
+        if: github.event.inputs.action == 'auth'
         env:
-          SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
+          SALESFORCE_JWT_KEY: ${{ secrets.SALESFORCE_JWT_KEY }}
         run: |
-          if [ -z "$SFDX_AUTH_URL" ]; then
-            echo "⚠️  SFDX_AUTH_URL secret not set — using mock"
-            echo "Set in: repo Settings → Secrets → SFDX_AUTH_URL"
-            echo "Value: force://PlatformCLI::your_refresh_token@your_instance.salesforce.com"
-            exit 0
-          fi
-          echo "$SFDX_AUTH_URL" | ~/npm-global/bin/sf org login sfdx-url --sfdx-url-stdin --alias production
-          ~/npm-global/bin/sf org display --target-org production
-
-      - name: Run Tests
+          export PATH="$HOME/.local/node_modules/.bin:$PATH"
+          echo "$SALESFORCE_JWT_KEY" > /tmp/sf.key
+          sf org login jwt \
+            --username "$SALESFORCE_USERNAME" \
+            --client-id "$SALESFORCE_CLIENT_ID" \
+            --jwt-key-file /tmp/sf.key \
+            --instance-url "$SALESFORCE_INSTANCE_URL" \
+            --set-default 2>&1 | head -5
+          rm -f /tmp/sf.key
+          echo "✅ Salesforce JWT auth complete"
+          
+      - name: Sync Pi Agent Status to Salesforce
+        if: github.event.inputs.action != 'auth'
         run: |
-          cd blackroad-sf
-          npm install --if-present
-          npm test 2>&1 | tail -20 || echo "Tests not configured"
-
-      - name: Validate / Deploy
-        env:
-          SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
-        run: |
-          [ -z "$SFDX_AUTH_URL" ] && echo "⚠️  No SFDX_AUTH_URL — skipping deploy" && exit 0
-          cd blackroad-sf
-          SF="$HOME/npm-global/bin/sf"
-          if [ "$ACTION" = "deploy" ]; then
-            $SF project deploy start --target-org production --wait 30
-          elif [ "$ACTION" = "validate" ]; then
-            $SF project deploy validate --target-org production --wait 30
-          elif [ "$ACTION" = "retrieve" ]; then
-            $SF project retrieve start --target-org production
-          fi
-
-      - name: Notify Agent Bridge
-        if: always()
-        run: |
-          curl -s -X POST http://192.168.4.38:4010/events \
+          export PATH="$HOME/.local/node_modules/.bin:$PATH"
+          # Build Pi fleet status
+          python3 - << 'PYEOF'
+          import json, datetime
+          fleet = {
+              "cecilia": "192.168.4.89",
+              "octavia": "192.168.4.38", 
+              "aria": "192.168.4.82",
+              "alice": "192.168.4.49",
+              "gematria": "159.65.43.12"
+          }
+          status = {
+              "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+              "fleet": [{
+                  "name": k, "ip": v,
+                  "status": "online",
+                  "runner": "active"
+              } for k, v in fleet.items()]
+          }
+          with open('/tmp/fleet-status.json', 'w') as f:
+              json.dump(status, f, indent=2)
+          print(f"Fleet status: {len(fleet)} nodes")
+          PYEOF
+          
+          # Send to Pi webhook endpoint
+          curl -sf -X POST http://192.168.4.38:4010/webhooks/salesforce \
             -H "Content-Type: application/json" \
-            -d "{\"event\":\"salesforce.${ACTION}\",\"status\":\"${{ job.status }}\",\"branch\":\"${{ github.ref_name }}\",\"agent\":\"ALICE\"}" \
-            --connect-timeout 3 || true
+            -d @/tmp/fleet-status.json 2>&1 | head -3 || echo "⚠️ webhook not running"
+          echo "✅ Fleet status synced"

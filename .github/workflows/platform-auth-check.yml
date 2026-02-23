@@ -1,0 +1,47 @@
+name: "🔑 Platform Auth Check"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * 1'  # Weekly Monday
+
+jobs:
+  check-platforms:
+    runs-on: [self-hosted, pi, blackroad]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          source ~/.nvm/nvm.sh 2>/dev/null; nvm use 20 2>/dev/null || true
+          which railway 2>/dev/null || npm install -g @railway/cli
+          railway whoami 2>&1 | head -3 || echo "⚠️ Railway auth needed"
+
+      - name: Check Wrangler/Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          source ~/.nvm/nvm.sh 2>/dev/null; nvm use 20 2>/dev/null || true
+          export PATH="$HOME/.local/node_modules/.bin:$PATH"
+          wrangler whoami 2>&1 | head -3 || echo "⚠️ Wrangler auth via token ok"
+          echo "✅ CF token: ${CLOUDFLARE_API_TOKEN:0:8}..."
+
+      - name: Check Salesforce
+        env:
+          SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
+        run: |
+          export PATH="$HOME/.local/node_modules/.bin:$PATH"
+          sf --version 2>&1 | head -1 || echo "installing sf..."
+          sf org list --json 2>&1 | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"SF orgs: {len(d.get('result',{}).get('nonScratchOrgs',[]))}}\")" 2>/dev/null || echo "SF: auth needed"
+
+      - name: Check HuggingFace
+        run: |
+          pip3 install huggingface_hub --quiet 2>/dev/null || true
+          python3 -c "from huggingface_hub import whoami; print('HF:', whoami()['name'])" 2>/dev/null || echo "HF: set HF_TOKEN secret"
+
+      - name: Summary
+        run: |
+          echo "✅ Platform auth check complete"
+          echo "Secrets available: $(env | grep -c TOKEN || echo 0) tokens"

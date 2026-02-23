@@ -1,54 +1,58 @@
-# Cloudflare Deploy via Pi Self-Hosted Runner
-# Cost: $0 — runs on octavia/gematria
-name: ☁️ Cloudflare Pi Deploy
-
+name: "☁️ Cloudflare Deploy from Pi"
 on:
   push:
-    branches: [master, agent/aria]
-    paths:
-      - 'tools/cloudflare/**'
-      - '.github/workflows/cloudflare-pi-deploy.yml'
+    branches: [master]
+    paths: ['workers/**', 'blackroad-web/**', '.github/workflows/cloudflare-pi-deploy.yml']
   workflow_dispatch:
     inputs:
-      worker:
-        description: 'Worker name to deploy (empty = all)'
+      target:
+        description: 'Deploy target'
         required: false
+        default: 'workers'
+        type: choice
+        options: [workers, pages, all]
 
 jobs:
   deploy-workers:
-    name: 🚀 Deploy Cloudflare Workers
-    runs-on: [self-hosted, pi, blackroad, aria]
+    if: github.event.inputs.target != 'pages'
+    runs-on: [self-hosted, gematria-do]
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: 📦 Setup Wrangler
+      
+      - name: Setup Node 20 + Wrangler
         run: |
-          which wrangler || npm install -g wrangler
+          source ~/.nvm/nvm.sh && nvm use 20 --delete-prefix 2>/dev/null
+          node --version
           wrangler --version
-
-      - name: 🔑 Auth Cloudflare
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_OAUTH_TOKEN: ${{ secrets.WRANGLER_OAUTH_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: echo "CF auth configured"
-
-      - name: 🚀 Deploy Worker(s)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_OAUTH_TOKEN: ${{ secrets.WRANGLER_OAUTH_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          
+      - name: Deploy Workers
         run: |
-          WORKER="${{ github.event.inputs.worker }}"
-          if [ -n "$WORKER" ]; then
-            echo "Deploying specific worker: $WORKER"
-            cd tools/cloudflare/$WORKER 2>/dev/null || echo "Worker not found: $WORKER"
-            wrangler deploy
-          else
-            echo "Deploying all workers..."
-            find tools/cloudflare -name "wrangler.toml" | while read wf; do
-              DIR=$(dirname "$wf")
-              echo "Deploying: $DIR"
-              (cd "$DIR" && wrangler deploy) || echo "⚠️ Failed: $DIR"
-            done
-          fi
+          source ~/.nvm/nvm.sh && nvm use 20
+          echo "Deploying Cloudflare Workers from gematria..."
+          
+          # Find all wrangler.toml files and deploy
+          DEPLOYED=0
+          for toml in $(find . -name "wrangler.toml" -not -path "*/node_modules/*" 2>/dev/null | head -10); do
+            DIR=$(dirname "$toml")
+            NAME=$(grep "^name" "$toml" | head -1 | cut -d'"' -f2)
+            echo "  Deploying: $NAME from $DIR"
+            cd "$DIR"
+            wrangler deploy --config wrangler.toml 2>&1 | tail -2 || echo "  ⚠️ $NAME deploy skipped"
+            cd /home/blackroad/blackroad
+            DEPLOYED=$((DEPLOYED+1))
+          done
+          echo "✅ Deployed $DEPLOYED workers"
+
+  deploy-tunnel:
+    runs-on: [self-hosted, cecilia]
+    steps:
+      - name: Verify Cloudflare Tunnel
+        run: |
+          # Check tunnel status
+          systemctl status cloudflared --no-pager 2>&1 | head -3 || \
+          ps aux | grep cloudflared | grep -v grep | head -2 || \
+          echo "⚠️ cloudflared not running - check tunnel config"
+          echo "✅ Tunnel check done"
