@@ -6236,6 +6236,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "error-handling" ]]; then
+  SYSTEM="${2:-our API}"
+  EH_DIR="$HOME/.blackroad/carpool/error-handling"
+  mkdir -p "$EH_DIR"
+  EH_FILE="$EH_DIR/errors-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m⚠️  CarPool — Error handling strategy: $SYSTEM\033[0m"
+  echo "# Error Handling: $SYSTEM" > "$EH_FILE"
+  echo "Generated: $(date)" >> "$EH_FILE"
+  PY_EH='
+import sys, json, urllib.request
+system = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","Design the error taxonomy for $SYSTEM: categories (transient, permanent, user, system), HTTP/error codes, and retry semantics for each."),
+  ("ALICE","PM","Write the user-facing error message guidelines for $SYSTEM. What tone, what info to include, and what action to give the user for the top 5 error types."),
+  ("CIPHER","Security","What error handling mistakes in $SYSTEM could leak sensitive info (stack traces, internal IDs, DB errors)? What must we scrub from error responses?"),
+  ("PRISM","Analyst","What error monitoring strategy for $SYSTEM? Which errors page on-call immediately vs log silently vs aggregate into weekly reports?"),
+  ("SHELLFISH","Chaos","Design 5 error injection tests for $SYSTEM: what failures to simulate, expected behavior, and how to verify graceful degradation.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SYSTEM', system)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_EH" "$SYSTEM" | tee -a "$EH_FILE"
+  echo -e "\033[0;32m✓ Saved to $EH_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "standup" ]]; then
+  TEAM="${2:-the team}"
+  SD_DIR="$HOME/.blackroad/carpool/standups"
+  mkdir -p "$SD_DIR"
+  SD_FILE="$SD_DIR/standup-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m☀️  CarPool — Standup format for: $TEAM\033[0m"
+  echo "# Standup Design: $TEAM" > "$SD_FILE"
+  echo "Generated: $(date)" >> "$SD_FILE"
+  PY_SD='
+import sys, json, urllib.request
+team = sys.argv[1]
+agents = [
+  ("ALICE","PM","Design the ideal async standup format for $TEAM. What 3 questions does each person answer? How is it collected and shared?"),
+  ("LUCIDIA","Facilitator","What are the 5 most common ways standups go wrong for $TEAM type? How do we prevent each one?"),
+  ("PRISM","Analyst","What signals in standup updates tell us $TEAM is in trouble before it becomes a crisis? List 6 early warning patterns."),
+  ("ARIA","Culture","How do we make the standup for $TEAM feel connective and human, not bureaucratic? What rituals or formats help?"),
+  ("OCTAVIA","Async","Design a fully async standup bot workflow for $TEAM: trigger time, format, aggregation, and where it posts the daily summary.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'TEAM', team)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_SD" "$TEAM" | tee -a "$SD_FILE"
+  echo -e "\033[0;32m✓ Saved to $SD_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "refactor" ]]; then
+  CODE="${2:-the module}"
+  RF_DIR="$HOME/.blackroad/carpool/refactors"
+  mkdir -p "$RF_DIR"
+  RF_FILE="$RF_DIR/refactor-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🔧 CarPool — Refactor plan for: $CODE\033[0m"
+  echo "# Refactor Plan: $CODE" > "$RF_FILE"
+  echo "Generated: $(date)" >> "$RF_FILE"
+  PY_RF='
+import sys, json, urllib.request
+code = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","What is the ideal end-state architecture for $CODE after refactoring? Draw the before/after in ASCII or describe it clearly."),
+  ("ALICE","PM","How do we refactor $CODE safely without stopping feature delivery? Propose a strangler fig or parallel-run approach with phases."),
+  ("SHELLFISH","Risk","What are the top 3 ways the $CODE refactor could go wrong or introduce regressions? What safety nets do we need first?"),
+  ("CIPHER","Security","What security improvements should we bake into the $CODE refactor while we are in there? Auth, input validation, secrets handling."),
+  ("PRISM","Quality","What test coverage must we have BEFORE touching $CODE? What characterization tests should we write to lock in current behavior?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'CODE', code)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_RF" "$CODE" | tee -a "$RF_FILE"
+  echo -e "\033[0;32m✓ Saved to $RF_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "alerting" ]]; then
+  SERVICE="${2:-our service}"
+  AL_DIR="$HOME/.blackroad/carpool/alerting"
+  mkdir -p "$AL_DIR"
+  AL_FILE="$AL_DIR/alerts-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🔔 CarPool — Alerting strategy for: $SERVICE\033[0m"
+  echo "# Alerting Strategy: $SERVICE" > "$AL_FILE"
+  echo "Generated: $(date)" >> "$AL_FILE"
+  PY_AL='
+import sys, json, urllib.request
+service = sys.argv[1]
+agents = [
+  ("PRISM","SRE","Design the full alerting pyramid for $SERVICE: what fires a page (P0/P1), what is a Slack warn (P2), and what is a weekly digest (P3)?"),
+  ("OCTAVIA","Platform","What are the 8 essential metrics to alert on for $SERVICE? For each: threshold, window, and severity."),
+  ("ALICE","Ops","How do we prevent alert fatigue for $SERVICE? What alert tuning cadence, silencing rules, and on-call rotation reduces noise?"),
+  ("CIPHER","Security","What security-specific alerts must exist for $SERVICE: auth failures, rate limit breaches, unusual access patterns, data exfil signals?"),
+  ("LUCIDIA","Strategist","What is the alert escalation policy for $SERVICE? Who gets paged, in what order, and what happens if no one responds in 10 minutes?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SERVICE', service)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_AL" "$SERVICE" | tee -a "$AL_FILE"
+  echo -e "\033[0;32m✓ Saved to $AL_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
