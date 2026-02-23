@@ -399,7 +399,7 @@ print(json.dumps({
   echo ""
 }
 
-
+show_help() {
   echo ""
   echo "  ${PINK}${BOLD}br agents${NC}  — live agent roster & dispatch"
   echo ""
@@ -410,16 +410,93 @@ print(json.dumps({
   echo "    ${CYAN}wake <NAME>${NC}              Wake/refresh an agent"
   echo "    ${CYAN}task <NAME> <task>${NC}       Send task to agent, get response"
   echo "    ${CYAN}models${NC}                   List available Ollama models"
-  echo "    ${CYAN}kill <NAME>${NC}              Remove agent from active roster
-    ${CYAN}chat [NAME] [model]${NC}      Persistent multi-turn chat with an agent"
+  echo "    ${CYAN}kill <NAME>${NC}              Remove agent from active roster"
+  echo "    ${CYAN}chat [NAME] [model]${NC}      Persistent multi-turn chat with an agent"
+  echo "    ${CYAN}registry [status|health|tasks]${NC}  Query the HTTP registry API"
   echo ""
   echo "  ${BOLD}Named agents:${NC}  LUCIDIA  ALICE  OCTAVIA  CIPHER  ARIA  SHELLFISH"
   echo ""
 }
 
+cmd_registry() {
+  local REGISTRY_URL="${BLACKROAD_REGISTRY_URL:-http://localhost:3001}"
+  local sub="${1:-status}"
+
+  case "$sub" in
+    status|list)
+      echo ""
+      echo "  ${PINK}${BOLD}🌐 Agent Registry${NC}  ${DIM}$REGISTRY_URL${NC}"
+      echo "  ${DIM}────────────────────────────────────────${NC}"
+
+      local resp
+      resp=$(curl -sf --max-time 5 "$REGISTRY_URL/agents" 2>/dev/null)
+      if [[ -z "$resp" ]]; then
+        echo "  ${RED}✗ Registry offline${NC}  →  start: ${DIM}npm start${NC} in blackroad-agents"
+        echo ""
+        return 1
+      fi
+
+      python3 -c "
+import json, sys
+data = json.loads('''$resp''')
+agents = data.get('agents', [])
+print(f'  \033[2m{len(agents)} agents registered\033[0m')
+print()
+for a in agents:
+    caps = ', '.join(a.get('capabilities', [])[:3])
+    st = a.get('status', 'unknown')
+    col = '\033[32m' if st == 'available' else '\033[33m' if st == 'busy' else '\033[31m'
+    reset = '\033[0m'
+    name = a.get('name','?').upper()
+    print(f'  {col}●{reset} \033[1m{name:<12}\033[0m  {col}{st:<10}{reset}  \033[2m{caps}\033[0m')
+print()
+"
+      ;;
+
+    health)
+      local h
+      h=$(curl -sf --max-time 5 "$REGISTRY_URL/health" 2>/dev/null)
+      if [[ -z "$h" ]]; then
+        echo "  ${RED}✗ Registry not responding at $REGISTRY_URL${NC}"
+        return 1
+      fi
+      echo "  ${GREEN}✓ Registry healthy${NC}  $(echo "$h" | python3 -c "import json,sys; d=json.load(sys.stdin); print(f\"\033[2m{d.get('agentCount','?')} agents  uptime: {int(d.get('uptime',0))}s\033[0m\")" 2>/dev/null)"
+      ;;
+
+    tasks)
+      local resp
+      resp=$(curl -sf --max-time 5 "$REGISTRY_URL/tasks" 2>/dev/null)
+      if [[ -z "$resp" ]]; then
+        echo "  ${RED}✗ Registry offline${NC}"
+        return 1
+      fi
+      echo ""
+      echo "  ${PINK}${BOLD}📋 Task Marketplace${NC}"
+      echo "  ${DIM}────────────────────────${NC}"
+      python3 -c "
+import json
+data = json.loads('''$resp''')
+tasks = data.get('tasks', [])
+if not tasks:
+    print('  \033[2mNo tasks\033[0m')
+for t in tasks[:10]:
+    st = t.get('status','?')
+    col = '\033[32m' if st == 'pending' else '\033[33m' if st == 'claimed' else '\033[2m'
+    print(f'  {col}[{st}]\033[0m \033[1m{t.get(\"title\",\"?\")}\033[0m  \033[2m{t.get(\"id\",\"?\")[:16]}\033[0m')
+print()
+"
+      ;;
+
+    *)
+      echo "  Usage: br agents registry [status|health|tasks]"
+      ;;
+  esac
+}
+
 case "${1:-list}" in
   list|roster|ls)   cmd_list ;;
   status|info)      cmd_status "$2" ;;
+  registry|reg)     cmd_registry "$2" ;;
   spawn|start|new)  cmd_spawn "$2" "$3" ;;
   wake|refresh)     cmd_wake "$2" "$3" ;;
   task|send|do)     shift; cmd_task "$@" ;;
