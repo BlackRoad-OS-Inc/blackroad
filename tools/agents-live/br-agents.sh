@@ -284,7 +284,122 @@ cmd_kill() {
   fi
 }
 
-show_help() {
+cmd_chat() {
+  local name="${1:u}"
+  [[ -z "$name" ]] && name="LUCIDIA"
+  local model="${2:-}"
+  [[ -z "$model" ]] && model=$(pick_model)
+  [[ -z "$model" ]] && { echo "  ${RED}No Ollama models available${NC}"; return 1; }
+
+  local history_file="$HOME/.blackroad/chat-${name}.jsonl"
+  local agent_file="$ACTIVE_DIR/${name}.json"
+
+  # Load agent personality
+  local persona="You are ${name}, an AI agent in BlackRoad OS. Be concise and in-character."
+  if [[ -f "$agent_file" ]]; then
+    persona=$(python3 -c "
+import json, sys
+d = json.load(open('$agent_file'))
+role = d.get('current_task','AI agent')
+print(f'You are {d[\"name\"]}, a BlackRoad OS agent. Role: {role}. Be concise, in-character, technical.')
+" 2>/dev/null || echo "$persona")
+  fi
+
+  # Agent color
+  local color
+  case "$name" in
+    LUCIDIA)   color=$CYAN ;;
+    ALICE)     color=$GREEN ;;
+    OCTAVIA)   color=$VIOLET ;;
+    CIPHER)    color=$RED ;;
+    ARIA)      color=$PINK ;;
+    *)         color=$AMBER ;;
+  esac
+
+  echo ""
+  echo "  ${color}${BOLD}◈ CHAT WITH ${name}${NC}  ${DIM}model: ${model}${NC}"
+  echo "  ${DIM}History: $history_file${NC}"
+  echo "  ${DIM}Type 'exit' or Ctrl+C to quit, 'clear' to reset history${NC}"
+  echo ""
+
+  # Build message history array from file
+  build_context() {
+    local ctx="$persona\n\n"
+    if [[ -f "$history_file" ]]; then
+      ctx+=$(tail -20 "$history_file" | python3 -c "
+import json, sys
+turns = []
+for line in sys.stdin:
+    try:
+        d = json.loads(line.strip())
+        turns.append(f'{d[\"role\"].upper()}: {d[\"content\"]}')
+    except: pass
+print('\n'.join(turns))
+" 2>/dev/null)
+    fi
+    echo "$ctx"
+  }
+
+  while true; do
+    printf "  ${YELLOW}you${NC} › "
+    local user_input
+    read -r user_input
+    [[ -z "$user_input" ]] && continue
+    [[ "$user_input" == "exit" || "$user_input" == "quit" ]] && break
+    if [[ "$user_input" == "clear" ]]; then
+      rm -f "$history_file"
+      echo "  ${DIM}History cleared.${NC}"; continue
+    fi
+    if [[ "$user_input" == "history" ]]; then
+      [[ -f "$history_file" ]] && cat "$history_file" || echo "  ${DIM}No history yet${NC}"
+      continue
+    fi
+
+    # Append user turn to history
+    echo "{\"role\":\"user\",\"content\":$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$user_input")}" >> "$history_file"
+
+    # Build prompt with context
+    local full_prompt
+    full_prompt=$(build_context)
+    full_prompt+="
+USER: $user_input
+${name}:"
+
+    printf "  ${color}${name}${NC} › "
+
+    local payload
+    payload=$(python3 -c "
+import json, sys
+print(json.dumps({
+  'model': sys.argv[1],
+  'prompt': sys.argv[2],
+  'stream': False,
+  'options': {'temperature': 0.8, 'num_predict': 300}
+}))
+" "$model" "$full_prompt" 2>/dev/null)
+
+    local response
+    response=$(curl -sf -X POST "$OLLAMA_URL/api/generate" \
+      -H "Content-Type: application/json" \
+      -d "$payload" \
+      --max-time 90 2>/dev/null | \
+      python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('response','(no response)').strip())" 2>/dev/null)
+
+    if [[ -n "$response" ]]; then
+      echo "$response"
+      # Append agent turn to history
+      echo "{\"role\":\"${name}\",\"content\":$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$response")}" >> "$history_file"
+    else
+      echo "${RED}(timeout or error)${NC}"
+    fi
+    echo ""
+  done
+
+  echo "  ${DIM}Chat ended. History saved: $history_file${NC}"
+  echo ""
+}
+
+
   echo ""
   echo "  ${PINK}${BOLD}br agents${NC}  — live agent roster & dispatch"
   echo ""
@@ -295,7 +410,8 @@ show_help() {
   echo "    ${CYAN}wake <NAME>${NC}              Wake/refresh an agent"
   echo "    ${CYAN}task <NAME> <task>${NC}       Send task to agent, get response"
   echo "    ${CYAN}models${NC}                   List available Ollama models"
-  echo "    ${CYAN}kill <NAME>${NC}              Remove agent from active roster"
+  echo "    ${CYAN}kill <NAME>${NC}              Remove agent from active roster
+    ${CYAN}chat [NAME] [model]${NC}      Persistent multi-turn chat with an agent"
   echo ""
   echo "  ${BOLD}Named agents:${NC}  LUCIDIA  ALICE  OCTAVIA  CIPHER  ARIA  SHELLFISH"
   echo ""
@@ -309,5 +425,6 @@ case "${1:-list}" in
   task|send|do)     shift; cmd_task "$@" ;;
   models|model)     cmd_models ;;
   kill|stop|rm)     cmd_kill "$2" ;;
+  chat|talk|convo)  cmd_chat "$2" "$3" ;;
   help|*)           show_help ;;
 esac
