@@ -7076,6 +7076,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "landing" ]]; then
+  PRODUCT="${2:-our product}"
+  LND_DIR="$HOME/.blackroad/carpool/landing"
+  mkdir -p "$LND_DIR"
+  LND_FILE="$LND_DIR/landing-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🌐 CarPool — Landing page for: $PRODUCT\033[0m"
+  echo "# Landing Page: $PRODUCT" > "$LND_FILE"
+  echo "Generated: $(date)" >> "$LND_FILE"
+  PY_LND='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("ARIA","Copywriter","Write the hero section for $PRODUCT: headline (under 10 words), subheadline (under 20 words), and CTA button text. Give 3 variants from bold to subtle."),
+  ("LUCIDIA","Storyteller","What is the narrative structure for the $PRODUCT landing page? Map each section: hero, problem, solution, social proof, features, pricing, FAQ, final CTA."),
+  ("ALICE","PM","What are the top 5 objections a visitor has when landing on the $PRODUCT page? Write the one-sentence answer to each that belongs on the page."),
+  ("PRISM","Analyst","What A/B tests should we run on the $PRODUCT landing page first? Rank by expected lift: headline, CTA, social proof placement, pricing visibility."),
+  ("SHELLFISH","Hacker","Audit the $PRODUCT landing page for conversion leaks: slow load, unclear value prop, too many CTAs, missing trust signals, bad mobile experience.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_LND" "$PRODUCT" | tee -a "$LND_FILE"
+  echo -e "\033[0;32m✓ Saved to $LND_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "database" ]]; then
+  SYSTEM="${2:-our app}"
+  DB_DIR="$HOME/.blackroad/carpool/databases"
+  mkdir -p "$DB_DIR"
+  DB_FILE="$DB_DIR/database-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🗄️  CarPool — Database design: $SYSTEM\033[0m"
+  echo "# Database Design: $SYSTEM" > "$DB_FILE"
+  echo "Generated: $(date)" >> "$DB_FILE"
+  PY_DB='
+import sys, json, urllib.request
+system = sys.argv[1]
+agents = [
+  ("OCTAVIA","DBA","What database engine fits $SYSTEM best: Postgres, MySQL, SQLite, MongoDB, DynamoDB, or a hybrid? Compare on: query patterns, scale, ops burden, cost."),
+  ("ALICE","Engineer","Design the core schema for $SYSTEM. List the top 5 tables/collections, their key fields, relationships, and indexes needed for the most common queries."),
+  ("PRISM","Analyst","What query performance risks will $SYSTEM face at 10x data volume? Which queries will become table scans and how do we fix them now?"),
+  ("CIPHER","Security","What database security controls does $SYSTEM need: row-level security, encrypted columns, connection pooling limits, audit logging, and backup encryption?"),
+  ("SHELLFISH","Chaos","What happens to $SYSTEM when the primary DB goes down, a migration runs long, or a query takes 30 seconds? Design the resilience strategy.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SYSTEM', system)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_DB" "$SYSTEM" | tee -a "$DB_FILE"
+  echo -e "\033[0;32m✓ Saved to $DB_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "social" ]]; then
+  BRAND="${2:-our brand}"
+  SOC_DIR="$HOME/.blackroad/carpool/social"
+  mkdir -p "$SOC_DIR"
+  SOC_FILE="$SOC_DIR/social-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📣 CarPool — Social media strategy: $BRAND\033[0m"
+  echo "# Social Strategy: $BRAND" > "$SOC_FILE"
+  echo "Generated: $(date)" >> "$SOC_FILE"
+  PY_SOC='
+import sys, json, urllib.request
+brand = sys.argv[1]
+agents = [
+  ("ARIA","Social strategist","What platforms should $BRAND prioritize and why? For each: content type, posting frequency, tone, and audience it reaches."),
+  ("LUCIDIA","Storyteller","Write a 1-week content calendar for $BRAND: 7 post ideas across platforms, each with a hook, body, and CTA. Mix educational, entertainment, and promotional."),
+  ("ALICE","PM","What is the social media workflow for $BRAND: who creates, who approves, what tools, what response time SLA for comments and DMs?"),
+  ("PRISM","Analyst","What social metrics actually matter for $BRAND growth? Beyond vanity metrics — what engagement signals predict pipeline or community health?"),
+  ("SHELLFISH","Risk","What are the top 3 social media risks for $BRAND: PR crisis, account compromise, employee posts, competitor trolling? Prepare response playbooks.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'BRAND', brand)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_SOC" "$BRAND" | tee -a "$SOC_FILE"
+  echo -e "\033[0;32m✓ Saved to $SOC_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "infra-cost" ]]; then
+  STACK="${2:-our cloud stack}"
+  IC_DIR="$HOME/.blackroad/carpool/infra-costs"
+  mkdir -p "$IC_DIR"
+  IC_FILE="$IC_DIR/infra-cost-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m💸 CarPool — Infrastructure cost review: $STACK\033[0m"
+  echo "# Infra Cost Review: $STACK" > "$IC_FILE"
+  echo "Generated: $(date)" >> "$IC_FILE"
+  PY_IC='
+import sys, json, urllib.request
+stack = sys.argv[1]
+agents = [
+  ("PRISM","FinOps","Break down the monthly cost of $STACK by service. What is the estimated spend for compute, storage, network egress, and managed services?"),
+  ("OCTAVIA","Platform","What are the top 3 over-provisioned resources in $STACK? Give concrete right-sizing recommendations with estimated monthly savings each."),
+  ("ALICE","DevOps","What cost allocation tags and budget alerts should we set up for $STACK to catch runaway spending before it hits the bill?"),
+  ("SHELLFISH","Risk","What are the runaway cost scenarios in $STACK: auto-scaling without caps, data transfer loops, orphaned resources, log explosion? How do we cap each?"),
+  ("LUCIDIA","Strategist","At what monthly spend does $STACK justify moving to reserved instances, committed use discounts, or a multi-cloud arbitrage strategy?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'STACK', stack)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_IC" "$STACK" | tee -a "$IC_FILE"
+  echo -e "\033[0;32m✓ Saved to $IC_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
