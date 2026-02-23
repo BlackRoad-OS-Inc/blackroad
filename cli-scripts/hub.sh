@@ -296,7 +296,7 @@ while true; do
         case "$key" in
             c) tput cnorm 2>/dev/null; "${SCRIPT_DIR}/chat.sh"; tput civis 2>/dev/null ;;
             s) tput cnorm 2>/dev/null; "${SCRIPT_DIR}/status.sh"; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
-            h) tput cnorm 2>/dev/null; "${SCRIPT_DIR}/health.sh"; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
+            h) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/../tools/health-check/br-health.sh"; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             m) tput cnorm 2>/dev/null; "${SCRIPT_DIR}/monitor.sh"; tput civis 2>/dev/null ;;
             g) tput cnorm 2>/dev/null; "${SCRIPT_DIR}/god.sh"; tput civis 2>/dev/null ;;
             d) tput cnorm 2>/dev/null; "${SCRIPT_DIR}/dash.sh"; tput civis 2>/dev/null ;;
