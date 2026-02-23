@@ -1,126 +1,169 @@
-#!/usr/bin/env bash
-# setup-pi-domains.sh — Run this ON the Pi to wire up carpool.blackroad.io + br.blackroad.io
-# Usage: bash setup-pi-domains.sh
-set -euo pipefail
+#!/bin/bash
+# BLACKROAD SELF-HOSTED DOMAIN ROUTING
+# Sets up nginx on all Pis for all domains with 4-tier backup
+# Tier 1: Pi fleet (primary self-hosted)
+# Tier 2: DigitalOcean (gematria/anastasia)
+# Tier 3: Cloudflare Pages (static fallback)
+# Tier 4: GitHub Pages (emergency)
+# Tier 5: Railway (full-app fallback)
 
-GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; NC='\033[0m'
-REPO_DIR="${REPO_DIR:-$HOME/blackroad}"
-TUNNEL_ID="52915859-da18-4aa6-add5-7bd9fcac2e0b"
-CLOUDFLARED_CONFIG="/etc/cloudflared/config.yml"
-CARPOOL_PORT=4040
-BR_PORT=4041
-# Target Pi: alice (192.168.4.49) — this is where the CF tunnel runs
+set -e
+GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
+log()  { echo -e "${GREEN}✅${NC} $1"; }
+info() { echo -e "${CYAN}ℹ️ ${NC} $1"; }
+err()  { echo -e "${RED}❌${NC} $1"; }
 
-log()  { echo -e "${GREEN}✓${NC} $1"; }
-info() { echo -e "${CYAN}→${NC} $1"; }
-warn() { echo -e "${YELLOW}⚠${NC} $1"; }
+# Domain → Pi port mapping
+declare -A DOMAIN_PORTS=(
+  ["blackroad.io"]="80"
+  ["blackroad.network"]="8081"
+  ["blackroad.systems"]="8082"
+  ["lucidia.earth"]="8083"
+  ["blackroadai.com"]="8084"
+  ["aliceqi.com"]="8085"
+  ["lucidiaqi.com"]="8086"
+  ["lucidia.studio"]="8087"
+  ["blackroadquantum.com"]="8088"
+  ["blackroadqi.com"]="8089"
+  ["blackboxprogramming.io"]="8090"
+  ["blackroad.company"]="8091"
+  ["blackroadinc.us"]="8092"
+  ["roadchain.io"]="8093"
+  ["blackroad.me"]="8094"
+  ["roadcoin.io"]="8095"
+)
 
-echo ""
-echo "🚗  CarPool + BR Domain Setup for BlackRoad Pi"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+# Domain → Primary Pi mapping
+declare -A DOMAIN_PI=(
+  ["blackroad.io"]="alice"
+  ["blackroad.network"]="cecilia"
+  ["blackroad.systems"]="cecilia"
+  ["lucidia.earth"]="aria"
+  ["blackroadai.com"]="cecilia"
+  ["aliceqi.com"]="alice"
+  ["lucidiaqi.com"]="aria"
+  ["lucidia.studio"]="aria"
+  ["blackroadquantum.com"]="octavia"
+  ["blackroadqi.com"]="octavia"
+  ["blackboxprogramming.io"]="cecilia"
+  ["blackroad.company"]="alice"
+  ["blackroadinc.us"]="alice"
+  ["roadchain.io"]="octavia"
+  ["blackroad.me"]="cecilia"
+  ["roadcoin.io"]="octavia"
+)
 
-# 1. Pull latest repo
-info "Pulling latest from BlackRoad repo..."
-cd "$REPO_DIR" && git pull --ff-only origin master
-log "Repo up to date"
+gen_nginx_config() {
+  local domain="$1"
+  local port="$2"
+  cat << NGINX
+server {
+    listen $port;
+    listen [::]:$port;
+    server_name $domain www.$domain;
+    
+    root /var/www/$domain;
+    index index.html index.htm;
+    
+    # Health check endpoint
+    location /health {
+        return 200 '{"status":"ok","host":"$domain","tier":"pi-primary"}';
+        add_header Content-Type application/json;
+    }
+    
+    # Proxy to local app if running
+    location /api/ {
+        proxy_pass http://127.0.0.1:$(( port + 1000 ));
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
+    }
+    
+    location / {
+        try_files \$uri \$uri/ /index.html;
+        
+        # If Pi is down, redirect to CF backup  
+        error_page 503 = @cloudflare_backup;
+    }
+    
+    location @cloudflare_backup {
+        return 302 https://blackroad-os.github.io;
+    }
+    
+    # Disable nginx version exposure
+    server_tokens off;
+    
+    # Basic security headers
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-BlackRoad-Node "$HOSTNAME";
+}
+NGINX
+}
 
-# 2. Start carpool web server (systemd service)
-info "Setting up CarPool web server on port $CARPOOL_PORT..."
-sudo tee /etc/systemd/system/carpool-server.service > /dev/null <<EOF
-[Unit]
-Description=CarPool Web Server — carpool.blackroad.io
-After=network.target
+deploy_domain() {
+  local domain="$1"
+  local pi="${DOMAIN_PI[$domain]}"
+  local port="${DOMAIN_PORTS[$domain]}"
+  
+  info "Deploying $domain → $pi:$port"
+  
+  # Generate nginx config
+  local nginx_conf=$(gen_nginx_config "$domain" "$port")
+  
+  # Deploy to primary Pi
+  ssh -o ConnectTimeout=10 -o BatchMode=yes "$pi" bash << REMOTE
+    # Create webroot
+    sudo mkdir -p /var/www/$domain
+    
+    # Create minimal index if not exists
+    if [ ! -f /var/www/$domain/index.html ]; then
+      sudo tee /var/www/$domain/index.html > /dev/null << 'HTML'
+<!DOCTYPE html>
+<html>
+<head><title>$domain - BlackRoad OS</title>
+<style>body{background:#000;color:#fff;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}</style>
+</head>
+<body><div style="text-align:center">
+<h1 style="color:#F5A623">⚡ BlackRoad OS</h1>
+<p>$domain</p><p style="color:#888">Self-hosted on Pi fleet</p>
+</div></body></html>
+HTML
+    fi
+    
+    # Write nginx config
+    echo '$nginx_conf' | sudo tee /etc/nginx/sites-available/$domain > /dev/null
+    sudo ln -sf /etc/nginx/sites-available/$domain /etc/nginx/sites-enabled/$domain 2>/dev/null || true
+    
+    # Test and reload
+    sudo nginx -t && sudo systemctl reload nginx 2>/dev/null || sudo service nginx reload 2>/dev/null || true
+    echo "✅ $domain deployed on $(hostname)"
+REMOTE
+  
+  log "$domain → $pi:$port"
+}
 
-[Service]
-Type=simple
-User=pi
-WorkingDirectory=$REPO_DIR/blackroad-web/carpool-server
-ExecStart=/usr/bin/node server.js
-Restart=on-failure
-RestartSec=5s
-Environment=CARPOOL_PORT=$CARPOOL_PORT
-Environment=CARPOOL_SH=$REPO_DIR/carpool.sh
-Environment=CARPOOL_MODEL=tinyllama
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable carpool-server
-sudo systemctl restart carpool-server
-log "CarPool server running on port $CARPOOL_PORT"
-
-# 3. Serve br-landing on port 4041 with a simple static server
-info "Setting up BR landing page on port $BR_PORT..."
-sudo tee /etc/systemd/system/br-landing.service > /dev/null <<EOF
-[Unit]
-Description=BR Landing Page — br.blackroad.io
-After=network.target
-
-[Service]
-Type=simple
-User=pi
-WorkingDirectory=$REPO_DIR/blackroad-web/br-landing
-ExecStart=/usr/bin/node -e "require('http').createServer((req,res)=>{require('fs').readFile('index.html',(e,d)=>{res.writeHead(e?404:200,{'Content-Type':'text/html'});res.end(d||'not found')})}).listen($BR_PORT,'0.0.0.0',()=>console.log('BR landing on $BR_PORT'))"
-Restart=on-failure
-RestartSec=5s
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable br-landing
-sudo systemctl restart br-landing
-log "BR landing running on port $BR_PORT"
-
-# 4. Update cloudflared tunnel config
-info "Updating Cloudflare tunnel config..."
-if [ ! -f "$CLOUDFLARED_CONFIG" ]; then
-  warn "No config at $CLOUDFLARED_CONFIG — creating..."
-  sudo mkdir -p /etc/cloudflared
-fi
-
-# Read existing config, inject new routes before the catch-all
-TMPCONFIG=$(mktemp)
-sudo cat "$CLOUDFLARED_CONFIG" 2>/dev/null > "$TMPCONFIG" || true
-
-# Check if already configured
-if grep -q "carpool.blackroad.io" "$TMPCONFIG" 2>/dev/null; then
-  warn "carpool.blackroad.io already in tunnel config — skipping"
-else
-  # Inject before the last catch-all service line
-  if grep -q "http_status:404" "$TMPCONFIG"; then
-    sudo sed -i "s|  - service: http_status:404|  - hostname: carpool.blackroad.io\n    service: http://localhost:$CARPOOL_PORT\n  - hostname: br.blackroad.io\n    service: http://localhost:$BR_PORT\n  - service: http_status:404|" "$CLOUDFLARED_CONFIG"
-  else
-    # Append ingress if config exists but has no catch-all
-    sudo tee -a "$CLOUDFLARED_CONFIG" >> /dev/null <<EOF
-
-  - hostname: carpool.blackroad.io
-    service: http://localhost:$CARPOOL_PORT
-  - hostname: br.blackroad.io
-    service: http://localhost:$BR_PORT
-EOF
-  fi
-  log "Tunnel config updated"
-fi
-rm -f "$TMPCONFIG"
-
-# 5. Register DNS routes via cloudflared
-info "Registering DNS routes with Cloudflare..."
-cloudflared tunnel route dns "$TUNNEL_ID" carpool.blackroad.io 2>/dev/null && log "carpool.blackroad.io DNS registered" || warn "DNS route may already exist for carpool.blackroad.io"
-cloudflared tunnel route dns "$TUNNEL_ID" br.blackroad.io 2>/dev/null && log "br.blackroad.io DNS registered" || warn "DNS route may already exist for br.blackroad.io"
-
-# 6. Restart cloudflared
-info "Restarting cloudflared tunnel..."
-sudo systemctl restart cloudflared
-sleep 2
-sudo systemctl is-active cloudflared && log "cloudflared restarted OK" || warn "Check: sudo systemctl status cloudflared"
-
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Done! Domains live in ~30s:"
-echo "   🚗 https://carpool.blackroad.io"
-echo "   💻 https://br.blackroad.io"
-echo ""
+case "${1:-help}" in
+  deploy-all)
+    for domain in "${!DOMAIN_PORTS[@]}"; do
+      deploy_domain "$domain" &
+    done
+    wait
+    log "All domains deployed to Pi fleet!"
+    ;;
+  deploy)
+    deploy_domain "$2"
+    ;;
+  status)
+    for pi in cecilia alice aria octavia; do
+      echo -n "  $pi: "
+      ssh -o ConnectTimeout=5 -o BatchMode=yes "$pi" \
+        "sudo nginx -t 2>&1 | tail -1 && echo 'sites: '$(ls /etc/nginx/sites-enabled/ 2>/dev/null | wc -l)" \
+        2>/dev/null || echo "offline"
+    done
+    ;;
+  help|*)
+    echo "Usage: $0 [deploy-all|deploy <domain>|status]"
+    ;;
+esac

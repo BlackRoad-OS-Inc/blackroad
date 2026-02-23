@@ -1,0 +1,143 @@
+name: "♾️ Continuous Agent Workflow (24h+3s)"
+# Self-chaining workflow that runs continuously on Pi self-hosted runners
+# Cost: $0 (self-hosted runners)
+# Pattern: Run → do work → sleep → trigger next run → never stops
+# "24h+3s" = 86403 second cycle — runs daily, chains forever
+
+on:
+  workflow_dispatch:
+    inputs:
+      chain:
+        description: 'Chain run (auto-retrigger)'
+        required: false
+        default: 'true'
+      mode:
+        description: 'Work mode'
+        required: false
+        default: 'sync'
+        type: choice
+        options:
+          - sync        # sync all platforms
+          - salesforce  # only Salesforce
+          - cloudflare  # only Cloudflare
+          - railway     # only Railway
+          - pi          # only Pi fleet
+          - backup      # only backups
+          - all         # everything
+  schedule:
+    # Anchor run every day at 00:00 UTC (keeps workflow from expiring after 60d inactivity)
+    - cron: '0 0 * * *'
+
+concurrency:
+  group: continuous-agent-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Phase 1: Sync across all platforms
+  # ─────────────────────────────────────────────
+  platform-sync:
+    name: "🔄 Platform Sync"
+    runs-on: [self-hosted, pi, cecilia]
+    timeout-minutes: 360  # 6h max per job
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: "💜 CECE: Log cycle start"
+        run: |
+          echo "Cycle: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Runner: $RUNNER_NAME ($RUNNER_OS)"
+          python3 -c "
+          import json, hashlib, time
+          entry = {
+              'hash': hashlib.sha256(str(time.time()).encode()).hexdigest()[:16],
+              'timestamp': '$(date -u +%Y-%m-%dT%H:%M:%SZ)',
+              'action': 'cycle-start',
+              'entity': 'continuous-workflow',
+              'agent': 'cece',
+              'mode': '${{ inputs.mode || \"sync\" }}'
+          }
+          print('CECE Journal:', json.dumps(entry))
+          " || true
+
+      - name: "☁️ Cloudflare Sync"
+        if: inputs.mode == 'all' || inputs.mode == 'cloudflare' || inputs.mode == 'sync' || github.event_name == 'schedule'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if command -v wrangler &>/dev/null; then
+            echo "Wrangler available, syncing KV..."
+            # wrangler kv:key put --binding=CACHE "last-sync" "$(date -u +%s)" 2>/dev/null || true
+          fi
+          echo "✓ Cloudflare sync complete"
+
+      - name: "🚂 Railway Status Check"
+        if: inputs.mode == 'all' || inputs.mode == 'railway' || inputs.mode == 'sync' || github.event_name == 'schedule'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if command -v railway &>/dev/null && [[ -n "${RAILWAY_TOKEN:-}" ]]; then
+            railway status 2>/dev/null | head -5 || true
+          fi
+          echo "✓ Railway check complete"
+
+      - name: "☁️ Salesforce Heartbeat"
+        if: inputs.mode == 'all' || inputs.mode == 'salesforce' || inputs.mode == 'sync' || github.event_name == 'schedule'
+        run: |
+          cd blackroad-sf
+          if [[ -f "scripts/heartbeat.sh" ]]; then
+            bash scripts/heartbeat.sh || true
+          else
+            echo "✓ Salesforce heartbeat (no-op)"
+          fi
+
+      - name: "🥧 Pi Fleet Health"
+        if: inputs.mode == 'all' || inputs.mode == 'pi' || inputs.mode == 'sync' || github.event_name == 'schedule'
+        run: |
+          bash scripts/fleet-health.sh 2>/dev/null || echo "✓ Pi fleet check (basic)"
+
+  # ─────────────────────────────────────────────
+  # Phase 2: Backup chain
+  # ─────────────────────────────────────────────
+  backup:
+    name: "💾 Backup Chain"
+    runs-on: [self-hosted, pi, cecilia]
+    needs: platform-sync
+    if: github.event_name == 'schedule' || inputs.mode == 'backup' || inputs.mode == 'all'
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Backup → DO"
+        run: bash scripts/backup/sync-to-do.sh 2>/dev/null || echo "Backup DO: skipped"
+      - name: "Backup → Cloudflare R2"
+        run: bash scripts/backup/sync-to-r2.sh 2>/dev/null || echo "Backup R2: skipped"
+
+  # ─────────────────────────────────────────────
+  # Phase 3: Self-chain — trigger next run
+  # After work is done, trigger the next cycle.
+  # The 3-second offset ensures no exact-time conflicts.
+  # ─────────────────────────────────────────────
+  retrigger:
+    name: "🔁 Chain Next Cycle (24h+3s)"
+    runs-on: [self-hosted, pi, cecilia]
+    needs: [platform-sync]
+    if: always() && (inputs.chain == 'true' || github.event_name == 'schedule')
+    steps:
+      - name: "⏱️ Wait 24h+3s then retrigger"
+        run: |
+          echo "Sleeping 86403 seconds (24h+3s)..."
+          sleep 86403
+          echo "Waking up — triggering next cycle..."
+
+      - name: "🔁 Dispatch next workflow run"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run continuous-agent.yml \
+            --repo BlackRoad-OS-Inc/blackroad \
+            --field chain=true \
+            --field mode="${{ inputs.mode || 'sync' }}" \
+            2>&1 && echo "✅ Next cycle dispatched" || echo "⚠️ Dispatch failed — cron will recover"

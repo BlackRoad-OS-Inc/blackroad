@@ -1,0 +1,65 @@
+{
+  "mesh_version": "2.0",
+  "updated_at": "2026-02-23T20:43:07Z",
+  "coordinator": "CECE",
+  "session": "copilot-master-integration-20260223",
+  "agents": {
+    "OCTAVIA": {
+      "host": "192.168.4.38",
+      "ports": {"api": 4010, "ollama": 11434, "metrics": 9090},
+      "role": "primary-compute",
+      "capacity": 22500,
+      "status": "OPERATIONAL"
+    },
+    "LUCIDIA": {
+      "host": "192.168.4.64",
+      "ports": {"api": 4010, "ollama": 11434},
+      "role": "secondary-compute",
+      "capacity": 7500,
+      "status": "OPERATIONAL"
+    },
+    "SHELLFISH": {
+      "host": "159.65.43.12",
+      "ports": {"api": 8080, "ssh": 22},
+      "role": "failover-security",
+      "status": "STANDBY"
+    },
+    "CODEX-INFINITY": {
+      "host": "159.65.43.12",
+      "ports": {"api": 8787, "ssh": 22},
+      "role": "code-generation",
+      "status": "STANDBY"
+    },
+    "GEMATRIA": {
+      "host": "192.168.4.38",
+      "ports": {"api": 4011},
+      "role": "cryptographic-identity",
+      "status": "REGISTERED"
+    },
+    "OLYMPIA": {
+      "host": "192.168.4.38",
+      "ports": {"api": 4012, "metrics": 9091},
+      "role": "performance",
+      "status": "REGISTERED"
+    },
+    "BLACKROAD": {
+      "host": "192.168.4.38",
+      "ports": {"gateway": 8787, "api": 3000},
+      "role": "orchestration-backbone",
+      "status": "REGISTERED"
+    },
+    "ALICE": {
+      "host": "192.168.4.49",
+      "ports": {"api": 4010},
+      "role": "devops-automation",
+      "status": "OPERATIONAL"
+    }
+  },
+  "backup_hierarchy": [
+    {"tier": 1, "name": "Pi Fleet", "hosts": ["192.168.4.38", "192.168.4.64", "192.168.4.49"]},
+    {"tier": 2, "name": "DigitalOcean", "hosts": ["159.65.43.12"]},
+    {"tier": 3, "name": "Cloudflare", "hosts": ["*.blackroad.workers.dev"]},
+    {"tier": 4, "name": "GitHub Pages", "hosts": ["blackroad-os.github.io"]},
+    {"tier": 5, "name": "Railway", "hosts": ["*.railway.app"]}
+  ]
+}

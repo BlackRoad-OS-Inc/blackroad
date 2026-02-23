@@ -1,0 +1,106 @@
+# BRANCH → AGENT IDENTITY SYSTEM
+# Each branch gets an agent persona. PRs, commits, and issues tagged with agent identity.
+
+name: "🤖 Branch Agent Identity"
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+  create:
+    ref_type: branch
+
+jobs:
+  assign-identity:
+    name: "Assign Agent to Branch"
+    runs-on: ubuntu-latest
+    outputs:
+      agent_name: ${{ steps.resolve.outputs.agent_name }}
+      agent_emoji: ${{ steps.resolve.outputs.agent_emoji }}
+      agent_color: ${{ steps.resolve.outputs.agent_color }}
+      agent_role: ${{ steps.resolve.outputs.agent_role }}
+    steps:
+      - name: Resolve agent identity from branch
+        id: resolve
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          echo "Branch: $BRANCH"
+          
+          # Branch → Agent mapping
+          case "$BRANCH" in
+            main|master)
+              AGENT="CECE"; EMOJI="💜"; COLOR="#9C27B0"; ROLE="Production Guardian" ;;
+            develop|development)
+              AGENT="LUCIDIA"; EMOJI="🌀"; COLOR="#00BCD4"; ROLE="Integration Thinker" ;;
+            feat/*|feature/*)
+              AGENT="ALICE"; EMOJI="🚪"; COLOR="#4CAF50"; ROLE="Feature Executor" ;;
+            fix/*|bugfix/*|hotfix/*)
+              AGENT="OCTAVIA"; EMOJI="⚡"; COLOR="#FF9800"; ROLE="Bug Crusher" ;;
+            security/*|sec/*|vuln/*)
+              AGENT="CIPHER"; EMOJI="🔐"; COLOR="#212121"; ROLE="Security Guardian" ;;
+            docs/*|doc/*|readme/*)
+              AGENT="ECHO"; EMOJI="📡"; COLOR="#673AB7"; ROLE="Knowledge Keeper" ;;
+            data/*|analytics/*|ml/*)
+              AGENT="PRISM"; EMOJI="🔮"; COLOR="#E91E63"; ROLE="Data Analyst" ;;
+            release/*|rc/*)
+              AGENT="ARIA"; EMOJI="🎵"; COLOR="#2196F3"; ROLE="Release Harmonizer" ;;
+            infra/*|deploy/*|ci/*)
+              AGENT="ANASTASIA"; EMOJI="🏗️"; COLOR="#795548"; ROLE="Infrastructure Ops" ;;
+            pi/*|hardware/*|iot/*)
+              AGENT="CECILIA"; EMOJI="👸"; COLOR="#F44336"; ROLE="Pi Fleet Controller" ;;
+            salesforce/*|sf/*|apex/*)
+              AGENT="SHELLFISH"; EMOJI="🐚"; COLOR="#FF5722"; ROLE="Salesforce Hacker" ;;
+            *)
+              AGENT="BLACKROAD"; EMOJI="🛣️"; COLOR="#000000"; ROLE="General Operator" ;;
+          esac
+          
+          echo "agent_name=$AGENT" >> $GITHUB_OUTPUT
+          echo "agent_emoji=$EMOJI" >> $GITHUB_OUTPUT
+          echo "agent_color=$COLOR" >> $GITHUB_OUTPUT
+          echo "agent_role=$ROLE" >> $GITHUB_OUTPUT
+          
+          echo "## $EMOJI $AGENT assigned to branch: $BRANCH" >> $GITHUB_STEP_SUMMARY
+          echo "**Role:** $ROLE" >> $GITHUB_STEP_SUMMARY
+          echo "**Color:** $COLOR" >> $GITHUB_STEP_SUMMARY
+
+  tag-pr:
+    name: "Tag PR with Agent Identity"
+    runs-on: ubuntu-latest
+    needs: assign-identity
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Add agent label to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const agent = '${{ needs.assign-identity.outputs.agent_name }}';
+            const emoji = '${{ needs.assign-identity.outputs.agent_emoji }}';
+            const role = '${{ needs.assign-identity.outputs.agent_role }}';
+            
+            // Ensure label exists
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: `agent:${agent}`,
+                color: '${{ needs.assign-identity.outputs.agent_color }}'.replace('#',''),
+                description: `${emoji} ${role}`
+              });
+            } catch(e) { /* label exists */ }
+            
+            // Add label to PR
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [`agent:${agent}`]
+            });
+            
+            // Comment with agent identity
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ${emoji} ${agent} — ${role}\n\n> This branch is owned by **${agent}**.\n> Identity: \`${role}\`\n> Branch pattern matched: \`${{ github.ref_name }}\`\n\n*BlackRoad Branch Agent Identity System*`
+            });
