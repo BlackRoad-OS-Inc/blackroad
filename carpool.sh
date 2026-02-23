@@ -9316,6 +9316,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "webhook-design" ]]; then
+  PLATFORM="${2:-our platform}"
+  AGENTS=("Architect" "Backend" "DevEx" "Security" "SRE")
+  QUESTIONS=(
+    "What events should $PLATFORM expose as webhooks and how do we decide the payload shape?"
+    "How does $PLATFORM handle webhook delivery guarantees — retries, exponential backoff, dead letters?"
+    "What security model should $PLATFORM use for webhook verification (HMAC, mTLS, secrets)?"
+    "How do we build a webhook debug and replay tool for $PLATFORM developers?"
+    "How does $PLATFORM scale webhook delivery to millions of events without dropping any?"
+  )
+  echo ""
+  echo "🔔 CARPOOL: WEBHOOK DESIGN — $PLATFORM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Webhook design roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "performance-budget" ]]; then
+  APP="${2:-our app}"
+  AGENTS=("Frontend" "Backend" "SRE" "Product" "Mobile")
+  QUESTIONS=(
+    "What performance budgets should $APP set for load time, TTI, and Core Web Vitals?"
+    "How do we enforce $APP performance budgets in CI so regressions never ship?"
+    "What are the top 5 performance bottlenecks in $APP and how do we tackle each?"
+    "How do we measure real-user performance for $APP vs synthetic lab tests?"
+    "How do we make performance a shared team value at $APP, not just an eng concern?"
+  )
+  echo ""
+  echo "⚡ CARPOOL: PERFORMANCE BUDGET — $APP"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Performance budget strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "board-meeting" ]]; then
+  COMPANY="${2:-our company}"
+  AGENTS=("CEO" "CFO" "Board" "Advisor" "Investor")
+  QUESTIONS=(
+    "What metrics and narrative should $COMPANY lead with in its next board meeting?"
+    "How does $COMPANY present bad news or misses to the board without losing confidence?"
+    "What does a board deck structure look like that drives decisions, not just updates, for $COMPANY?"
+    "How should $COMPANY prepare for tough board questions on burn, runway, and hiring?"
+    "How does $COMPANY get strategic value out of board members beyond the quarterly meeting?"
+  )
+  echo ""
+  echo "🏛️  CARPOOL: BOARD MEETING — $COMPANY"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Board meeting prep complete."
+  exit 0
+fi
+
+if [[ "$1" == "feature-discovery" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("PM" "UX Research" "Design" "Engineering" "Customer")
+  QUESTIONS=(
+    "What discovery methods (interviews, surveys, shadowing) work best for $PRODUCT right now?"
+    "How do we run a customer interview for $PRODUCT that surfaces real problems, not feature requests?"
+    "How does $PRODUCT validate a problem is worth building for before writing any code?"
+    "What does a jobs-to-be-done discovery sprint look like for $PRODUCT?"
+    "How do we synthesize messy discovery data into a crisp $PRODUCT opportunity to build?"
+  )
+  echo ""
+  echo "🔍 CARPOOL: FEATURE DISCOVERY — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Feature discovery session complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
