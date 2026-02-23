@@ -23,26 +23,28 @@ const QUICK_STARTS = [
   { id: 'new-shellfish', icon: '🔐', agent: 'Shellfish', title: 'Security scan', desc: 'Audit, harden, verify', href: '/conversations/new?agent=shellfish' },
 ];
 
-const INFRA_STATS_STATIC = [
-  { label: 'CF Workers', value: '499', sub: 'edge functions', color: '#F5A623', icon: Radio },
-  { label: 'CF Zones', value: '20', sub: 'domains managed', color: '#2979FF', icon: Globe },
-  { label: 'Agent Capacity', value: '30,000', sub: 'across 3 nodes', color: '#FF1D6C', icon: Bot },
-  { label: 'GitHub Repos', value: '1,825+', sub: 'across 17 orgs', color: '#9C27B0', icon: Server },
-];
-
 export default function WorkspacePage() {
   const user = useAuthStore((state) => state.user);
   const [agentData, setAgentData] = useState<AgentData | null>(null);
   const [statusData, setStatusData] = useState<StatusData | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [recentConvs, setRecentConvs] = useState<{ id: string; title: string; agent: string; updatedAt?: string }[]>([]);
 
   useEffect(() => {
     fetch('/api/agents').then(r => r.json()).then(setAgentData).catch(() => {});
     fetch('/api/status').then(r => r.json()).then(setStatusData).catch(() => {});
+    fetch('/api/analytics').then(r => r.json()).then(setAnalyticsData).catch(() => {});
     fetch('/api/conversations').then(r => r.ok ? r.json() : null).then(d => {
       if (d?.conversations?.length) setRecentConvs(d.conversations.slice(0, 3));
     }).catch(() => {});
   }, []);
+
+  const INFRA_STATS_STATIC = [
+    { label: 'CF Workers', value: analyticsData?.workers?.total?.toString() ?? '499', sub: 'edge functions', color: '#F5A623', icon: Radio },
+    { label: 'CF Zones', value: '20', sub: 'domains managed', color: '#2979FF', icon: Globe },
+    { label: 'Agent Capacity', value: analyticsData?.agents?.total?.toLocaleString() ?? '30,000', sub: `${analyticsData?.fleet?.online ?? '?'}/${analyticsData?.fleet?.total ?? 4} nodes online`, color: '#FF1D6C', icon: Bot },
+    { label: 'GitHub Repos', value: '1,825+', sub: 'across 17 orgs', color: '#9C27B0', icon: Server },
+  ];
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';

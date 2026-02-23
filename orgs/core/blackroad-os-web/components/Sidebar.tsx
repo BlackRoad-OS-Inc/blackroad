@@ -17,6 +17,9 @@ import {
   Cpu,
   Server,
   Zap,
+  BarChart2,
+  Network,
+  Send,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWorkspaceStore } from '@/stores/workspace-store';
@@ -36,8 +39,10 @@ export default function Sidebar() {
     { name: 'Verify',         href: '/verify',         icon: ShieldCheck },
     { name: 'Governance',     href: '/governance',     icon: Shield },
     { name: 'Fleet',          href: '/fleet',          icon: Server },
-    { name: 'Network',        href: '/network',        icon: Globe },
+    { name: 'Network',        href: '/network',        icon: Network },
+    { name: 'Mesh',           href: '/mesh',           icon: Send },
     { name: 'Workers',        href: '/workers',        icon: Zap },
+    { name: 'Analytics',      href: '/analytics',      icon: BarChart2 },
     { name: 'Onboarding',     href: '/onboarding',     icon: Sparkles },
     { name: 'Settings',       href: '/settings',       icon: Settings },
   ];
