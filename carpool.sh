@@ -4148,6 +4148,153 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── DEMO — script a live demo walkthrough for a feature ───────────────
+if [[ "$1" == "demo" ]]; then
+  shift
+  FEATURE="$*"
+  [[ -z "$FEATURE" ]] && echo "Usage: br carpool demo <feature or product>" && exit 1
+  echo ""
+  echo -e "\033[1;36m🎬 DEMO SCRIPT: $FEATURE\033[0m"
+  echo ""
+  DEMO_FILE="$HOME/.blackroad/carpool/demos/$(echo "$FEATURE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/demos"
+  printf "# Demo Script: %s\nDate: %s\n\n" "$FEATURE" "$(date '+%Y-%m-%d')" > "$DEMO_FILE"
+  for entry in "ARIA|OPENING HOOK|The first 30 seconds. Set the scene, name the pain, promise the wow moment." "ALICE|HAPPY PATH|Step-by-step the demo flow. Each step: what you click, what you say, what they see." "PRISM|THE WOW MOMENT|The single screenshot or interaction that makes the audience lean forward." "SHELLFISH|WHAT CAN GO WRONG|Every demo gremlins — wifi, data, error states. The backup plan for each." "LUCIDIA|CLOSING STATEMENT|The last thing you say. What you want them to remember tomorrow."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} scripting a live product demo for: \"${FEATURE}\"
+Section: ${section}
+${lens}
+Be specific — real UI elements, real words to say, real things to show.
+Format each step/point as a numbered item or bullet.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$DEMO_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $DEMO_FILE\033[0m"
+  exit 0
+fi
+
+# ── GLOSSARY — build a shared domain vocabulary ───────────────────────
+if [[ "$1" == "glossary" ]]; then
+  shift
+  DOMAIN="$*"
+  [[ -z "$DOMAIN" ]] && echo "Usage: br carpool glossary <domain>" && exit 1
+  echo ""
+  echo -e "\033[1;33m📖 GLOSSARY: $DOMAIN\033[0m"
+  echo ""
+  GLOSS_FILE="$HOME/.blackroad/carpool/glossaries/$(echo "$DOMAIN" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40).md"
+  mkdir -p "$HOME/.blackroad/carpool/glossaries"
+  printf "# Glossary: %s\nDate: %s\n\n" "$DOMAIN" "$(date '+%Y-%m-%d')" > "$GLOSS_FILE"
+  for entry in "OCTAVIA|TECHNICAL TERMS|The core engineering/architecture vocabulary. Things new engineers must learn." "ALICE|OPERATIONAL TERMS|Process, workflow, and tooling terms the team uses day-to-day." "PRISM|METRICS & DATA TERMS|KPIs, measurement terms, and data concepts specific to this domain." "ARIA|PRODUCT & USER TERMS|What we call things in the UI, docs, and user-facing comms." "LUCIDIA|CONCEPTS & METAPHORS|The mental models and analogies that help explain this domain to anyone."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} building a glossary for the domain: \"${DOMAIN}\"
+Section: ${section}
+${lens}
+Give 6-8 terms. Format each:
+**<term>** — <clear one-sentence definition>
+No preamble.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$GLOSS_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $GLOSS_FILE\033[0m"
+  exit 0
+fi
+
+# ── NORTH-STAR — identify the north star metric for a product ─────────
+if [[ "$1" == "north-star" || "$1" == "northstar" ]]; then
+  shift
+  PRODUCT="$*"
+  PRODUCT="${PRODUCT:-this product}"
+  echo ""
+  echo -e "\033[1;35m⭐ NORTH STAR METRIC: $PRODUCT\033[0m"
+  echo ""
+  candidates=""
+  for entry in "PRISM|CANDIDATE METRICS|Name 3 metrics that could be the north star. Explain what each captures." "ALICE|LEADING INDICATORS|What early signals predict the north star before you can measure it?" "OCTAVIA|HOW TO INSTRUMENT|What needs to be built to track this accurately? Events, pipelines, dashboards." "LUCIDIA|THE REAL QUESTION|What single number, if it doubled, would mean the product truly succeeded?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} defining the north star metric for: \"${PRODUCT}\"
+Section: ${section}
+${lens}
+Be specific — real metric names, real formulas where applicable.
+3-4 focused points.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    echo ""
+  done
+  # Final PRISM verdict
+  IFS='|' read -r _ col _ emoji <<< "$(agent_meta "PRISM")"
+  echo -e "${col}${emoji} PRISM — FINAL RECOMMENDATION${NC}"
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are PRISM. Pick ONE north star metric for \"${PRODUCT}\".
+NORTH STAR: <metric name>
+FORMULA: <how to calculate it>
+FREQUENCY: <how often to review>
+WHY: <one paragraph why this is the right one>
+TRAP: <the metric that looks right but misleads>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[PRISM offline]"
+  echo ""
+  exit 0
+fi
+
+# ── FAQ — generate FAQ for a product, feature, or topic ──────────────
+if [[ "$1" == "faq" ]]; then
+  shift
+  TOPIC="$*"
+  [[ -z "$TOPIC" ]] && echo "Usage: br carpool faq <product, feature, or topic>" && exit 1
+  echo ""
+  echo -e "\033[1;32m❓ FAQ GENERATOR: $TOPIC\033[0m"
+  echo ""
+  FAQ_FILE="$HOME/.blackroad/carpool/faqs/$(echo "$TOPIC" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/faqs"
+  printf "# FAQ: %s\nDate: %s\n\n" "$TOPIC" "$(date '+%Y-%m-%d')" > "$FAQ_FILE"
+  for entry in "ARIA|NEW USER QUESTIONS|What do first-time users always ask? Confusion, onboarding, first impressions." "ALICE|HOW-TO QUESTIONS|The practical how-do-I questions from people actively using it." "CIPHER|SECURITY & TRUST QUESTIONS|Data privacy, auth, compliance, what happens if something goes wrong." "PRISM|COMPARISON QUESTIONS|How does this compare to X? Why not just use Y? When should I not use this?" "SHELLFISH|HARD & AWKWARD QUESTIONS|Questions people think but rarely ask. Honest, uncomfortable, important."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} writing FAQ entries for: \"${TOPIC}\"
+Category: ${section}
+${lens}
+Write 4 Q&A pairs. Format:
+**Q: <question>**
+A: <direct, honest answer in 1-3 sentences>
+
+No filler. Answer as if writing for smart, impatient people.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$FAQ_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $FAQ_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
