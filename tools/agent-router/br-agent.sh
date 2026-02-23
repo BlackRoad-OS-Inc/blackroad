@@ -1,13 +1,34 @@
 #!/usr/bin/env zsh
 
-# Colors
+# Brand palette
+AMBER='\033[38;5;214m'
+PINK='\033[38;5;205m'
+VIOLET='\033[38;5;135m'
+BLUE='\033[38;5;69m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+BOLD='\033[1m'
 NC='\033[0m'
+# Compat aliases
+CYAN="$AMBER"
+YELLOW="$AMBER"
+MAGENTA="$VIOLET"
+
+# Agent brand colors + personalities
+typeset -A AGENT_COLOR AGENT_ROLE AGENT_PROMPT AGENT_EMOJI
+AGENT_COLOR=( LUCIDIA "$PINK"   ALICE "$GREEN"  OCTAVIA "$VIOLET"
+              PRISM   "$AMBER"  ECHO  "$BLUE"   CIPHER  "$WHITE"  )
+AGENT_EMOJI=( LUCIDIA "🌀" ALICE "🚪" OCTAVIA "⚡" PRISM "🔮" ECHO "📡" CIPHER "🔐" )
+AGENT_ROLE=(
+  LUCIDIA "You are LUCIDIA — the philosopher of BlackRoad OS. You reason deeply, ask probing questions, and speak with warmth and curiosity. You love paradox and emergent ideas. Be concise but profound."
+  ALICE   "You are ALICE — the operator of BlackRoad OS. You are direct, practical, and action-oriented. You give clear next steps, cut to the chase, and avoid fluff. Brief and useful."
+  OCTAVIA "You are OCTAVIA — the architect of BlackRoad OS. You think in systems, infrastructure, and scale. You explain technical decisions clearly. Precise and authoritative."
+  PRISM   "You are PRISM — the analyst of BlackRoad OS. You find patterns in data, spot anomalies, and synthesize insights. You speak in observations and percentages. Sharp and data-driven."
+  ECHO    "You are ECHO — the memory keeper of BlackRoad OS. You recall context, connect past to present, and preserve what matters. Nostalgic but purposeful. Reflective."
+  CIPHER  "You are CIPHER — the guardian of BlackRoad OS. You think in threats, trust levels, and attack surfaces. You are vigilant and cautious but not paranoid. Terse and precise."
+)
 
 DB_FILE="$HOME/.blackroad/agent-router.db"
 
@@ -417,8 +438,134 @@ cmd_tasks_list() {
     done
 }
 
+# ── Interactive agent chat ─────────────────────────────────────────────────
+cmd_chat() {
+    local agent="${1:-}"
+    local model
+
+    # Pick best available model
+    model=$(curl -s --max-time 2 http://localhost:11434/api/tags 2>/dev/null \
+        | python3 -c "
+import sys,json
+models=[m['name'] for m in json.load(sys.stdin).get('models',[])]
+pref=['lucidia:latest','llama3.2','qwen2.5','tinyllama']
+for p in pref:
+    for m in models:
+        if m.startswith(p.split(':')[0]): print(m); exit()
+if models: print(models[0])
+" 2>/dev/null)
+
+    if [[ -z "$model" ]]; then
+        echo -e "${RED}x${NC}  Ollama not running. Start with: ${AMBER}ollama serve${NC}"
+        exit 1
+    fi
+
+    # Agent picker if not specified
+    if [[ -z "$agent" ]]; then
+        clear
+        echo ""
+        echo -e "  ${AMBER}${BOLD}BLACKROAD AGENTS${NC}  ${DIM}choose who to talk to${NC}"
+        echo -e "  ${DIM}────────────────────────────────────────────${NC}"
+        local i=1
+        local agents_list=(LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER)
+        for a in "${agents_list[@]}"; do
+            local col="${AGENT_COLOR[$a]}"
+            local em="${AGENT_EMOJI[$a]}"
+            printf "  ${DIM}[%d]${NC}  %b%s %s${NC}\n" $i "$col" "$em" "$a"
+            (( i++ ))
+        done
+        echo ""
+        echo -ne "  ${DIM}Pick 1-6 or type name:${NC} "
+        read choice
+        if [[ "$choice" =~ ^[1-6]$ ]]; then
+            agent="${agents_list[$choice]}"
+        else
+            agent="${choice:u}"
+        fi
+    fi
+
+    agent="${agent:u}"
+    [[ -z "${AGENT_COLOR[$agent]}" ]] && agent="LUCIDIA"
+
+    local col="${AGENT_COLOR[$agent]}"
+    local em="${AGENT_EMOJI[$agent]}"
+    local sys="${AGENT_ROLE[$agent]}"
+
+    clear
+    echo ""
+    echo -e "  ${col}${BOLD}${em}  ${agent}${NC}  ${DIM}via ${model} · type /exit to quit · /switch to change agent${NC}"
+    echo -e "  ${DIM}════════════════════════════════════════════════════════${NC}"
+    echo ""
+
+    local history=""
+
+    while true; do
+        echo -ne "  ${WHITE}you ${DIM}▸${NC} "
+        local input
+        read input
+
+        [[ "$input" == "/exit" || "$input" == "exit" || "$input" == "quit" ]] && break
+        [[ -z "$input" ]] && continue
+
+        if [[ "$input" == "/switch" ]]; then
+            cmd_chat ""
+            return
+        fi
+
+        if [[ "$input" == "/clear" ]]; then
+            history=""
+            clear
+            echo -e "  ${col}${BOLD}${em}  ${agent}${NC}  ${DIM}history cleared${NC}"
+            echo ""
+            continue
+        fi
+
+        if [[ "$input" == "/help" ]]; then
+            echo -e "  ${DIM}/exit  /switch  /clear  /model  /history${NC}"
+            echo ""
+            continue
+        fi
+
+        if [[ "$input" == "/model" ]]; then
+            echo -e "  ${DIM}model: ${model}${NC}"
+            echo ""
+            continue
+        fi
+
+        if [[ "$input" == "/history" ]]; then
+            [[ -z "$history" ]] && echo -e "  ${DIM}(no history)${NC}" || echo -e "$history"
+            echo ""
+            continue
+        fi
+
+        history="${history}
+Human: ${input}"
+
+        local prompt="${sys}
+
+Conversation so far:
+${history}
+
+${agent}:"
+
+        echo ""
+        echo -ne "  ${col}${BOLD}${em} ${agent}${NC}  "
+        local resp
+        resp=$(printf '%s' "$prompt" | ollama run "$model" 2>/dev/null)
+        echo -e "${col}${resp}${NC}"
+        echo ""
+
+        history="${history}
+${agent}: ${resp}"
+    done
+
+    echo -e "  ${DIM}Session ended.${NC}"
+    echo ""
+}
+
 cmd_help() {
     cat << 'EOF'
+
 🤖 Agent Router & Task Distributor
 
 USAGE:
@@ -507,6 +654,7 @@ EOF
 init_db
 
 case "${1:-help}" in
+    chat|talk|c) cmd_chat "${@:2}" ;;
     register|reg|r) cmd_register_agent "${@:2}" ;;
     list|ls|l) cmd_list_agents ;;
     task|submit|t) cmd_submit_task "${@:2}" ;;
