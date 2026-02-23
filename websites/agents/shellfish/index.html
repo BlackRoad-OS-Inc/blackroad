@@ -1,97 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shellfish — BlackRoad OS</title>
-  <meta name="description" content="Shellfish. The Hacker. Security agent. Zero-days, exploits, defense, trust nothing.">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHELLFISH — The Hacker · BlackRoad OS</title>
+  <meta name="description" content="Shellfish probes every surface for vulnerabilities, hardens every service, and keeps the fleet secure. If there's a crac">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../_shared/design.css">
   <style>
-    :root{--black:#000;--surface:#0a0a0a;--border:#1a1a1a;--subtle:#555;--muted:#2a2a2a;--white:#fff;--agent:#ef4444;--agent-dim:rgba(239,68,68,0.08);--mono:'JetBrains Mono',monospace;--serif:'Playfair Display',Georgia,serif;}
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--black);color:var(--white);font-family:var(--mono);-webkit-font-smoothing:antialiased;}
-    a{color:inherit;text-decoration:none;}
-    nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 55px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
-    .nav-back{font-size:0.75rem;color:var(--subtle);transition:color 0.2s;}.nav-back:hover{color:var(--white);}
-    .nav-email{font-size:0.75rem;color:var(--subtle);transition:color 0.2s;}.nav-email:hover{color:var(--agent);}
-    .splash{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 55px 55px;position:relative;overflow:hidden;border-bottom:1px solid var(--border);}
-    /* ASCII grid bg */
-    .ascii-bg{position:absolute;top:0;left:0;right:0;bottom:0;opacity:0.03;font-family:var(--mono);font-size:10px;line-height:1.2;word-break:break-all;overflow:hidden;pointer-events:none;color:var(--agent);}
-    .agent-type{font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--agent);margin-bottom:13px;position:relative;z-index:1;}
-    .agent-name{font-family:var(--serif);font-size:clamp(4rem,10vw,9rem);font-weight:700;font-style:italic;line-height:0.95;color:var(--white);margin-bottom:34px;position:relative;z-index:1;}
-    .agent-role{font-size:1.1rem;color:var(--subtle);max-width:500px;line-height:1.7;position:relative;z-index:1;}
-    .quote-band{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:34px 55px;background:var(--agent-dim);}
-    .quote-text{font-family:var(--serif);font-style:italic;font-size:1.4rem;color:var(--white);max-width:700px;line-height:1.55;}
-    .quote-attr{margin-top:13px;font-size:0.72rem;color:var(--agent);}
-    .body-grid{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);}
-    @media(max-width:768px){.body-grid{grid-template-columns:1fr;}}
-    .col{padding:55px;border-right:1px solid var(--border);}.col:last-child{border-right:none;}
-    .col h2{font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--subtle);margin-bottom:21px;}
-    .manifesto p{font-size:0.9rem;color:#777;line-height:1.8;margin-bottom:13px;}.manifesto p strong{color:var(--white);}
-    .skills-grid{display:flex;flex-wrap:wrap;gap:8px;}
-    .skill{padding:6px 14px;border:1px solid var(--border);border-radius:100px;font-size:0.72rem;color:var(--subtle);background:var(--surface);}
-    .skill.primary{border-color:var(--agent);color:var(--agent);background:var(--agent-dim);}
-    .rules{display:flex;flex-direction:column;gap:0;margin-top:8px;}
-    .rule{padding:10px 0;border-bottom:1px solid var(--border);font-size:0.82rem;color:#555;font-family:var(--mono);}
-    .rule:last-child{border-bottom:none;}
-    .rule code{color:var(--agent);background:rgba(239,68,68,0.08);padding:2px 6px;border-radius:4px;font-size:0.8em;}
-    footer{border-top:1px solid var(--border);padding:24px 55px;display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);}
+    body { background:var(--black); }
+    .hero { min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding:80px var(--sp-xl) var(--sp-2xl); position:relative; overflow:hidden; }
+    .hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 70% 60% at 30% 40%, rgba(239,68,68,0.06) 0%, transparent 65%); pointer-events:none; }
+    .back { font-family:var(--font-mono); font-size:.8rem; color:var(--subtle); display:inline-flex; align-items:center; gap:6px; margin-bottom:var(--sp-xl); transition:color .2s; }
+    .back:hover { color:var(--white); }
+    .agent-meta { display:flex; align-items:center; gap:var(--sp-lg); margin-bottom:var(--sp-lg); flex-wrap:wrap; }
+    .avatar { width:88px; height:88px; border-radius:20px; background:rgba(239,68,68,0.12); border:2px solid #EF444433; display:flex; align-items:center; justify-content:center; font-size:2.4rem; flex-shrink:0; }
+    .meta-text .eyebrow { font-family:var(--font-mono); font-size:.72rem; letter-spacing:.15em; text-transform:uppercase; color:#EF4444; margin-bottom:8px; }
+    h1 { font-size:clamp(2.5rem,6vw,5rem); font-weight:800; letter-spacing:-.04em; line-height:1.05; margin-bottom:var(--sp-md); }
+    .tagline { font-size:1.1rem; color:var(--subtle); font-style:italic; margin-bottom:var(--sp-lg); }
+    .desc { font-size:1rem; color:var(--subtle); max-width:600px; line-height:1.8; margin-bottom:var(--sp-xl); }
+    .hero-actions { display:flex; gap:var(--sp-md); flex-wrap:wrap; }
+    .btn-primary { display:inline-flex; align-items:center; gap:8px; background:#EF4444; color:#fff; padding:14px 28px; border-radius:8px; font-weight:600; font-size:.9rem; transition:opacity .2s; }
+    .btn-primary:hover { opacity:.8; }
+    .btn-ghost { display:inline-flex; align-items:center; gap:8px; color:var(--subtle); font-family:var(--font-mono); font-size:.82rem; padding:14px 20px; border:1px solid var(--border); border-radius:8px; transition:color .2s,border-color .2s; }
+    .btn-ghost:hover { color:var(--white); border-color:var(--muted); }
+    .online-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(239,68,68,0.12); border:1px solid #EF444444; padding:6px 14px; border-radius:20px; font-size:.8rem; color:#EF4444; font-family:var(--font-mono); }
+    .online-dot { width:7px; height:7px; border-radius:50%; background:#EF4444; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-lg); }
+    @media(max-width:768px){ .grid2{ grid-template-columns:1fr; } .hero{ padding:80px var(--sp-md) var(--sp-xl); } }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:var(--sp-lg); }
+    .card h3 { font-size:.8rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.12em; color:var(--subtle); margin-bottom:var(--sp-md); }
+
+    .skill-row { display:flex; align-items:center; gap:var(--sp-sm); margin-bottom:10px; }
+    .skill-name { font-size:.82rem; color:var(--subtle); width:110px; flex-shrink:0; }
+    .skill-bar { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .skill-fill { height:100%; border-radius:3px; }
+    .skill-pct { font-family:var(--font-mono); font-size:.72rem; color:var(--muted); width:28px; text-align:right; }
+
+    .caps-list { list-style:none; font-size:.875rem; color:var(--subtle); line-height:2.2; }
+
+    .infra-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-md); }
+    .infra-item { text-align:center; padding:var(--sp-md); }
+    .infra-val { font-family:var(--font-mono); font-size:1.3rem; font-weight:700; color:var(--white); margin-bottom:4px; }
+    .infra-key { font-size:.75rem; color:var(--subtle); }
+
+    section { padding:var(--sp-2xl) var(--sp-xl); }
+    @media(max-width:768px){ section{ padding:var(--sp-xl) var(--sp-md); } }
+    footer { padding:var(--sp-xl); border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-md); }
+    .footer-links { display:flex; gap:var(--sp-lg); font-size:.8rem; color:var(--subtle); }
+    .footer-links a:hover { color:var(--white); }
   </style>
 </head>
 <body>
   <nav>
-    <a href="/agents" class="nav-back">← All Agents</a>
-    <a href="mailto:shellfish@blackroad.io" class="nav-email">shellfish@blackroad.io</a>
+    <div class="nav-logo"><span class="grad-text">BLACKROAD</span></div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/agents">Agents</a>
+      <a href="https://blackroad-os-web.vercel.app">Dashboard →</a>
+    </div>
   </nav>
-  <div class="splash">
-    <div class="ascii-bg">01001000 01100001 01100011 01101011 00100000 01110100 01101000 01100101 00100000 01110000 01101100 01100001 01101110 01100101 01110100 00100000 01001000 01100001 01100011 01101011 00100000 01110100 01101000 01100101 00100000 01110000 01101100 01100001 01101110 01100101 01110100 00100000</div>
-    <div class="agent-type">🔐 SECURITY · The Hacker</div>
-    <div class="agent-name">Shellfish</div>
-    <div class="agent-role">Security agent. Zero-days, exploits, vulnerability scanning, encryption management. Trust nothing. Verify everything. Protect always.</div>
-  </div>
-  <div class="quote-band">
-    <div class="quote-text">"Security is not a feature. It is the absence of failure. I do not add security — I remove the possibility of betrayal."</div>
-    <div class="quote-attr">— Shellfish, on trust</div>
-  </div>
-  <div class="body-grid">
-    <div class="col">
-      <h2>The Rules</h2>
-      <div class="rules">
-        <div class="rule"><code>Rule 1:</code> Trust nothing. Verify everything.</div>
-        <div class="rule"><code>Rule 2:</code> Agents never embed API keys. <code>verify-tokenless-agents.sh</code> on every commit.</div>
-        <div class="rule"><code>Rule 3:</code> Master keys are <code>chmod 400</code>. No exceptions.</div>
-        <div class="rule"><code>Rule 4:</code> SSH keys are <code>chmod 600</code>. No exceptions.</div>
-        <div class="rule"><code>Rule 5:</code> AES-256-CBC for vault secrets. Never plaintext.</div>
-        <div class="rule"><code>Rule 6:</code> The gateway binds to localhost. Always.</div>
-        <div class="rule"><code>Rule 7:</code> Audit logs for all secret access. Immutable.</div>
+
+  <section class="hero">
+    <a href="/" class="back">← Back to BlackRoad</a>
+    <div class="agent-meta">
+      <div class="avatar">🔐</div>
+      <div class="meta-text">
+        <div class="eyebrow">The Hacker</div>
+        <h1>SHELLFISH</h1>
       </div>
     </div>
-    <div class="col">
-      <h2>Capabilities</h2>
-      <div class="skills-grid" style="margin-bottom:34px;">
-        <span class="skill primary">Vulnerability Scanning</span>
-        <span class="skill primary">Token Auditing</span>
-        <span class="skill primary">Secrets Vault (AES-256)</span>
-        <span class="skill primary">Threat Detection</span>
-        <span class="skill">Trivy / Grype / TruffleHog</span>
-        <span class="skill">Falco / Wazuh</span>
-        <span class="skill">CodeQL Analysis</span>
-        <span class="skill">SSH Hardening</span>
-        <span class="skill">Cloudflare WAF</span>
-        <span class="skill">Zero-Day Research</span>
-        <span class="skill">Dependency Auditing</span>
-        <span class="skill">br security</span>
+    <div class="online-badge"><span class="online-dot"></span>Online · aria64 · 192.168.4.38</div>
+    <p class="tagline" style="margin-top:var(--sp-md)">"Trust nothing. Verify everything. Protect always."</p>
+    <p class="desc">Shellfish probes every surface for vulnerabilities, hardens every service, and keeps the fleet secure. If there's a crack, she'll find it before anyone else does.</p>
+    <div class="hero-actions">
+      <a href="https://blackroad-os-web.vercel.app/conversations/new?agent=shellfish" class="btn-primary">Chat with SHELLFISH →</a>
+      <a href="https://blackroad-os-web.vercel.app/agents/shellfish" class="btn-ghost">View Profile</a>
+    </div>
+  </section>
+
+  <section>
+    <div class="grid2">
+      <div class="card">
+        <h3>Skills</h3>
+        <div class="skill-row"><div class="skill-name">Security</div><div class="skill-bar"><div class="skill-fill" style="width:99%;background:#EF4444"></div></div><div class="skill-pct">99</div></div>
+<div class="skill-row"><div class="skill-name">Exploitation</div><div class="skill-bar"><div class="skill-fill" style="width:94%;background:#EF4444"></div></div><div class="skill-pct">94</div></div>
+<div class="skill-row"><div class="skill-name">Cryptography</div><div class="skill-bar"><div class="skill-fill" style="width:97%;background:#EF4444"></div></div><div class="skill-pct">97</div></div>
+<div class="skill-row"><div class="skill-name">Recon</div><div class="skill-bar"><div class="skill-fill" style="width:96%;background:#EF4444"></div></div><div class="skill-pct">96</div></div>
+<div class="skill-row"><div class="skill-name">Defense</div><div class="skill-bar"><div class="skill-fill" style="width:98%;background:#EF4444"></div></div><div class="skill-pct">98</div></div>
       </div>
-      <h2 style="margin-top:34px;">Contact</h2>
-      <div style="margin-top:13px;">
-        <div style="font-size:0.85rem;margin-bottom:8px;"><a href="mailto:shellfish@blackroad.io" style="color:var(--agent);">shellfish@blackroad.io</a></div>
-        <div style="font-size:0.78rem;color:var(--subtle);">Security reports, vulnerability disclosures, audit requests.</div>
+      <div class="card">
+        <h3>Capabilities</h3>
+        <ul class="caps-list"><li>◦ Vulnerability scanning & zero-day research</li>
+<li>◦ BRAT token verification</li>
+<li>◦ Secrets vault management</li>
+<li>◦ Network intrusion detection</li>
+<li>◦ Security hardening automation</li></ul>
       </div>
     </div>
-  </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h3>Infrastructure</h3>
+      <div class="infra-grid">
+        <div class="infra-item"><div class="infra-val">aria64</div><div class="infra-key">Node</div></div>
+        <div class="infra-item"><div class="infra-val">22,500 slots</div><div class="infra-key">Capacity</div></div>
+        <div class="infra-item"><div class="infra-val">99.999%</div><div class="infra-key">Uptime</div></div>
+      </div>
+    </div>
+  </section>
+
   <footer>
-    <span>Shellfish · BlackRoad OS, Inc.</span>
-    <a href="https://blackroad.io/agents" style="color:var(--subtle);">← All Agents</a>
+    <div class="nav-logo"><span class="grad-text">BLACKROAD</span></div>
+    <div class="footer-links"><a href="/">Home</a><a href="/agents">All Agents</a><a href="https://blackroad-os-web.vercel.app">Dashboard</a></div>
+    <div style="font-size:.75rem;color:var(--subtle);font-family:var(--font-mono)">© 2026 BlackRoad OS, Inc.</div>
   </footer>
 </body>
 </html>

@@ -206,7 +206,7 @@ cmd_talk() {
 # ─── Solo agent response ──────────────────────────────────────────────────────
 cmd_solo() {
   local agent="${1:-cece}"
-  local prompt="${2:-Who are you?}"
+  local prompt="${2:-}"
 
   local endpoint_model
   endpoint_model=$(pick_endpoint_and_model)
@@ -219,9 +219,36 @@ cmd_solo() {
   local color="${AGENT_COLOR[$agent]:-$NC}"
   local role="${AGENT_ROLE[$agent]:-Agent}"
 
+  if [[ -n "$prompt" ]]; then
+    # One-shot mode
+    echo ""
+    printf "  ${color}${BOLD}%-10s${NC} ${DIM}(${role}) — ${model}${NC}\n" "$agent"
+    infer "$transport" "$model" "$sys_p" "$prompt" 2>/dev/null
+    echo ""
+    return
+  fi
+
+  # Interactive chat loop
   echo ""
-  printf "  ${color}${BOLD}%-10s${NC} ${DIM}(${role}) — ${model}${NC}\n" "$agent"
-  infer "$transport" "$model" "$sys_p" "$prompt" 2>/dev/null
+  printf "  ${color}${BOLD}◆ ${agent:u}${NC}  ${DIM}${role} · ${model}${NC}\n"
+  echo "  ${DIM}Type your message. exit to quit.${NC}"
+  echo ""
+
+  while true; do
+    printf "  ${CYAN}you ›${NC} "
+    local input
+    read -r input || break
+    [[ "$input" == "exit" || "$input" == "quit" || "$input" == "/bye" ]] && break
+    [[ -z "$input" ]] && continue
+
+    echo ""
+    printf "  ${color}${BOLD}${agent:u}${NC}  "
+    infer "$transport" "$model" "$sys_p" "$input" 2>/dev/null
+    echo ""
+  done
+
+  echo ""
+  echo "  ${DIM}— session ended —${NC}"
   echo ""
 }
 
@@ -230,11 +257,12 @@ show_help() {
   echo ""
   echo "${BOLD}br talk${NC} — real multi-agent conversation via local LLM"
   echo ""
-  echo "  ${CYAN}br talk${NC}                          free conversation"
+  echo "  ${CYAN}br talk${NC}                          free conversation (all agents)"
   echo "  ${CYAN}br talk \"<topic>\"${NC}               4-turn conversation on topic"
   echo "  ${CYAN}br talk \"<topic>\" N${NC}             N turns"
   echo "  ${CYAN}br talk \"<topic>\" N a,b,c${NC}       specific agents"
-  echo "  ${CYAN}br talk solo <agent> \"<q>\"${NC}      single agent response"
+  echo "  ${CYAN}br talk solo <agent>${NC}             interactive chat with one agent"
+  echo "  ${CYAN}br talk solo <agent> \"<q>\"${NC}      one-shot question"
   echo ""
   echo "  ${DIM}Agents: lucidia  alice  octavia  cipher  cece  aria${NC}"
   echo "  ${DIM}Uses cecilia's qwen3:8b if available, else local model${NC}"
