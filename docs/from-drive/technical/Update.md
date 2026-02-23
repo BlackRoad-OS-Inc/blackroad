@@ -18285,7 +18285,7 @@ BROS_API
 
 
 ⏺ Bash(gh auth token 2>&1)
-  ⎿ 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                               
+  ⎿ [REDACTED_OAUTH_TOKEN]                               
     /Users/alexa/.zprofile:16: no such file or directory: /usr/local/bin/br
     ew
 
