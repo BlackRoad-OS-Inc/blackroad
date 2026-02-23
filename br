@@ -85,6 +85,9 @@ BR_TOOLS=(
     agent       "${BR_TOOLS_DIR}/agent-router/br-agent.sh"
     agents      "${BR_TOOLS_DIR}/agent-router/br-agent.sh"
     route       "${BR_TOOLS_DIR}/agent-router/br-agent.sh"
+    worker      "${BR_TOOLS_DIR}/worker-bridge/br-worker.sh"
+    workers     "${BR_TOOLS_DIR}/worker-bridge/br-worker.sh"
+    edge        "${BR_TOOLS_DIR}/worker-bridge/br-worker.sh"
     ci          "${BR_TOOLS_DIR}/ci-pipeline/br-ci.sh"
     pipeline    "${BR_TOOLS_DIR}/ci-pipeline/br-ci.sh"
     notify      "${BR_TOOLS_DIR}/notifications/br-notify.sh"
@@ -441,6 +444,10 @@ show_help() {
     echo "║    br carpool glossary <d>  - Domain vocabulary (40+ terms)         ║"
     echo "║    br carpool north-star    - Identify + instrument north star metric║"
     echo "║    br carpool faq <topic>   - 20 FAQs across 5 user mindsets        ║"
+    echo "║    br carpool checklist <c> - Pre-launch checklist (5 categories)   ║"
+    echo "║    br carpool competitor <c>- Competitive analysis + our moat       ║"
+    echo "║    br carpool meeting <p>   - Agenda + talking points + decisions   ║"
+    echo "║    br carpool support <i>   - Support response + escalation verdict ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
     echo "║    br carpool ask <q>       - Inject follow-up into live session   ║"
@@ -1124,6 +1131,10 @@ main() {
                 glossary)   bash /Users/alexa/blackroad/carpool.sh glossary "$@" ;;
                 north-star|northstar) bash /Users/alexa/blackroad/carpool.sh north-star "$@" ;;
                 faq)        bash /Users/alexa/blackroad/carpool.sh faq "$@" ;;
+                checklist)  bash /Users/alexa/blackroad/carpool.sh checklist "$@" ;;
+                competitor|compete) bash /Users/alexa/blackroad/carpool.sh competitor "$@" ;;
+                meeting)    bash /Users/alexa/blackroad/carpool.sh meeting "$@" ;;
+                support)    bash /Users/alexa/blackroad/carpool.sh support "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac

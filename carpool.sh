@@ -4295,6 +4295,146 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── CHECKLIST — pre-launch / pre-deploy checklist ─────────────────────
+if [[ "$1" == "checklist" ]]; then
+  shift
+  CONTEXT="$*"
+  CONTEXT="${CONTEXT:-production deploy}"
+  echo ""
+  echo -e "\033[1;33m✅ CHECKLIST: $CONTEXT\033[0m"
+  echo ""
+  CHECK_FILE="$HOME/.blackroad/carpool/checklists/$(echo "$CONTEXT" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/checklists"
+  printf "# Checklist: %s\nDate: %s\n\n" "$CONTEXT" "$(date '+%Y-%m-%d')" > "$CHECK_FILE"
+  for entry in "CIPHER|SECURITY|Auth tested, secrets rotated, deps scanned, no exposed endpoints." "OCTAVIA|INFRASTRUCTURE|Health checks passing, rollback tested, alerts configured, capacity checked." "ALICE|OPERATIONS|Runbook updated, on-call notified, monitoring dashboard ready, comms drafted." "PRISM|QUALITY|Tests green, coverage acceptable, performance benchmarks within SLA." "ARIA|COMMUNICATIONS|Changelog ready, docs updated, stakeholders notified, support briefed."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Generate a pre-launch checklist for: \"${CONTEXT}\"
+Category: ${section}
+Focus: ${lens}
+Give 6-8 specific checklist items.
+Format: - [ ] <item> — <why it matters>
+Be concrete. Not generic.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$CHECK_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $CHECK_FILE\033[0m"
+  exit 0
+fi
+
+# ── COMPETITOR — competitive analysis for a product or feature ─────────
+if [[ "$1" == "competitor" || "$1" == "compete" ]]; then
+  shift
+  COMPETITOR="$*"
+  [[ -z "$COMPETITOR" ]] && echo "Usage: br carpool competitor <competitor or product>" && exit 1
+  echo ""
+  echo -e "\033[1;31m⚔️  COMPETITIVE ANALYSIS: $COMPETITOR\033[0m"
+  echo ""
+  COMP_FILE="$HOME/.blackroad/carpool/competitors/$(echo "$COMPETITOR" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/competitors"
+  printf "# Competitive Analysis: %s\nDate: %s\n\n" "$COMPETITOR" "$(date '+%Y-%m-%d')" > "$COMP_FILE"
+  for entry in "PRISM|WHAT THEY DO WELL|Their actual strengths. Be honest — knowing this protects you." "SHELLFISH|THEIR WEAKNESSES|Real gaps, complaints from users, things they consistently fail at." "ALICE|WHERE WE WIN|The specific situations where our approach beats theirs. Be precise." "CIPHER|THEIR MOAT|What makes them hard to displace? Lock-in, network effects, data, brand." "LUCIDIA|OUR DIFFERENTIATOR|The one thing we do that they cannot easily copy. Our unfair advantage."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} analyzing competitor: \"${COMPETITOR}\" in the context of BlackRoad OS (AI agent orchestration platform).
+Section: ${section}
+${lens}
+Give 4-5 specific, insightful points. No generic SWOT filler.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$COMP_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $COMP_FILE\033[0m"
+  exit 0
+fi
+
+# ── MEETING — agenda + talking points + expected outcomes ─────────────
+if [[ "$1" == "meeting" ]]; then
+  shift
+  PURPOSE="$*"
+  [[ -z "$PURPOSE" ]] && echo "Usage: br carpool meeting <meeting purpose>" && exit 1
+  echo ""
+  echo -e "\033[1;36m📅 MEETING PREP: $PURPOSE\033[0m"
+  echo ""
+  MTG_FILE="$HOME/.blackroad/carpool/meetings/$(echo "$PURPOSE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/meetings"
+  printf "# Meeting: %s\nDate: %s\n\n" "$PURPOSE" "$(date '+%Y-%m-%d')" > "$MTG_FILE"
+  for entry in "ALICE|AGENDA|5-7 agenda items with time boxes. Total under 60 min. No item without an owner." "LUCIDIA|FRAMING|The one sentence that explains why this meeting matters right now." "PRISM|PRE-READ|What must attendees know before walking in? Max 3 bullets." "ARIA|TALKING POINTS|For each agenda item: the key thing to say and the question to ask." "OCTAVIA|DECISIONS NEEDED|The specific decisions that must come out of this meeting. If none, cancel it."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} preparing for a meeting about: \"${PURPOSE}\"
+Section: ${section}
+${lens}
+Be specific and efficient. Time is the most expensive resource in this meeting.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$MTG_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $MTG_FILE\033[0m"
+  exit 0
+fi
+
+# ── SUPPORT — draft support response + escalation decision ────────────
+if [[ "$1" == "support" ]]; then
+  shift
+  ISSUE="$*"
+  [[ -z "$ISSUE" ]] && echo "Usage: br carpool support <user issue or ticket>" && exit 1
+  echo ""
+  echo -e "\033[1;32m🎧 SUPPORT RESPONSE: $ISSUE\033[0m"
+  echo ""
+  for entry in "ARIA|EMPATHETIC RESPONSE|Draft the human-first reply. Acknowledge, validate, then help." "ALICE|TECHNICAL RESOLUTION|The exact steps to resolve this. What the user needs to do." "OCTAVIA|ROOT CAUSE|What system/code/config likely caused this? Internal diagnosis." "CIPHER|SECURITY CHECK|Is this a security issue in disguise? Data exposure, auth bypass, abuse vector?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} handling a support issue: \"${ISSUE}\"
+Section: ${section}
+${lens}
+Be direct and helpful. Real words, not corporate speak.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  # Escalation verdict
+  IFS='|' read -r _ col _ emoji <<< "$(agent_meta "SHELLFISH")"
+  echo -e "${col}${emoji} SHELLFISH — ESCALATION VERDICT${NC}"
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''User issue: \"${ISSUE}\"
+Should this be escalated? Answer:
+ESCALATE: YES / NO / MONITOR
+SEVERITY: P1 / P2 / P3
+REASON: <one sentence>
+NEXT OWNER: <who handles this next>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[SHELLFISH offline]"
+  echo ""
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
