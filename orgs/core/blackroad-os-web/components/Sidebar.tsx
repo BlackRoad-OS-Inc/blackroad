@@ -76,7 +76,7 @@ export default function Sidebar() {
       {/* New conversation button */}
       <div className="p-4">
         <Link
-          href="/workspace?new=true"
+          href="/conversations/new"
           className="group flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-[#FF1D6C] to-violet-600 hover:from-[#FF1D6C]/90 hover:to-violet-600/90 rounded-xl text-sm font-medium transition-all hover:shadow-lg hover:shadow-[#FF1D6C]/25"
         >
           <Plus className="h-4 w-4" />
