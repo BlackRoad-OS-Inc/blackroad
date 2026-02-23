@@ -1,20 +1,24 @@
 #!/bin/zsh
 #===============================================================================
-# BR Snippet - Code Snippet Manager
+# BR Snippet - Code Snippet Manager  v2
 # Save, retrieve, and manage code snippets
 #===============================================================================
 
 SNIPPET_HOME="/Users/alexa/blackroad/tools/snippet-manager"
 SNIPPET_DB="${SNIPPET_HOME}/snippets.db"
 
-# Colors
+# Brand palette
+AMBER='\033[38;5;214m'
+PINK='\033[38;5;205m'
+VIOLET='\033[38;5;135m'
+BBLUE='\033[38;5;69m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-PURPLE='\033[0;35m'
 RED='\033[0;31m'
+BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m'
+# Compat aliases
+BLUE="$BBLUE"; CYAN="$AMBER"; YELLOW="$PINK"; PURPLE="$VIOLET"
 
 # Initialize database
 init_db() {
@@ -72,9 +76,8 @@ save_snippet() {
         return 1
     fi
     
-    echo -e "${BLUE}╔═══════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║     💾 Save Code Snippet                     ║${NC}"
-    echo -e "${BLUE}╚═══════════════════════════════════════════════╝${NC}"
+    echo -e "  ${AMBER}${BOLD}◆ BR SNIPPET${NC}  ${DIM}save${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
     echo ""
     
     # Get code from stdin or prompt
@@ -161,38 +164,32 @@ get_snippet() {
     local language=$(echo "$result" | cut -f2)
     local description=$(echo "$result" | cut -f3)
     
-    echo -e "${GREEN}╔═══════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║     📋 Snippet: $name${NC}"
-    echo -e "${GREEN}╚═══════════════════════════════════════════════╝${NC}"
+    echo -e "  ${AMBER}${BOLD}◆ BR SNIPPET${NC}  ${DIM}$name${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
     echo ""
     
     if [[ -n "$description" ]]; then
-        echo -e "${CYAN}Description:${NC} $description"
+        echo -e "  ${DIM}$description${NC}"
         echo ""
     fi
     
-    echo -e "${YELLOW}Language:${NC} $language"
+    echo -e "  ${VIOLET}lang${NC}  ${DIM}$language${NC}"
     echo ""
     echo "$code"
     echo ""
     
     # Update usage stats
-    sqlite3 "$SNIPPET_DB" <<EOF
-UPDATE snippets 
-SET use_count = use_count + 1, last_used = $(date +%s)
-WHERE name='$name';
-EOF
+    sqlite3 "$SNIPPET_DB" "UPDATE snippets SET use_count = use_count + 1, last_used = $(date +%s) WHERE name='$name';"
     
-    echo -e "${CYAN}Tip: Copy with:${NC} br snippet get $name | pbcopy"
+    echo -e "  ${DIM}→  br snippet get $name | pbcopy${NC}"
 }
 
 # List snippets
 list_snippets() {
     local filter=${1:-""}
     
-    echo -e "${BLUE}╔═══════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║     📚 Snippet Library                        ║${NC}"
-    echo -e "${BLUE}╚═══════════════════════════════════════════════╝${NC}"
+    echo -e "  ${AMBER}${BOLD}◆ BR SNIPPET${NC}  ${DIM}library${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
     echo ""
     
     local query="SELECT name, language, description, use_count FROM snippets"
@@ -211,15 +208,13 @@ list_snippets() {
     local count=0
     while IFS=$'\t' read -r name language description use_count; do
         ((count++))
-        echo -e "${GREEN}${count}. ${name}${NC} ${CYAN}(${language})${NC}"
-        if [[ -n "$description" ]]; then
-            echo "   $description"
-        fi
-        echo "   Uses: $use_count"
+        echo -e "  ${GREEN}${BOLD}${count}. ${name}${NC}  ${VIOLET}${language}${NC}"
+        [[ -n "$description" ]] && echo -e "     ${DIM}$description${NC}"
+        echo -e "     ${DIM}uses: $use_count${NC}"
         echo ""
     done <<< "$results"
     
-    echo -e "${CYAN}Total: ${count} snippet(s)${NC}"
+    echo -e "  ${DIM}total: ${count} snippet(s)${NC}"
 }
 
 # Search snippets
@@ -232,11 +227,8 @@ search_snippets() {
         return 1
     fi
     
-    echo -e "${CYAN}╔═══════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║     🔍 Search Results                         ║${NC}"
-    echo -e "${CYAN}╚═══════════════════════════════════════════════╝${NC}"
-    echo ""
-    echo -e "${YELLOW}Searching for: '$query'${NC}"
+    echo -e "  ${AMBER}${BOLD}◆ BR SNIPPET${NC}  ${DIM}search: $query${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
     echo ""
     
     local results=$(sqlite3 "$SNIPPET_DB" -separator $'\t' \
@@ -255,20 +247,14 @@ search_snippets() {
     local count=0
     while IFS=$'\t' read -r name language description code; do
         ((count++))
-        echo -e "${GREEN}${count}. ${name}${NC} ${CYAN}(${language})${NC}"
-        if [[ -n "$description" ]]; then
-            echo "   $description"
-        fi
-        
-        # Show matching line
-        local match=$(echo "$code" | grep -i "$query" | head -1 | cut -c1-60)
-        if [[ -n "$match" ]]; then
-            echo "   ${YELLOW}...${match}...${NC}"
-        fi
+        echo -e "  ${GREEN}${BOLD}${count}. ${name}${NC}  ${VIOLET}${language}${NC}"
+        [[ -n "$description" ]] && echo -e "     ${DIM}$description${NC}"
+        local match; match=$(echo "$code" | grep -i "$query" | head -1 | cut -c1-60)
+        [[ -n "$match" ]] && echo -e "     ${DIM}…${match}…${NC}"
         echo ""
     done <<< "$results"
     
-    echo -e "${CYAN}Found: ${count} match(es)${NC}"
+    echo -e "  ${DIM}found: ${count} match(es)${NC}"
 }
 
 # Delete snippet
@@ -302,9 +288,8 @@ delete_snippet() {
 
 # Suggest snippets based on context
 suggest_snippets() {
-    echo -e "${PURPLE}╔═══════════════════════════════════════════════╗${NC}"
-    echo -e "${PURPLE}║     💡 Snippet Suggestions                    ║${NC}"
-    echo -e "${PURPLE}╚═══════════════════════════════════════════════╝${NC}"
+    echo -e "  ${AMBER}${BOLD}◆ BR SNIPPET${NC}  ${DIM}suggest${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
     echo ""
     
     # Detect current context
@@ -334,47 +319,36 @@ suggest_snippets() {
          LIMIT 5;")
     
     if [[ -z "$results" ]]; then
-        echo -e "${YELLOW}No $language snippets available${NC}"
-        echo "Create one with: br snippet save <name>"
+        echo -e "  ${DIM}No $language snippets yet.  br snippet save <name>${NC}"
         return 0
     fi
     
     local count=0
     while IFS='|||' read -r name description; do
         ((count++))
-        echo -e "  ${count}. ${GREEN}${name}${NC}"
-        if [[ -n "$description" ]]; then
-            echo "     ${description}"
-        fi
+        echo -e "  ${GREEN}${BOLD}${count}. ${name}${NC}"
+        [[ -n "$description" ]] && echo -e "     ${DIM}${description}${NC}"
     done <<< "$results"
     
     echo ""
-    echo -e "${CYAN}Get snippet:${NC} br snippet get <name>"
+    echo -e "  ${DIM}→  br snippet get <name>${NC}"
 }
 
 # Show help
 show_help() {
-    cat <<EOF
-BR Snippet - Code Snippet Manager
-
-Usage: br snippet {command} [args]
-
-Commands:
-  save <name>      - Save code snippet from stdin
-  get <name>       - Retrieve and display snippet
-  list [filter]    - List all snippets (optional filter)
-  search <query>   - Search snippets by name/content
-  delete <name>    - Delete a snippet
-  suggest          - Get suggestions for current context
-
-Examples:
-  echo "ls -la" | br snippet save list-all
-  br snippet get list-all
-  br snippet list bash
-  br snippet search loop
-  br snippet suggest
-
-EOF
+    echo ""
+    echo -e "  ${AMBER}${BOLD}BR SNIPPET${NC}  ${DIM}code snippet manager${NC}"
+    echo ""
+    echo -e "  ${BOLD}br snippet${NC}             ${DIM}list all (default)${NC}"
+    echo -e "  ${BOLD}br snippet save <name>${NC} ${DIM}save from stdin${NC}"
+    echo -e "  ${BOLD}br snippet get <name>${NC}  ${DIM}retrieve snippet${NC}"
+    echo -e "  ${BOLD}br snippet search <q>${NC}  ${DIM}search by name/content/tags${NC}"
+    echo -e "  ${BOLD}br snippet suggest${NC}     ${DIM}suggest for current dir context${NC}"
+    echo -e "  ${BOLD}br snippet del <name>${NC}  ${DIM}delete snippet${NC}"
+    echo ""
+    echo -e "  ${DIM}echo 'ls -la' | br snippet save list-all${NC}"
+    echo -e "  ${DIM}br snippet get list-all | pbcopy${NC}"
+    echo ""
 }
 
 # Initialize database on first run
@@ -382,30 +356,14 @@ init_db
 
 # Main dispatch
 case ${1:-list} in
-    save|s)
-        save_snippet "$2"
-        ;;
-    get|g)
-        get_snippet "$2"
-        ;;
-    list|l|ls)
-        list_snippets "$2"
-        ;;
-    search|find|f)
-        search_snippets "$2"
-        ;;
-    delete|del|rm)
-        delete_snippet "$2"
-        ;;
-    suggest|sug)
-        suggest_snippets
-        ;;
-    help|-h|--help)
-        show_help
-        ;;
+    save|s)       save_snippet "$2" ;;
+    get|g)        get_snippet "$2" ;;
+    list|l|ls|"") list_snippets "$2" ;;
+    search|find|f) search_snippets "$2" ;;
+    delete|del|rm) delete_snippet "$2" ;;
+    suggest|sug)  suggest_snippets ;;
+    help|-h|--help) show_help ;;
     *)
-        echo "Unknown command: $1"
-        show_help
-        exit 1
-        ;;
+        echo -e "  ${RED}✗${NC} Unknown: $1"
+        show_help; exit 1 ;;
 esac

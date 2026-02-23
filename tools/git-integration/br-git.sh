@@ -1,172 +1,151 @@
 #!/bin/zsh
-#===============================================================================
-# BR Git - Smart Git Integration
-# AI-powered git operations for BlackRoad
-#===============================================================================
+# BR Git — AI-powered smart git operations
 
 GIT_TOOLS="/Users/alexa/blackroad/tools/git-integration"
 
-# Colors
+# ── Brand Palette ──────────────────────────────────────────────────────────────
+AMBER='\033[38;5;214m'
+PINK='\033[38;5;205m'
+VIOLET='\033[38;5;135m'
+BBLUE='\033[38;5;69m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-PURPLE='\033[0;35m'
 RED='\033[0;31m'
+DIM='\033[2m'
+BOLD='\033[1m'
 NC='\033[0m'
+# compat aliases
+BLUE="$BBLUE"; CYAN="$AMBER"; YELLOW="$PINK"; PURPLE="$VIOLET"
 
-# Generate smart commit message from git diff
+# ── Ollama-powered commit message generation ───────────────────────────────────
+_ai_commit_msg() {
+    local diff_stat="$1"
+    local diff_body="$2"
+
+    command -v ollama &>/dev/null || { echo ""; return 1; }
+    local model
+    for m in lucidia llama3.2:1b qwen2.5:1.5b tinyllama; do
+        ollama list 2>/dev/null | grep -q "^$m" && { model="$m"; break; }
+    done
+    [[ -z "$model" ]] && { echo ""; return 1; }
+
+    local prompt="Write a conventional commit message for this git diff.
+Rules: one line only, format is type(scope): description, be specific and concise.
+Types: feat fix docs refactor test perf style chore.
+Only output the commit message line, nothing else.
+
+Files changed:
+$diff_stat
+
+Diff (first 80 lines):
+$diff_body"
+
+    local msg
+    msg=$(echo "$prompt" | ollama run "$model" 2>/dev/null | head -1 | tr -d '\n')
+    # strip any markdown fences or quotes
+    msg=$(echo "$msg" | sed "s/^\`//;s/\`$//;s/^'//;s/'$//;s/^\"/\"/")
+    echo "$msg"
+}
+
+# Smart commit with AI message generation
 smart_commit() {
-    echo -e "${BLUE}╔═══════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║     🤖 Smart Commit Message Generator        ║${NC}"
-    echo -e "${BLUE}╚═══════════════════════════════════════════════╝${NC}"
     echo ""
-    
-    # Check if in git repo
-    if ! git rev-parse --git-dir > /dev/null 2>&1; then
-        echo -e "${RED}Error: Not in a git repository${NC}"
-        return 1
+    echo -e "  ${AMBER}${BOLD}◆ BR GIT COMMIT${NC}  ${DIM}AI-powered message generation${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    echo ""
+
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo -e "  ${RED}✗${NC} Not in a git repository"; return 1
     fi
-    
-    # Get staged changes
-    local staged=$(git diff --cached --stat)
+
+    # Auto-stage if nothing staged
+    local staged
+    staged=$(git diff --cached --stat 2>/dev/null)
     if [[ -z "$staged" ]]; then
-        echo -e "${YELLOW}No staged changes. Staging all changes...${NC}"
+        echo -e "  ${DIM}Nothing staged — running git add -A${NC}"
         git add -A
-        staged=$(git diff --cached --stat)
-        if [[ -z "$staged" ]]; then
-            echo -e "${RED}No changes to commit${NC}"
-            return 1
-        fi
+        staged=$(git diff --cached --stat 2>/dev/null)
+        [[ -z "$staged" ]] && echo -e "  ${RED}✗${NC} Nothing to commit" && return 1
     fi
-    
-    echo -e "${CYAN}Analyzing changes...${NC}"
+
+    # Show what's staged
+    echo -e "  ${DIM}staged files:${NC}"
+    git diff --cached --name-only | while read -r f; do
+        echo -e "    ${DIM}+${NC} $f"
+    done
     echo ""
-    git diff --cached --stat
+    git --no-pager diff --cached --stat | tail -1 | while read -r line; do
+        echo -e "  ${DIM}$line${NC}"
+    done
     echo ""
-    
-    # Analyze the diff
-    local diff=$(git diff --cached)
-    local files_changed=$(echo "$staged" | wc -l | tr -d ' ')
-    ((files_changed--))
-    
-    # Smart commit message generation
-    local commit_msg=""
-    local commit_type="feat"
-    
-    # Detect commit type from diff
-    if echo "$diff" | grep -q "test\|spec"; then
-        commit_type="test"
-        commit_msg="Add tests"
-    elif echo "$diff" | grep -q "fix\|bug"; then
-        commit_type="fix"
-        commit_msg="Fix issue"
-    elif echo "$diff" | grep -q "doc\|README\|\.md"; then
-        commit_type="docs"
-        commit_msg="Update documentation"
-    elif echo "$diff" | grep -q "refactor"; then
-        commit_type="refactor"
-        commit_msg="Refactor code"
-    elif echo "$diff" | grep -q "style\|format"; then
-        commit_type="style"
-        commit_msg="Update code style"
-    elif echo "$diff" | grep -q "perf\|performance"; then
-        commit_type="perf"
-        commit_msg="Improve performance"
-    else
-        # Detect from files
-        local added=$(echo "$diff" | grep "^+" | grep -v "^+++" | wc -l | tr -d ' ')
-        local removed=$(echo "$diff" | grep "^-" | grep -v "^---" | wc -l | tr -d ' ')
-        
-        if (( removed > added * 2 )); then
-            commit_type="refactor"
-            commit_msg="Clean up code"
-        elif (( added > 100 )); then
-            commit_type="feat"
-            commit_msg="Add new feature"
+
+    # Generate AI message
+    local diff_stat diff_body commit_msg
+    diff_stat=$(git diff --cached --stat)
+    diff_body=$(git diff --cached | head -80)
+
+    echo -e "  ${AMBER}◆${NC} Generating commit message with AI…"
+    commit_msg=$(_ai_commit_msg "$diff_stat" "$diff_body")
+
+    if [[ -z "$commit_msg" ]]; then
+        # Fallback: keyword-based
+        local diff_full files added removed
+        diff_full=$(git diff --cached)
+        files=$(git diff --cached --name-only | head -1)
+        added=$(echo "$diff_full" | grep -c "^+" 2>/dev/null || echo 0)
+        removed=$(echo "$diff_full" | grep -c "^-" 2>/dev/null || echo 0)
+        local fbase
+        fbase=$(basename "${files:-code}" | sed 's/\.[^.]*$//')
+        if echo "$diff_full" | grep -qi "test\|spec"; then
+            commit_msg="test: add $fbase tests"
+        elif echo "$diff_full" | grep -qi "fix\|bug"; then
+            commit_msg="fix: resolve $fbase issue"
+        elif echo "$diff_full" | grep -qi "doc\|readme\|\.md"; then
+            commit_msg="docs: update $fbase"
+        elif (( removed > added * 2 )); then
+            commit_msg="refactor: clean up $fbase"
         else
-            commit_type="feat"
-            commit_msg="Update functionality"
+            commit_msg="feat: update $fbase"
         fi
+        echo -e "  ${DIM}(Ollama unavailable — using keyword detection)${NC}"
     fi
-    
-    # Analyze file names for better context
-    local file_list=$(git diff --cached --name-only)
-    local first_file=$(echo "$file_list" | head -1)
-    local file_base=$(basename "$first_file" | sed 's/\.[^.]*$//')
-    
-    # Make message more specific
-    if [[ -n "$file_base" ]]; then
-        case $commit_type in
-            feat)
-                commit_msg="feat: add ${file_base} functionality"
-                ;;
-            fix)
-                commit_msg="fix: resolve ${file_base} issues"
-                ;;
-            docs)
-                commit_msg="docs: update ${file_base} documentation"
-                ;;
-            test)
-                commit_msg="test: add ${file_base} tests"
-                ;;
-            refactor)
-                commit_msg="refactor: improve ${file_base} structure"
-                ;;
-            style)
-                commit_msg="style: format ${file_base}"
-                ;;
-            perf)
-                commit_msg="perf: optimize ${file_base}"
-                ;;
-        esac
-    fi
-    
-    echo -e "${GREEN}Suggested commit message:${NC}"
+
     echo ""
-    echo -e "  ${CYAN}$commit_msg${NC}"
+    echo -e "  ${AMBER}${BOLD}$commit_msg${NC}"
     echo ""
-    
-    # Add detailed body
-    echo -e "${YELLOW}Changes summary:${NC}"
-    echo "  - $files_changed file(s) changed"
-    git diff --cached --stat | tail -1
-    echo ""
-    
-    # Interactive confirmation
-    echo -ne "${YELLOW}Use this message? [Y/n/e(dit)]:${NC} "
-    read -r response
-    
-    case ${response:l} in
+    echo -ne "  ${DIM}[Enter] accept  [e] edit  [n] cancel:${NC}  "
+    read -r resp
+
+    case "${resp:l}" in
         n|no)
-            echo -e "${YELLOW}Commit cancelled${NC}"
-            return 0
-            ;;
+            echo -e "  ${DIM}Cancelled.${NC}"; return 0 ;;
         e|edit)
-            echo -ne "${CYAN}Enter your commit message:${NC} "
-            read -r custom_msg
-            commit_msg="$custom_msg"
-            ;;
+            echo -ne "  ${AMBER}commit message:${NC} "
+            read -r commit_msg ;;
     esac
-    
-    # Commit with the message
-    git commit -m "$commit_msg"
-    
+
+    # Append Co-authored-by trailer
+    local full_msg="${commit_msg}
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+
+    git commit -m "$full_msg"
     if [[ $? -eq 0 ]]; then
         echo ""
-        echo -e "${GREEN}✓ Committed successfully!${NC}"
-        git log -1 --oneline
+        echo -e "  ${GREEN}✓${NC} Committed"
+        git --no-pager log -1 --oneline | while read -r line; do
+            echo -e "  ${DIM}$line${NC}"
+        done
+        echo ""
     else
-        echo -e "${RED}✗ Commit failed${NC}"
-        return 1
+        echo -e "  ${RED}✗${NC} Commit failed"; return 1
     fi
 }
 
 # Suggest branch name
 smart_branch() {
-    echo -e "${PURPLE}╔═══════════════════════════════════════════════╗${NC}"
-    echo -e "${PURPLE}║     🌿 Smart Branch Name Suggester           ║${NC}"
-    echo -e "${PURPLE}╚═══════════════════════════════════════════════╝${NC}"
+    echo -e "${VIOLET}╔═══════════════════════════════════════════════╗${NC}"
+    echo -e "${VIOLET}║     🌿 Smart Branch Name Suggester           ║${NC}"
+    echo -e "${VIOLET}╚═══════════════════════════════════════════════╝${NC}"
     echo ""
     
     # Get current branch
@@ -355,52 +334,92 @@ smart_status() {
     fi
 }
 
+# Pretty git log — last 10 commits with color
+cmd_log() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo -e "  ${RED}✗${NC} Not a git repository"; return 1
+    fi
+    local branch
+    branch=$(git branch --show-current 2>/dev/null || echo "HEAD")
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR GIT LOG${NC}  ${DIM}${branch}${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    echo ""
+    git --no-pager log --oneline --graph --decorate -12 --color=always \
+        --format="%C(bold yellow)%h%C(reset) %C(dim)%ar%C(reset) %s %C(dim)%an%C(reset)" 2>/dev/null \
+    | while IFS= read -r line; do
+        echo "  $line"
+    done
+    echo ""
+}
+
+# Compact status snapshot
+cmd_summary() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo -e "  ${RED}✗${NC} Not a git repository"; return 1
+    fi
+    local branch remote ahead behind
+    branch=$(git branch --show-current 2>/dev/null || echo "HEAD")
+    remote=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "")
+    local staged_n unstaged_n untracked_n
+    staged_n=$(git diff --cached --name-only 2>/dev/null | wc -l | tr -d ' ')
+    unstaged_n=$(git diff --name-only 2>/dev/null | wc -l | tr -d ' ')
+    untracked_n=$(git ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ')
+    if [[ -n "$remote" ]]; then
+        ahead=$(git rev-list "@{u}..HEAD" --count 2>/dev/null || echo 0)
+        behind=$(git rev-list "HEAD..@{u}" --count 2>/dev/null || echo 0)
+    fi
+    local last_commit
+    last_commit=$(git --no-pager log -1 --format="%h %s" 2>/dev/null)
+
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR GIT${NC}  ${DIM}$(git rev-parse --show-toplevel 2>/dev/null | xargs basename)${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    printf "  ${BOLD}%-12s${NC}${AMBER}%s${NC}" "branch" "$branch"
+    [[ -n "$remote" ]] && printf "  ${DIM}%s${NC}" "$remote"
+    echo ""
+    [[ -n "$ahead" && $ahead -gt 0 ]]   && printf "  ${BOLD}%-12s${NC}${GREEN}↑ $ahead to push${NC}\n" "ahead"
+    [[ -n "$behind" && $behind -gt 0 ]] && printf "  ${BOLD}%-12s${NC}${PINK}↓ $behind to pull${NC}\n" "behind"
+    echo -e "  $(printf '%-12s' 'staged')${GREEN}$staged_n${NC} files"
+    echo -e "  $(printf '%-12s' 'unstaged')${PINK}$unstaged_n${NC} files"
+    echo -e "  $(printf '%-12s' 'untracked')${DIM}$untracked_n${NC} files"
+    echo -e "  $(printf '%-12s' 'last')${DIM}$last_commit${NC}"
+    echo ""
+    # Hint
+    if (( staged_n > 0 )); then
+        echo -e "  ${DIM}→  br git commit   (${staged_n} staged)${NC}"
+    elif (( unstaged_n > 0 )); then
+        echo -e "  ${DIM}→  br git commit   (will stage all)${NC}"
+    else
+        echo -e "  ${DIM}✓  working tree clean${NC}"
+    fi
+    echo ""
+}
+
 # Help
 show_help() {
-    cat <<EOF
-BR Git - Smart Git Integration
-
-Usage: br git {command} [args]
-
-Commands:
-  commit [files]  - Generate smart commit message and commit
-  branch          - Suggest and create branch name
-  review          - Pre-commit code review
-  status          - Enhanced git status with insights
-  suggest         - Suggest next git action
-
-Examples:
-  br git commit                  # Smart commit with auto message
-  br git branch                  # Create feature branch
-  br git review                  # Review changes before commit
-  br git status                  # See smart git status
-
-EOF
+    echo ""
+    echo -e "  ${AMBER}${BOLD}BR GIT${NC}  ${DIM}AI-powered git operations${NC}"
+    echo ""
+    echo -e "  ${BOLD}br git${NC}                ${DIM}status summary (default)${NC}"
+    echo -e "  ${BOLD}br git commit${NC}         ${DIM}AI commit message + stage + commit${NC}"
+    echo -e "  ${BOLD}br git log${NC}            ${DIM}pretty log — last 12 commits${NC}"
+    echo -e "  ${BOLD}br git branch${NC}         ${DIM}suggest and create branch name${NC}"
+    echo -e "  ${BOLD}br git review${NC}         ${DIM}pre-commit code review${NC}"
+    echo ""
 }
 
 # Main dispatch
-case ${1:-status} in
-    commit|c)
-        smart_commit
-        ;;
-    branch|b)
-        smart_branch
-        ;;
-    review|r)
-        smart_review
-        ;;
-    status|s)
-        smart_status
-        ;;
-    suggest)
-        smart_status
-        ;;
-    help|-h|--help)
-        show_help
-        ;;
+case ${1:-summary} in
+    summary|snap|"") cmd_summary ;;
+    commit|c) smart_commit ;;
+    log|l) cmd_log ;;
+    branch|b) smart_branch ;;
+    review|r) smart_review ;;
+    status|s) smart_status ;;
+    suggest) smart_status ;;
+    help|-h|--help) show_help ;;
     *)
-        echo "Unknown command: $1"
-        show_help
-        exit 1
-        ;;
+        echo -e "  ${RED}✗${NC} Unknown: $1"
+        show_help; exit 1 ;;
 esac

@@ -298,7 +298,9 @@ show_help() {
     echo "║  AGENT INTERACTIONS (🤖 Talk to the Fleet):                     ║"
     echo "║    br wake [agent] [model]  - Wake an agent with morning thoughts ║"
     echo "║    br council <question>    - All agents vote on a question       ║"
-    echo "║    br carpool <topic>       - Agents CarPool a topic together 🚗  ║"
+    echo "║    br carpool <topic>       - 8 agents parallel roundtable 🚗    ║"
+    echo "║    br carpool list          - List saved carpool sessions         ║"
+    echo "║    br carpool last          - Open most recent session            ║"
     echo "║    br roundtable <topic>    - All 6 agents discuss in tmux 🎯   ║"
     echo "║    br think <query>         - All agents respond to a query       ║"
     echo "║    br debate <topic>        - LUCIDIA vs CIPHER debate            ║"
@@ -664,16 +666,26 @@ main() {
             bash /Users/alexa/blackroad/council.sh llama3.2 "$question"
             ;;
         carpool)
-            # br carpool [topic] [turns] — group conversation tab + 6 worker tabs in tmux
-            local topic="$1"; shift 2>/dev/null || true
-            local turns="${1:-3}"
-            if [[ -z "$topic" ]]; then
-                echo -e "\033[1;37m🚗 BlackRoad CarPool\033[0m"
-                echo -ne "\033[0;36mTopic: \033[0m"
-                read -r topic
-                [[ -z "$topic" ]] && topic="What should BlackRoad build next?"
-            fi
-            bash /Users/alexa/blackroad/carpool.sh "$topic" "$turns"
+            # br carpool [topic]       — 8-agent parallel tmux roundtable
+            # br carpool list          — list saved sessions
+            # br carpool last          — open most recent session
+            # CARPOOL_MODEL=x CARPOOL_TURNS=n br carpool "topic"
+            local subcmd="$1"; shift 2>/dev/null || true
+            case "$subcmd" in
+                list|last)
+                    bash /Users/alexa/blackroad/carpool.sh "$subcmd"
+                    ;;
+                "")
+                    echo -e "\033[1;37m🚗 BlackRoad CarPool\033[0m"
+                    echo -ne "\033[0;36mTopic: \033[0m"
+                    read -r topic
+                    [[ -z "$topic" ]] && topic="What should BlackRoad build next?"
+                    bash /Users/alexa/blackroad/carpool.sh "$topic"
+                    ;;
+                *)
+                    bash /Users/alexa/blackroad/carpool.sh "$subcmd"
+                    ;;
+            esac
             ;;
         roundtable|rt)
             # br roundtable [topic] [turns] — all 6 agents discuss in tmux panes

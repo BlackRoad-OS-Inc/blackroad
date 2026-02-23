@@ -503,128 +503,109 @@ cmd_mac_devices() {
   local mac_ip
   mac_ip=$(ipconfig getifaddr en0 2>/dev/null || echo "192.168.4.28")
 
-  # Ensure mac node exists
   db "INSERT OR IGNORE INTO nodes (ip, hostname, alias, role, os, arch, ssh_user, reachable, ssh_ok, last_seen, tags)
       VALUES ('$mac_ip','alexandria','mac','MacBook Pro','macOS','arm64','alexa',1,0,'$(ts)','mac,local')"
   db "DELETE FROM devices WHERE node_ip='$mac_ip'"
 
-  # USB via system_profiler
+  # USB via ioreg (clean, no quoting issues)
   echo "${BOLD}USB Devices:${NC}"
-  system_profiler SPUSBDataType 2>/dev/null | python3 -c "
-import sys, re
+  local usb_raw
+  usb_raw=$(ioreg -p IOUSB -l -w0 2>/dev/null | grep -E '"USB Product Name"|"USB Vendor Name"|"USB Serial Number"')
+  local usb_name usb_vendor usb_serial
+  usb_name=$(echo "$usb_raw"   | grep "USB Product Name"  | sed 's/.*= //' | tr -d '"' | head -1)
+  usb_vendor=$(echo "$usb_raw" | grep "USB Vendor Name"   | sed 's/.*= //' | tr -d '"' | head -1)
+  usb_serial=$(echo "$usb_raw" | grep "USB Serial Number" | sed 's/.*= //' | tr -d '"' | head -1)
 
-lines = sys.stdin.read()
-blocks = lines.split('\n\n')
-for block in blocks:
-    if 'Product ID:' not in block:
-        continue
-    name = ''
-    mfr = ''
-    speed = ''
-    serial = ''
-    bsd = ''
-    pid = ''
-    vid = ''
-    for line in block.split('\n'):
-        stripped = line.strip()
-        if stripped and not stripped.startswith('Product ID') and not stripped.startswith('Vendor') and not stripped.startswith('Speed') and not stripped.startswith('Serial') and not stripped.startswith('BSD') and not stripped.startswith('Location') and not stripped.startswith('Current') and not stripped.startswith('Extra') and not stripped.startswith('Host') and ':' in stripped:
-            k, _, v = stripped.partition(':')
-            k = k.strip(); v = v.strip()
-            if k == 'Manufacturer': mfr = v
-            elif k == 'BSD Name': bsd = v
-            elif k == 'Speed': speed = v
-            elif k == 'Serial Number': serial = v
-            elif k == 'Product ID': pid = v
-            elif k == 'Vendor ID': vid = v
-    # Try to get device name (first non-indented line that isn't a category)
-    for line in block.split('\n'):
-        stripped = line.strip()
-        if stripped and stripped.endswith(':') and 'Bus' not in stripped and 'Hub' not in stripped:
-            name = stripped.rstrip(':')
-            break
-    if pid:
-        print(f'USB|{name or mfr or \"Unknown\"}|{mfr}|{serial}|{speed}|{bsd}|{pid}|{vid}')
-" | while IFS='|' read -r type name mfr serial speed bsd pid vid; do
-    printf "  ${GREEN}●${NC} %-28s ${DIM}%s  %s${NC}\n" "${name:-$mfr}" "$mfr" "$speed"
-    [[ -n "$bsd" ]] && printf "    ${DIM}BSD: %-10s${NC}\n" "$bsd"
+  if [[ -n "$usb_name" ]]; then
+    printf "  ${GREEN}●${NC} %-28s ${DIM}%s  USB 2.0 480Mb/s${NC}\n" "$usb_name" "$usb_vendor"
+    [[ -n "$usb_serial" ]] && printf "    ${DIM}S/N: %s${NC}\n" "$usb_serial"
+    local safe_v="${usb_vendor//\'/}"
+    local safe_n="${usb_name//\'/}"
+    local safe_s="${usb_serial//\'/}"
     db "INSERT INTO devices (node_ip, type, path, vendor, model, detail)
-        VALUES ('$mac_ip','usb','${bsd:-}','$(echo $mfr|tr "'"" ")','$(echo $name|tr "'"" ")','PID:$pid VID:$vid Serial:$serial')"
-  done 2>/dev/null
-
-  # Quest 2 hardcoded (often the only USB)
-  local quest_check
-  quest_check=$(system_profiler SPUSBDataType 2>/dev/null | grep -i "Quest\|Oculus" | head -1)
-  if [[ -n "$quest_check" ]]; then
-    echo "  ${PURPLE}● Meta Quest 2${NC}  (Oculus, S/N: 1WMHH869MH1283)  USB 480Mb/s"
-    db "INSERT OR IGNORE INTO devices (node_ip, type, path, vendor, model, detail)
-        VALUES ('$mac_ip','usb','','Oculus','Meta Quest 2','SN:1WMHH869MH1283 Speed:480Mbps')"
+        VALUES ('$mac_ip','usb','','$safe_v','$safe_n','SN:$safe_s')"
+  else
+    echo "  ${DIM}No USB devices detected (Quest may be in standby)${NC}"
   fi
 
-  # Bluetooth
+  # Thunderbolt/USB4
+  echo ""
+  echo "${BOLD}Thunderbolt / USB4:${NC}"
+  local prev_dev=""
+  system_profiler SPThunderboltDataType 2>/dev/null | grep -E "Device Name:|Speed:" | \
+  while IFS= read -r tline; do
+    if echo "$tline" | grep -q "Device Name:"; then
+      prev_dev=$(echo "$tline" | sed 's/.*Device Name: //')
+    elif echo "$tline" | grep -q "Speed:"; then
+      local spd=$(echo "$tline" | sed 's/.*Speed: //')
+      printf "  ${CYAN}⚡${NC} %-28s ${DIM}%s${NC}\n" "${prev_dev:-MacBook Pro}" "$spd"
+    fi
+  done
+
+  # Bluetooth — write parser to temp file to avoid zsh quoting issues
   echo ""
   echo "${BOLD}Bluetooth Devices:${NC}"
-  system_profiler SPBluetoothDataType 2>/dev/null | python3 -c "
-import sys, re
+  local bt_py="/tmp/br_bt_parse.py"
+  cat > "$bt_py" << 'BTEOF'
+import sys
 text = sys.stdin.read()
-# Find device blocks
-devices = []
 current = {}
+results = []
+bt_icons = {'Keyboard':'K', 'Mouse':'M', 'Headphones':'H', 'MobilePhone':'P'}
 for line in text.split('\n'):
-    stripped = line.strip()
-    if not stripped:
+    s = line.strip()
+    if not s:
         if current.get('addr'):
-            devices.append(dict(current))
+            results.append(dict(current))
         current = {}
         continue
-    if stripped.startswith('Address:'):
-        current['addr'] = stripped.split(':',1)[-1].strip()
-    elif 'Name:' in stripped:
-        current['name'] = stripped.split(':',1)[-1].strip()
-    elif 'Minor Type:' in stripped:
-        current['type'] = stripped.split(':',1)[-1].strip()
-    elif 'Connected:' in stripped:
-        current['connected'] = 'Yes' in stripped
-    elif 'Battery Level' in stripped:
-        current['battery'] = stripped.split(':',1)[-1].strip()
+    if s.startswith('Address:'):
+        current['addr'] = s.split(':',1)[-1].strip()
+    elif 'Name:' in s and 'Address' not in s and len(s) < 80:
+        current['name'] = s.split(':',1)[-1].strip()
+    elif 'Minor Type:' in s:
+        current['type'] = s.split(':',1)[-1].strip()
+    elif 'Connected:' in s:
+        current['conn'] = 'Yes' in s
+    elif 'Battery Level' in s:
+        current['bat'] = s.split(':',1)[-1].strip()
+if current.get('addr'):
+    results.append(current)
+for d in results:
+    addr = d.get('addr','')
+    if not addr:
+        continue
+    name  = d.get('name', 'Unknown')
+    btype = d.get('type', '')
+    conn  = 'connected' if d.get('conn') else 'paired'
+    bat   = d.get('bat','')
+    oui   = addr[:8].lower()
+    esp   = 'ESP32' if oui == '80:f3:ef' else ''
+    print(f'{name}|{btype}|{addr}|{conn}|{bat}|{esp}')
+BTEOF
 
-bt_types = {
-    'Keyboard': '⌨️',
-    'Mouse': '🖱️',
-    'Headphones': '🎧',
-    'MobilePhone': '📱',
-}
-for d in devices:
-    if d.get('addr'):
-        icon = bt_types.get(d.get('type',''), '📶')
-        name = d.get('name', 'Unknown')
-        btype = d.get('type', '?')
-        connected = '● connected' if d.get('connected') else '○'
-        battery = f\" 🔋{d['battery']}\" if d.get('battery') else ''
-        print(f'BT|{icon}|{name}|{btype}|{d[\"addr\"]}|{connected}|{battery}')
-" | while IFS='|' read -r _ icon name btype addr connected battery; do
-    # Map known MAC OUIs
-    local vendor=""
-    local oui="${addr:0:8}"
-    case "${oui:l}" in
-      80:f3:ef) vendor="${RED}ESP32 (Espressif)${NC}" ;;
-      b0:be:83) vendor="Apple" ;;
-      6c:4a:85) vendor="" ;;
-      dc:08:0f) vendor="" ;;
-      e4:76:84) vendor="" ;;
-      04:52:c7) vendor="Apple" ;;
-      ac:bf:71) vendor="" ;;
-      *) vendor="" ;;
+  system_profiler SPBluetoothDataType 2>/dev/null | python3 "$bt_py" | \
+  while IFS='|' read -r name btype addr conn bat esp; do
+    local icon="○"
+    case "$btype" in
+      Keyboard)   icon="⌨" ;;
+      Mouse)      icon="⊙" ;;
+      Headphones) icon="♫" ;;
+      MobilePhone) icon="☎" ;;
     esac
-    printf "  %s %-24s ${DIM}%-12s  %s${NC}" "$icon" "$name" "$btype" "$connected"
-    [[ -n "$battery" ]] && printf " %s" "$battery"
-    [[ -n "$vendor" ]] && printf "  %b" "$vendor"
+    local color="$DIM"
+    [[ "$conn" == "connected" ]] && color="$GREEN"
+    printf "  %s ${color}%-24s${NC} ${DIM}%-12s  %s${NC}" "$icon" "$name" "$btype" "$conn"
+    [[ -n "$bat" ]] && printf " battery:%s" "$bat"
+    [[ -n "$esp" ]] && printf " ${RED}[%s - same as LAN .94]${NC}" "$esp"
     printf "\n"
+    local safe_n="${name//\'/}"
     db "INSERT INTO devices (node_ip, type, path, vendor, model, detail)
-        VALUES ('$mac_ip','bluetooth','$addr','$(echo $vendor|tr "'"" ""|sed "s/\\\033\[[0-9;]*m//g")','$(echo $name|tr "'"" ")','type:$btype $connected')"
-  done 2>/dev/null
+        VALUES ('$mac_ip','bluetooth','$addr','','$safe_n','type:$btype conn:$conn')" 2>/dev/null
+  done
 
   echo ""
-  echo "${DIM}  Note: MAC 80:f3:ef = Espressif (same OUI as ESP32 at 192.168.4.94)${NC}"
+  echo "  ${DIM}MAC 80:f3:ef = Espressif vendor (ESP32/ESP8266)${NC}"
   echo ""
 }
 
