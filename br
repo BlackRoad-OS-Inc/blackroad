@@ -685,12 +685,62 @@ show_help() {
 cmd_status() {
     local agent=$1
 
-    if [[ -n "$agent" ]]; then
+    if [[ "$agent" == "--live" ]] || [[ "$agent" == "live" ]]; then
+        # Full live system status
+        echo -e "\n${CYAN}╔══════════════════════════════════════════════════════╗${NC}"
+        echo -e "${CYAN}║       🌌 BLACKROAD OS — LIVE SYSTEM STATUS           ║${NC}"
+        echo -e "${CYAN}╚══════════════════════════════════════════════════════╝${NC}\n"
+
+        # Fleet
+        echo -e "${YELLOW}🍓 Pi Fleet${NC}"
+        bash /Users/alexa/blackroad/br pi status 2>/dev/null | grep -E "●|cpu=|worlds=" | head -6 | sed 's/^/  /'
+        echo ""
+
+        # Worlds
+        echo -e "${YELLOW}🌍 World Artifacts${NC}"
+        bash /Users/alexa/blackroad/br worlds stats 2>/dev/null | sed 's/^/  /'
+        echo ""
+
+        # Agents
+        echo -e "${YELLOW}🤖 Local Agents${NC}"
+        local backend=$(detect_backend)
+        echo "  Inference: $backend"
+        for a in octavia lucidia alice aria shellfish; do
+            local db="${MEMORY_DIR}/${a}.db"
+            if [[ -f "$db" ]]; then
+                local count=$(sqlite3 "$db" "SELECT COUNT(*) FROM memories;" 2>/dev/null || echo "0")
+                echo -e "  ${AGENT_COLORS[$a]}●${NC} $a: $count memories"
+            else
+                echo "  ○ $a: not initialized"
+            fi
+        done
+        echo ""
+
+        # Gateway
+        echo -e "${YELLOW}🚪 Gateway${NC}"
+        if curl -sf http://127.0.0.1:8787/health &>/dev/null; then
+            echo -e "  ${GREEN}✓${NC} Gateway online :8787"
+        else
+            echo -e "  ${RED}✗${NC} Gateway offline  →  br gateway start"
+        fi
+
+        # MCP
+        if curl -sf http://127.0.0.1:8420/ &>/dev/null; then
+            echo -e "  ${GREEN}✓${NC} MCP Bridge online :8420"
+        else
+            echo -e "  ${RED}✗${NC} MCP Bridge offline  →  br mcp start"
+        fi
+        echo ""
+    elif [[ -n "$agent" ]]; then
         agent_status "$agent"
     else
         echo "╔═══════════════════════════════════════════════════════════════════╗"
         echo "║              BLACKROAD AGENT STATUS                               ║"
         echo "╚═══════════════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "  Usage:  br status           → agent memory status"
+        echo "          br status --live    → full live system health"
+        echo "          br status <agent>   → single agent status"
         echo ""
 
         local backend=$(detect_backend)
