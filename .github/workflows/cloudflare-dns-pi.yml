@@ -20,7 +20,7 @@ jobs:
 
       - name: Check cloudflared tunnel health
         run: |
-          curl -sf http://localhost/health || true
+          curl -sf http://localhost:8787/health || true
           systemctl is-active cloudflared 2>/dev/null || \
             pgrep -f cloudflared > /dev/null && echo "cloudflared running" || echo "cloudflared stopped"
 

@@ -34,26 +34,18 @@ jobs:
             echo "⚠️ rclone not installed — configure manually"
           }
 
-      - name: Configure rclone (if token exists)
+      - name: Configure rclone
         env:
-          RCLONE_GDRIVE_TOKEN: ${{ secrets.RCLONE_GDRIVE_TOKEN }}
-          RCLONE_GDRIVE_CLIENT_ID: ${{ secrets.RCLONE_GDRIVE_CLIENT_ID }}
-          RCLONE_GDRIVE_CLIENT_SECRET: ${{ secrets.RCLONE_GDRIVE_CLIENT_SECRET }}
+          RCLONE_CONFIG_B64: ${{ secrets.RCLONE_CONFIG }}
         run: |
-          # Write rclone config if secrets available
-          if [ -n "$RCLONE_GDRIVE_TOKEN" ]; then
-            mkdir -p ~/.config/rclone
-            cat > ~/.config/rclone/rclone.conf << EOF
-          [gdrive]
-          type = drive
-          client_id = ${RCLONE_GDRIVE_CLIENT_ID}
-          client_secret = ${RCLONE_GDRIVE_CLIENT_SECRET}
-          token = ${RCLONE_GDRIVE_TOKEN}
-          team_drive =
-          EOF
-            echo "✓ rclone configured"
+          mkdir -p ~/.config/rclone
+          if [ -n "$RCLONE_CONFIG_B64" ]; then
+            echo "$RCLONE_CONFIG_B64" | base64 -d > ~/.config/rclone/rclone.conf
+            echo "✓ rclone configured from secret"
+          elif [ -f ~/.config/rclone/rclone.conf ]; then
+            echo "✓ rclone using existing config"
           else
-            echo "⚠️ No RCLONE_GDRIVE_TOKEN — using existing ~/.config/rclone/rclone.conf"
+            echo "⚠️ No rclone config — skipping sync"
           fi
 
       - name: Sync memory/ to Google Drive
