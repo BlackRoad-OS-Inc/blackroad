@@ -1,0 +1,53 @@
+name: "🤖 PR Agent Identity"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  create-pr-identity:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create PR agent identity
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUM="${{ github.event.pull_request.number }}"
+          PR_BRANCH="${{ github.event.pull_request.head.ref }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          
+          # Detect agent role from branch name
+          ROLE="general"
+          echo "$PR_BRANCH" | grep -qi "feat\|feature" && ROLE="feature-builder"
+          echo "$PR_BRANCH" | grep -qi "fix\|bug\|patch" && ROLE="bug-fixer"
+          echo "$PR_BRANCH" | grep -qi "refactor" && ROLE="code-optimizer"
+          echo "$PR_BRANCH" | grep -qi "docs\|doc" && ROLE="documentation"
+          echo "$PR_BRANCH" | grep -qi "ci\|cd\|workflow" && ROLE="devops"
+          echo "$PR_BRANCH" | grep -qi "security\|sec\|auth" && ROLE="security"
+          echo "$PR_BRANCH" | grep -qi "test\|spec" && ROLE="test-engineer"
+          echo "$PR_BRANCH" | grep -qi "release\|v[0-9]" && ROLE="release-manager"
+          
+          # Post agent identity comment
+          gh pr comment $PR_NUM --body "
+          ## 🤖 Agent Identity Activated
+          
+          | Field | Value |
+          |-------|-------|
+          | **Agent** | \`PR-$PR_NUM-${PR_BRANCH}\` |
+          | **Role** | $ROLE |
+          | **Author** | @$PR_AUTHOR |
+          | **Gateway** | https://agents.blackroad.io |
+          | **Runner** | [self-hosted, pi, blackroad] |
+          | **Qdrant** | 192.168.4.49:6333 |
+          
+          > This PR has an assigned BlackRoad agent identity. Merging will update the agent registry.
+          " 2>/dev/null || true
+          
+          echo "✅ PR #$PR_NUM agent identity: $ROLE"
