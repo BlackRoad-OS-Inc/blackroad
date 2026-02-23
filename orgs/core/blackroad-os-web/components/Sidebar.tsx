@@ -10,7 +10,8 @@ import {
   Plus,
   LogOut,
   LayoutDashboard,
-  Activity
+  Activity,
+  Globe,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWorkspaceStore } from '@/stores/workspace-store';
@@ -41,6 +42,11 @@ export default function Sidebar() {
       name: 'Monitoring',
       href: '/monitoring',
       icon: Activity,
+    },
+    {
+      name: 'Worlds',
+      href: '/worlds',
+      icon: Globe,
     },
     {
       name: 'Governance',
