@@ -1,0 +1,14 @@
+{
+  "name": "blackroad-failover",
+  "description": "Last-resort static server if Pi tunnel + CF Workers both fail",
+  "type": "static",
+  "source": "failover/",
+  "buildCommand": "echo 'No build needed'",
+  "startCommand": "python3 -m http.server 8080",
+  "healthcheck": "/status.html",
+  "env": {
+    "PORT": "8080",
+    "NODE_ENV": "production"
+  },
+  "note": "Deploy manually: cd failover && railway up --service blackroad-failover"
+}
