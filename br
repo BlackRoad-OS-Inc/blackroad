@@ -642,6 +642,17 @@ main() {
             local question="${*:-Should we deploy to production?}"
             bash /Users/alexa/blackroad/council.sh llama3.2 "$question"
             ;;
+        carpool)
+            # br carpool [topic] — group conversation tab + 6 worker tabs in tmux
+            local topic="$*"
+            if [[ -z "$topic" ]]; then
+                echo -e "\033[1;37m🚗 BlackRoad CarPool\033[0m"
+                echo -ne "\033[0;36mTopic: \033[0m"
+                read -r topic
+                [[ -z "$topic" ]] && topic="What should BlackRoad build next?"
+            fi
+            bash /Users/alexa/blackroad/carpool.sh "$topic"
+            ;;
         think)
             # br think <query> — all agents respond
             local query="${*:-What should we build next?}"

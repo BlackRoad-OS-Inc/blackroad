@@ -1,15 +1,18 @@
 #!/usr/bin/env zsh
-# 📊 Metrics Dashboard - Feature #31
-# Real-time system metrics, performance tracking, and visualization
+# BR Metrics — Real-time system metrics, performance tracking, and visualization
 
-# Colors
+# ── Brand Palette ──────────────────────────────────────────────────────────────
+AMBER='\033[38;5;214m'
+PINK='\033[38;5;205m'
+VIOLET='\033[38;5;135m'
+BBLUE='\033[38;5;69m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+DIM='\033[2m'
+BOLD='\033[1m'
 NC='\033[0m'
+# compat aliases used in legacy functions
+BLUE="$BBLUE"; CYAN="$AMBER"; YELLOW="$PINK"; MAGENTA="$VIOLET"
 
 DB_FILE="$HOME/.blackroad/metrics.db"
 
@@ -56,8 +59,14 @@ collect_system_metrics() {
     
     # CPU Usage (macOS/Linux)
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        cpu_usage=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')
-        memory_usage=$(top -l 1 | grep "PhysMem" | awk '{print $2}' | sed 's/M//')
+        local top_out=$(top -l 1 | grep "CPU usage")
+        local user_pct=$(echo "$top_out" | grep -o '[0-9.]*% user' | grep -o '[0-9.]*')
+        local sys_pct=$(echo  "$top_out" | grep -o '[0-9.]*% sys'  | grep -o '[0-9.]*')
+        cpu_usage=$(echo "$user_pct $sys_pct" | awk '{printf "%.1f", $1+$2}')
+        local phys=$(top -l 1 | grep "PhysMem" | head -1)
+        local used_mb=$(echo "$phys" | grep -o '[0-9]*M used' | grep -o '[0-9]*')
+        local total_mb=$(( $(sysctl -n hw.memsize) / 1048576 ))
+        memory_usage=$(echo "$used_mb $total_mb" | awk '{printf "%.1f", ($1/$2)*100}')
         disk_usage=$(df -h / | tail -1 | awk '{print $5}' | sed 's/%//')
         load_avg=$(uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | sed 's/,//')
     else
@@ -71,73 +80,88 @@ collect_system_metrics() {
     sqlite3 "$DB_FILE" "INSERT INTO system_metrics (cpu_usage, memory_usage, disk_usage, load_avg, recorded_at) VALUES ($cpu_usage, $memory_usage, $disk_usage, $load_avg, $(date +%s));"
 }
 
+# Generate sparkline from last N metric values ▁▂▃▄▅▆▇█
+_sparkline() {
+    local col="${1}"   # DB column name
+    local n="${2:-12}"
+    local vals
+    vals=$(sqlite3 "$DB_FILE" "SELECT $col FROM system_metrics ORDER BY recorded_at DESC LIMIT $n;" 2>/dev/null | tail -r)
+    [[ -z "$vals" ]] && echo "  —" && return
+    local blocks=("▁" "▂" "▃" "▄" "▅" "▆" "▇" "█")
+    local min max
+    min=$(echo "$vals" | awk 'BEGIN{m=9999} {if($1<m)m=$1} END{print m}')
+    max=$(echo "$vals" | awk 'BEGIN{m=0} {if($1>m)m=$1} END{print m}')
+    local spark=""
+    while IFS= read -r v; do
+        local range=$(echo "$min $max" | awk '{r=$2-$1; print (r==0)?0:r}')
+        local idx=0
+        [[ "$range" != "0" ]] && idx=$(echo "$v $min $range" | awk '{i=int(($1-$2)/$3*7); print (i>7)?7:(i<0)?0:i}')
+        spark+="${blocks[$((idx+1))]}"
+    done <<< "$vals"
+    echo "$spark"
+}
+
+# One-shot snapshot with sparklines
+cmd_summary() {
+    init_db
+    collect_system_metrics
+    local cpu mem disk load
+    IFS=$'\t' read -r cpu mem disk load < <(sqlite3 -separator $'\t' "$DB_FILE" \
+        "SELECT cpu_usage, memory_usage, disk_usage, load_avg FROM system_metrics ORDER BY recorded_at DESC LIMIT 1;")
+
+    local spark_cpu spark_mem spark_disk
+    spark_cpu=$(_sparkline cpu_usage 12)
+    spark_mem=$(_sparkline memory_usage 12)
+    spark_disk=$(_sparkline disk_usage 12)
+
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR METRICS${NC}  ${DIM}system snapshot${NC}  ${DIM}$(date '+%H:%M:%S')${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────────${NC}"
+    echo ""
+
+    _draw_metric "CPU" "${cpu}" "$spark_cpu"
+    _draw_metric "MEM" "${mem}" "$spark_mem"
+    _draw_metric "DSK" "${disk}" "$spark_disk"
+
+    echo ""
+    echo -e "  ${DIM}load avg ${NC}${BOLD}${load}${NC}   ${DIM}history (last 12 samples)${NC}"
+    echo ""
+}
+
+# Draw one metric row
+_draw_metric() {
+    local label="${1}"
+    local pct="${2}"
+    local spark="${3}"
+    local ipct="${pct%.*}"
+    local filled=$(( ipct / 2 ))
+    [[ $filled -gt 50 ]] && filled=50
+    local empty=$(( 50 - filled ))
+    local bar_color="$GREEN"
+    [[ $ipct -gt 70 ]] && bar_color="$AMBER"
+    [[ $ipct -gt 85 ]] && bar_color="$PINK"
+    printf "  ${BOLD}%s${NC}  " "$label"
+    printf "${bar_color}"
+    for ((i=0; i<filled; i++)); do printf "█"; done
+    printf "${NC}${DIM}"
+    for ((i=0; i<empty; i++)); do printf "░"; done
+    printf "${NC}  ${BOLD}%s%%${NC}  ${DIM}%s${NC}\n" "$ipct" "$spark"
+}
+
 # Show dashboard
 cmd_dashboard() {
     init_db
     
     while true; do
         clear
-        echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${CYAN}║           📊 BLACKROAD METRICS DASHBOARD 📊               ║${NC}"
-        echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
+        cmd_summary
+        echo -e "  ${DIM}──────────────────────────────────────────────────${NC}"
         echo ""
-        
-        # Get current metrics
-        collect_system_metrics
-        
-        local latest=$(sqlite3 -separator $'\t' "$DB_FILE" "SELECT cpu_usage, memory_usage, disk_usage, load_avg, datetime(recorded_at, 'unixepoch') FROM system_metrics ORDER BY recorded_at DESC LIMIT 1;")
-        
-        if [[ -n "$latest" ]]; then
-            local cpu=$(echo "$latest" | cut -f1)
-            local mem=$(echo "$latest" | cut -f2)
-            local disk=$(echo "$latest" | cut -f3)
-            local load=$(echo "$latest" | cut -f4)
-            local time=$(echo "$latest" | cut -f5)
-            
-            # CPU
-            echo -e "${BLUE}CPU Usage:${NC}"
-            draw_bar "$cpu" 100 "cyan"
-            echo -e "  ${cpu}%\n"
-            
-            # Memory
-            echo -e "${BLUE}Memory Usage:${NC}"
-            draw_bar "$mem" 100 "yellow"
-            echo -e "  ${mem}%\n"
-            
-            # Disk
-            echo -e "${BLUE}Disk Usage:${NC}"
-            draw_bar "$disk" 100 "magenta"
-            echo -e "  ${disk}%\n"
-            
-            # Load Average
-            echo -e "${BLUE}Load Average:${NC} $load"
-            echo -e "${BLUE}Last Update:${NC} $time"
-        fi
-        
+        local alert_count
+        alert_count=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM alerts WHERE enabled = 1;" 2>/dev/null)
+        [[ -n "$alert_count" && $alert_count -gt 0 ]] && echo -e "  ${AMBER}◆${NC} ${alert_count} active alert(s)"
+        echo -e "  ${DIM}Ctrl+C to stop  ·  refreshes every 5s${NC}"
         echo ""
-        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo ""
-        
-        # Show alerts
-        local alert_count=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM alerts WHERE enabled = 1;")
-        echo -e "${BLUE}Active Alerts:${NC} $alert_count"
-        
-        # Check for threshold breaches
-        if [[ "$cpu" > 80 ]]; then
-            echo -e "${RED}⚠️  High CPU usage detected!${NC}"
-        fi
-        
-        if [[ "$mem" > 85 ]]; then
-            echo -e "${RED}⚠️  High memory usage detected!${NC}"
-        fi
-        
-        if [[ "$disk" > 90 ]]; then
-            echo -e "${RED}⚠️  High disk usage detected!${NC}"
-        fi
-        
-        echo ""
-        echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
-        
         sleep 5
     done
 }
@@ -398,7 +422,8 @@ EOF
 # Main dispatch
 init_db
 
-case "${1:-help}" in
+case "${1:-summary}" in
+    summary|snap|now|"") cmd_summary ;;
     dashboard|dash|d) cmd_dashboard ;;
     record|r) cmd_record "${@:2}" ;;
     history|hist|h) cmd_history "${@:2}" ;;

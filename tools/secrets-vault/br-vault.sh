@@ -1,15 +1,27 @@
 #!/usr/bin/env zsh
-# 🔐 Secrets Vault - Feature #32
-# Encrypted secrets storage with rotation, audit logs, and access control
+# 🔐 BR Vault — BlackRoad OS Secrets Manager
+# AES-256 encrypted storage · audit logs · rotation · access control
 
-# Colors
+# Brand palette
+AMBER='\033[38;5;214m'    # #F5A623
+PINK='\033[38;5;205m'     # #FF1D6C
+VIOLET='\033[38;5;135m'   # #9C27B0
+BLUE='\033[38;5;69m'      # #2979FF
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+DIM='\033[2m'
+BOLD='\033[1m'
 NC='\033[0m'
+
+# Compat aliases used throughout
+CYAN="$AMBER"
+MAGENTA="$VIOLET"
+YELLOW="$AMBER"
+
+_vault_header() {
+  echo -e "${AMBER}${BOLD}◆ BR VAULT${NC}  ${DIM}AES-256 · audit-logged · rotation-ready${NC}"
+  echo -e "${DIM}──────────────────────────────────────────────────${NC}"
+}
 
 DB_FILE="$HOME/.blackroad/secrets-vault.db"
 VAULT_DIR="$HOME/.blackroad/vault"
@@ -196,8 +208,8 @@ cmd_list() {
     init_db
     local category="${1:-}"
     
-    echo -e "${CYAN}🔐 Secrets Vault${NC}\n"
-    
+    _vault_header
+
     local query="SELECT name, category, tags, accessed_count, datetime(created_at, 'unixepoch'), expires_at FROM secrets"
     [[ -n "$category" ]] && query="$query WHERE category = '$category'"
     query="$query ORDER BY name;"
@@ -381,6 +393,43 @@ cmd_generate() {
     fi
 }
 
+# Status dashboard
+cmd_status() {
+    init_db
+    _vault_header
+    local total=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM secrets;" 2>/dev/null || echo 0)
+    local expiring=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM secrets WHERE expires_at > 0 AND expires_at < $(($(date +%s) + 604800));" 2>/dev/null || echo 0)
+    local expired=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM secrets WHERE expires_at > 0 AND expires_at < $(date +%s);" 2>/dev/null || echo 0)
+    local audit_total=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM audit_log;" 2>/dev/null || echo 0)
+
+    echo -e "  ${AMBER}Secrets${NC}    ${BOLD}${total}${NC} stored  ${DIM}·${NC}  ${AMBER}Expiring${NC}  ${expiring} soon  ${DIM}·${NC}  ${RED}Expired${NC}  ${expired}"
+    echo ""
+
+    local cats=$(sqlite3 "$DB_FILE" "SELECT category, COUNT(*) FROM secrets GROUP BY category ORDER BY COUNT(*) DESC;" 2>/dev/null)
+    if [[ -n "$cats" ]]; then
+        echo -e "  ${DIM}Categories:${NC}"
+        while IFS='|' read -r cat cnt; do
+            echo -e "    ${DIM}▸${NC} ${BLUE}${cat}${NC}  ${cnt}"
+        done <<< "$cats"
+        echo ""
+    fi
+
+    echo -e "  ${DIM}Recent activity:${NC}"
+    sqlite3 -separator $'\t' "$DB_FILE" \
+        "SELECT action, secret_name, datetime(timestamp,'unixepoch') FROM audit_log ORDER BY timestamp DESC LIMIT 5;" 2>/dev/null \
+        | while IFS=$'\t' read -r action name ts; do
+            local icon="◦"
+            [[ "$action" == "CREATE" ]] && icon="${GREEN}+${NC}"
+            [[ "$action" == "DELETE" ]] && icon="${RED}−${NC}"
+            [[ "$action" == "ROTATE" ]] && icon="${AMBER}↻${NC}"
+            [[ "$action" == "GET" ]]    && icon="${DIM}·${NC}"
+            echo -e "    ${icon} ${DIM}${ts}${NC}  ${BLUE}${action}${NC}  ${name}"
+          done
+    echo ""
+    echo -e "  ${DIM}Total audit events: ${audit_total}${NC}"
+    echo -e "${DIM}──────────────────────────────────────────────────${NC}"
+}
+
 # Help
 cmd_help() {
     cat << 'EOF'
@@ -462,17 +511,18 @@ EOF
 # Main dispatch
 init_db
 
-case "${1:-help}" in
-    set|store|s) cmd_set "${@:2}" ;;
-    get|g) cmd_get "${@:2}" ;;
-    list|ls|l) cmd_list "${@:2}" ;;
+case "${1:-status}" in
+    status|st)      cmd_status ;;
+    set|store|s)    cmd_set "${@:2}" ;;
+    get|g)          cmd_get "${@:2}" ;;
+    list|ls|l)      cmd_list "${@:2}" ;;
     delete|del|rm|d) cmd_delete "${@:2}" ;;
-    rotate|r) cmd_rotate "${@:2}" ;;
-    expiring|exp|e) cmd_expiring "${@:2}" ;;
-    audit|log|a) cmd_audit "${@:2}" ;;
-    export|backup|ex) cmd_export "${@:2}" ;;
-    import|restore|im) cmd_import "${@:2}" ;;
-    generate|gen|rand) cmd_generate "${@:2}" ;;
+    rotate|r)       cmd_rotate "${@:2}" ;;
+    expiring|exp)   cmd_expiring "${@:2}" ;;
+    audit|log)      cmd_audit "${@:2}" ;;
+    export|backup)  cmd_export "${@:2}" ;;
+    import|restore) cmd_import "${@:2}" ;;
+    generate|gen)   cmd_generate "${@:2}" ;;
     help|--help|-h) cmd_help ;;
     *)
         echo -e "${RED}❌ Unknown command: $1${NC}"
