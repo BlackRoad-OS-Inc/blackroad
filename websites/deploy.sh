@@ -8,6 +8,14 @@ SITES=(
   "blackroad-ai:blackroad-ai:blackroad.ai"
   "lucidia-earth:lucidia-earth:lucidia.earth"
   "agents:blackroad-agents-page:agents.blackroad.io"
+  "alexa:blackroad-alexa:alexa.blackroad.io"
+  "pricing:blackroad-pricing:blackroad.io/pricing"
+  "agents/lucidia:blackroad-agent-lucidia:lucidia.blackroad.io"
+  "agents/alice:blackroad-agent-alice:alice.blackroad.io"
+  "agents/cecilia:blackroad-agent-cecilia:cecilia.blackroad.io"
+  "agents/octavia:blackroad-agent-octavia:octavia.blackroad.io"
+  "agents/aria:blackroad-agent-aria:aria.blackroad.io"
+  "agents/shellfish:blackroad-agent-shellfish:shellfish.blackroad.io"
 )
 
 deploy_site() {
@@ -29,6 +37,14 @@ case "${1:-all}" in
   blackroad.ai)  deploy_site blackroad-ai blackroad-ai blackroad.ai ;;
   lucidia.earth) deploy_site lucidia-earth lucidia-earth lucidia.earth ;;
   agents)        deploy_site agents blackroad-agents-page agents.blackroad.io ;;
+  alexa)         deploy_site alexa blackroad-alexa alexa.blackroad.io ;;
+  pricing)       deploy_site pricing blackroad-pricing pricing.blackroad.io ;;
+  lucidia)       deploy_site agents/lucidia blackroad-agent-lucidia lucidia.blackroad.io ;;
+  alice)         deploy_site agents/alice blackroad-agent-alice alice.blackroad.io ;;
+  cecilia)       deploy_site agents/cecilia blackroad-agent-cecilia cecilia.blackroad.io ;;
+  octavia)       deploy_site agents/octavia blackroad-agent-octavia octavia.blackroad.io ;;
+  aria)          deploy_site agents/aria blackroad-agent-aria aria.blackroad.io ;;
+  shellfish)     deploy_site agents/shellfish blackroad-agent-shellfish shellfish.blackroad.io ;;
   all)
     for entry in "${SITES[@]}"; do
       IFS=: read dir project domain <<< "$entry"
