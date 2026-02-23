@@ -1785,12 +1785,131 @@ print(json.dumps({
   exit 0
 fi
 
+# ── GUT — fast gut-check: one word + one sentence per agent ──
+if [[ "$1" == "gut" ]]; then
+  _topic="${2:-}"
+  [[ -z "$_topic" ]] && echo -ne "${CYAN}Gut-check what? ${NC}" && read -r _topic
+  [[ -z "$_topic" ]] && exit 1
+
+  echo -e "\n${WHITE}🫀 CarPool Gut Check${NC}  ${DIM}${_topic}${NC}\n"
+
+  for name in LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER ARIA SHELLFISH; do
+    agent_meta "$name"
+    _c="\033[${COLOR_CODE}m"
+    echo -ne "  ${_c}${EMOJI} ${name}${NC}  ${DIM}...${NC}"
+
+    _gut_payload=$(python3 -c "
+import json,sys
+n,r,t=sys.argv[1],sys.argv[2],sys.argv[3]
+prompt=f'You are {n}, {r}.\nGut check: {t}\nRespond with exactly two lines:\nGUT: <one word reaction in CAPS>\nBECAUSE: <one sentence explaining why>'
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':40,'temperature':0.8,'stop':['\n\n','---']}}))" "$name" "$ROLE" "$_topic" 2>/dev/null)
+
+    _ans=$(curl -s -m 20 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_gut_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    _gut_word=$(echo "$_ans" | grep "^GUT:" | sed 's/^GUT: *//')
+    _gut_reason=$(echo "$_ans" | grep "^BECAUSE:" | sed 's/^BECAUSE: *//')
+    printf "  ${_c}${EMOJI} %-10s${NC}  ${WHITE}%-12s${NC}  %s\n" "$name" "${_gut_word:-?}" "${_gut_reason:-$_ans}"
+  done
+  echo ""
+  exit 0
+fi
+
+# ── SHIP — go/no-go checklist for shipping a feature ─────────
+if [[ "$1" == "ship" ]]; then
+  _feature="${2:-}"
+  [[ -z "$_feature" ]] && echo -ne "${CYAN}What are we shipping? ${NC}" && read -r _feature
+  [[ -z "$_feature" ]] && exit 1
+
+  _ship_topic="SHIP OR HOLD: '${_feature}'
+This is a go/no-go decision. From YOUR domain, evaluate:
+READY: what is confirmed ready in your area (be specific)
+RISK: one thing that could break post-ship
+VERDICT: SHIP / HOLD / SHIP-WITH-CAVEAT — one sentence why
+
+Be decisive. We are making a call today."
+
+  echo -e "\n${WHITE}🚀 Ship Check${NC}  ${DIM}${_feature}${NC}\n"
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" --brief "$_ship_topic"
+fi
+
+# ── FORECAST — agents predict next quarter in their domain ───
+if [[ "$1" == "forecast" ]]; then
+  _horizon="${2:-next quarter}"
+  echo -e "\n${WHITE}🔭 CarPool Forecast${NC}  ${DIM}${_horizon}${NC}\n"
+
+  _fc_topic="FORECAST: ${_horizon}
+From YOUR domain, give three predictions:
+1. WILL HAPPEN: something highly likely (>80%)
+2. MIGHT HAPPEN: something possible (40-60%)
+3. WILDCARD: a low-probability, high-impact surprise (<20% but huge if true)
+Be specific. Name technologies, numbers, trends. No vague generalities."
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" --brief "$_fc_topic"
+fi
+
+# ── NAME — agents suggest names for a product/feature ────────
+if [[ "$1" == "name" ]]; then
+  _thing="${2:-}"
+  [[ -z "$_thing" ]] && echo -ne "${CYAN}Name what? (describe it): ${NC}" && read -r _thing
+  [[ -z "$_thing" ]] && exit 1
+
+  _name_topic="NAMING SESSION: '${_thing}'
+Suggest 3 names from YOUR domain aesthetic and sensibility.
+For each name: NAME — one-sentence rationale.
+Then pick your FAVORITE and say why it sticks.
+Names should be: memorable, pronounceable, domain-appropriate. No generic AI names."
+
+  echo -e "\n${WHITE}✏️  CarPool Name${NC}  ${DIM}${_thing}${NC}\n"
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" --brief --crew "LUCIDIA,ARIA,ECHO,PRISM,ALICE" "$_name_topic"
+fi
+
+# ── EXPORT-BOOK — all sessions as one markdown file ──────────
+if [[ "$1" == "export-book" || "$1" == "book" ]]; then
+  [[ ! -d "$SAVE_DIR" ]] && echo "No saved sessions yet." && exit 0
+  count=$(ls "$SAVE_DIR"/*.txt 2>/dev/null | wc -l | tr -d ' ')
+  [[ "$count" -eq 0 ]] && echo "No saved sessions yet." && exit 0
+
+  book_file="$HOME/.blackroad/carpool/carpool-book-$(date +%Y-%m-%d).md"
+  {
+    echo "# 🚗 CarPool Sessions"
+    echo ""
+    echo "> Generated $(date '+%B %d, %Y')  ·  ${count} sessions"
+    echo ""
+    for f in $(ls -1t "$SAVE_DIR"/*.txt 2>/dev/null | tail -r 2>/dev/null || ls -1t "$SAVE_DIR"/*.txt 2>/dev/null); do
+      fname=$(basename "$f" .txt)
+      echo "---"
+      echo ""
+      echo "## ${fname}"
+      echo ""
+      echo '```'
+      cat "$f"
+      echo '```'
+      echo ""
+    done
+  } > "$book_file"
+
+  echo -e "${GREEN}✓ Book exported:${NC} ${book_file}"
+  echo -e "${DIM}${count} sessions · $(wc -l < "$book_file" | tr -d ' ') lines${NC}"
+
+  # Try to open
+  command -v open >/dev/null 2>&1 && open "$book_file" 2>/dev/null || \
+  command -v xdg-open >/dev/null 2>&1 && xdg-open "$book_file" 2>/dev/null
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
   less "$SAVE_DIR/$f"
   exit 0
 fi
+
 SESSION_NAME=""
 BRIEF=0
 CONTEXT_FILE=""

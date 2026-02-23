@@ -351,11 +351,16 @@ show_help() {
     echo "║    br carpool risk <plan>   - Risk matrix: likelihood/impact/fix   ║"
     echo "║    br carpool remix         - Rerun last topic with fresh crew     ║"
     echo "║    br carpool personas      - Show all agent bios and roles        ║"
-    echo "║    br carpool theme         - Set persistent project context       ║"
+    echo "║    br carpool theme         - Persistent project context           ║"
     echo "║    br carpool critique <f>  - Deep review of any local file        ║"
     echo "║    br carpool pitch <idea>  - Agents as skeptical investors        ║"
     echo "║    br carpool what-if <X>   - Counterfactual hypothetical          ║"
     echo "║    br carpool oh <AGENT>    - Interactive office hours (no tmux)   ║"
+    echo "║    br carpool gut <topic>   - Instant gut check: one word + reason ║"
+    echo "║    br carpool ship <feat>   - Go/no-go: SHIP / HOLD / CAVEAT      ║"
+    echo "║    br carpool forecast      - Predictions: WILL/MIGHT/WILDCARD    ║"
+    echo "║    br carpool name <thing>  - Agents suggest names + rationale     ║"
+    echo "║    br carpool book          - Export all sessions as markdown book ║"
     echo "║    br carpool react <f/url> - Quick reaction: brief+context        ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
@@ -513,6 +518,10 @@ show_help() {
     echo "║    br timeline today        - Full 24h timeline                   ║"
     echo "║    br timeline heatmap      - 24h event heatmap                   ║"
     echo "║    br timeline watch        - Live refreshing timeline            ║"
+    echo "║    br pulse                 - Full system pulse panel             ║"
+    echo "║    br pulse watch [N]       - Live pulse, refresh every N sec     ║"
+    echo "║    br pulse line            - Single-line ticker                  ║"
+    echo "║    br agents chat [NAME]    - Persistent multi-turn agent chat    ║"
     echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
@@ -857,6 +866,11 @@ main() {
                 pitch)      bash /Users/alexa/blackroad/carpool.sh pitch "$@" ;;
                 what-if|whatif) bash /Users/alexa/blackroad/carpool.sh what-if "$@" ;;
                 office-hours|oh) bash /Users/alexa/blackroad/carpool.sh office-hours "$@" ;;
+                gut)        bash /Users/alexa/blackroad/carpool.sh gut "$@" ;;
+                ship)       bash /Users/alexa/blackroad/carpool.sh ship "$@" ;;
+                forecast)   bash /Users/alexa/blackroad/carpool.sh forecast "$@" ;;
+                name)       bash /Users/alexa/blackroad/carpool.sh name "$@" ;;
+                export-book|book) bash /Users/alexa/blackroad/carpool.sh export-book ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
@@ -909,6 +923,10 @@ main() {
         oracle|reflect)
             # br oracle — system introspection via local LLM (CECE reflects)
             zsh "${BR_TOOLS_DIR}/oracle/br-oracle.sh" "$@"
+            ;;
+        talk|fugue-live|convo)
+            # br talk — real multi-agent conversation via Ollama
+            zsh "${BR_TOOLS_DIR}/talk/br-talk.sh" "$@"
             ;;
         stream|events)
             # br stream — live SSE event feed from gateway
