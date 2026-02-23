@@ -319,6 +319,12 @@ BR_TOOLS=(
     http-trace  "${BR_TOOLS_DIR}/trace-http/br-trace-http.sh"
     db-migrate  "${BR_TOOLS_DIR}/db-migrate/br-db-migrate.sh"
     pr-check    "${BR_TOOLS_DIR}/pr-check/br-pr-check.sh"
+    # Wave 19 — secret-rotation/env-diff
+    secret-rotation "${BR_TOOLS_DIR}/secret-rotation/br-secret-rotation.sh"
+    secret-rot  "${BR_TOOLS_DIR}/secret-rotation/br-secret-rotation.sh"
+    rotate      "${BR_TOOLS_DIR}/secret-rotation/br-secret-rotation.sh"
+    env-diff    "${BR_TOOLS_DIR}/env-diff/br-env-diff.sh"
+    envdiff     "${BR_TOOLS_DIR}/env-diff/br-env-diff.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -2564,6 +2570,9 @@ worlds.sort(reverse=True)
             ;;
         auth)
             zsh "${BR_TOOLS_DIR}/auth/br-auth.sh" "$@"
+            ;;
+        gov|governance)
+            zsh "${BR_TOOLS_DIR}/gov-api/br-gov-api.sh" "$@"
             ;;
         *)
             # Data-driven tool dispatch
