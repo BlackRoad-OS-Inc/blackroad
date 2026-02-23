@@ -115,6 +115,10 @@ BR_TOOLS=(
     api-gw      "${BR_TOOLS_DIR}/agent-gateway/br-gateway.sh"
     tpl         "${BR_TOOLS_DIR}/brand/br-brand.sh"
     template    "${BR_TOOLS_DIR}/brand/br-brand.sh"
+    brand       "${BR_TOOLS_DIR}/brand/br-brand.sh"
+    health      "${BR_TOOLS_DIR}/health-check/br-health.sh"
+    check       "${BR_TOOLS_DIR}/health-check/br-health.sh"
+    diag        "${BR_TOOLS_DIR}/health-check/br-health.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -295,6 +299,7 @@ show_help() {
     echo "║    br wake [agent] [model]  - Wake an agent with morning thoughts ║"
     echo "║    br council <question>    - All agents vote on a question       ║"
     echo "║    br carpool <topic>       - Agents CarPool a topic together 🚗  ║"
+    echo "║    br roundtable <topic>    - All 6 agents discuss in tmux 🎯   ║"
     echo "║    br think <query>         - All agents respond to a query       ║"
     echo "║    br debate <topic>        - LUCIDIA vs CIPHER debate            ║"
     echo "║    br broadcast <msg>       - Broadcast to all agents             ║"
@@ -347,6 +352,12 @@ show_help() {
     echo "║    br gateway test          - Run API test suite                  ║"
     echo "║    br gateway logs          - Tail gateway logs                   ║"
     echo "║    br stream                - Watch live agent event stream (SSE) ║"
+    echo "║                                                                   ║"
+    echo "║  DIAGNOSTICS (🩺 System Health):                                  ║"
+    echo "║    br health                - Full system health diagnostic       ║"
+    echo "║    br health quick          - Fast check (no latency tests)       ║"
+    echo "║    br brand list            - List brand templates                ║"
+    echo "║    br brand new <type>      - Generate brand-compliant HTML page  ║"
     echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
@@ -643,15 +654,28 @@ main() {
             bash /Users/alexa/blackroad/council.sh llama3.2 "$question"
             ;;
         carpool)
-            # br carpool [topic] — group conversation tab + 6 worker tabs in tmux
-            local topic="$*"
+            # br carpool [topic] [turns] — group conversation tab + 6 worker tabs in tmux
+            local topic="$1"; shift 2>/dev/null || true
+            local turns="${1:-3}"
             if [[ -z "$topic" ]]; then
                 echo -e "\033[1;37m🚗 BlackRoad CarPool\033[0m"
                 echo -ne "\033[0;36mTopic: \033[0m"
                 read -r topic
                 [[ -z "$topic" ]] && topic="What should BlackRoad build next?"
             fi
-            bash /Users/alexa/blackroad/carpool.sh "$topic"
+            bash /Users/alexa/blackroad/carpool.sh "$topic" "$turns"
+            ;;
+        roundtable|rt)
+            # br roundtable [topic] [turns] — all 6 agents discuss in tmux panes
+            local topic="$1"; shift 2>/dev/null || true
+            local turns="${1:-6}"
+            if [[ -z "$topic" ]]; then
+                echo -e "\033[1;37m🎯 BlackRoad Roundtable\033[0m"
+                echo -ne "\033[0;36mTopic: \033[0m"
+                read -r topic
+                [[ -z "$topic" ]] && topic="What is the best way to optimize our agent network?"
+            fi
+            bash /Users/alexa/blackroad/roundtable.sh "$topic" "$turns"
             ;;
         think)
             # br think <query> — all agents respond
