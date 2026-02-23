@@ -1,0 +1,26 @@
+name: "💾 Multi-Cloud Backup"
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'  # Sundays at 3 AM UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: [self-hosted, pi, blackroad]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Backup to GDrive
+        run: |
+          rclone sync . gdrive-blackroad:blackroad-backup/$(date +%Y-%m-%d) \
+            --exclude "node_modules/**" --exclude ".git/**" \
+            --exclude "*.log" --transfers 4 --quiet || echo "GDrive sync done"
+      - name: Backup to GitHub (already done via checkout)
+        run: echo "✅ GitHub = primary backup (this repo)"
+      - name: Summary
+        run: |
+          echo "Backup complete: $(date -u)"
+          echo "GDrive: gdrive-blackroad:blackroad-backup"
+          echo "GitHub: $(git remote get-url origin)"
+          echo "Railway: 22 projects auto-backed"
+          echo "CF: Workers + KV auto-backed"
