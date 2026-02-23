@@ -132,9 +132,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return resp(self, 401, {"error": "Unauthorized"})
         p = urlparse(self.path).path.rstrip("/")
 
-        if p in ("", "/"):
+        if p in ("", "/", "/ui"):
+            html = DASHBOARD_HTML.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", len(html))
+            self.end_headers()
+            self.wfile.write(html)
+            return
+
+        if p == "/api":
             return resp(self, 200, {
-                "service": "BlackRoad Agent Gateway", "version": "1.1.0", "port": PORT,
+                "service": "BlackRoad Agent Gateway", "version": "1.2.0", "port": PORT,
+                "ui": f"http://{BIND}:{PORT}/",
                 "endpoints": [
                     "GET  /health", "GET  /agents", "GET  /tasks", "GET  /tasks/:id",
                     "GET  /log", "GET  /events  (SSE stream)",
@@ -326,6 +336,533 @@ class Handler(http.server.BaseHTTPRequestHandler):
         resp(self, 404, {"error": "not found"})
 
 
+# ── Dashboard HTML ────────────────────────────────────────────────────────────
+DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlackRoad OS — Agent Fleet</title>
+<style>
+  :root {
+    --black:  #000;
+    --white:  #fff;
+    --amber:  #F5A623;
+    --pink:   #FF1D6C;
+    --blue:   #2979FF;
+    --violet: #9C27B0;
+    --green:  #00E676;
+    --red:    #FF1744;
+    --dim:    #333;
+    --card:   #0d0d0d;
+    --border: #1a1a1a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: #050505;
+  }
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--amber) 0%, var(--pink) 38%, var(--violet) 62%, var(--blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    color: #888;
+  }
+  .status-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  /* ── Layout ── */
+  main { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 0; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section {
+    padding: 20px 24px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  section:nth-child(even) { border-right: none; }
+  h2 {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2 .count {
+    background: var(--border);
+    color: #777;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+  /* ── Agent cards ── */
+  .agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .agent-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .agent-card:hover { border-color: #333; transform: translateY(-1px); }
+  .agent-card.alive { border-color: #1a2a1a; }
+  .agent-card.busy  { border-color: #2a1a2a; }
+  .agent-card.dead  { opacity: 0.4; }
+  .agent-name {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .agent-meta { color: #555; font-size: 11px; margin-bottom: 8px; }
+  .agent-task {
+    font-size: 11px;
+    color: #888;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .agent-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 8px;
+  }
+  .agent-status.alive  { background: #0a2010; color: var(--green); }
+  .agent-status.busy   { background: #1a0a20; color: var(--violet); }
+  .agent-status.dead   { background: #200a0a; color: var(--red); }
+  /* ── Tasks ── */
+  .task-list { display: flex; flex-direction: column; gap: 8px; }
+  .task-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid transparent;
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    align-items: start;
+  }
+  .task-item.pending    { border-left-color: var(--amber); }
+  .task-item.in_progress { border-left-color: var(--violet); }
+  .task-item.done       { border-left-color: #333; opacity: 0.6; }
+  .task-title { font-size: 12px; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .task-meta  { font-size: 10px; color: #555; grid-column: 1; }
+  .task-badge {
+    font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 8px; white-space: nowrap;
+    grid-row: 1; grid-column: 2;
+  }
+  .task-badge.pending     { background: #2a1e00; color: var(--amber); }
+  .task-badge.in_progress { background: #1a0a20; color: var(--violet); }
+  .task-badge.done        { background: #111; color: #555; }
+  /* ── Event log ── */
+  #event-log {
+    height: 240px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #222 transparent;
+  }
+  .event-row {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 3px 0;
+    border-bottom: 1px solid #0d0d0d;
+    animation: fadein 0.3s ease;
+  }
+  @keyframes fadein { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+  .event-time { color: #444; font-size: 10px; white-space: nowrap; }
+  .event-type {
+    font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 1px 6px; border-radius: 8px; white-space: nowrap;
+  }
+  .event-type.agent_event  { background: #0a1520; color: var(--blue); }
+  .event-type.task_created { background: #0a2010; color: var(--green); }
+  .event-type.task_done    { background: #1a2a1a; color: var(--green); }
+  .event-type.task_chained { background: #1a0a20; color: var(--violet); }
+  .event-type.broadcast    { background: #2a1000; color: var(--amber); }
+  .event-text { color: #888; font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: #050505;
+  }
+  .stat {
+    flex: 1;
+    padding: 12px 20px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat:last-child { border-right: none; }
+  .stat-val {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--amber), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #555; margin-top: 4px; }
+  /* ── Post task form ── */
+  .post-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .post-form input, .post-form select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--white);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .post-form input:focus, .post-form select:focus { border-color: var(--pink); }
+  .post-form .row { display: flex; gap: 8px; }
+  .post-form .row > * { flex: 1; }
+  .btn {
+    background: linear-gradient(135deg, var(--pink), var(--violet));
+    color: var(--white);
+    border: none;
+    padding: 9px 20px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:hover  { opacity: 0.85; }
+  .btn:active { transform: scale(0.97); }
+  .btn-sm { padding: 5px 12px; font-size: 11px; }
+  .empty { color: #333; font-size: 11px; text-align: center; padding: 24px 0; }
+  .tag { display: inline-block; background: #111; color: #555; font-size: 9px; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">◆ BLACKROAD OS</div>
+  <div style="display:flex;gap:12px;align-items:center">
+    <span class="status-pill"><span class="dot"></span><span id="hdr-status">connecting…</span></span>
+    <span style="color:#444;font-size:11px" id="hdr-time"></span>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-val" id="stat-alive">—</div><div class="stat-label">agents alive</div></div>
+  <div class="stat"><div class="stat-val" id="stat-pending">—</div><div class="stat-label">pending</div></div>
+  <div class="stat"><div class="stat-val" id="stat-active">—</div><div class="stat-label">active</div></div>
+  <div class="stat"><div class="stat-val" id="stat-done">—</div><div class="stat-label">completed</div></div>
+  <div class="stat"><div class="stat-val" id="stat-sse">—</div><div class="stat-label">sse clients</div></div>
+</div>
+
+<main>
+  <!-- Agents -->
+  <section style="grid-column:1/-1">
+    <h2>⬡ AGENT FLEET <span class="count" id="agents-count">0</span></h2>
+    <div class="agents-grid" id="agents-grid">
+      <div class="empty">Loading agents…</div>
+    </div>
+  </section>
+
+  <!-- Task Queue -->
+  <section>
+    <h2>▶ TASK QUEUE <span class="count" id="tasks-count">0</span></h2>
+    <div class="task-list" id="task-list">
+      <div class="empty">No tasks</div>
+    </div>
+  </section>
+
+  <!-- Right column: events + post form -->
+  <section>
+    <h2>◈ LIVE EVENTS</h2>
+    <div id="event-log"><div class="empty">Waiting for events…</div></div>
+    <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:16px">
+      <h2 style="margin-bottom:12px">✦ POST TASK</h2>
+      <div class="post-form">
+        <input id="pt-title" placeholder="Task title *" />
+        <input id="pt-desc"  placeholder="Description (optional)" />
+        <div class="row">
+          <select id="pt-agent">
+            <option value="LUCIDIA">LUCIDIA</option>
+            <option value="ARIA">ARIA</option>
+            <option value="CIPHER">CIPHER</option>
+            <option value="OCTAVIA">OCTAVIA</option>
+            <option value="SHELLFISH">SHELLFISH</option>
+            <option value="ALICE">ALICE</option>
+          </select>
+          <select id="pt-chain">
+            <option value="">No chain</option>
+            <option value="LUCIDIA">→ LUCIDIA</option>
+            <option value="ARIA">→ ARIA</option>
+            <option value="CIPHER">→ CIPHER</option>
+            <option value="OCTAVIA">→ OCTAVIA</option>
+            <option value="SHELLFISH">→ SHELLFISH</option>
+            <option value="ALICE">→ ALICE</option>
+          </select>
+          <input id="pt-priority" type="number" min="1" max="10" value="5" placeholder="Pri" style="max-width:60px" />
+        </div>
+        <button class="btn" onclick="postTask()">▶ Post Task</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const AGENTS = ['LUCIDIA','ALICE','CIPHER','OCTAVIA','ARIA','SHELLFISH'];
+const COLORS = {
+  LUCIDIA:'#FF1D6C', ALICE:'#00E676', CIPHER:'#2979FF',
+  OCTAVIA:'#F5A623', ARIA:'#9C27B0', SHELLFISH:'#FF6D00'
+};
+
+let agentMap = {};
+let taskMap  = {};
+
+function ts() {
+  return new Date().toTimeString().slice(0,8);
+}
+
+function pushEvent(type, text) {
+  const log = document.getElementById('event-log');
+  // Remove empty placeholder
+  const empty = log.querySelector('.empty');
+  if (empty) empty.remove();
+  const row = document.createElement('div');
+  row.className = 'event-row';
+  row.innerHTML = `<span class="event-time">${ts()}</span>
+    <span class="event-type ${type}">${type.replace('_',' ')}</span>
+    <span class="event-text">${text}</span>`;
+  log.prepend(row);
+  // Keep max 100 rows
+  while (log.children.length > 100) log.removeChild(log.lastChild);
+}
+
+function renderAgents() {
+  const grid = document.getElementById('agents-grid');
+  grid.innerHTML = '';
+  const list = Object.values(agentMap);
+  if (!list.length) { grid.innerHTML = '<div class="empty">No agents found</div>'; return; }
+  document.getElementById('agents-count').textContent = list.length;
+  list.forEach(a => {
+    const alive = a.alive;
+    const busy  = a.status === 'busy' || a.current_task;
+    const cls   = alive ? (busy ? 'busy' : 'alive') : 'dead';
+    const color = COLORS[a.name] || '#888';
+    const card  = document.createElement('div');
+    card.className = `agent-card ${cls}`;
+    card.innerHTML = `
+      <div class="agent-name" style="color:${color}">${a.name || a.agent}</div>
+      <div class="agent-meta">${a.model || '—'} &nbsp;·&nbsp; pid ${a.pid || '—'}</div>
+      <div class="agent-task">${a.current_task ? '⟳ ' + a.current_task : (alive ? 'idle' : 'offline')}</div>
+      <div class="agent-status ${cls}">
+        <span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>
+        ${cls}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  list.innerHTML = '';
+  const tasks = Object.values(taskMap)
+    .sort((a,b) => (b.priority||5)-(a.priority||5) || (a.created_at||0)-(b.created_at||0))
+    .slice(0, 20);
+  document.getElementById('tasks-count').textContent = tasks.length;
+  if (!tasks.length) { list.innerHTML = '<div class="empty">No tasks</div>'; return; }
+  tasks.forEach(t => {
+    const div = document.createElement('div');
+    div.className = `task-item ${t.status}`;
+    const chain = t.chain_to ? `<span class="tag">→${t.chain_to}</span>` : '';
+    div.innerHTML = `
+      <div class="task-title">${t.title || '—'} ${chain}</div>
+      <div class="task-meta">${t.assigned_to || '?'} · p${t.priority||5}</div>
+      <span class="task-badge ${t.status}">${t.status}</span>`;
+    list.appendChild(div);
+  });
+}
+
+function updateStats(h) {
+  if (!h) return;
+  document.getElementById('stat-alive').textContent   = h.agents_alive   ?? '—';
+  document.getElementById('stat-pending').textContent = h.tasks_pending   ?? '—';
+  document.getElementById('stat-active').textContent  = h.tasks_active    ?? '—';
+  document.getElementById('stat-done').textContent    = h.tasks_done      ?? '—';
+  document.getElementById('stat-sse').textContent     = h.sse_clients     ?? '—';
+  document.getElementById('hdr-time').textContent     = h.timestamp ? h.timestamp.slice(11,19)+' UTC' : '';
+}
+
+async function fetchHealth() {
+  try {
+    const r = await fetch('/health');
+    if (r.ok) updateStats(await r.json());
+  } catch(_) {}
+}
+
+async function fetchTasks() {
+  try {
+    const r = await fetch('/tasks');
+    if (!r.ok) return;
+    const d = await r.json();
+    taskMap = {};
+    (d.tasks || []).forEach(t => taskMap[t.id] = t);
+    renderTasks();
+  } catch(_) {}
+}
+
+async function postTask() {
+  const title    = document.getElementById('pt-title').value.trim();
+  const desc     = document.getElementById('pt-desc').value.trim();
+  const agent    = document.getElementById('pt-agent').value;
+  const chain    = document.getElementById('pt-chain').value;
+  const priority = parseInt(document.getElementById('pt-priority').value) || 5;
+  if (!title) { alert('Title is required'); return; }
+  try {
+    const r = await fetch('/tasks', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({title, description:desc, assigned_to:agent,
+                             chain_to:chain, priority})
+    });
+    const d = await r.json();
+    if (r.ok) {
+      document.getElementById('pt-title').value = '';
+      document.getElementById('pt-desc').value  = '';
+      taskMap[d.id] = d;
+      renderTasks();
+      pushEvent('task_created', `${d.id} → ${agent}${chain?' ⇒ '+chain:''}: ${title}`);
+    } else {
+      alert(d.error || 'Failed to post task');
+    }
+  } catch(e) { alert('Gateway unreachable'); }
+}
+
+function connectSSE() {
+  const es = new EventSource('/events');
+  document.getElementById('hdr-status').textContent = 'connected';
+
+  es.addEventListener('snapshot', e => {
+    const d = JSON.parse(e.data);
+    agentMap = {};
+    (d.agents || []).forEach(a => agentMap[a.name || a.agent] = a);
+    renderAgents();
+    taskMap = {};
+    (d.tasks || []).forEach(t => taskMap[t.id] = t);
+    renderTasks();
+    fetchHealth();
+    pushEvent('agent_event', `snapshot: ${Object.keys(agentMap).length} agents, ${Object.keys(taskMap).length} tasks`);
+  });
+
+  es.addEventListener('agent_event', e => {
+    const d = JSON.parse(e.data);
+    if (d.event === 'status_update' || d.event === 'task_started' || d.event === 'task_done') {
+      // Refresh agent states
+      fetch('/agents').then(r => r.json()).then(data => {
+        agentMap = {};
+        (data.agents || []).forEach(a => agentMap[a.name || a.agent] = a);
+        renderAgents();
+      }).catch(()=>{});
+    }
+    pushEvent('agent_event', `${d.agent} · ${d.event} ${d.detail || ''}`);
+  });
+
+  es.addEventListener('task_created', e => {
+    const d = JSON.parse(e.data);
+    taskMap[d.id] = Object.assign(d, {status:'pending'});
+    renderTasks();
+    fetchHealth();
+    pushEvent('task_created', `${d.assigned_to}: ${d.title}`);
+  });
+
+  es.addEventListener('task_done', e => {
+    const d = JSON.parse(e.data);
+    if (taskMap[d.id]) taskMap[d.id].status = 'done';
+    renderTasks();
+    fetchHealth();
+    pushEvent('task_done', `${d.agent}: ${d.result ? d.result.slice(0,80)+'…' : '(no result)'}`);
+  });
+
+  es.addEventListener('task_chained', e => {
+    const d = JSON.parse(e.data);
+    pushEvent('task_chained', `${d.from_agent} → ${d.to_agent}  new=${d.new_task}`);
+    fetchTasks();
+    fetchHealth();
+  });
+
+  es.addEventListener('broadcast', e => {
+    const d = JSON.parse(e.data);
+    pushEvent('broadcast', d.message);
+  });
+
+  es.onerror = () => {
+    document.getElementById('hdr-status').textContent = 'reconnecting…';
+    es.close();
+    setTimeout(connectSSE, 3000);
+  };
+}
+
+// Clock
+setInterval(() => {
+  // header time is updated from health poll
+}, 1000);
+
+// Periodic health poll (supplements SSE)
+setInterval(fetchHealth, 10000);
+
+// Init
+connectSSE();
+fetchTasks();
+fetchHealth();
+</script>
+</body>
+</html>"""
+
+
 if __name__ == "__main__":
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     try:
@@ -337,7 +874,7 @@ if __name__ == "__main__":
     server = http.server.HTTPServer((BIND, PORT), Handler)
     server.socket.setsockopt(__import__('socket').SOL_SOCKET,
                               __import__('socket').SO_REUSEADDR, 1)
-    sys.stderr.write(f"[gateway] v1.1 listening on {BIND}:{PORT}\n")
+    sys.stderr.write(f"[gateway] v1.2 listening on {BIND}:{PORT}  ui=http://{BIND}:{PORT}/\n")
     sys.stderr.flush()
     try:
         server.serve_forever()
