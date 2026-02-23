@@ -134,6 +134,12 @@ BR_TOOLS=(
     agent-live  "${BR_TOOLS_DIR}/agents-live/br-agents.sh"
     context     "${BR_TOOLS_DIR}/context/br-context.sh"
     ctx         "${BR_TOOLS_DIR}/context/br-context.sh"
+    sync        "${BR_TOOLS_DIR}/sync/br-sync.sh"
+    sync-repos  "${BR_TOOLS_DIR}/sync/br-sync.sh"
+    snapshot    "${BR_TOOLS_DIR}/snapshot/br-snapshot.sh"
+    snap        "${BR_TOOLS_DIR}/snapshot/br-snapshot.sh"
+    search      "${BR_TOOLS_DIR}/search/br-search.sh"
+    find-all    "${BR_TOOLS_DIR}/search/br-search.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -776,6 +782,10 @@ main() {
                 history)    bash /Users/alexa/blackroad/carpool.sh history ;;
                 stats)      bash /Users/alexa/blackroad/carpool.sh stats ;;
                 share)      bash /Users/alexa/blackroad/carpool.sh share ;;
+                pr)         bash /Users/alexa/blackroad/carpool.sh pr "$@" ;;
+                template|t) bash /Users/alexa/blackroad/carpool.sh template "$@" ;;
+                debate)     bash /Users/alexa/blackroad/carpool.sh debate "$@" ;;
+                digest)     bash /Users/alexa/blackroad/carpool.sh digest ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
@@ -816,6 +826,14 @@ main() {
         nodes|hardware)
             # br nodes — fleet discovery, device inventory, topology
             zsh "${BR_TOOLS_DIR}/nodes/br-nodes.sh" "$@"
+            ;;
+        geb)
+            # br geb — Gödel, Escher, Bach lens on the system
+            zsh "${BR_TOOLS_DIR}/geb/br-geb.sh" "$@"
+            ;;
+        hofstadter|loop|fugue)
+            # shorthand aliases: br loop, br fugue
+            zsh "${BR_TOOLS_DIR}/geb/br-geb.sh" "${cmd}" "$@"
             ;;
         stream|events)
             # br stream — live SSE event feed from gateway
