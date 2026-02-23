@@ -1028,16 +1028,8 @@ main() {
         setup)
             cmd_setup
             ;;
-        radar)
-            local subcmd=${1:-suggest}
-            case $subcmd in
-                daemon|db)
-                    "${BR_TOOLS_DIR}/context-radar/radar-${subcmd}.sh" "${@:2}"
-                    ;;
-                *)
-                    "${BR_TOOLS_DIR}/context-radar/radar-suggest.sh" "$subcmd" "${@:2}"
-                    ;;
-            esac
+        radar|ctx-radar)
+            "${BR_TOOLS_DIR}/context-radar/br-context-radar.sh" "${@:1}"
             ;;
         octavia|lucidia|alice|aria|shellfish)
             if [[ $# -gt 0 ]]; then
