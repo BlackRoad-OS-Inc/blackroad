@@ -8616,6 +8616,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "feature-prioritization" ]]; then
+  BACKLOG="${2:-our backlog}"
+  AGENTS=("PM" "Engineering" "Customer" "Data", "Design")
+  QUESTIONS=(
+    "What framework (RICE, ICE, MoSCoW, Kano) fits $BACKLOG best and why?"
+    "How do we weight customer requests vs strategic bets in $BACKLOG?"
+    "What signals tell us a feature in $BACKLOG is truly high-impact vs just loud?"
+    "How do we say no to good ideas in $BACKLOG without demoralizing the team?"
+    "How do we keep $BACKLOG from becoming a graveyard of stale tickets?"
+  )
+  echo ""
+  echo "📋 CARPOOL: FEATURE PRIORITIZATION — $BACKLOG"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Feature prioritization roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "cloud-cost" ]]; then
+  INFRA="${2:-our cloud infrastructure}"
+  AGENTS=("FinOps" "Infra" "Engineering" "Leadership" "SRE")
+  QUESTIONS=(
+    "What are the biggest cost drivers in $INFRA today and which are lowest-hanging fruit?"
+    "How do we right-size compute and storage in $INFRA without hurting performance?"
+    "What reserved vs spot vs on-demand mix makes sense for $INFRA workloads?"
+    "How do we build a cost-aware engineering culture so devs care about $INFRA spend?"
+    "What FinOps tooling and tagging strategy gives $INFRA the best visibility?"
+  )
+  echo ""
+  echo "💸 CARPOOL: CLOUD COST — $INFRA"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Cloud cost optimization complete."
+  exit 0
+fi
+
+if [[ "$1" == "user-personas" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("UX Research" "Product" "Marketing" "Sales" "CS")
+  QUESTIONS=(
+    "Who are the 3 most important user archetypes for $PRODUCT and what defines each?"
+    "What jobs-to-be-done motivate each persona to use $PRODUCT?"
+    "How do the personas differ in their technical sophistication and workflow for $PRODUCT?"
+    "Which persona should $PRODUCT optimize for first and why?"
+    "How do we keep $PRODUCT personas grounded in real data rather than assumptions?"
+  )
+  echo ""
+  echo "👤 CARPOOL: USER PERSONAS — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ User personas roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "disaster-recovery" ]]; then
+  SYSTEM="${2:-our system}"
+  AGENTS=("SRE" "Infra" "Security" "Leadership" "Engineering")
+  QUESTIONS=(
+    "What are the RTO and RPO targets for $SYSTEM and how do we meet them?"
+    "What failure scenarios does $SYSTEM need a DR plan for — region outage, data loss, breach?"
+    "How do we design $SYSTEM for multi-region active-active or active-passive failover?"
+    "How often should $SYSTEM run DR drills and what does a successful drill look like?"
+    "What runbooks and decision trees does $SYSTEM need for on-call during a disaster?"
+  )
+  echo ""
+  echo "🆘 CARPOOL: DISASTER RECOVERY — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Disaster recovery plan complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
