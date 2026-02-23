@@ -9736,6 +9736,316 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "containerization" ]]; then
+  APP="${2:-our application}"
+  AGENTS=("DevOps" "Backend" "Security" "Infra" "SRE")
+  QUESTIONS=(
+    "What is the right base image strategy for $APP containers — distroless, Alpine, Ubuntu?"
+    "How do we keep $APP container images small, fast, and secure in production?"
+    "What does a multi-stage Dockerfile look like for $APP to separate build from runtime?"
+    "How do we scan $APP container images for vulnerabilities in CI before they ship?"
+    "What resource limits and health checks should every $APP container have?"
+  )
+  echo ""
+  echo "🐳 CARPOOL: CONTAINERIZATION — $APP"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Containerization strategy complete."; exit 0
+fi
+
+if [[ "$1" == "product-metrics" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("PM" "Data" "Growth" "Engineering" "Leadership")
+  QUESTIONS=(
+    "What is the single most important metric $PRODUCT should optimize for right now?"
+    "How do we define and instrument the activation metric for $PRODUCT?"
+    "What engagement metrics tell us $PRODUCT is delivering real value vs vanity numbers?"
+    "How do we build a metrics framework for $PRODUCT that connects inputs to outcomes?"
+    "How does $PRODUCT avoid metric gaming and keep teams focused on real customer value?"
+  )
+  echo ""
+  echo "📊 CARPOOL: PRODUCT METRICS — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Product metrics roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "on-call" ]]; then
+  TEAM="${2:-our engineering team}"
+  AGENTS=("SRE" "EM" "Engineer" "Leadership" "HR")
+  QUESTIONS=(
+    "What does a humane, sustainable on-call rotation look like for $TEAM?"
+    "How do we build runbooks for $TEAM that actually help during a 3am incident?"
+    "What escalation policy and severity levels should $TEAM use for alerts?"
+    "How does $TEAM reduce alert fatigue without missing real production issues?"
+    "How do we compensate and recognize on-call burden fairly in $TEAM?"
+  )
+  echo ""
+  echo "📟 CARPOOL: ON-CALL — $TEAM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ On-call strategy complete."; exit 0
+fi
+
+if [[ "$1" == "positioning" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("Marketing" "Product" "Sales" "Customer" "Analyst")
+  QUESTIONS=(
+    "What category does $PRODUCT belong to — or should it create a new one?"
+    "What is $PRODUCT uniquely best at that no competitor can honestly claim?"
+    "How do we write a positioning statement for $PRODUCT using the classic April Dunford framework?"
+    "How does $PRODUCT positioning change as it moves from SMB to enterprise buyers?"
+    "How do we test whether our $PRODUCT positioning actually lands with target buyers?"
+  )
+  echo ""
+  echo "🎯 CARPOOL: POSITIONING — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Positioning roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "schema-design" ]]; then
+  APP="${2:-our application}"
+  AGENTS=("Data Eng" "Backend" "DBA" "Architect" "SRE")
+  QUESTIONS=(
+    "What are the core entities and relationships $APP needs in its data model?"
+    "How do we design $APP schema for read performance without over-indexing?"
+    "How does $APP handle schema migrations in production with zero downtime?"
+    "When should $APP normalize vs denormalize — what are the tradeoffs for our workload?"
+    "How do we design $APP schema to scale to 10x data without a painful rewrite?"
+  )
+  echo ""
+  echo "🗃️  CARPOOL: SCHEMA DESIGN — $APP"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Schema design roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "eng-management" ]]; then
+  ORG="${2:-our engineering team}"
+  AGENTS=("EM" "CTO" "IC" "HR" "Coach")
+  QUESTIONS=(
+    "What does a great 1:1 look like for an engineering manager at $ORG?"
+    "How does an EM at $ORG balance technical depth with people and project work?"
+    "How do we give direct, effective performance feedback to engineers at $ORG?"
+    "What does an EM at $ORG do when a high performer wants to quit?"
+    "How does an EM build a high-trust, psychologically safe team at $ORG?"
+  )
+  echo ""
+  echo "👔 CARPOOL: ENGINEERING MANAGEMENT — $ORG"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Engineering management roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "llm-architecture" ]]; then
+  APP="${2:-our AI application}"
+  AGENTS=("AI Architect" "Backend" "Infra" "Product" "Data")
+  QUESTIONS=(
+    "What LLM architecture pattern fits $APP — RAG, fine-tuning, agents, or prompt chaining?"
+    "How do we handle context window limits and memory for $APP at scale?"
+    "What does a reliable LLM evaluation and regression testing pipeline look like for $APP?"
+    "How do we pick the right model (GPT-4, Claude, Gemini, local) for each $APP use case?"
+    "How does $APP handle LLM latency, cost, and fallback when a model is unavailable?"
+  )
+  echo ""
+  echo "🧠 CARPOOL: LLM ARCHITECTURE — $APP"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ LLM architecture design complete."; exit 0
+fi
+
+if [[ "$1" == "payment-systems" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("Payments" "Backend" "Security" "Legal" "Finance")
+  QUESTIONS=(
+    "What payment infrastructure does $PRODUCT need — Stripe, Paddle, custom, or hybrid?"
+    "How does $PRODUCT handle failed payments, dunning, and subscription lifecycle?"
+    "What PCI compliance requirements apply to $PRODUCT and how do we meet them?"
+    "How does $PRODUCT handle multi-currency, tax, and international payment complexity?"
+    "What fraud detection and chargeback strategy should $PRODUCT have from day one?"
+  )
+  echo ""
+  echo "💳 CARPOOL: PAYMENT SYSTEMS — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Payment systems roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "dark-launch" ]]; then
+  FEATURE="${2:-our feature}"
+  AGENTS=("Engineering" "SRE" "PM" "Data" "QA")
+  QUESTIONS=(
+    "What dark launch and canary release strategy fits $FEATURE rollout best?"
+    "How do we use feature flags to control $FEATURE exposure by user segment?"
+    "What metrics and error rates should trigger an automatic rollback of $FEATURE?"
+    "How do we test $FEATURE at production load before full rollout without user impact?"
+    "What does a graduated rollout plan look like for $FEATURE — 1%, 5%, 25%, 100%?"
+  )
+  echo ""
+  echo "🌑 CARPOOL: DARK LAUNCH — $FEATURE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Dark launch plan complete."; exit 0
+fi
+
+if [[ "$1" == "technical-interview" ]]; then
+  ROLE="${2:-software engineer}"
+  AGENTS=("Interviewer" "Hiring Mgr" "Engineer" "Candidate" "HR")
+  QUESTIONS=(
+    "What does a fair, signal-rich technical interview process look like for $ROLE?"
+    "What coding problems best predict real $ROLE job performance vs LeetCode grinding?"
+    "How do we assess system design skills for $ROLE without privileging big-tech experience?"
+    "How do we structure the debrief and scoring rubric for $ROLE to reduce bias?"
+    "What makes a candidate experience for $ROLE interview feel respectful and worth their time?"
+  )
+  echo ""
+  echo "💻 CARPOOL: TECHNICAL INTERVIEW — $ROLE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"; question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""; echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Technical interview design complete."; exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1

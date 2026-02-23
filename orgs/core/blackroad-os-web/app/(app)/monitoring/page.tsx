@@ -119,6 +119,21 @@ export default function MonitoringPage() {
         </button>
       </div>
 
+      {/* Infra stats bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'CF Workers', value: '499', color: '#F5A623' },
+          { label: 'CF Zones', value: '20', color: '#2979FF' },
+          { label: 'Agent Capacity', value: '30,000', color: '#FF1D6C' },
+          { label: 'Online Nodes', value: fleetData?.summary?.online_nodes?.toString() ?? '3', color: '#22c55e' },
+        ].map(s => (
+          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+            <div className="text-xl font-bold" style={{ color: s.color }}>{s.value}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
       {/* Overall status banner */}
       <div
         className="flex items-center gap-3 p-4 rounded-xl border"
