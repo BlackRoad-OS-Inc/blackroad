@@ -7216,6 +7216,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "pitch-deck" ]]; then
+  COMPANY="${2:-our startup}"
+  PD_DIR="$HOME/.blackroad/carpool/pitch-decks"
+  mkdir -p "$PD_DIR"
+  PD_FILE="$PD_DIR/pitch-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📊 CarPool — Pitch deck outline: $COMPANY\033[0m"
+  echo "# Pitch Deck: $COMPANY" > "$PD_FILE"
+  echo "Generated: $(date)" >> "$PD_FILE"
+  PY_PD='
+import sys, json, urllib.request
+company = sys.argv[1]
+agents = [
+  ("LUCIDIA","Storyteller","Write the narrative arc for $COMPANY pitch deck: 10 slides in order, each with a title, the one thing it must convey, and the emotional beat it hits."),
+  ("PRISM","Analyst","What are the 5 most important numbers $COMPANY must show investors: TAM, traction metric, unit economics, growth rate, and burn multiple? Define each clearly."),
+  ("ARIA","Designer","What visual and layout principles make a pitch deck for $COMPANY land? Slides to avoid, density rules, use of white space, and the one-chart-per-slide rule."),
+  ("ALICE","PM","What are the top 5 hard questions investors will ask $COMPANY after the pitch? Write a crisp 2-sentence answer to each."),
+  ("SHELLFISH","Skeptic","What are the 3 biggest weaknesses in the $COMPANY story that a sharp investor will poke at? How do we address them head-on in the deck rather than hiding them?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'COMPANY', company)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_PD" "$COMPANY" | tee -a "$PD_FILE"
+  echo -e "\033[0;32m✓ Saved to $PD_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "cicd" ]]; then
+  PROJECT="${2:-our project}"
+  CI_DIR="$HOME/.blackroad/carpool/cicd"
+  mkdir -p "$CI_DIR"
+  CI_FILE="$CI_DIR/cicd-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m⚙️  CarPool — CI/CD pipeline: $PROJECT\033[0m"
+  echo "# CI/CD Pipeline: $PROJECT" > "$CI_FILE"
+  echo "Generated: $(date)" >> "$CI_FILE"
+  PY_CI='
+import sys, json, urllib.request
+project = sys.argv[1]
+agents = [
+  ("OCTAVIA","Platform","Design the full CI/CD pipeline for $PROJECT: stages (lint, test, build, scan, deploy), tools for each stage, and target pipeline time under 10 minutes."),
+  ("ALICE","DevOps","What branch strategy and deployment promotion model fits $PROJECT: trunk-based, GitFlow, environment promotion (dev→staging→prod)? Define the rules."),
+  ("CIPHER","Security","What security gates must exist in the $PROJECT pipeline: SAST, dependency scan, secret detection, container scanning, and SBOM generation?"),
+  ("SHELLFISH","Chaos","What happens to $PROJECT when CI is flaky, a deployment gets stuck mid-rollout, or a bad commit slips through? Define the automated safety nets."),
+  ("PRISM","Analyst","What CI/CD metrics should $PROJECT track: deployment frequency, lead time, MTTR, change failure rate. What are good DORA benchmarks to aim for?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PROJECT', project)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_CI" "$PROJECT" | tee -a "$CI_FILE"
+  echo -e "\033[0;32m✓ Saved to $CI_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "microservices" ]]; then
+  SYSTEM="${2:-our monolith}"
+  MS_DIR="$HOME/.blackroad/carpool/microservices"
+  mkdir -p "$MS_DIR"
+  MS_FILE="$MS_DIR/microservices-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🔬 CarPool — Microservices design: $SYSTEM\033[0m"
+  echo "# Microservices: $SYSTEM" > "$MS_FILE"
+  echo "Generated: $(date)" >> "$MS_FILE"
+  PY_MS='
+import sys, json, urllib.request
+system = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","How should $SYSTEM be decomposed into microservices? Identify the bounded contexts and define the service boundaries using domain-driven design."),
+  ("LUCIDIA","Strategist","Should $SYSTEM split into microservices now or stay monolith longer? Make the case for each path with honest tradeoffs and a decision framework."),
+  ("ALICE","DevOps","What operational complexity does splitting $SYSTEM add: service discovery, distributed tracing, inter-service auth, and versioned contracts? How do we manage each?"),
+  ("CIPHER","Security","What new attack surface does a microservices split create for $SYSTEM: lateral movement, service mesh auth, noisy logs hiding intrusions? How do we defend?"),
+  ("SHELLFISH","Chaos","Design a chaos experiment that validates the $SYSTEM microservices split is resilient: which service to take down, expected cascade behavior, and recovery validation.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SYSTEM', system)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_MS" "$SYSTEM" | tee -a "$MS_FILE"
+  echo -e "\033[0;32m✓ Saved to $MS_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "community" ]]; then
+  PRODUCT="${2:-our product}"
+  COM_DIR="$HOME/.blackroad/carpool/community"
+  mkdir -p "$COM_DIR"
+  COM_FILE="$COM_DIR/community-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🫂 CarPool — Community building: $PRODUCT\033[0m"
+  echo "# Community Strategy: $PRODUCT" > "$COM_FILE"
+  echo "Generated: $(date)" >> "$COM_FILE"
+  PY_COM='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("ARIA","Community lead","What community platform fits $PRODUCT best: Discord, Slack, Circle, GitHub Discussions, or forum? Design the channel/category structure for launch."),
+  ("LUCIDIA","Philosopher","What is the deeper shared identity and purpose that will make the $PRODUCT community magnetic, not just transactional?"),
+  ("ALICE","PM","What is the community flywheel for $PRODUCT: how does community activity drive product growth, and product growth drive community? Map the loop."),
+  ("PRISM","Analyst","What community health metrics matter for $PRODUCT: DAU, contributor ratio, question answer rate, churn. What early signals predict a thriving vs dying community?"),
+  ("SHELLFISH","Risk","What are the top 3 community failure modes for $PRODUCT: toxicity, spam, cliques, founder dependency? Write the moderation policy for each.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_COM" "$PRODUCT" | tee -a "$COM_FILE"
+  echo -e "\033[0;32m✓ Saved to $COM_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
