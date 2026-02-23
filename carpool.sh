@@ -8896,6 +8896,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "knowledge-base" ]]; then
+  ORG="${2:-our organization}"
+  AGENTS=("Docs" "Engineering" "CS", "HR" "Leadership")
+  QUESTIONS=(
+    "What knowledge is most critical for $ORG to capture and why does it keep getting lost?"
+    "What structure and taxonomy should $ORG use for its internal knowledge base?"
+    "How do we make contributing to $ORG knowledge base a habit rather than a chore?"
+    "What tooling (Notion, Confluence, Obsidian, custom) fits $ORG knowledge needs best?"
+    "How does $ORG keep its knowledge base fresh and prevent it from rotting over time?"
+  )
+  echo ""
+  echo "📚 CARPOOL: KNOWLEDGE BASE — $ORG"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Knowledge base strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "async-culture" ]]; then
+  ORG="${2:-our team}"
+  AGENTS=("Culture" "Engineering" "Leadership" "Remote" "PM")
+  QUESTIONS=(
+    "What norms and rituals make async-first work actually work for $ORG?"
+    "How does $ORG balance async communication with the need for real-time collaboration?"
+    "What does great async written communication look like at $ORG — docs, decisions, updates?"
+    "How do we onboard new people into an async culture at $ORG without leaving them lost?"
+    "What are the biggest async anti-patterns $ORG must avoid to stay high-trust and fast?"
+  )
+  echo ""
+  echo "🌐 CARPOOL: ASYNC CULTURE — $ORG"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Async culture roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "event-driven" ]]; then
+  SYSTEM="${2:-our system}"
+  AGENTS=("Architect" "Backend" "Data" "Infra" "SRE")
+  QUESTIONS=(
+    "What parts of $SYSTEM are best modeled as events rather than request-response?"
+    "How should $SYSTEM design its event schema and versioning strategy?"
+    "Compare Kafka, Pulsar, and SQS/SNS for $SYSTEM event backbone — which fits?"
+    "How does $SYSTEM handle event ordering, exactly-once delivery, and idempotency?"
+    "What does debugging and observability look like in an event-driven $SYSTEM?"
+  )
+  echo ""
+  echo "⚡ CARPOOL: EVENT-DRIVEN ARCHITECTURE — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Event-driven architecture design complete."
+  exit 0
+fi
+
+if [[ "$1" == "competitive-moat" ]]; then
+  COMPANY="${2:-our company}"
+  AGENTS=("Strategy" "Product" "VC" "Founder" "Competitor")
+  QUESTIONS=(
+    "What durable competitive advantages does $COMPANY have or could build?"
+    "Which moat type fits $COMPANY best — network effects, switching costs, data, brand, scale?"
+    "What does $COMPANY need to do in the next 12 months to deepen its moat?"
+    "What competitor move would most threaten $COMPANY moat and how do we defend against it?"
+    "How does $COMPANY communicate its moat to investors, customers, and recruits?"
+  )
+  echo ""
+  echo "🏰 CARPOOL: COMPETITIVE MOAT — $COMPANY"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Competitive moat analysis complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
