@@ -5816,6 +5816,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "naming" ]]; then
+  THING="${2:-our new feature}"
+  NAME_DIR="$HOME/.blackroad/carpool/naming"
+  mkdir -p "$NAME_DIR"
+  NAME_FILE="$NAME_DIR/naming-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m✏️  CarPool — Name brainstorm for: $THING\033[0m"
+  echo "# Naming: $THING" > "$NAME_FILE"
+  echo "Generated: $(date)" >> "$NAME_FILE"
+  PY_NAME='
+import sys, json, urllib.request
+thing = sys.argv[1]
+agents = [
+  ("ARIA","Brand designer","Generate 8 creative name ideas for $THING. For each: the name, a one-line rationale, and a vibe (playful/serious/technical/human)."),
+  ("LUCIDIA","Poet","Give 5 metaphor-driven or evocative names for $THING that would feel alive and memorable. Explain the imagery behind each."),
+  ("ALICE","PM","Propose 5 pragmatic, clear, self-explanatory names for $THING that would work well in docs and APIs. No cleverness — just clarity."),
+  ("CIPHER","Security","Flag any of these naming concerns for $THING: trademark collisions, offensive meanings in other languages, or names that sound like something insecure."),
+  ("PRISM","Analyst","From a naming standpoint, what are the 3 criteria that matter most for $THING? Then rank the best options from the other agents.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'THING', thing)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_NAME" "$THING" | tee -a "$NAME_FILE"
+  echo -e "\033[0;32m✓ Saved to $NAME_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "postmortem" ]]; then
+  INCIDENT="${2:-the last incident}"
+  PM_DIR="$HOME/.blackroad/carpool/postmortems"
+  mkdir -p "$PM_DIR"
+  PM_FILE="$PM_DIR/postmortem-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🔍 CarPool — Post-mortem for: $INCIDENT\033[0m"
+  echo "# Post-Mortem: $INCIDENT" > "$PM_FILE"
+  echo "Generated: $(date)" >> "$PM_FILE"
+  PY_PM='
+import sys, json, urllib.request
+incident = sys.argv[1]
+agents = [
+  ("PRISM","Analyst","For the incident ($INCIDENT): reconstruct a timeline of events. What signals appeared first? When was it detected vs when did it start?"),
+  ("OCTAVIA","Platform","What was the root cause of $INCIDENT? Use 5 Whys. What single change would have prevented it?"),
+  ("ALICE","PM","Write the customer-facing incident summary for $INCIDENT: what happened, impact, and what we are doing to prevent recurrence. Keep it under 150 words."),
+  ("CIPHER","Security","Were there any security implications of $INCIDENT? Unauthorized access, data exposure, or compliance concerns?"),
+  ("LUCIDIA","Strategist","What are the top 3 systemic action items from $INCIDENT? Assign each a DRI, priority, and deadline. No blameless culture — own the fixes.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'INCIDENT', incident)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_PM" "$INCIDENT" | tee -a "$PM_FILE"
+  echo -e "\033[0;32m✓ Saved to $PM_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "techdebt" ]]; then
+  AREA="${2:-our codebase}"
+  TD_DIR="$HOME/.blackroad/carpool/techdebt"
+  mkdir -p "$TD_DIR"
+  TD_FILE="$TD_DIR/techdebt-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🏚️  CarPool — Tech debt audit for: $AREA\033[0m"
+  echo "# Tech Debt Audit: $AREA" > "$TD_FILE"
+  echo "Generated: $(date)" >> "$TD_FILE"
+  PY_TD='
+import sys, json, urllib.request
+area = sys.argv[1]
+agents = [
+  ("SHELLFISH","Chaos engineer","What are the top 5 most dangerous tech debt items in $AREA? Rank by blast radius if they explode."),
+  ("OCTAVIA","Architect","In $AREA, which architectural decisions are now wrong and actively slowing the team down? What is the refactor path?"),
+  ("ALICE","PM","How do we prioritize tech debt paydown in $AREA against feature work? Propose a sustainable ratio and quarterly plan."),
+  ("PRISM","Analyst","How do we measure tech debt in $AREA? What proxy metrics (deploy frequency, incident rate, PR cycle time) tell us the debt is shrinking?"),
+  ("LUCIDIA","Strategist","Write a 1-paragraph pitch to leadership explaining why investing in $AREA tech debt now saves money and velocity later.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'AREA', area)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_TD" "$AREA" | tee -a "$TD_FILE"
+  echo -e "\033[0;32m✓ Saved to $TD_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "launch-checklist" ]]; then
+  FEATURE="${2:-the new feature}"
+  LC_DIR="$HOME/.blackroad/carpool/launch-checklists"
+  mkdir -p "$LC_DIR"
+  LC_FILE="$LC_DIR/checklist-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🚀 CarPool — Launch checklist for: $FEATURE\033[0m"
+  echo "# Launch Checklist: $FEATURE" > "$LC_FILE"
+  echo "Generated: $(date)" >> "$LC_FILE"
+  PY_LC='
+import sys, json, urllib.request
+feature = sys.argv[1]
+agents = [
+  ("ALICE","PM","List the product and comms checklist items for launching $FEATURE: docs, changelog, support briefing, announcement copy, CSM notification."),
+  ("OCTAVIA","Platform","List the infrastructure checklist for $FEATURE launch: feature flags, DB migrations run, monitors configured, rollback tested, load tested."),
+  ("CIPHER","Security","List the security checklist for $FEATURE launch: auth flows reviewed, input validation, rate limits, pen test if needed, GDPR/compliance sign-off."),
+  ("ARIA","Design","List the UX/design checklist for $FEATURE: responsive tested, accessibility pass, copy reviewed, empty states, error states, loading states done."),
+  ("PRISM","Analytics","List the analytics checklist for $FEATURE: events instrumented, dashboards built, baseline metrics captured, success KPIs defined and shared.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'FEATURE', feature)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_LC" "$FEATURE" | tee -a "$LC_FILE"
+  echo -e "\033[0;32m✓ Saved to $LC_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
