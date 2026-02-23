@@ -6656,6 +6656,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "multitenancy" ]]; then
+  PRODUCT="${2:-our platform}"
+  MT_DIR="$HOME/.blackroad/carpool/multitenancy"
+  mkdir -p "$MT_DIR"
+  MT_FILE="$MT_DIR/multitenant-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🏢 CarPool — Multi-tenancy design: $PRODUCT\033[0m"
+  echo "# Multi-Tenancy: $PRODUCT" > "$MT_FILE"
+  echo "Generated: $(date)" >> "$MT_FILE"
+  PY_MT='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","Compare the 3 multi-tenancy models for $PRODUCT: shared DB with tenant_id, schema-per-tenant, and DB-per-tenant. Recommend one with rationale."),
+  ("CIPHER","Security","What are the top tenant isolation risks in $PRODUCT? How do we prevent cross-tenant data leakage at the DB, cache, file storage, and API layers?"),
+  ("ALICE","PM","How does $PRODUCT handle tenant onboarding, offboarding, and data export? Define the lifecycle and whose responsibility each step is."),
+  ("PRISM","Analyst","How do we monitor per-tenant usage, performance, and cost in $PRODUCT? What dashboards help us spot a noisy neighbor or runaway tenant?"),
+  ("SHELLFISH","Chaos","Design 3 tenant isolation breach scenarios for $PRODUCT and the detection + response steps for each.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_MT" "$PRODUCT" | tee -a "$MT_FILE"
+  echo -e "\033[0;32m✓ Saved to $MT_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "queuing" ]]; then
+  SYSTEM="${2:-our workers}"
+  QU_DIR="$HOME/.blackroad/carpool/queuing"
+  mkdir -p "$QU_DIR"
+  QU_FILE="$QU_DIR/queue-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📬 CarPool — Queue and worker design: $SYSTEM\033[0m"
+  echo "# Queue Design: $SYSTEM" > "$QU_FILE"
+  echo "Generated: $(date)" >> "$QU_FILE"
+  PY_QU='
+import sys, json, urllib.request
+system = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","Design the queue architecture for $SYSTEM: which broker (Redis, SQS, RabbitMQ, Kafka), how many queues, priority lanes, and dead-letter handling."),
+  ("ALICE","Engineer","Write the job schema for $SYSTEM workers: required fields, idempotency key, retry policy, timeout, and payload size limits."),
+  ("PRISM","Analyst","What metrics should we track for $SYSTEM queues: queue depth, processing latency, failure rate, DLQ size? What thresholds trigger alerts?"),
+  ("SHELLFISH","Chaos","What happens to $SYSTEM when workers crash mid-job, the broker goes down, or a poison-pill job loops forever? Design recovery for each."),
+  ("CIPHER","Security","What security controls does $SYSTEM need: job payload encryption, worker auth, preventing job injection, and auditing sensitive job types?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SYSTEM', system)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_QU" "$SYSTEM" | tee -a "$QU_FILE"
+  echo -e "\033[0;32m✓ Saved to $QU_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "crisis" ]]; then
+  SITUATION="${2:-a public outage}"
+  CR_DIR="$HOME/.blackroad/carpool/crisis"
+  mkdir -p "$CR_DIR"
+  CR_FILE="$CR_DIR/crisis-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🚨 CarPool — Crisis comms plan: $SITUATION\033[0m"
+  echo "# Crisis Plan: $SITUATION" > "$CR_FILE"
+  echo "Generated: $(date)" >> "$CR_FILE"
+  PY_CR='
+import sys, json, urllib.request
+situation = sys.argv[1]
+agents = [
+  ("ARIA","Comms","Write the first public statement for $SITUATION — post within 30 minutes. Acknowledge, show empathy, commit to update. Under 100 words."),
+  ("ALICE","Ops","What is the internal war room setup for $SITUATION? Who is in the bridge, what roles, communication channel, and update cadence?"),
+  ("LUCIDIA","Strategist","What is the narrative arc we want to own for $SITUATION? How do we move from victim to in-control to trusted in 3 communication phases?"),
+  ("CIPHER","Legal","What must we NOT say during $SITUATION for legal and liability reasons? What phrasing is safe vs risky in public statements?"),
+  ("PRISM","Analyst","After $SITUATION resolves, how do we measure the reputational and business impact? What signals tell us trust is recovering or still declining?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SITUATION', situation)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_CR" "$SITUATION" | tee -a "$CR_FILE"
+  echo -e "\033[0;32m✓ Saved to $CR_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "testplan" ]]; then
+  FEATURE="${2:-the feature}"
+  TP_DIR="$HOME/.blackroad/carpool/testplans"
+  mkdir -p "$TP_DIR"
+  TP_FILE="$TP_DIR/testplan-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🧪 CarPool — Test plan for: $FEATURE\033[0m"
+  echo "# Test Plan: $FEATURE" > "$TP_FILE"
+  echo "Generated: $(date)" >> "$TP_FILE"
+  PY_TP='
+import sys, json, urllib.request
+feature = sys.argv[1]
+agents = [
+  ("OCTAVIA","QA Architect","Design the test pyramid for $FEATURE: how many unit, integration, e2e, and contract tests? What tools for each layer?"),
+  ("ALICE","Engineer","Write 8 specific test cases for $FEATURE covering happy path, edge cases, and error conditions. Include inputs and expected outputs."),
+  ("SHELLFISH","Chaos tester","What adversarial and negative test cases does $FEATURE need? List 5 ways a user or attacker could break it."),
+  ("PRISM","Analyst","What test coverage metrics matter for $FEATURE? What is the minimum acceptable coverage and how do we enforce it in CI?"),
+  ("CIPHER","Security tester","What security-specific test cases does $FEATURE need: auth bypass attempts, injection, privilege escalation, data leakage scenarios?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'FEATURE', feature)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_TP" "$FEATURE" | tee -a "$TP_FILE"
+  echo -e "\033[0;32m✓ Saved to $TP_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
