@@ -257,23 +257,134 @@ delete_world() {
 }
 
 show_help() {
-    echo ""
-    echo -e "  ${AMBER}${BOLD}BR WORLD${NC}  ${DIM}8-bit ASCII world generator${NC}"
-    echo ""
-    echo -e "  ${BOLD}br world generate <name>${NC}     ${DIM}create new world${NC}"
-    echo -e "  ${BOLD}br world explore <name>${NC}      ${DIM}explore (WASD/HJKL)${NC}"
-    echo -e "  ${BOLD}br world list${NC}                ${DIM}list all worlds${NC}"
-    echo -e "  ${BOLD}br world delete <name>${NC}       ${DIM}delete a world${NC}"
-    echo ""
-    echo -e "  ${DIM}Controls: W/K up  S/J down  A/H left  D/L right  Q quit${NC}"
-    echo -e "  ${DIM}Collect 💎 treasures, ⚔️ items, encounter 🐉 creatures!${NC}"
-    echo ""
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR WORLD${NC}  ${DIM}8-bit ASCII explorer meets live AI dashboard.${NC}"
+  echo -e "  ${DIM}Your agents. Your terrain. Your rules.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br world ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  generate <name> [w] [h]         ${NC} Create a new world (default 80×24)"
+  echo -e "  ${AMBER}  explore <name>                  ${NC} Enter interactive WASD explorer"
+  echo -e "  ${AMBER}  live                            ${NC} Live agent HUD — world + real-time stats"
+  echo -e "  ${AMBER}  list                            ${NC} List all saved worlds"
+  echo -e "  ${AMBER}  delete <name>                   ${NC} Delete a world"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br world generate blackroad 80 24${NC}"
+  echo -e "  ${DIM}  br world explore blackroad${NC}"
+  echo -e "  ${DIM}  br world live${NC}"
+  echo -e ""
 }
-
 # Initialize database
 init_db
 
 # Command routing
+
+cmd_live() {
+  local CECE_DB="$HOME/.blackroad/cece-identity.db"
+  local VAULT_DB="$HOME/.blackroad/secrets-vault.db"
+  local AGENT_DIR="$HOME/.blackroad/agents/active"
+  local METRICS_DB="$HOME/.blackroad/metrics.db"
+
+  # Mini world terrain (static 42×10 ASCII art)
+  local TERRAIN=(
+    "  ≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈  "
+    "  ≈ 🌲  .  .  ⛰  .  .  .  .  .  ⛰  .  ≈  "
+    "  ≈  . ◆  .  .  .  🌲 .  .  .  .  . ◆  ≈  "
+    "  ≈  .  .  .  💎  .  .  .  .  ⛰  .  .  ≈  "
+    "  ≈  ⛰  .  .  .  .  🌲  .  .  .  .  .  ≈  "
+    "  ≈  .  . ◆  .  .  .  .  .  .  .  ⛰  .  ≈  "
+    "  ≈  .  .  .  .  🌲  .  ◆ .  .  .  .  .  ≈  "
+    "  ≈  ⛰  .  .  .  .  .  .  .  🌲  .  .  ≈  "
+    "  ≈  .  .  .  ⛰  .  . ◆  .  .  .  .  .  ≈  "
+    "  ≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈  "
+  )
+
+  # Animated agent positions (cycle through on each tick)
+  local AGENT_ICONS=("◆" "●" "◈" "◉" "◎")
+  local AGENT_NAMES=("LUCIDIA" "ALICE" "OCTAVIA" "PRISM" "ECHO" "CIPHER")
+  local tick=0
+
+  tput civis 2>/dev/null
+  trap 'tput cnorm 2>/dev/null; tput rmcup 2>/dev/null; exit' INT TERM
+
+  tput smcup 2>/dev/null
+
+  while true; do
+    tput cup 0 0 2>/dev/null
+    clear
+
+    # ── Header ────────────────────────────────────────────────────────────────
+    echo -e "
+  ${AMBER}${BOLD}◆ BR WORLD — LIVE${NC}  ${DIM}BlackRoad OS · Agent HUD${NC}  ${DIM}$(date '+%H:%M:%S')${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────────────────────────${NC}
+"
+
+    # ── Pull live data ─────────────────────────────────────────────────────────
+    local bond_pct bond_name bond_inter xp_count goal_title
+    if [[ -f "$CECE_DB" ]]; then
+      bond_pct=$(sqlite3 "$CECE_DB" "SELECT bond_strength FROM relationships ORDER BY bond_strength DESC LIMIT 1;" 2>/dev/null || echo "0")
+      bond_name=$(sqlite3 "$CECE_DB" "SELECT human_name FROM relationships ORDER BY bond_strength DESC LIMIT 1;" 2>/dev/null || echo "—")
+      bond_inter=$(sqlite3 "$CECE_DB" "SELECT COALESCE(total_interactions,0) FROM relationships ORDER BY bond_strength DESC LIMIT 1;" 2>/dev/null || echo "0")
+      xp_count=$(sqlite3 "$CECE_DB" "SELECT COUNT(*) FROM experiences;" 2>/dev/null || echo "0")
+      goal_title=$(sqlite3 "$CECE_DB" "SELECT goal_title FROM goals WHERE goal_status='active' ORDER BY priority LIMIT 1;" 2>/dev/null || echo "—")
+    fi
+
+    local vault_total=0 vault_exp=0
+    [[ -f "$VAULT_DB" ]] && vault_total=$(sqlite3 "$VAULT_DB" "SELECT COUNT(*) FROM secrets;" 2>/dev/null || echo 0)
+
+    local agent_online=0
+    [[ -d "$AGENT_DIR" ]] && agent_online=$(ls "$AGENT_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+
+    local cpu_pct="—" mem_pct="—"
+    if [[ "$OSTYPE" == darwin* ]]; then
+      cpu_pct=$(top -l 1 -n 0 | grep "CPU usage" | awk '{print $3}' | tr -d '%' 2>/dev/null || echo "—")
+      local total_mem=$(( $(sysctl -n hw.memsize 2>/dev/null || echo 0) / 1048576 ))
+      local used_mem=$(vm_stat 2>/dev/null | awk '/Pages active/ {print $3+0}')
+      (( total_mem > 0 && used_mem > 0 )) && mem_pct=$(( used_mem * 4 / total_mem ))"%"
+    fi
+
+    # ── Render columns ─────────────────────────────────────────────────────────
+    # Left: mini ASCII world
+    echo -e "  ${BOLD}BLACKROAD WORLD${NC}               ${DIM}│${NC}  ${BOLD}AGENT HQ${NC}"
+    echo -e "  ${DIM}──────────────────────────────${NC} ${DIM}│${NC}  ${DIM}──────────────────────────────${NC}"
+
+    local row=0
+    for line in "${TERRAIN[@]}"; do
+      local right_col=""
+      case $row in
+        0) right_col="  ${AMBER}●${NC} LUCIDIA  ${DIM}Coordinator${NC}      ${DIM}active${NC}" ;;
+        1) right_col="  ${PINK}●${NC} ALICE    ${DIM}Router${NC}           ${DIM}active${NC}" ;;
+        2) right_col="  ${GREEN}●${NC} OCTAVIA  ${DIM}Compute${NC}          ${DIM}active${NC}" ;;
+        3) right_col="  ${VIOLET}●${NC} PRISM    ${DIM}Analyst${NC}          ${DIM}active${NC}" ;;
+        4) right_col="  ${BBLUE}●${NC} ECHO     ${DIM}Memory${NC}           ${DIM}active${NC}" ;;
+        5) right_col="  ${DIM}●${NC} CIPHER   ${DIM}Security${NC}         ${DIM}active${NC}" ;;
+        6) right_col="  ${DIM}──────────────────────────────${NC}" ;;
+        7) right_col="  ${DIM}Agents online${NC}   ${BOLD}${agent_online}${NC}  ${DIM}/ 30,000${NC}" ;;
+        8) right_col="  ${DIM}CECE bond${NC}       ${AMBER}${bond_pct}%${NC}  ${DIM}${bond_name} · ${bond_inter} sessions${NC}" ;;
+        9) right_col="  ${DIM}Vault secrets${NC}   ${BOLD}${vault_total}${NC}" ;;
+      esac
+      printf "  ${DIM}%s${NC} ${DIM}│${NC}%s
+" "$line" "$right_col"
+      (( row++ ))
+    done
+
+    echo ""
+    echo -e "  ${DIM}──────────────────────────────────────────────────────────────────────${NC}"
+
+    # ── Bottom bar ─────────────────────────────────────────────────────────────
+    local goal_display="${goal_title:0:40}"
+    echo -e "  ${DIM}CPU${NC} ${BOLD}${cpu_pct}${NC}   ${DIM}MEM${NC} ${BOLD}${mem_pct}${NC}   ${DIM}XP${NC} ${BOLD}${xp_count}${NC}   ${DIM}GOAL${NC} ${AMBER}${goal_display}${NC}"
+    echo -e "
+  ${DIM}Auto-refreshes every 3s  ·  Ctrl+C to exit${NC}
+"
+
+    (( tick++ ))
+    sleep 3
+  done
+}
+
 case "$1" in
     generate|gen|g)
         shift

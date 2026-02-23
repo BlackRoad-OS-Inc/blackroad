@@ -1,7 +1,9 @@
 #!/bin/zsh
 # BR Run - Smart Task Runner
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 RUN_HOME="/Users/alexa/blackroad/tools/task-runner"
-GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
 detect_tasks() {
     echo -e "${CYAN}🔍 Detecting tasks...${NC}\n"
@@ -17,7 +19,26 @@ run_task() {
     eval $task
 }
 
+show_help() {
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR RUN${NC}  ${DIM}Task automation that just runs.${NC}"
+  echo -e "  ${DIM}Scripts, jobs, pipelines — go.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br run ${DIM}<command>${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  detect                          ${NC} Auto-detect tasks (npm/make/cargo/go)"
+  echo -e "  ${AMBER}  <task>                          ${NC} Execute any command as a named task"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br run detect${NC}"
+  echo -e "  ${DIM}  br run npm test${NC}"
+  echo -e "  ${DIM}  br run make build${NC}"
+  echo -e ""
+}
+
 case ${1:-detect} in
     detect|d) detect_tasks ;;
+    help|-h|--help) show_help ;;
     *) run_task "$*" ;;
 esac

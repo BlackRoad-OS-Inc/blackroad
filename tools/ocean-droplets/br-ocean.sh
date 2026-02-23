@@ -1,12 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/digitalocean.db"
@@ -317,73 +314,28 @@ cmd_regions() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-💧 DigitalOcean Droplet Manager
-
-USAGE:
-  br ocean <command> [options]
-
-SETUP:
-  auth <token>               Set API token
-
-DROPLET MANAGEMENT:
-  list                       List all droplets
-  create <name> [size] [region] [image]  Create droplet
-  delete <id>                Delete droplet
-  ssh <id> [user]            SSH to droplet
-  resize <id> <size>         Resize droplet
-
-BACKUP & SNAPSHOT:
-  snapshot <id> <name>       Create snapshot
-
-DISCOVERY:
-  sizes                      List available sizes
-  regions                    List available regions
-
-EXAMPLES:
-  # Setup
-  br ocean auth do_token_xyz123
-
-  # List droplets
-  br ocean list
-
-  # Create droplet
-  br ocean create my-server s-1vcpu-1gb nyc1
-  br ocean create web-server s-2vcpu-2gb sfo3 ubuntu-22-04-x64
-
-  # Connect
-  br ocean ssh 12345
-  br ocean ssh 12345 ubuntu
-
-  # Manage
-  br ocean snapshot 12345 backup-2024
-  br ocean resize 12345 s-4vcpu-8gb
-  br ocean delete 12345
-
-  # Discovery
-  br ocean sizes
-  br ocean regions
-
-COMMON SIZES:
-  s-1vcpu-1gb      - $6/mo   (1 CPU, 1GB RAM, 25GB SSD)
-  s-2vcpu-2gb      - $12/mo  (2 CPU, 2GB RAM, 50GB SSD)
-  s-4vcpu-8gb      - $48/mo  (4 CPU, 8GB RAM, 160GB SSD)
-
-POPULAR REGIONS:
-  nyc1, nyc3       - New York
-  sfo3             - San Francisco
-  lon1             - London
-  fra1             - Frankfurt
-  sgp1             - Singapore
-
-NOTES:
-  - Get API token from: cloud.digitalocean.com/account/api/tokens
-  - SSH keys are automatically added to new droplets
-  - Add your SSH key in DigitalOcean dashboard first
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR OCEAN${NC}  ${DIM}DigitalOcean from your terminal.${NC}"
+  echo -e "  ${DIM}Spin up. Scale out. Shut down.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  list                            ${NC} List all droplets"
+  echo -e "  ${AMBER}  create <name> <region> <size>   ${NC} Create a new droplet"
+  echo -e "  ${AMBER}  destroy <id>                    ${NC} Destroy a droplet"
+  echo -e "  ${AMBER}  ssh <name>                      ${NC} SSH into a droplet"
+  echo -e "  ${AMBER}  snapshot <id> <name>            ${NC} Create droplet snapshot"
+  echo -e "  ${AMBER}  status                          ${NC} Droplet status overview"
+  echo -e "  ${AMBER}  auth <token>                    ${NC} Set DigitalOcean API token"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br ocean list${NC}"
+  echo -e "  ${DIM}  br ocean create my-server nyc3 s-1vcpu-1gb${NC}"
+  echo -e "  ${DIM}  br ocean ssh blackroad-infinity${NC}"
+  echo -e "  ${DIM}  br ocean snapshot 12345 pre-deploy${NC}"
+  echo -e ""
 }
-
 # Main dispatch
 init_db
 

@@ -3,6 +3,9 @@
 # BR Pair - AI Pair Programming
 # Interactive coding assistant that watches and helps
 #===============================================================================
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 PAIR_HOME="/Users/alexa/blackroad/tools/pair-programming"
 SESSION_FILE="${PAIR_HOME}/current-session.json"
@@ -343,31 +346,27 @@ stop_pair() {
 
 # Help
 show_help() {
-    cat <<EOF
-BR Pair - AI Pair Programming Assistant
-
-Usage: br pair {command} [args]
-
-Commands:
-  start [agent]     - Start pair programming session (default: octavia)
-  ask <question>    - Ask your pair a question
-  review            - Review current changes
-  suggest           - Get context-aware suggestions
-  status            - Show session status
-  stop              - End current session
-
-Examples:
-  br pair start octavia         # Start with Octavia
-  br pair ask "how do I test this?"
-  br pair review                # Review before commit
-  br pair suggest               # Get suggestions
-  br pair stop                  # End session
-
-Available agents: octavia, lucidia, alice, aria, shellfish
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR PAIR${NC}  ${DIM}AI pair programming in your terminal.${NC}"
+  echo -e "  ${DIM}Octavia · Lucidia · Alice. Ship better code, faster.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  start [agent]                   ${NC} Start pair session (default: octavia)"
+  echo -e "  ${AMBER}  ask <question>                  ${NC} Ask your AI pair a question"
+  echo -e "  ${AMBER}  review                          ${NC} Review current diff before commit"
+  echo -e "  ${AMBER}  suggest                         ${NC} Get context-aware code suggestions"
+  echo -e "  ${AMBER}  status                          ${NC} Show active session"
+  echo -e "  ${AMBER}  stop                            ${NC} End current session"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br pair start octavia${NC}"
+  echo -e "  ${DIM}  br pair ask "how should I structure this auth module?"${NC}"
+  echo -e "  ${DIM}  br pair review${NC}"
+  echo -e "  ${DIM}  br pair suggest${NC}"
+  echo -e ""
 }
-
 # Main dispatch
 case ${1:-status} in
     start)

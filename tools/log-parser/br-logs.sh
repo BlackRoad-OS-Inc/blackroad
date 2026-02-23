@@ -1,6 +1,8 @@
 #!/bin/zsh
 # BR Logs - Log Parser and Analyzer
-GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 parse_logs() {
     local file=${1:-/dev/stdin}
@@ -43,8 +45,14 @@ show_errors() {
     fi
 }
 
-case ${1:-parse} in
+case ${1:-help} in
     parse|p) parse_logs "$2" ;;
     errors|e) show_errors "$2" ;;
+    help|--help|-h)
+        echo -e "  ${AMBER}${BOLD}◆ BR LOGS${NC}  log parser\n"
+        echo -e "  ${AMBER}br logs parse [file]${NC}   parse + colorize"
+        echo -e "  ${AMBER}br logs errors [file]${NC}  errors only"
+        echo -e "  ${DIM}pipe: cat app.log | br logs parse${NC}"
+        ;;
     *) parse_logs "$1" ;;
 esac

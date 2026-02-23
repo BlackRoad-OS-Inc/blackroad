@@ -5,12 +5,9 @@
 # Pattern: mirrors br-cloudflare.sh
 
 # Colors (BlackRoad brand)
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 PINK='\033[38;5;205m'
 NC='\033[0m'
 
@@ -522,60 +519,31 @@ cmd_portal() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-💳 BlackRoad Stripe Manager
-
-USAGE:
-  br stripe <command> [options]
-
-SETUP:
-  auth <key>                  Save & verify Stripe API key
-
-PRODUCTS:
-  products list               List active products
-  products create             Create canonical BlackRoad pricing (products + prices)
-
-CUSTOMERS:
-  customers list              List recent customers
-  customers search <email>    Search customer by email
-
-SUBSCRIPTIONS:
-  subscriptions list          List active subscriptions with MRR
-  subscriptions cancel <id>   Cancel subscription at period end
-
-REVENUE:
-  revenue                     Revenue dashboard (balance, MRR, ARR, charges)
-
-TOOLS:
-  webhook-test [event]        Fire test webhook via Stripe CLI
-  sync                        Pull Stripe data into local SQLite cache
-  portal <customer_id>        Generate billing portal URL
-
-EXAMPLES:
-  # Setup
-  br stripe auth sk_live_xxx
-
-  # Create products
-  br stripe products create
-
-  # Check revenue
-  br stripe revenue
-
-  # Search customer
-  br stripe customers search user@example.com
-
-  # Generate portal link
-  br stripe portal cus_1AbcDef
-
-NOTES:
-  - Get API key from: dashboard.stripe.com/apikeys
-  - Stripe CLI required for webhook-test: brew install stripe/stripe-cli/stripe
-  - Local cache stored at: ~/.blackroad/stripe.db
-  - Config stored at: ~/.blackroad/stripe.conf (600 permissions)
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR STRIPE${NC}  ${DIM}Stripe billing from your terminal.${NC}"
+  echo -e "  ${DIM}Payments without the portal. MRR · ARR · Customers.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  auth <key>                      ${NC} Save Stripe API key"
+  echo -e "  ${AMBER}  revenue                         ${NC} Revenue dashboard (MRR · ARR · balance)"
+  echo -e "  ${AMBER}  customers list                  ${NC} List customers"
+  echo -e "  ${AMBER}  customers search <email>        ${NC} Search by email"
+  echo -e "  ${AMBER}  subscriptions list              ${NC} Active subscriptions with MRR"
+  echo -e "  ${AMBER}  subscriptions cancel <id>       ${NC} Cancel subscription"
+  echo -e "  ${AMBER}  products list                   ${NC} List products & prices"
+  echo -e "  ${AMBER}  products create                 ${NC} Create canonical BlackRoad pricing"
+  echo -e "  ${AMBER}  sync                            ${NC} Pull Stripe data to local SQLite cache"
+  echo -e "  ${AMBER}  webhook-test [event]            ${NC} Fire test webhook via Stripe CLI"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br stripe revenue${NC}"
+  echo -e "  ${DIM}  br stripe customers search hello@blackroad.io${NC}"
+  echo -e "  ${DIM}  br stripe subscriptions list${NC}"
+  echo -e "  ${DIM}  br stripe auth sk_live_xxx${NC}"
+  echo -e ""
 }
-
 # ============================================================================
 # Main dispatch
 # ============================================================================

@@ -1,12 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/web-dev.db"
@@ -471,61 +468,27 @@ cmd_optimize() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-🌐 Web Development Toolkit
-
-USAGE:
-  br web <command> [options]
-
-DEVELOPMENT:
-  serve [dir] [port]         Start dev server (default: port 8080)
-  scaffold <framework> <name>  Create new project
-  build [dir]                Build for production
-
-FRAMEWORKS:
-  react       - React with Vite
-  vue         - Vue 3 with Vite
-  next        - Next.js
-  svelte      - Svelte
-  static      - HTML/CSS/JS
-  express     - Express.js API
-
-ANALYSIS:
-  analyze [dir]              Analyze bundle size
-  perf <url>                 Test performance
-  seo <url>                  Check SEO
-  sitemap <url>              View sitemap
-
-OPTIMIZATION:
-  optimize [dir]             Optimize assets
-  screenshot <url> [file]    Take screenshot
-
-EXAMPLES:
-  # Create new project
-  br web scaffold react my-app
-  br web scaffold static landing-page
-
-  # Development
-  br web serve
-  br web serve ./dist 3000
-
-  # Production
-  br web build
-  br web analyze
-  br web optimize
-
-  # Testing
-  br web perf https://example.com
-  br web seo https://example.com
-
-NOTES:
-  - Uses Python HTTP server for static serving
-  - Integrates with npm/Vite/Next.js for frameworks
-  - Performance tracking saved to database
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR WEB${NC}  ${DIM}Spin up dev servers fast.${NC}"
+  echo -e "  ${DIM}Local dev, professional grade.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  serve [port]                    ${NC} Start a static file server"
+  echo -e "  ${AMBER}  proxy <port> <target>           ${NC} Reverse proxy to another port"
+  echo -e "  ${AMBER}  tunnel                          ${NC} Expose local server via tunnel"
+  echo -e "  ${AMBER}  status                          ${NC} Running servers overview"
+  echo -e "  ${AMBER}  stop [port]                     ${NC} Stop server on port"
+  echo -e "  ${AMBER}  logs [port]                     ${NC} Tail server logs"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br web serve 3000${NC}"
+  echo -e "  ${DIM}  br web proxy 8080 http://localhost:3000${NC}"
+  echo -e "  ${DIM}  br web tunnel${NC}"
+  echo -e "  ${DIM}  br web status${NC}"
+  echo -e ""
 }
-
 # Main dispatch
 init_db
 

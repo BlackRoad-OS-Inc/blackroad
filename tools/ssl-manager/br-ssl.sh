@@ -1,19 +1,31 @@
 #!/usr/bin/env zsh
 # BR SSL - SSL Certificate Manager
 
-GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BLUE='\033[0;34m'; NC='\033[0m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 show_help() {
-    echo "${CYAN}╔══════════════════════════════════════════════════════╗${NC}"
-    echo "${CYAN}║  🔒 BR SSL - Certificate Manager                     ║${NC}"
-    echo "${CYAN}╠══════════════════════════════════════════════════════╣${NC}"
-    echo "${CYAN}║${NC}  br ssl check <domain>   - Check SSL cert expiry     ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br ssl info <domain>    - Full cert details          ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br ssl scan <domain>    - Scan all subdomains        ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br ssl watch <domain>   - Add to expiry watchlist    ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br ssl list             - Show watchlist             ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br ssl local <dir>      - Check local cert files     ${CYAN}║${NC}"
-    echo "${CYAN}╚══════════════════════════════════════════════════════╝${NC}"
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR SSL${NC}  ${DIM}SSL certificates managed.${NC}"
+  echo -e "  ${DIM}Auto-renew. Never expire. HTTPS, guaranteed.${NC}"
+  echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  check <domain>                ${NC} Check certificate expiry"
+  echo -e "  ${AMBER}  list                          ${NC} List all managed certificates"
+  echo -e "  ${AMBER}  renew <domain>                ${NC} Renew a certificate"
+  echo -e "  ${AMBER}  install <domain>              ${NC} Issue and install certificate"
+  echo -e "  ${AMBER}  status                        ${NC} Certificate health overview"
+  echo -e "  ${AMBER}  watch                         ${NC} Monitor expiry dates"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br ssl check blackroad.io${NC}"
+  echo -e "  ${DIM}  br ssl list${NC}"
+  echo -e "  ${DIM}  br ssl renew api.blackroad.io${NC}"
+  echo -e "  ${DIM}  br ssl watch${NC}"
+  echo -e ""
 }
 
 check_cert() {

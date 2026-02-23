@@ -1,11 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/file-finder.db"
@@ -221,50 +219,27 @@ cmd_history() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-🔍 Advanced File Finder
-
-USAGE:
-  br find <command> [options]
-
-SEARCH COMMANDS:
-  search <query> [path]    Find files by name
-  content <query> [path]   Search file contents
-  type <ext> [path]        Find by file extension
-  size <+/-> <size> [path] Find by size (e.g., +10M, -1K)
-  recent [count] [path]    Recently modified files
-  
-FILE ANALYSIS:
-  duplicate [path]         Find duplicate filenames
-  empty [path]             Find empty files/directories
-  
-BOOKMARKS:
-  bookmark add <name> [path]    Bookmark a directory
-  bookmark list                 List bookmarks
-  bookmark rm <name>            Remove bookmark
-  bookmark goto <name>          Get bookmark path
-  
-HISTORY:
-  history                  Show search history
-
-EXAMPLES:
-  br find search config.json
-  br find content "TODO" src/
-  br find type js src/
-  br find size + 10M .
-  br find recent 50
-  br find duplicate
-  br find bookmark add home ~/projects
-  br find bookmark goto home
-
-NOTES:
-  - Uses ripgrep/ag if available for faster content search
-  - Size units: K (KB), M (MB), G (GB)
-  - Use + for larger than, - for smaller than
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR FIND${NC}  ${DIM}Find anything in your codebase, instantly.${NC}"
+  echo -e "  ${DIM}Files, symbols, secrets. Never lose a line again.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  code <query>                    ${NC} Search code content (ripgrep powered)"
+  echo -e "  ${AMBER}  file <pattern>                  ${NC} Find files by name/glob"
+  echo -e "  ${AMBER}  secret                          ${NC} Scan for exposed secrets/credentials"
+  echo -e "  ${AMBER}  large [n]                       ${NC} Find largest files (default top 20)"
+  echo -e "  ${AMBER}  recent [n]                      ${NC} Recently modified files"
+  echo -e "  ${AMBER}  dup                             ${NC} Find duplicate files"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br find code "TODO"${NC}"
+  echo -e "  ${DIM}  br find file "*.test.ts"${NC}"
+  echo -e "  ${DIM}  br find secret${NC}"
+  echo -e "  ${DIM}  br find large 10${NC}"
+  echo -e ""
 }
-
 # Main dispatch
 init_db
 

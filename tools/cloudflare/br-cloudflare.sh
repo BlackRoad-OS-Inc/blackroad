@@ -1,12 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/cloudflare.db"
@@ -341,56 +338,20 @@ cmd_analytics() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-☁️ Cloudflare Manager
-
-USAGE:
-  br cloudflare <command> [options]
-
-SETUP:
-  auth <token>               Set API token
-
-ZONE MANAGEMENT:
-  zones                      List all zones
-
-DNS MANAGEMENT:
-  dns list <zone>            List DNS records
-  dns add <zone> <type> <name> <content>  Add DNS record
-  dns remove <zone> <id>     Remove DNS record
-
-DEPLOYMENT:
-  pages deploy [dir]         Deploy to Pages
-  worker deploy <file> <name>  Deploy Worker
-
-OPERATIONS:
-  cache purge <zone>         Purge cache
-  analytics <zone>           View analytics
-
-EXAMPLES:
-  # Setup
-  br cloudflare auth cf_token_xyz123
-
-  # View zones
-  br cloudflare zones
-
-  # DNS management
-  br cloudflare dns list example.com
-  br cloudflare dns add example.com A www 192.0.2.1
-  br cloudflare dns add example.com CNAME api example.com
-
-  # Deploy
-  br cloudflare pages deploy ./dist
-  br cloudflare worker deploy ./worker.js my-worker
-
-  # Cache
-  br cloudflare cache purge example.com
-
-NOTES:
-  - Get API token from: dash.cloudflare.com/profile/api-tokens
-  - Use "Edit zone DNS" template for token
-  - Wrangler CLI required for Pages/Workers deployment
-
-EOF
+    echo -e "  ${AMBER}${BOLD}◆ BR CLOUDFLARE${NC}  CF manager\n"
+    echo -e "  ${AMBER}br cloudflare auth <token>${NC}              set API token\n"
+    echo -e "  ${BOLD}zones & dns${NC}"
+    echo -e "  ${AMBER}br cloudflare zones${NC}                     list zones"
+    echo -e "  ${AMBER}br cloudflare dns list <zone>${NC}           list records"
+    echo -e "  ${AMBER}br cloudflare dns add <zone> <type> <name> <content>${NC}"
+    echo -e "  ${AMBER}br cloudflare dns remove <zone> <id>${NC}\n"
+    echo -e "  ${BOLD}deploy${NC}"
+    echo -e "  ${AMBER}br cloudflare pages deploy [dir]${NC}        → Pages"
+    echo -e "  ${AMBER}br cloudflare worker deploy <file> <name>${NC} → Worker\n"
+    echo -e "  ${BOLD}ops${NC}"
+    echo -e "  ${AMBER}br cloudflare cache purge <zone>${NC}"
+    echo -e "  ${AMBER}br cloudflare analytics <zone>${NC}\n"
+    echo -e "  ${DIM}Get token: dash.cloudflare.com/profile/api-tokens${NC}"
 }
 
 # Main dispatch

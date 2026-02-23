@@ -1,12 +1,8 @@
 #!/usr/bin/env zsh
 
-# Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 DB_FILE="$HOME/.blackroad/docker-manager.db"
 
@@ -190,50 +186,77 @@ cmd_compose() {
 
 cmd_stats() {
     check_docker
-    echo -e "${CYAN}📊 Container Stats:${NC}\n"
-    docker stats --no-stream
+    local interval="${1:-3}"
+    local containers; containers=$(docker ps --format '{{.Names}}' 2>/dev/null)
+    if [[ -z "$containers" ]]; then
+        echo -e "  ${DIM}No running containers${NC}"; return 0
+    fi
+
+    echo -e "  ${AMBER}${BOLD}◆ BR DOCKER STATS${NC}  ${DIM}Live · Ctrl-C to exit · refresh ${interval}s${NC}\n"
+
+    while true; do
+        # Move cursor up to redraw (skip on first run)
+        local raw; raw=$(docker stats --no-stream --format \
+            "{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}" 2>/dev/null)
+
+        # Clear previous rows
+        tput cuu1 2>/dev/null
+        printf "\033[2K"
+
+        echo -e "  ${BOLD}$(printf '%-20s' 'CONTAINER')  $(printf '%-7s' 'CPU')  $(printf '%-20s' 'MEM USAGE')  $(printf '%-6s' 'MEM%')  NET I/O${NC}"
+        echo -e "  ${DIM}$(printf '%.0s─' {1..68})${NC}"
+
+        echo "$raw" | while IFS=$'\t' read -r name cpu mem memp net; do
+            # CPU bar (max 20 chars)
+            local cpu_n; cpu_n=$(echo "$cpu" | tr -d '%' | python3 -c "import sys; v=float(sys.stdin.read().strip() or 0); print(min(int(v/5),20))" 2>/dev/null || echo 0)
+            local mem_n; mem_n=$(echo "$memp" | tr -d '%' | python3 -c "import sys; v=float(sys.stdin.read().strip() or 0); print(min(int(v/5),20))" 2>/dev/null || echo 0)
+            local cpu_bar; cpu_bar=$(python3 -c "print('█'*${cpu_n} + '░'*(10-min(${cpu_n},10)))" 2>/dev/null || echo "")
+            local mem_bar; mem_bar=$(python3 -c "print('█'*${mem_n} + '░'*(10-min(${mem_n},10)))" 2>/dev/null || echo "")
+
+            # Color CPU by load
+            local cpu_color="$GREEN"
+            (( cpu_n >= 12 )) && cpu_color="$PINK"
+            (( cpu_n >= 16 )) && cpu_color="$RED"
+
+            printf "  ${AMBER}%-20s${NC}  ${cpu_color}%-6s${NC}  ${DIM}%s${NC}  %-20s  ${VIOLET}%-5s${NC}  ${DIM}%s${NC}  %s\n" \
+                "${name:0:19}" "$cpu" "$cpu_bar" "${mem:0:19}" "$memp" "$mem_bar" "${net:0:20}"
+        done
+
+        echo -e "\n  ${DIM}$(date '+%H:%M:%S') · next in ${interval}s${NC}"
+
+        sleep "$interval"
+
+        # Move up past the table for redraw (count lines)
+        local row_count; row_count=$(echo "$raw" | wc -l | tr -d ' ')
+        local total_rows=$(( row_count + 4 ))
+        tput cuu "$total_rows" 2>/dev/null
+    done
 }
 
 cmd_help() {
-    cat << 'EOF'
-🐳 Docker Manager
-
-USAGE:
-  br docker <command> [options]
-
-CONTAINER COMMANDS:
-  ps [-a]              List running containers (--all for all)
-  start <name>         Start a container
-  stop <name>          Stop a container
-  restart <name>       Restart a container
-  logs <name> [lines]  View container logs (default: 50)
-  exec <name> [cmd]    Execute command in container (default: /bin/sh)
-  stats               Show resource usage
-
-IMAGE COMMANDS:
-  images              List images
-  pull <image>        Pull an image
-  build <path>        Build image from Dockerfile
-
-COMPOSE COMMANDS:
-  compose up          Start compose stack
-  compose down        Stop compose stack
-  compose ps          List compose services
-  compose logs        View compose logs
-
-MAINTENANCE:
-  clean               Remove unused resources
-  prune               Full system cleanup (dangerous!)
-
-EXAMPLES:
-  br docker ps -a
-  br docker start my-app
-  br docker logs my-app 100
-  br docker exec my-app bash
-  br docker compose up
-  br docker clean
-
-EOF
+    echo -e ""
+    echo -e "  ${AMBER}${BOLD}◆ BR DOCKER${NC}  ${DIM}Container control. Zero-friction ops, live stats.${NC}"
+    echo -e "  ${DIM}Ship faster. Debug quicker. One command to rule the daemon.${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo -e "  ${BOLD}CONTAINERS${NC}"
+    echo -e "  ${AMBER}  ps [-a]                  ${NC} List running (or all) containers"
+    echo -e "  ${AMBER}  start|stop|restart <n>   ${NC} Container lifecycle"
+    echo -e "  ${AMBER}  logs <name> [lines]      ${NC} Tail container logs"
+    echo -e "  ${AMBER}  exec <name> [cmd]        ${NC} Exec into container"
+    echo -e "  ${AMBER}  stats [interval]         ${NC} ${BOLD}Live stats${NC} with CPU/MEM bars (default 3s)"
+    echo -e ""
+    echo -e "  ${BOLD}IMAGES${NC}"
+    echo -e "  ${AMBER}  images                   ${NC} List images"
+    echo -e "  ${AMBER}  pull <image>             ${NC} Pull image"
+    echo -e "  ${AMBER}  build [path]             ${NC} Build from Dockerfile"
+    echo -e ""
+    echo -e "  ${BOLD}COMPOSE${NC}"
+    echo -e "  ${AMBER}  compose up|down|ps|logs  ${NC} Docker Compose control"
+    echo -e ""
+    echo -e "  ${BOLD}MAINTENANCE${NC}"
+    echo -e "  ${AMBER}  clean                    ${NC} Remove unused containers/images"
+    echo -e "  ${AMBER}  prune                    ${RED}DANGER${NC} Full system cleanup"
+    echo -e ""
 }
 
 # Main dispatch
@@ -260,7 +283,7 @@ case "${1:-help}" in
         docker build "${@:2}"
         ;;
     compose) cmd_compose "${@:2}" ;;
-    stats) cmd_stats ;;
+    stats) cmd_stats "${2:-3}" ;;
     clean) cmd_clean ;;
     prune)
         check_docker

@@ -422,6 +422,169 @@ EOF
 # Main dispatch
 init_db
 
+
+# ─── Live multi-panel dashboard ───────────────────────────────────────────────
+cmd_panels() {
+  local interval="${1:-3}"
+  tput civis 2>/dev/null
+  trap 'tput cnorm 2>/dev/null; tput rmcup 2>/dev/null; exit' INT TERM
+  tput smcup 2>/dev/null
+
+  local CECE_DB="$HOME/.blackroad/cece-identity.db"
+  local GATEWAY_PID="$HOME/.blackroad/gateway.pid"
+
+  while true; do
+    clear
+
+    collect_system_metrics
+
+    # Pull current metrics
+    local cpu mem disk load
+    IFS=$'\t' read -r cpu mem disk load < <(sqlite3 -separator $'\t' "$DB_FILE" \
+      "SELECT cpu_usage, memory_usage, disk_usage, load_avg FROM system_metrics ORDER BY recorded_at DESC LIMIT 1;" 2>/dev/null || echo "0\t0\t0\t0")
+
+    local spark_cpu spark_mem spark_disk
+    spark_cpu=$(_sparkline cpu_usage 20)
+    spark_mem=$(_sparkline memory_usage 20)
+    spark_disk=$(_sparkline disk_usage 20)
+
+    echo -e "\n  ${AMBER}${BOLD}◆ BR METRICS — PANELS${NC}  ${DIM}$(date '+%H:%M:%S')${NC}  ${DIM}↻ ${interval}s${NC}"
+    echo -e "  ${DIM}══════════════════════════════════════════════════════════════════════${NC}\n"
+
+    # ── Row 1: System metrics ──────────────────────────────────────────────────
+    echo -e "  ${BOLD}SYSTEM${NC}                               ${DIM}│${NC}  ${BOLD}TRENDS (last 20 samples)${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────${NC} ${DIM}│${NC}  ${DIM}────────────────────────────────${NC}"
+
+    # CPU bar
+    local cpu_i="${cpu%.*}"; [[ -z "$cpu_i" || "$cpu_i" == "0" ]] && cpu_i=0
+    local cpu_fill=$(( cpu_i / 2 )); [[ $cpu_fill -gt 50 ]] && cpu_fill=50
+    local cpu_col="$GREEN"; (( cpu_i > 70 )) && cpu_col="$AMBER"; (( cpu_i > 85 )) && cpu_col="$PINK"
+    printf "  ${BOLD}CPU${NC}  ${cpu_col}"
+    for ((i=0; i<cpu_fill; i++)); do printf "█"; done
+    printf "${NC}${DIM}"
+    for ((i=cpu_fill; i<30; i++)); do printf "░"; done
+    printf "${NC}  ${BOLD}%s%%${NC}   ${DIM}│${NC}  ${DIM}CPU${NC} %s\n" "$cpu_i" "$spark_cpu"
+
+    # MEM bar
+    local mem_i="${mem%.*}"; [[ -z "$mem_i" || "$mem_i" == "0" ]] && mem_i=0
+    local mem_fill=$(( mem_i / 2 )); [[ $mem_fill -gt 50 ]] && mem_fill=50
+    local mem_col="$GREEN"; (( mem_i > 70 )) && mem_col="$AMBER"; (( mem_i > 85 )) && mem_col="$PINK"
+    printf "  ${BOLD}MEM${NC}  ${mem_col}"
+    for ((i=0; i<mem_fill; i++)); do printf "█"; done
+    printf "${NC}${DIM}"
+    for ((i=mem_fill; i<30; i++)); do printf "░"; done
+    printf "${NC}  ${BOLD}%s%%${NC}   ${DIM}│${NC}  ${DIM}MEM${NC} %s\n" "$mem_i" "$spark_mem"
+
+    # DISK bar
+    local dsk_i="${disk%.*}"; [[ -z "$dsk_i" || "$dsk_i" == "0" ]] && dsk_i=0
+    local dsk_fill=$(( dsk_i / 2 )); [[ $dsk_fill -gt 50 ]] && dsk_fill=50
+    local dsk_col="$GREEN"; (( dsk_i > 80 )) && dsk_col="$AMBER"; (( dsk_i > 90 )) && dsk_col="$PINK"
+    printf "  ${BOLD}DSK${NC}  ${dsk_col}"
+    for ((i=0; i<dsk_fill; i++)); do printf "█"; done
+    printf "${NC}${DIM}"
+    for ((i=dsk_fill; i<30; i++)); do printf "░"; done
+    printf "${NC}  ${BOLD}%s%%${NC}   ${DIM}│${NC}  ${DIM}DSK${NC} %s\n" "$dsk_i" "$spark_disk"
+
+    echo -e "  ${DIM}load: ${NC}${BOLD}${load}${NC}                              ${DIM}│${NC}"
+    echo ""
+
+    # ── Row 2: Agent activity + Gateway ───────────────────────────────────────
+    echo -e "  ${BOLD}AGENTS${NC}                               ${DIM}│${NC}  ${BOLD}GATEWAY${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────${NC} ${DIM}│${NC}  ${DIM}────────────────────────────────${NC}"
+
+    if [[ -f "$CECE_DB" ]]; then
+      local bond=$(sqlite3 "$CECE_DB" "SELECT bond_strength FROM relationships ORDER BY bond_strength DESC LIMIT 1;" 2>/dev/null || echo 0)
+      local interactions=$(sqlite3 "$CECE_DB" "SELECT COALESCE(total_interactions,0) FROM relationships ORDER BY bond_strength DESC LIMIT 1;" 2>/dev/null || echo 0)
+      local xp=$(sqlite3 "$CECE_DB" "SELECT COUNT(*) FROM experiences;" 2>/dev/null || echo 0)
+      local skills=$(sqlite3 "$CECE_DB" "SELECT group_concat(skill_name, ' · ') FROM (SELECT skill_name FROM skills ORDER BY times_used DESC LIMIT 3);" 2>/dev/null || echo "—")
+      local goal=$(sqlite3 "$CECE_DB" "SELECT goal_title FROM goals WHERE goal_status='active' ORDER BY priority LIMIT 1;" 2>/dev/null || echo "—")
+      echo -e "  ${DIM}CECE bond${NC}    ${AMBER}${bond}%${NC}  ${DIM}· ${interactions} sessions${NC}     ${DIM}│${NC}  $(
+        if [[ -f "$GATEWAY_PID" ]] && kill -0 "$(cat "$GATEWAY_PID")" 2>/dev/null; then
+          echo "${GREEN}● running${NC}  pid=$(cat "$GATEWAY_PID")"
+        else
+          echo "${DIM}○ stopped  br gateway start${NC}"
+        fi)"
+      echo -e "  ${DIM}XP events${NC}    ${BOLD}${xp}${NC}                         ${DIM}│${NC}  ${DIM}URL${NC}  ${BOLD}http://127.0.0.1:8787${NC}"
+      echo -e "  ${DIM}Top skills${NC}   ${DIM}${skills:0:36}${NC}  ${DIM}│${NC}"
+      echo -e "  ${DIM}Active goal${NC}  ${AMBER}${goal:0:36}${NC}   ${DIM}│${NC}"
+    else
+      echo -e "  ${DIM}CECE not initialized — run: br cece init${NC}  ${DIM}│${NC}"
+    fi
+
+    echo ""
+
+    # ── Row 3: Top processes + Ollama ─────────────────────────────────────────
+    echo -e "  ${BOLD}TOP PROCESSES${NC}                        ${DIM}│${NC}  ${BOLD}OLLAMA${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────${NC} ${DIM}│${NC}  ${DIM}────────────────────────────────${NC}"
+
+    ps aux 2>/dev/null | sort -rk3 | awk 'NR>1 && NR<=6 {printf "  %-8s %5s%%  %-20s\n", $1, $3, substr($11,1,20)}' | \
+      while IFS= read -r line; do
+        echo -e "${DIM}${line}${NC}   ${DIM}│${NC}"
+      done
+
+    local ollama_models=""
+    if curl -sf http://localhost:11434/api/tags -o /tmp/br_ollama_tags.json 2>/dev/null; then
+      ollama_models=$(python3 -c "
+import json
+d = json.load(open('/tmp/br_ollama_tags.json'))
+models = d.get('models',[])
+for m in models[:4]:
+    print(f"  {m['name'][:28]:28s}  {m.get('size',0)//1073741824:.1f}GB")
+" 2>/dev/null)
+      echo -e "  ${DIM}│${NC}  ${GREEN}● running${NC}  ${DIM}$(echo "$ollama_models" | wc -l | tr -d ' ') models${NC}"
+      echo "$ollama_models" | head -4 | while IFS= read -r line; do
+        echo -e "  ${DIM}│${NC}  ${DIM}${line}${NC}"
+      done
+    else
+      echo -e "  ${DIM}│${NC}  ${DIM}○ Ollama not running${NC}"
+      echo -e "  ${DIM}│${NC}  ${DIM}  start: ollama serve${NC}"
+    fi
+
+    echo ""
+    echo -e "  ${DIM}══════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "  ${DIM}Ctrl+C to exit  ·  refresh every ${interval}s${NC}\n"
+
+    sleep "$interval"
+  done
+}
+
+# ─── Agent activity panel ─────────────────────────────────────────────────────
+cmd_agents_panel() {
+  local CECE_DB="$HOME/.blackroad/cece-identity.db"
+  echo -e "\n  ${AMBER}${BOLD}◆ BR METRICS${NC}  ${DIM}Agent Activity${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}\n"
+
+  if [[ ! -f "$CECE_DB" ]]; then
+    echo -e "  ${DIM}CECE not initialized — run: br cece init${NC}\n"; return
+  fi
+
+  echo -e "  ${BOLD}RELATIONSHIPS${NC}"
+  sqlite3 "$CECE_DB" "SELECT human_name, bond_strength, total_interactions FROM relationships ORDER BY bond_strength DESC;" 2>/dev/null | \
+    while IFS='|' read -r name bond inter; do
+      local bfill=$(( bond / 5 )); [[ $bfill -gt 20 ]] && bfill=20
+      local bcol="$GREEN"; (( bond >= 80 )) && bcol="$AMBER"; (( bond >= 95 )) && bcol="$PINK"
+      printf "  ${BOLD}%-12s${NC} ${bcol}" "$name"
+      for ((i=0; i<bfill; i++)); do printf "█"; done
+      for ((i=bfill; i<20; i++)); do printf "░"; done
+      printf "${NC}  ${BOLD}%3s%%${NC}  ${DIM}%s sessions${NC}\n" "$bond" "$inter"
+    done
+
+  echo ""
+  echo -e "  ${BOLD}RECENT EXPERIENCES${NC}"
+  sqlite3 "$CECE_DB" "SELECT experience_type, title FROM experiences ORDER BY timestamp DESC LIMIT 5;" 2>/dev/null | \
+    while IFS='|' read -r etype title; do
+      printf "  ${AMBER}%-12s${NC} %s\n" "$etype" "${title:0:50}"
+    done
+
+  echo ""
+  echo -e "  ${BOLD}TOP SKILLS${NC}"
+  sqlite3 "$CECE_DB" "SELECT skill_name, skill_category, times_used FROM skills ORDER BY times_used DESC LIMIT 8;" 2>/dev/null | \
+    while IFS='|' read -r name cat uses; do
+      printf "  ${AMBER}%-20s${NC} ${DIM}%-12s${NC} ${BOLD}%s${NC} uses\n" "$name" "$cat" "$uses"
+    done
+  echo ""
+}
+
 case "${1:-summary}" in
     summary|snap|now|"") cmd_summary ;;
     dashboard|dash|d) cmd_dashboard ;;

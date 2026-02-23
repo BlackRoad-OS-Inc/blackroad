@@ -1,9 +1,11 @@
 #!/usr/bin/env zsh
 # BR Agent Gateway — HTTP API + SSE event stream + agent chaining
 # br gateway start|stop|restart|status|logs|test|stream
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
-GREEN=$'\033[0;32m'; RED=$'\033[0;31m'; YELLOW=$'\033[1;33m'
-CYAN=$'\033[0;36m'; BOLD=$'\033[1m'; DIM=$'\033[2m'; NC=$'\033[0m'
+# (aliases above; no overrides)
 
 GATEWAY_PORT=${BLACKROAD_GATEWAY_PORT:-8080}
 GATEWAY_BIND=${BLACKROAD_GATEWAY_BIND:-127.0.0.1}
@@ -1012,42 +1014,196 @@ cmd_test() {
     echo "${GREEN}✓ gateway test complete${NC}"
 }
 
+#──────────────────────────────────────────────────────────────────────────────
+# Provider discovery
+#──────────────────────────────────────────────────────────────────────────────
+cmd_providers() {
+  echo -e "\n  ${AMBER}${BOLD}◆ BR GATEWAY${NC}  ${DIM}Provider Discovery${NC}\n"
+  local ollama_url="${BLACKROAD_OLLAMA_URL:-http://localhost:11434}"
+  local gw_url="http://${GATEWAY_BIND}:${GATEWAY_PORT}"
+
+  # Check Ollama
+  if curl -sf --max-time 2 "${ollama_url}/api/tags" &>/dev/null; then
+    local models=$(curl -sf "${ollama_url}/api/tags" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+names=[m['name'] for m in d.get('models',[])]
+print(', '.join(names[:8]) if names else '(no models pulled)')
+" 2>/dev/null || echo "unknown")
+    echo -e "  ${GREEN}●${NC} ${BOLD}Ollama${NC}           ${DIM}${ollama_url}${NC}"
+    echo -e "  ${DIM}  Models: ${models}${NC}"
+  else
+    echo -e "  ${RED}○${NC} ${BOLD}Ollama${NC}           ${DIM}${ollama_url} — offline${NC}"
+    echo -e "  ${DIM}  Run: ollama serve${NC}"
+  fi
+
+  # Check local gateway
+  if [[ -f "$PID_FILE" ]] && kill -0 $(cat "$PID_FILE") 2>/dev/null; then
+    echo -e "  ${GREEN}●${NC} ${BOLD}BR Gateway${NC}       ${DIM}${gw_url}${NC}"
+  else
+    echo -e "  ${RED}○${NC} ${BOLD}BR Gateway${NC}       ${DIM}${gw_url} — not running${NC}"
+    echo -e "  ${DIM}  Run: br gateway start${NC}"
+  fi
+
+  # Check env-based providers (only show existence, never keys)
+  for var in BLACKROAD_OPENAI_API_KEY BLACKROAD_ANTHROPIC_API_KEY; do
+    if [[ -n "${(P)var}" ]]; then
+      local name="${var/BLACKROAD_/}"; name="${name/_API_KEY/}"
+      echo -e "  ${GREEN}●${NC} ${BOLD}${name}${NC}           ${DIM}(key set via env — routed through gateway)${NC}"
+    fi
+  done
+
+  echo ""
+}
+
+#──────────────────────────────────────────────────────────────────────────────
+# Route a prompt to Ollama / gateway
+#──────────────────────────────────────────────────────────────────────────────
+cmd_route() {
+  local model="${2:-llama3.2}"
+  local prompt="${@:3}"
+  if [[ -z "$prompt" ]]; then
+    echo -e "${RED}✗ Usage: br gateway route <model> <prompt>${NC}"; return 1
+  fi
+  local ollama_url="${BLACKROAD_OLLAMA_URL:-http://localhost:11434}"
+  local gw_url="http://${GATEWAY_BIND}:${GATEWAY_PORT}"
+
+  echo -e "\n  ${AMBER}${BOLD}◆ BR GATEWAY${NC}  ${DIM}Routing →${NC} ${BOLD}${model}${NC}\n"
+
+  # Try Ollama directly first
+  if curl -sf --max-time 2 "${ollama_url}/api/tags" &>/dev/null; then
+    echo -e "  ${DIM}Provider: Ollama (local)${NC}\n"
+    curl -sf -X POST "${ollama_url}/api/generate" \
+      -H "Content-Type: application/json" \
+      -d "$(python3 -c "import json; print(json.dumps({'model':'${model}','prompt':'${prompt}','stream':False}))")" \
+    | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+resp=d.get('response','')
+# word-wrap at 72 chars
+words=resp.split()
+line=''; lines=[]
+for w in words:
+    if len(line)+len(w)+1>72:
+        lines.append(line); line=w
+    else:
+        line=(line+' '+w).strip()
+if line: lines.append(line)
+print('\n'.join('  '+l for l in lines))
+print()
+" 2>/dev/null || echo -e "  ${RED}✗ Ollama response parse error${NC}"
+    return
+  fi
+
+  # Try local gateway as fallback
+  if [[ -f "$PID_FILE" ]] && kill -0 $(cat "$PID_FILE") 2>/dev/null; then
+    echo -e "  ${DIM}Provider: BR Gateway (localhost:${GATEWAY_PORT})${NC}\n"
+    local r=$(curl -sf -X POST "${gw_url}/route" \
+      -H "Content-Type: application/json" \
+      -d "$(python3 -c "import json; print(json.dumps({'model':'${model}','prompt':'${prompt}'}))")" 2>/dev/null)
+    if [[ -n "$r" ]]; then
+      echo "$r" | python3 -m json.tool 2>/dev/null || echo "$r"
+      return
+    fi
+  fi
+
+  echo -e "  ${RED}✗ No providers available${NC}"
+  echo -e "  ${DIM}  Start Ollama:  ollama serve${NC}"
+  echo -e "  ${DIM}  Start gateway: br gateway start${NC}\n"
+}
+
+#──────────────────────────────────────────────────────────────────────────────
+# Interactive chat via Ollama / gateway
+#──────────────────────────────────────────────────────────────────────────────
+cmd_chat() {
+  local model="${2:-llama3.2}"
+  local ollama_url="${BLACKROAD_OLLAMA_URL:-http://localhost:11434}"
+  local history=()
+
+  # Check provider
+  if ! curl -sf --max-time 2 "${ollama_url}/api/tags" &>/dev/null; then
+    echo -e "${RED}✗ Ollama not running — start with: ollama serve${NC}"; return 1
+  fi
+
+  clear
+  echo -e "\n  ${AMBER}${BOLD}◆ BR GATEWAY CHAT${NC}  ${DIM}model: ${model} · type${NC} ${BOLD}/quit${NC} ${DIM}to exit${NC}\n"
+
+  while true; do
+    printf "  ${AMBER}you${NC} › "
+    read -r user_input
+    [[ -z "$user_input" ]] && continue
+    [[ "$user_input" == "/quit" || "$user_input" == "quit" ]] && break
+    [[ "$user_input" == "/model "* ]] && { model="${user_input#/model }"; echo -e "  ${DIM}→ switched to ${model}${NC}"; continue; }
+    [[ "$user_input" == "/clear" ]] && { history=(); clear; continue; }
+
+    history+=("$(python3 -c "import json; print(json.dumps({'role':'user','content':'${user_input//\'/}'}))")")
+
+    local payload=$(python3 -c "
+import json
+model='${model}'
+messages=$(echo "${history[@]}" | python3 -c "import json,sys; lines=sys.stdin.read().strip().split('\n'); print(json.dumps([json.loads(l) for l in lines if l.strip()]))" 2>/dev/null || echo "[]")
+print(json.dumps({'model':model,'messages':messages,'stream':False}))
+" 2>/dev/null)
+
+    local resp=$(curl -sf -X POST "${ollama_url}/api/chat" \
+      -H "Content-Type: application/json" \
+      -d "${payload}" 2>/dev/null)
+
+    local reply=$(echo "$resp" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+print(d.get('message',{}).get('content',''))
+" 2>/dev/null)
+
+    if [[ -n "$reply" ]]; then
+      echo -e "\n  ${VIOLET}${model}${NC} › ${reply}\n"
+      history+=("$(python3 -c "import json; print(json.dumps({'role':'assistant','content':$(echo "$reply" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read().strip()))")}))")")
+    else
+      echo -e "  ${RED}✗ No response — check model name${NC}\n"
+    fi
+  done
+  echo -e "\n  ${DIM}◆ Chat ended${NC}\n"
+}
+
 show_help() {
-    echo ""
-    echo "${BOLD}br gateway${NC} — HTTP API + SSE event stream for agent tasks"
-    echo ""
-    echo "${CYAN}Commands:${NC}"
-    echo "  ${BOLD}start${NC}          Start gateway server (port ${GATEWAY_PORT})"
-    echo "  ${BOLD}stop${NC}           Stop gateway server"
-    echo "  ${BOLD}restart${NC}        Restart gateway"
-    echo "  ${BOLD}status${NC}         Show status + health metrics"
-    echo "  ${BOLD}logs [n]${NC}       Tail logs (default 40 lines)"
-    echo "  ${BOLD}stream${NC}         Watch live SSE event stream"
-    echo "  ${BOLD}test${NC}           Run API test suite"
-    echo ""
-    echo "${CYAN}Key endpoints:${NC}"
-    echo "  GET  /health                     # agents alive, task counts, SSE clients"
-    echo "  GET  /events                     # SSE stream — agent_event, task_created, task_done, task_chained"
-    echo "  GET  /agents                     # live agent states"
-    echo "  GET  /log                        # recent agent activity log"
-    echo "  GET  /tasks?status=pending       # task queue"
-    echo "  POST /tasks                      # {title, assigned_to, chain_to?, priority?}"
-    echo "  POST /tasks/:id/complete         # {result}"
-    echo ""
-    echo "${CYAN}Task chaining:${NC}"
-    echo "  POST /tasks -d '{...\"chain_to\":\"CIPHER\"}'"
-    echo "  → when ARIA completes, a follow-up task is auto-created for CIPHER"
-    echo ""
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR GATEWAY${NC}  ${DIM}Tokenless AI routing. One gateway, every provider.${NC}"
+  echo -e "  ${DIM}Your rules. Your secrets. Zero tokens in agent code.${NC}"
+  echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  start                         ${NC} Start the BlackRoad gateway server"
+  echo -e "  ${AMBER}  stop                          ${NC} Stop the gateway"
+  echo -e "  ${AMBER}  status                        ${NC} Gateway health and route status"
+  echo -e "  ${AMBER}  providers                     ${NC} Discover available AI providers"
+  echo -e "  ${AMBER}  route <model> <prompt>        ${NC} Route a prompt (Ollama → gateway fallback)"
+  echo -e "  ${AMBER}  chat [model]                  ${NC} Interactive chat via Ollama/gateway"
+  echo -e "  ${AMBER}  routes                        ${NC} List registered agent routes"
+  echo -e "  ${AMBER}  logs                          ${NC} Tail gateway request logs"
+  echo -e "  ${AMBER}  config                        ${NC} Show/edit gateway configuration"
+  echo -e "  ${AMBER}  test                          ${NC} Test a route end-to-end"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br gateway providers${NC}"
+  echo -e "  ${DIM}  br gateway route llama3.2 \"What is 2+2?\"${NC}"
+  echo -e "  ${DIM}  br gateway chat qwen2.5:7b${NC}"
+  echo -e "  ${DIM}  br gateway start${NC}"
+  echo -e "  ${DIM}  br gateway status${NC}"
+  echo -e ""
 }
 
 case "${1:-status}" in
-    start)    cmd_start ;;
-    stop)     cmd_stop ;;
-    restart)  cmd_stop; sleep 0.3; cmd_start ;;
-    status)   cmd_status ;;
-    logs)     shift; cmd_logs "$@" ;;
-    stream)   cmd_stream ;;
-    test)     cmd_test ;;
-    help|-h)  show_help ;;
-    *)        show_help ;;
+    start)       cmd_start ;;
+    stop)        cmd_stop ;;
+    restart)     cmd_stop; sleep 0.3; cmd_start ;;
+    status)      cmd_status ;;
+    providers)   cmd_providers ;;
+    route)       cmd_route "$@" ;;
+    chat)        cmd_chat "$@" ;;
+    logs)        shift; cmd_logs "$@" ;;
+    stream)      cmd_stream ;;
+    test)        cmd_test ;;
+    help|-h)     show_help ;;
+    *)           show_help ;;
 esac

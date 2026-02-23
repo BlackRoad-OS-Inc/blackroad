@@ -921,7 +921,7 @@ _cmd_new() {
   local language="bash" code_text=""
   local launch_date=""
   local output="" config_file=""
-  local price="" price_id="" stripe_worker="https://blackroad-stripe.workers.dev"
+  local price="" price_id="" stripe_worker="https://blackroad-stripe.workers.dev" payment_link=""
   local -a features skills sections tiers items stats testimonials members entries
 
   # Pre-scan for --config so we can load defaults before flag parsing
@@ -995,6 +995,7 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
       --price)         price="$2";            shift 2 ;;
       --price-id)      price_id="$2";         shift 2 ;;
       --worker)        stripe_worker="$2";    shift 2 ;;
+      --payment-link)  payment_link="$2";     shift 2 ;;
       --output)        output="$2";           shift 2 ;;
       --config)        shift 2 ;;  # already processed above
       *) shift ;;
@@ -1061,7 +1062,7 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
       ;;
     checkout)
       _tpl_checkout "$title" "$price" "$price_id" "$stripe_worker" \
-        "$(IFS=','; echo "${features[*]}")" "$cta_text" "$output"
+        "$(IFS=','; echo "${features[*]}")" "$cta_text" "$output" "$payment_link"
       ;;
     *)
       echo -e "${RED}Unknown template: ${tpl}${NC}"
@@ -1743,7 +1744,7 @@ _tpl_checkout() {
   local title="${1:-Pro Plan}" price="${2:-\$49/mo}" price_id="${3:-}" \
         worker="${4:-https://blackroad-stripe.workers.dev}" \
         features_raw="${5:-Unlimited templates,Deploy,Priority support}" \
-        cta="${6:-Get Started}" output="${7:-}"
+        cta="${6:-Get Started}" output="${7:-}" payment_link="${8:-}"
   [[ -z "$output" ]] && output="${OUT_DIR}/checkout.html"
   mkdir -p "$(dirname "$output")"
 
@@ -1804,17 +1805,24 @@ $(_html_nav "$title")
 </main>
 $(_html_footer)
 <script>
-const WORKER_URL = '${worker}';
-const PRICE_ID   = '${price_id}';
+const PAYMENT_LINK = '${payment_link}';
+const WORKER_URL   = '${worker}';
+const PRICE_ID     = '${price_id}';
 
 async function startCheckout() {
   const btn   = document.getElementById('ck-pay-btn');
   const label = document.getElementById('ck-btn-label');
   const msg   = document.getElementById('ck-msg');
 
+  // Prefer direct Stripe payment link (no Worker needed)
+  if (PAYMENT_LINK) {
+    window.location.href = PAYMENT_LINK;
+    return;
+  }
+
   if (!PRICE_ID) {
     msg.className = 'ck-msg error';
-    msg.textContent = 'Price ID not configured. Set --price-id when generating this page.';
+    msg.textContent = 'Checkout not configured. Contact support.';
     return;
   }
 
@@ -1946,7 +1954,7 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
   has_changelog=$(python3 -c "import json;d=json.load(open('$config'));print('yes' if d.get('changelog') else '')" 2>/dev/null)
   has_coming_soon=$(python3 -c "import json;d=json.load(open('$config'));print('yes' if d.get('launch_date') else '')" 2>/dev/null)
 
-  local page_count=5
+  local page_count=7  # index, pricing, pro checkout, enterprise checkout, docs, about, 404
   [[ -n "$has_team" ]]        && (( page_count++ ))
   [[ -n "$has_changelog" ]]   && (( page_count++ ))
   [[ -n "$has_coming_soon" ]] && (( page_count++ ))
@@ -1963,9 +1971,25 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
   # pricing/index.html
   _tpl_pricing "$name Pricing" "Simple, transparent pricing." "${out_dir}/pricing/index.html" \
     "Starter|Free|forever|Perfect to get started.|5 agents,1GB memory,Community support|Get Started|${cta_url}|false" \
-    "Pro|\$49|/month|For serious builders.|50 agents,10GB memory,Priority support,Custom domains|Start Pro Trial|/signup|true" \
+    "Pro|\$49|/month|For serious builders.|50 agents,10GB memory,Priority support,Custom domains|Start Pro Trial|/pricing/pro|true" \
     "Enterprise|Custom|pricing|For teams and companies.|Unlimited agents,Unlimited memory,SLA + SSO,Dedicated support|Contact Sales|/contact|false"
   echo -e "  ${GREEN}✓${NC} ${out_dir}/pricing/index.html  (pricing)"
+
+  # checkout pages — Pro and Enterprise with Stripe payment links
+  mkdir -p "${out_dir}/pricing/pro" "${out_dir}/pricing/enterprise"
+  _tpl_checkout "Pro Plan" "\$49/month" "price_1T3nxYChUUSEbzyhRA8XeENr" \
+    "https://blackroad-stripe.workers.dev" \
+    "50 agents,10GB memory,Priority support,Custom domains,Deploy to CF Pages,API access" \
+    "Start Pro Trial" "${out_dir}/pricing/pro/index.html" \
+    "https://buy.stripe.com/test_fZu3cubyb2ZMdDqcNT4ko07"
+  echo -e "  ${GREEN}✓${NC} ${out_dir}/pricing/pro/index.html (checkout/pro)"
+
+  _tpl_checkout "Enterprise Plan" "Custom pricing" "price_1T3nyzChUUSEbzyhYjASdHjR" \
+    "https://blackroad-stripe.workers.dev" \
+    "Unlimited agents,Unlimited memory,SLA guarantee,SSO + SAML,Dedicated support,Custom SLAs" \
+    "Contact Sales" "${out_dir}/pricing/enterprise/index.html" \
+    "https://buy.stripe.com/test_6oUaEWfOr1VI1UI5lr4ko09"
+  echo -e "  ${GREEN}✓${NC} ${out_dir}/pricing/enterprise/index.html (checkout/enterprise)"
 
   # docs/index.html
   _tpl_docs "${name} Docs" "Getting Started" "${name}" "${out_dir}/docs/index.html" \
@@ -2112,6 +2136,34 @@ _cmd_export() {
 }
 
 # ─── MAIN ─────────────────────────────────────────────────────────────────
+
+_cmd_help() {
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR BRAND${NC}  ${DIM}Brand tokens, gradients, copy.${NC}"
+  echo -e "  ${DIM}Look consistent. Ship beautiful. Every time.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br brand ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  list                            ${NC} List available brand templates"
+  echo -e "  ${AMBER}  new <template>                  ${NC} Generate from a brand template"
+  echo -e "  ${AMBER}  site                            ${NC} Build brand site"
+  echo -e "  ${AMBER}  preview <file>                  ${NC} Preview a brand file"
+  echo -e "  ${AMBER}  init                            ${NC} Initialize brand config in project"
+  echo -e "  ${AMBER}  audit <file>                    ${NC} Audit file for brand compliance"
+  echo -e "  ${AMBER}  deploy                          ${NC} Deploy brand assets"
+  echo -e "  ${AMBER}  watch                           ${NC} Watch and auto-rebuild"
+  echo -e "  ${AMBER}  export                          ${NC} Export brand package as zip"
+  echo -e "  ${AMBER}  open [file]                     ${NC} Open brand output in browser"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br brand list${NC}"
+  echo -e "  ${DIM}  br brand new landing${NC}"
+  echo -e "  ${DIM}  br brand audit src/styles.css${NC}"
+  echo -e "  ${DIM}  br brand deploy${NC}"
+  echo -e ""
+}
+
 case "${1:-list}" in
   list|ls)    _cmd_list ;;
   preview)    _cmd_preview "$2" ;;
@@ -2123,9 +2175,10 @@ case "${1:-list}" in
   watch)      _cmd_watch "${@:2}" ;;
   open)       _cmd_open "${@:2}" ;;
   export)     _cmd_export "${@:2}" ;;
+  help|-h|--help) _cmd_help ;;
   *)
-    echo -e "${RED}Unknown command: $1${NC}"
-    echo "Usage: br brand [list | init | new <template> | site | deploy | audit | watch | open | export | preview]"
+    echo -e "${RED}✗ Unknown command: $1${NC}"
+    _cmd_help
     exit 1
     ;;
 esac

@@ -1,161 +1,243 @@
 #!/usr/bin/env zsh
-# BR Search — fast cross-repo search across tools, agents, coordination, journal
-# br search <query> [--type code|journal|agent|task|all] [--file <glob>]
+# ◆ BR SEARCH — Smart cross-repo code search
+# br search <query> [--code|--journal|--docs|--agents|--tasks|ai]
 
-AMBER=$'\033[38;5;214m'; PINK=$'\033[38;5;205m'; VIOLET=$'\033[38;5;135m'
-CYAN=$'\033[0;36m'; GREEN=$'\033[0;32m'; RED=$'\033[0;31m'
-YELLOW=$'\033[1;33m'; BOLD=$'\033[1m'; DIM=$'\033[2m'; NC=$'\033[0m'
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 BR_ROOT="${BR_ROOT:-$HOME/blackroad}"
 JOURNAL="$HOME/.blackroad/memory/journals/master-journal.jsonl"
 
-show_help() {
-  echo ""
-  echo "  ${PINK}${BOLD}br search${NC}  — cross-repo search"
-  echo ""
-  echo "  ${BOLD}Usage:${NC}"
-  echo "    ${CYAN}br search <query>${NC}                  Search everything"
-  echo "    ${CYAN}br search <query> --code${NC}           Search tools/, scripts, br"
-  echo "    ${CYAN}br search <query> --journal${NC}        Search PS-SHA∞ journal"
-  echo "    ${CYAN}br search <query> --agents${NC}         Search agents/, coordination/"
-  echo "    ${CYAN}br search <query> --docs${NC}           Search *.md docs"
-  echo "    ${CYAN}br search <query> --tasks${NC}          Search task queue + inboxes"
-  echo "    ${CYAN}br search <query> --file '*.sh'${NC}    Search specific file glob"
-  echo ""
-  echo "  ${BOLD}Examples:${NC}"
-  echo "    br search 'collab-join'          # Find all collab join references"
-  echo "    br search 'spawn' --code         # Find spawn in shell scripts"
-  echo "    br search 'deploy' --journal     # Find deploy actions in memory"
-  echo ""
-}
-
-# ── Section printers ───────────────────────────────────────────────────────────
-
-print_match() {
-  local file="$1" line="$2" content="$3" query="$4"
+#──────────────────────────────────────────────────────────────────────────────
+# Helpers
+#──────────────────────────────────────────────────────────────────────────────
+_print_match() {
+  local file="$1" line="$2" content="$3" score="${4:-}"
   local short="${file#$BR_ROOT/}"
-  local highlighted
-  highlighted=$(echo "$content" | sed "s/$query/$(printf '\033[1;33m')&$(printf '\033[0m')/gi" 2>/dev/null || echo "$content")
-  printf "  ${CYAN}%-45s${NC} ${DIM}%4s${NC}  %s\n" "$short" "$line" "$highlighted"
-}
-
-search_code() {
-  local query="$1"
-  local dirs=("$BR_ROOT/tools" "$BR_ROOT/scripts" "$BR_ROOT/lib" "$BR_ROOT/br")
-  local found=0
-
-  echo "  ${BOLD}${DIM}── CODE${NC}"
-  for target in "${dirs[@]}"; do
-    [[ ! -e "$target" ]] && continue
-    grep -rn --include="*.sh" --include="*.zsh" --include="*.py" --include="*.js" \
-      -i "$query" "$target" 2>/dev/null | head -10 | while IFS=: read -r file line content; do
-      print_match "$file" "$line" "${content:0:80}" "$query"
-      ((found++))
-    done
-  done
-  # Also search the main br file
-  if [[ -f "$BR_ROOT/br" ]]; then
-    grep -n -i "$query" "$BR_ROOT/br" 2>/dev/null | head -5 | while IFS=: read -r line content; do
-      print_match "$BR_ROOT/br" "$line" "${content:0:80}" "$query"
-    done
+  # Highlight query term (if possible)
+  local hi; hi=$(printf '%s' "$content" | sed "s/${_QUERY_ESC}/$(printf '\033[1;33m')&$(printf '\033[0m')/gi" 2>/dev/null || printf '%s' "$content")
+  if [[ -n "$score" ]]; then
+    printf "  ${AMBER}%-40s${NC} ${DIM}%4s${NC}  ${DIM}[%s]${NC}  %s\n" "$short" "$line" "$score" "${hi:0:72}"
+  else
+    printf "  ${AMBER}%-40s${NC} ${DIM}%4s${NC}  %s\n" "$short" "$line" "${hi:0:72}"
   fi
 }
 
+_section() { echo -e "\n  ${BOLD}${DIM}── $1${NC}"; }
+
+#──────────────────────────────────────────────────────────────────────────────
+# Search modes
+#──────────────────────────────────────────────────────────────────────────────
+search_code() {
+  local q="$1"
+  _section "CODE"
+  local dirs=("$BR_ROOT/tools" "$BR_ROOT/scripts" "$BR_ROOT/lib" "$BR_ROOT/br")
+  for target in "${dirs[@]}"; do
+    [[ ! -e "$target" ]] && continue
+    rg -in --with-filename --line-number "$q" "$target" \
+       --type sh --type py --type js --type ts \
+       -m 5 2>/dev/null | head -15 | while IFS=: read -r file line content; do
+      _print_match "$file" "$line" "$content"
+    done
+  done
+}
+
 search_agents() {
-  local query="$1"
-  echo "  ${BOLD}${DIM}── AGENTS / COORDINATION${NC}"
+  local q="$1"
+  _section "AGENTS / COORDINATION"
   local dirs=("$BR_ROOT/agents" "$BR_ROOT/coordination" "$BR_ROOT/shared")
   for d in "${dirs[@]}"; do
     [[ ! -d "$d" ]] && continue
-    grep -rn -i "$query" "$d" --include="*.json" --include="*.sh" --include="*.txt" 2>/dev/null \
-      | head -8 | while IFS=: read -r file line content; do
-      print_match "$file" "$line" "${content:0:80}" "$query"
+    rg -in --with-filename --line-number "$q" "$d" -m 3 2>/dev/null | head -8 | while IFS=: read -r file line content; do
+      _print_match "$file" "$line" "$content"
     done
   done
 }
 
 search_docs() {
-  local query="$1"
-  echo "  ${BOLD}${DIM}── DOCS${NC}"
-  grep -rn -i "$query" "$BR_ROOT" --include="*.md" --max-depth=2 2>/dev/null \
-    | head -8 | while IFS=: read -r file line content; do
-    print_match "$file" "$line" "${content:0:80}" "$query"
+  local q="$1"
+  _section "DOCS"
+  rg -in --with-filename --line-number "$q" "$BR_ROOT" \
+     --type md --max-depth 2 -m 3 2>/dev/null | head -10 | while IFS=: read -r file line content; do
+    _print_match "$file" "$line" "$content"
   done
 }
 
 search_journal() {
-  local query="$1"
-  echo "  ${BOLD}${DIM}── JOURNAL${NC}"
-  local hits=$(grep -ic "$query" "$JOURNAL" 2>/dev/null || echo 0)
-  echo "  ${DIM}$hits matches in $(wc -l < "$JOURNAL" | tr -d ' ') entries${NC}"
-  grep -i "$query" "$JOURNAL" 2>/dev/null | tail -8 | python3 -c "
-import json, sys
-query = '$query'.lower()
+  local q="$1"
+  _section "JOURNAL"
+  local hits; hits=$(grep -ic "$q" "$JOURNAL" 2>/dev/null || echo 0)
+  echo "  ${DIM}$hits matches${NC}"
+  grep -i "$q" "$JOURNAL" 2>/dev/null | tail -8 | python3 -c "
+import json,sys
 for line in sys.stdin:
-    line = line.strip()
+    line=line.strip()
     if not line: continue
     try:
-        d = json.loads(line)
-        ts     = d.get('timestamp','?')[:16].replace('T',' ')
-        action = d.get('action','?')
-        entity = d.get('entity','?')[:25]
-        detail = str(d.get('details',''))[:50]
-        print(f'  \033[2m{ts}\033[0m  \033[36m{action:<18}\033[0m  \033[1m{entity:<25}\033[0m  \033[2m{detail}\033[0m')
-    except: print(f'  {line[:100]}')
+        d=json.loads(line)
+        ts=d.get('timestamp','?')[:16].replace('T',' ')
+        action=d.get('action','?')
+        entity=str(d.get('entity','?'))[:25]
+        detail=str(d.get('details',''))[:45]
+        print(f'  \033[2m{ts}\033[0m  \033[38;5;214m{action:<18}\033[0m  \033[1m{entity:<25}\033[0m  \033[2m{detail}\033[0m')
+    except: print(f'  {line[:90]}')
 "
 }
 
 search_tasks() {
-  local query="$1"
-  echo "  ${BOLD}${DIM}── TASKS / INBOXES${NC}"
+  local q="$1"
+  _section "TASKS"
   local dirs=("$BR_ROOT/shared/mesh/queue" "$BR_ROOT/shared/inbox")
   for d in "${dirs[@]}"; do
     [[ ! -d "$d" ]] && continue
-    grep -rn -i "$query" "$d" 2>/dev/null | head -5 | while IFS=: read -r file line content; do
-      print_match "$file" "$line" "${content:0:80}" "$query"
+    rg -in --with-filename --line-number "$q" "$d" -m 3 2>/dev/null | head -6 | while IFS=: read -r file line content; do
+      _print_match "$file" "$line" "$content"
     done
   done
 }
 
-search_glob() {
-  local query="$1" glob="$2"
-  echo "  ${BOLD}${DIM}── FILES ($glob)${NC}"
-  find "$BR_ROOT" -name "$glob" 2>/dev/null | head -50 | while read -r f; do
-    grep -n -i "$query" "$f" 2>/dev/null | head -3 | while IFS=: read -r line content; do
-      print_match "$f" "$line" "${content:0:80}" "$query"
-    done
-  done
+#──────────────────────────────────────────────────────────────────────────────
+# AI mode — smart ranked results with file-type scoring
+#──────────────────────────────────────────────────────────────────────────────
+search_ai() {
+  local q="$1"
+  echo -e "\n  ${AMBER}${BOLD}◆ BR SEARCH${NC}  ${DIM}AI mode — ranked by relevance${NC}\n"
+
+  # Collect all hits with metadata
+  local tmpfile; tmpfile=$(mktemp)
+  rg -in --with-filename --line-number --no-heading "$q" \
+     "$BR_ROOT/tools" "$BR_ROOT/scripts" "$BR_ROOT/lib" "$BR_ROOT/br" \
+     "$BR_ROOT/agents" "$BR_ROOT/coordination" \
+     -m 10 2>/dev/null >> "$tmpfile"
+  rg -in --with-filename --line-number --no-heading --type md "$q" \
+     "$BR_ROOT" --max-depth 2 2>/dev/null >> "$tmpfile"
+
+  local total; total=$(wc -l < "$tmpfile")
+  echo -e "  ${DIM}${total} raw hits — scoring...${NC}\n"
+
+  python3 << PYEOF
+import sys, re, os
+
+query = "${q}".lower()
+results = []
+
+with open("${tmpfile}") as f:
+    for raw in f:
+        raw = raw.rstrip('\n')
+        if not raw: continue
+        # file:line:content
+        parts = raw.split(':', 2)
+        if len(parts) < 3: continue
+        filepath, lineno, content = parts[0], parts[1], parts[2]
+
+        short = filepath.replace("${BR_ROOT}/", "")
+        content_lower = content.lower().strip()
+        score = 0
+
+        # Exact match in content
+        count = content_lower.count(query)
+        score += count * 10
+
+        # Match in filename
+        if query in os.path.basename(filepath).lower():
+            score += 20
+
+        # File type bonuses
+        ext = os.path.splitext(filepath)[1]
+        if ext in ('.sh', '.zsh'):   score += 5
+        if ext in ('.py',):          score += 4
+        if ext in ('.ts', '.js'):    score += 3
+        if ext in ('.md',):          score += 1
+
+        # Penalise deep paths (less relevant)
+        score -= filepath.count('/') // 3
+
+        # Query appears at start of content line → big bonus
+        stripped = content_lower.lstrip('# /\t ')
+        if stripped.startswith(query):
+            score += 15
+
+        results.append((score, short, lineno, content.strip()[:72]))
+
+results.sort(key=lambda x: -x[0])
+seen = set()
+AMBER='\033[38;5;214m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'; YELLOW='\033[1;33m'
+
+for score, short, lineno, content in results[:20]:
+    key = f"{short}:{lineno}"
+    if key in seen: continue
+    seen.add(key)
+    hi = re.sub(re.escape(query), f'{YELLOW}\\g<0>{NC}', content, flags=re.IGNORECASE)
+    bar = '█' * min(score, 20) if score > 0 else ''
+    print(f"  {AMBER}{short:<42}{NC} {DIM}{lineno:>4}{NC}  {DIM}[{score:>2}] {bar[:10]:<10}{NC}  {hi}")
+
+PYEOF
+  rm -f "$tmpfile"
+  echo ""
 }
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+#──────────────────────────────────────────────────────────────────────────────
+# Help
+#──────────────────────────────────────────────────────────────────────────────
+show_help() {
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR SEARCH${NC}  ${DIM}Smart code search. Finds what you mean, not just what you type.${NC}"
+  echo -e "  ${DIM}Ripgrep-powered across tools, agents, docs, journals — with AI ranking.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br search ${DIM}<query> [mode]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}MODES${NC}"
+  echo -e "  ${AMBER}  ai                ${NC} ${BOLD}Smart ranked results${NC} — relevance-scored hits across everything"
+  echo -e "  ${AMBER}  --code            ${NC} Tools, scripts, lib — .sh .py .ts"
+  echo -e "  ${AMBER}  --docs            ${NC} Markdown docs"
+  echo -e "  ${AMBER}  --journal         ${NC} PS-SHA∞ memory journal"
+  echo -e "  ${AMBER}  --agents          ${NC} Agents + coordination dirs"
+  echo -e "  ${AMBER}  --tasks           ${NC} Task queue + inboxes"
+  echo -e "  ${AMBER}  (no flag)         ${NC} Search everything"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br search deploy ai${NC}"
+  echo -e "  ${DIM}  br search 'ollama' --code${NC}"
+  echo -e "  ${DIM}  br search 'bond' --journal${NC}"
+  echo -e "  ${DIM}  br search 'gateway' --docs${NC}"
+  echo -e ""
+}
 
-# Parse args
-local query="" mode="all" glob_pat=""
-local args=("$@")
+#──────────────────────────────────────────────────────────────────────────────
+# Main
+#──────────────────────────────────────────────────────────────────────────────
+local query="" mode="all" _QUERY_ESC=""
+local -a args=("$@")
 local i=1
-while [[ $i -le ${#args[@]} ]]; do
+while (( i <= ${#args[@]} )); do
   local arg="${args[$i]}"
   case "$arg" in
+    ai)        mode="ai" ;;
     --code)    mode="code" ;;
     --journal) mode="journal" ;;
     --agents)  mode="agents" ;;
     --docs)    mode="docs" ;;
     --tasks)   mode="tasks" ;;
     --all)     mode="all" ;;
-    --file)    ((i++)); glob_pat="${args[$i]}" ;;
     help|--help|-h) show_help; exit 0 ;;
-    -*)        ;; # ignore unknown flags
+    -*)        ;;
     *)         [[ -z "$query" ]] && query="$arg" ;;
   esac
-  ((i++))
+  (( i++ ))
 done
 
 [[ -z "$query" ]] && { show_help; exit 0; }
+_QUERY_ESC="${query//\//\\/}"
 
-echo ""
-echo "  ${PINK}${BOLD}◈ SEARCH${NC}  ${DIM}\"$query\"  mode: $mode${NC}"
-echo "  ${DIM}────────────────────────────────────────────────────────────${NC}"
-echo ""
+if [[ "$mode" == "ai" ]]; then
+  search_ai "$query"
+  exit 0
+fi
+
+echo -e ""
+echo -e "  ${AMBER}${BOLD}◆ BR SEARCH${NC}  ${DIM}\"${query}\"  [${mode}]${NC}"
+echo -e "  ${DIM}────────────────────────────────────────────────────────────${NC}"
 
 case "$mode" in
   code)    search_code "$query" ;;
@@ -164,14 +246,9 @@ case "$mode" in
   docs)    search_docs "$query" ;;
   tasks)   search_tasks "$query" ;;
   all)
-    [[ -n "$glob_pat" ]] && search_glob "$query" "$glob_pat" || {
-      search_code "$query"
-      echo ""
-      search_agents "$query"
-      echo ""
-      search_journal "$query"
-    }
+    search_code "$query"
+    search_agents "$query"
+    search_journal "$query"
     ;;
 esac
-
 echo ""

@@ -1,11 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/web-monitor.db"
@@ -250,54 +248,28 @@ cmd_alerts() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-🔍 Website Monitoring
-
-USAGE:
-  br monitor <command> [options]
-
-SITE MANAGEMENT:
-  add <name> <url> [interval]   Add site to monitor
-  list                          List monitored sites
-  remove <name>                 Remove site
-
-CHECKING:
-  check <name>                  Check site now
-  check-all                     Check all sites
-  status <name>                 Show status history
-  watch [interval]              Continuously watch (default: 60s)
-
-SSL:
-  ssl <name>                    Check SSL certificate
-
-ALERTS:
-  alerts                        Show recent alerts
-
-EXAMPLES:
-  # Add sites
-  br monitor add mysite https://example.com 300
-  br monitor add api https://api.example.com 60
-
-  # Check sites
-  br monitor check mysite
-  br monitor check-all
-  br monitor status mysite
-
-  # SSL monitoring
-  br monitor ssl mysite
-
-  # Continuous monitoring
-  br monitor watch 60
-
-NOTES:
-  - Interval in seconds (default: 300 = 5 minutes)
-  - Status codes 2xx/3xx = UP, others = DOWN
-  - Uptime percentage calculated from checks
-  - SSL expiry warnings at < 30 days
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR MONITOR${NC}  ${DIM}Real-time web monitoring. Uptime alerts.${NC}"
+  echo -e "  ${DIM}Always watching. Never sleeping.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  add <url>                       ${NC} Add a URL to monitor"
+  echo -e "  ${AMBER}  list                            ${NC} List all monitored endpoints"
+  echo -e "  ${AMBER}  check                           ${NC} Run immediate health check on all"
+  echo -e "  ${AMBER}  status                          ${NC} Uptime dashboard"
+  echo -e "  ${AMBER}  remove <url>                    ${NC} Remove a monitored URL"
+  echo -e "  ${AMBER}  alerts                          ${NC} View recent alerts"
+  echo -e "  ${AMBER}  watch                           ${NC} Continuous live monitoring"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br monitor add https://blackroad.io${NC}"
+  echo -e "  ${DIM}  br monitor status${NC}"
+  echo -e "  ${DIM}  br monitor check${NC}"
+  echo -e "  ${DIM}  br monitor watch${NC}"
+  echo -e ""
 }
-
 # Main dispatch
 init_db
 

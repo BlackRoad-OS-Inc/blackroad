@@ -3,6 +3,9 @@
 # BR API - Smart API Tester
 # Quick HTTP requests with history and code generation
 #===============================================================================
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 API_HOME="/Users/alexa/blackroad/tools/api-tester"
 API_DB="${API_HOME}/api-history.db"
@@ -435,36 +438,30 @@ EOF
 
 # Help
 show_help() {
-    cat <<EOF
-BR API - Smart API Tester
-
-Usage: br api {command} [args]
-
-Commands:
-  get <url>                - Make GET request
-  post <url> <body>        - Make POST request
-  put <url> <body>         - Make PUT request
-  delete <url>             - Make DELETE request
-  
-  save <name>              - Save last request as endpoint
-  run <name>               - Run saved endpoint
-  list                     - List saved endpoints
-  
-  history [limit]          - Show request history
-  code [language]          - Generate code from last request
-
-Examples:
-  br api get https://api.github.com/users/octocat
-  br api post https://httpbin.org/post '{"key":"value"}'
-  br api save github-user
-  br api run github-user
-  br api code python
-
-Supported languages: curl, javascript, python, go
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR API${NC}  ${DIM}Fire requests. Save them. Replay them.${NC}"
+  echo -e "  ${DIM}Your personal API test bench.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  get <url>                       ${NC} GET request"
+  echo -e "  ${AMBER}  post <url> <body>               ${NC} POST with JSON body"
+  echo -e "  ${AMBER}  put <url> <body>                ${NC} PUT request"
+  echo -e "  ${AMBER}  delete <url>                    ${NC} DELETE request"
+  echo -e "  ${AMBER}  save <name>                     ${NC} Save last request as named endpoint"
+  echo -e "  ${AMBER}  run <name>                      ${NC} Replay a saved endpoint"
+  echo -e "  ${AMBER}  list                            ${NC} List all saved endpoints"
+  echo -e "  ${AMBER}  history [n]                     ${NC} Request history (default 10)"
+  echo -e "  ${AMBER}  code [lang]                     ${NC} Generate code: curl/python/js/go"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br api get https://api.github.com/users/octocat${NC}"
+  echo -e "  ${DIM}  br api post https://api.example.com '{"key":"val"}'${NC}"
+  echo -e "  ${DIM}  br api save github-user && br api run github-user${NC}"
+  echo -e "  ${DIM}  br api code python${NC}"
+  echo -e ""
 }
-
 # Initialize database
 init_db
 

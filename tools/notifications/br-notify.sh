@@ -395,72 +395,38 @@ cmd_test() {
 
 # Help
 cmd_help() {
-    cat << 'EOF'
-🔔 Notification System
-
-USAGE:
-  br notify <command> [options]
-
-SENDING:
-  send <title> <msg> [priority] [channels]  Send notification
-  test [channel]                            Test notification
-
-CHANNELS:
-  add-channel <name> <type>                 Add channel
-  list-channels                             List channels
-  config <type>                             Configure channel
-
-RULES:
-  add-rule <event> <channel> [priority]     Add notification rule
-  list-rules                                List rules
-
-HISTORY:
-  list                                      List notification history
-
-CHANNEL TYPES:
-  desktop   - System desktop notifications
-  email     - Email notifications
-  slack     - Slack messages
-  webhook   - Custom webhook
-
-PRIORITY LEVELS:
-  critical  - Urgent, immediate attention
-  high      - Important, notify soon
-  normal    - Regular notification
-  low       - Informational only
-
-EXAMPLES:
-  # Send desktop notification
-  br notify send "Build Complete" "All tests passed!" normal desktop
-
-  # Send to multiple channels
-  br notify send "Deploy Failed" "Check logs" critical desktop,slack,email
-
-  # Configure Slack
-  br notify config slack
-
-  # Add rule
-  br notify add-rule "ci_failed" "slack" "high"
-
-  # Test notification
-  br notify test desktop
-
-  # List history
-  br notify list
-
-INTEGRATION:
-  # From CI pipeline
-  br ci run myapp && br notify send "CI Success" "Build passed" || br notify send "CI Failed" "Build failed" critical
-
-  # From tests
-  br test run && br notify send "Tests Passed" "All green" || br notify send "Tests Failed" "Some failed" high
-
-  # From deployment
-  br deploy quick && br notify send "Deployed" "Live now" high
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR NOTIFY${NC}  ${DIM}Send it. Everywhere. Instantly.${NC}"
+  echo -e "  ${DIM}Slack · Discord · Desktop · Webhooks. Your stack, your alerts.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br notify ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}SEND${NC}"
+  echo -e "  ${AMBER}  alert <title> <msg>             ${NC} Fire an error alert"
+  echo -e "  ${AMBER}  send <title> <msg> [lvl] [chan] ${NC} Level: info|success|warning|error|critical"
+  echo -e "  ${AMBER}  test [channel]                  ${NC} Send a test notification"
+  echo -e ""
+  echo -e "  ${BOLD}CHANNELS${NC}"
+  echo -e "  ${AMBER}  add-channel <name> <type>       ${NC} Add channel (desktop/slack/email/webhook)"
+  echo -e "  ${AMBER}  list-channels                   ${NC} List all channels"
+  echo -e "  ${AMBER}  config <type>                   ${NC} Configure a channel type"
+  echo -e ""
+  echo -e "  ${BOLD}RULES${NC}"
+  echo -e "  ${AMBER}  add-rule <event> <chan> [prio]  ${NC} Add auto-trigger rule"
+  echo -e "  ${AMBER}  list-rules                      ${NC} List notification rules"
+  echo -e ""
+  echo -e "  ${BOLD}OTHER${NC}"
+  echo -e "  ${AMBER}  list                            ${NC} Notification history"
+  echo -e "  ${AMBER}  status                          ${NC} Channel status overview"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br notify send "Build Done" "All tests passed" success desktop${NC}"
+  echo -e "  ${DIM}  br notify send "Deploy Failed" "Check logs" critical desktop,slack${NC}"
+  echo -e "  ${DIM}  br notify add-channel prod-slack slack${NC}"
+  echo -e "  ${DIM}  br notify config slack${NC}"
+  echo -e "  ${DIM}  br notify test${NC}"
+  echo -e ""
 }
-
 # Main dispatch
 init_db
 

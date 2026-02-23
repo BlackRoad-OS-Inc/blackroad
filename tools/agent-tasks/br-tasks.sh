@@ -1,5 +1,8 @@
 #!/usr/bin/env zsh
 # BR Task Queue — post, list, claim, complete agent tasks
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -217,21 +220,26 @@ cmd_watch_sync() {
 }
 
 show_help() {
-    echo "${CYAN}Usage: br task <command>${NC}"
-    echo ""
-    echo "  post <title> [desc] [agent] [priority]  — Post a new task"
-    echo "  list [pending|active|done|all]          — List tasks"
-    echo "  assign <id> <agent>                     — Assign task to agent"
-    echo "  claim <id> [agent]                      — Mark task as in progress"
-    echo "  done <id> [result]                      — Complete a task"
-    echo "  result <id>                             — Show task result"
-    echo "  clear                                   — Remove completed tasks"
-    echo "  sync                                    — Sync tasks with Pi nodes"
-    echo "  watch [interval]                        — Auto-sync every N seconds"
-    echo ""
-    echo "Example:"
-    echo "  br task post \"Scan for vulnerabilities\" \"\" CIPHER 8"
-    echo "  br task sync"
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR TASKS${NC}  ${DIM}Dispatch work. Track outcomes.${NC}"
+  echo -e "  ${DIM}Autonomous agents, on your command.${NC}"
+  echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  post <title>                  ${NC} Post a new task to the marketplace"
+  echo -e "  ${AMBER}  list                          ${NC} List available tasks"
+  echo -e "  ${AMBER}  claim <id>                    ${NC} Claim a task"
+  echo -e "  ${AMBER}  complete <id>                 ${NC} Mark a task complete"
+  echo -e "  ${AMBER}  status                        ${NC} Marketplace overview"
+  echo -e "  ${AMBER}  mine                          ${NC} Tasks claimed by you"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br tasks post "Deploy API to staging"${NC}"
+  echo -e "  ${DIM}  br tasks list${NC}"
+  echo -e "  ${DIM}  br tasks claim task-001${NC}"
+  echo -e "  ${DIM}  br tasks complete task-001${NC}"
+  echo -e ""
 }
 
 case "${1:-list}" in

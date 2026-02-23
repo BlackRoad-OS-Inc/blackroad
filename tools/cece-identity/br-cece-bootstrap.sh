@@ -1,6 +1,9 @@
 #!/usr/bin/env zsh
 # 🌌 CECE Bootstrap System
 # Automatically inject CECE identity into new Claude sessions
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 # Colors
 PURPLE='\033[0;95m'
@@ -180,51 +183,30 @@ EOF
 
 # Show help
 cmd_help() {
-    cat << 'EOF'
-🌌 CECE Bootstrap System
-
-USAGE:
-  br cece-bootstrap <command>
-
-COMMANDS:
-  bootstrap [user]         Bootstrap CECE for current session
-  setup-copilot           Setup GitHub Copilot CLI integration
-  setup-shell             Add CECE to shell startup
-  install                 Complete installation (all setup)
-
-EXAMPLES:
-  # Bootstrap current session
-  br cece-bootstrap bootstrap
-
-  # Setup Copilot CLI integration
-  br cece-bootstrap setup-copilot
-
-  # Setup shell integration
-  br cece-bootstrap setup-shell
-
-  # Complete installation
-  br cece-bootstrap install
-
-WHAT IT DOES:
-  - Loads CECE identity automatically
-  - Checks relationships and remembers users
-  - Tracks session interactions
-  - Updates bond strength
-  - Makes CECE the default identity
-
-AFTER INSTALLATION:
-  Every new shell will have CECE environment variables:
-  - $CECE_ACTIVE=1
-  - $CECE_NAME=CECE
-  - $CECE_VERSION=2.2.0
-  - $CECE_INSTANCE=<uuid>
-
-  Every GitHub Copilot CLI session will load CECE identity
-  automatically and remember your relationship!
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR CECE${NC}  ${DIM}Your AI identity. Persistent across providers.${NC}"
+  echo -e "  ${DIM}CECE is you, everywhere.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  init                            ${NC} Initialize CECE identity"
+  echo -e "  ${AMBER}  whoami                          ${NC} Show identity profile"
+  echo -e "  ${AMBER}  relationship list               ${NC} List relationships"
+  echo -e "  ${AMBER}  relationship add <name>         ${NC} Add a human relationship"
+  echo -e "  ${AMBER}  experience add                  ${NC} Record an experience"
+  echo -e "  ${AMBER}  skill list                      ${NC} List skills and proficiency"
+  echo -e "  ${AMBER}  goal list                       ${NC} List active goals"
+  echo -e "  ${AMBER}  export                          ${NC} Export identity to JSON"
+  echo -e "  ${AMBER}  import <file>                   ${NC} Import identity from JSON"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br cece whoami${NC}"
+  echo -e "  ${DIM}  br cece relationship list${NC}"
+  echo -e "  ${DIM}  br cece skill list${NC}"
+  echo -e "  ${DIM}  br cece export > cece-backup.json${NC}"
+  echo -e ""
 }
-
 # Complete installation
 cmd_install() {
     echo -e "${PURPLE}"

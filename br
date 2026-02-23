@@ -1184,6 +1184,95 @@ except: print('  Ollama not running')
                     ;;
             esac
             ;;
+        worlds)
+            # br worlds [list|view <id>|node <name>|stats] — view Pi-generated world artifacts
+            local subcmd="${1:-list}"; shift 2>/dev/null || true
+            local WREPO="BlackRoad-OS-Inc/blackroad-agents"
+            case $subcmd in
+                list|ls|"")
+                    local limit="${1:-15}"
+                    echo -e "${CYAN}🌌 Recent World Artifacts${NC} (${WREPO})"
+                    echo ""
+                    gh api "repos/${WREPO}/git/trees/main?recursive=1" 2>/dev/null \
+                        | python3 -c "
+import sys, json, re
+data = json.load(sys.stdin)
+paths = [f['path'] for f in data.get('tree', []) if f['path'].endswith('.md') and ('worlds/' in f['path'] or 'alice-worlds/' in f['path'])]
+worlds = []
+for p in paths:
+    m = re.match(r'([\w-]+)/((\d{8})_(\d{6})_(world|lore|code)_(.+))\.md', p)
+    if m:
+        dir_, fname, date, time, type_, slug = m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)
+        node = 'aria64' if dir_ == 'worlds' else dir_.replace('-worlds','')
+        ts = f'{date[:4]}-{date[4:6]}-{date[6:8]} {time[:2]}:{time[2:4]}'
+        icon = {'world':'🌍','lore':'📖','code':'💻'}.get(type_,'🌌')
+        title = slug.replace('-',' ').title()
+        worlds.append((ts, icon, node, title))
+worlds.sort(reverse=True)
+nc='\033[0m'; pc='\033[0;35m'; gc='\033[0;32m'
+limit=int('$limit')
+for ts,icon,node,title in worlds[:limit]:
+    c=pc if node=='aria64' else gc
+    print(f'  {icon}  {ts}  {c}@{node}{nc}  {title}')
+print(f'\n  Total: {len(worlds)} | aria64: {sum(1 for w in worlds if w[2]==\"aria64\")} | alice: {sum(1 for w in worlds if w[2]==\"alice\")}')
+"
+                    ;;
+                stats)
+                    echo -e "${CYAN}🌌 World Stats${NC}"
+                    gh api "repos/${WREPO}/git/trees/main?recursive=1" 2>/dev/null \
+                        | python3 -c "
+import sys,json,re
+data=json.load(sys.stdin)
+paths=[f['path'] for f in data.get('tree',[]) if f['path'].endswith('.md') and ('worlds/' in f['path'] or 'alice-worlds/' in f['path'])]
+by_type={};by_node={}
+for p in paths:
+    m=re.match(r'([\w-]+)/((\d{8})_(\d{6})_(world|lore|code)_(.+))\.md',p)
+    if m:
+        dir_,type_=m.group(1),m.group(5)
+        node='aria64' if dir_=='worlds' else dir_.replace('-worlds','')
+        by_type[type_]=by_type.get(type_,0)+1; by_node[node]=by_node.get(node,0)+1
+print(f'  Total: {len(paths)}')
+[print(f'  @{k}: {v}') for k,v in sorted(by_node.items())]
+[print(f'  {k}: {v}') for k,v in sorted(by_type.items())]
+"
+                    ;;
+                node)
+                    local node="${1:-aria64}"; local limit="${2:-10}"
+                    echo -e "${CYAN}🌌 Worlds from @${node}${NC}"
+                    gh api "repos/${WREPO}/git/trees/main?recursive=1" 2>/dev/null \
+                        | python3 -c "
+import sys,json,re
+data=json.load(sys.stdin)
+node='$node'; limit=int('$limit')
+worlds=[]
+for f in data.get('tree',[]):
+    p=f['path']
+    m=re.match(r'([\w-]+)/((\d{8})_(\d{6})_(world|lore|code)_(.+))\.md',p)
+    if m:
+        dir_,fname,date,time_,type_,slug=m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)
+        n='aria64' if dir_=='worlds' else dir_.replace('-worlds','')
+        if n==node:
+            ts=f'{date[:4]}-{date[4:6]}-{date[6:8]} {time_[:2]}:{time_[2:4]}'
+            icon={'world':'🌍','lore':'📖','code':'💻'}.get(type_,'🌌')
+            worlds.append((ts,icon,slug.replace('-',' ').title()))
+worlds.sort(reverse=True)
+[print(f'  {icon}  {ts}  {title}') for ts,icon,title in worlds[:limit]]
+"
+                    ;;
+                view)
+                    local id="$1"
+                    [[ -z "$id" ]] && { echo "Usage: br worlds view <world-id>"; exit 1; }
+                    local content
+                    content=$(gh api "repos/${WREPO}/contents/worlds/${id}.md" 2>/dev/null \
+                        | python3 -c "import sys,json,base64;d=json.load(sys.stdin);print(base64.b64decode(d['content']).decode())" 2>/dev/null)
+                    [[ -z "$content" ]] && content=$(gh api "repos/${WREPO}/contents/alice-worlds/${id}.md" 2>/dev/null \
+                        | python3 -c "import sys,json,base64;d=json.load(sys.stdin);print(base64.b64decode(d['content']).decode())" 2>/dev/null)
+                    [[ -z "$content" ]] && { echo "${RED}World '${id}' not found${NC}"; exit 1; }
+                    echo -e "${CYAN}🌌 ${id}${NC}\n"; echo "$content"
+                    ;;
+                *)  echo "Usage: br worlds [list|stats|node <name>|view <id>]" ;;
+            esac
+            ;;
         *)
             # Data-driven tool dispatch
             if dispatch_tool "$cmd" "$@"; then

@@ -1,12 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/backup-manager.db"
@@ -249,63 +246,17 @@ cmd_clean() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-💾 Backup Manager
-
-USAGE:
-  br backup <command> [options]
-
-BACKUP TYPES:
-  git [name]                    Backup Git repository (all branches)
-  db <type> <connection> [name] Backup database
-  files [path] [name]           Backup files/directories
-
-DATABASE TYPES:
-  postgres    PostgreSQL database
-  mysql       MySQL database
-  sqlite      SQLite database
-  mongo       MongoDB database
-
-MANAGEMENT:
-  list                          List all backups
-  restore <id> [target]         Restore a backup
-  clean [days]                  Remove old backups (default: 30 days)
-
-EXAMPLES:
-  # Backup current Git repo
-  br backup git
-
-  # Backup with custom name
-  br backup git my-project-stable
-
-  # Backup database
-  br backup db postgres "postgresql://user:pass@localhost/mydb"
-  br backup db sqlite ./database.db
-
-  # Backup files
-  br backup files .
-  br backup files ~/projects/myapp
-
-  # List backups
-  br backup list
-
-  # Restore
-  br backup restore 5
-  br backup restore 5 ~/restore-here
-
-  # Clean old backups
-  br backup clean 30
-
-BACKUP LOCATION:
-  All backups stored in: ~/.blackroad/backups/
-
-NOTES:
-  - Git backups use bundle format (portable)
-  - Database backups require respective CLI tools
-  - File backups exclude: node_modules, .git, dist, build, *.log
-  - Use restore <id> to restore from backup
-
-EOF
+    echo -e "  ${AMBER}${BOLD}◆ BR BACKUP${NC}  backup manager\n"
+    echo -e "  ${BOLD}create${NC}"
+    echo -e "  ${AMBER}br backup git [name]${NC}                    git bundle"
+    echo -e "  ${AMBER}br backup db <type> <conn> [name]${NC}       database"
+    echo -e "  ${AMBER}br backup files [path] [name]${NC}           files/dirs\n"
+    echo -e "  ${BOLD}database types:${NC}  postgres · mysql · sqlite · mongo\n"
+    echo -e "  ${BOLD}manage${NC}"
+    echo -e "  ${AMBER}br backup list${NC}                          list all"
+    echo -e "  ${AMBER}br backup restore <id> [target]${NC}         restore"
+    echo -e "  ${AMBER}br backup clean [days]${NC}                  remove old (30d)\n"
+    echo -e "  ${DIM}stored in ~/.blackroad/backups/${NC}"
 }
 
 # Main dispatch

@@ -396,29 +396,86 @@ cmd_summary() {
     echo ""
 }
 
+#──────────────────────────────────────────────────────────────────────────────
+# Standup — last 24h commits across all branches
+#──────────────────────────────────────────────────────────────────────────────
+cmd_standup() {
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+        echo -e "  ${RED}✗ Not in a git repo${NC}"; return 1
+    fi
+    local since="${1:-24 hours ago}"
+    local author; author=$(git config user.name 2>/dev/null || echo "")
+    echo -e "\n  ${AMBER}${BOLD}◆ BR GIT STANDUP${NC}  ${DIM}Last 24h — $(git rev-parse --show-toplevel 2>/dev/null | xargs basename)${NC}\n"
+
+    # All branches, last 24h
+    local commits; commits=$(git --no-pager log \
+        --all \
+        --since="$since" \
+        ${author:+--author="$author"} \
+        --format="%C(yellow)%h%Creset %C(cyan)%ar%Creset %s" \
+        2>/dev/null)
+
+    if [[ -z "$commits" ]]; then
+        echo -e "  ${DIM}No commits in the last 24 hours${NC}\n"; return 0
+    fi
+
+    echo "$commits" | while read -r line; do
+        echo "  $line"
+    done
+
+    local total; total=$(echo "$commits" | wc -l | tr -d ' ')
+    echo -e "\n  ${DIM}${total} commit(s) · since: ${since}${NC}"
+
+    # Changed files summary
+    echo -e "\n  ${BOLD}Files touched:${NC}"
+    git --no-pager log --all --since="$since" \
+        ${author:+--author="$author"} \
+        --name-only --pretty=format:"" 2>/dev/null \
+        | grep -v '^$' | sort | uniq -c | sort -rn | head -8 \
+        | while read -r count file; do
+            printf "  ${AMBER}%-3s${NC}  ${DIM}%s${NC}\n" "$count" "$file"
+        done
+    echo ""
+}
+
+#──────────────────────────────────────────────────────────────────────────────
 # Help
+#──────────────────────────────────────────────────────────────────────────────
 show_help() {
-    echo ""
-    echo -e "  ${AMBER}${BOLD}BR GIT${NC}  ${DIM}AI-powered git operations${NC}"
-    echo ""
-    echo -e "  ${BOLD}br git${NC}                ${DIM}status summary (default)${NC}"
-    echo -e "  ${BOLD}br git commit${NC}         ${DIM}AI commit message + stage + commit${NC}"
-    echo -e "  ${BOLD}br git log${NC}            ${DIM}pretty log — last 12 commits${NC}"
-    echo -e "  ${BOLD}br git branch${NC}         ${DIM}suggest and create branch name${NC}"
-    echo -e "  ${BOLD}br git review${NC}         ${DIM}pre-commit code review${NC}"
-    echo ""
+    echo -e ""
+    echo -e "  ${AMBER}${BOLD}◆ BR GIT${NC}  ${DIM}AI-powered git. Smart commits, fast reviews, daily standups.${NC}"
+    echo -e "  ${DIM}Your git workflow, supercharged. No excuses for bad commit messages.${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo -e "  ${BOLD}USAGE${NC}  br git ${DIM}<command>${NC}"
+    echo -e ""
+    echo -e "  ${BOLD}COMMANDS${NC}"
+    echo -e "  ${AMBER}  (default)         ${NC} Status summary — branch, staged, ahead/behind"
+    echo -e "  ${AMBER}  commit            ${NC} Smart commit — AI message, stages, pushes"
+    echo -e "  ${AMBER}  review            ${NC} Pre-commit code review — debug, TODOs, large diffs"
+    echo -e "  ${AMBER}  standup [period]  ${NC} Last 24h commits + files touched"
+    echo -e "  ${AMBER}  log               ${NC} Pretty log — last 12 commits"
+    echo -e "  ${AMBER}  branch            ${NC} Suggest + create branch name from staged changes"
+    echo -e "  ${AMBER}  status            ${NC} Smart status with suggestions"
+    echo -e ""
+    echo -e "  ${BOLD}EXAMPLES${NC}"
+    echo -e "  ${DIM}  br git commit${NC}"
+    echo -e "  ${DIM}  br git review${NC}"
+    echo -e "  ${DIM}  br git standup${NC}"
+    echo -e "  ${DIM}  br git standup \"48 hours ago\"${NC}"
+    echo -e ""
 }
 
 # Main dispatch
 case ${1:-summary} in
-    summary|snap|"") cmd_summary ;;
-    commit|c) smart_commit ;;
-    log|l) cmd_log ;;
-    branch|b) smart_branch ;;
-    review|r) smart_review ;;
-    status|s) smart_status ;;
-    suggest) smart_status ;;
-    help|-h|--help) show_help ;;
+    summary|snap|"")         cmd_summary ;;
+    commit|c)                smart_commit ;;
+    log|l)                   cmd_log ;;
+    branch|b)                smart_branch ;;
+    review|r)                smart_review ;;
+    status|s)                smart_status ;;
+    standup|daily|yesterday) cmd_standup "${2:-}" ;;
+    suggest)                 smart_status ;;
+    help|-h|--help)          show_help ;;
     *)
         echo -e "  ${RED}✗${NC} Unknown: $1"
         show_help; exit 1 ;;

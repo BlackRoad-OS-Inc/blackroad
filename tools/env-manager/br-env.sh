@@ -1,11 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/env-manager.db"
@@ -286,44 +284,21 @@ cmd_export() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-🔐 Environment Manager
-
-USAGE:
-  br env <command> [options]
-
-FILE COMMANDS:
-  init [file]              Create new .env file
-  list [file]              List all variables
-  edit [file]              Open file in editor
-
-VARIABLE COMMANDS:
-  get <file> <key>         Get variable value
-  set <file> <key> <val>   Set variable
-  unset <file> <key>       Remove variable
-  export [file]            Export to shell
-
-FILE OPERATIONS:
-  copy <source> <dest>     Copy env file (optionally clear secrets)
-  diff <file1> <file2>     Show differences
-  validate [file] [tmpl]   Validate against template
-
-EXAMPLES:
-  br env init
-  br env list
-  br env set .env API_KEY abc123
-  br env get .env API_KEY
-  br env copy .env .env.local
-  br env diff .env .env.example
-  br env validate .env
-  br env export .env
-
-NOTES:
-  - Secrets (PASSWORD, TOKEN, KEY, SECRET) are masked in output
-  - Default file is .env in current directory
-  - Use quotes for values with spaces
-
-EOF
+    echo -e "  ${AMBER}${BOLD}◆ BR ENV${NC}  environment manager\n"
+    echo -e "  ${BOLD}files${NC}"
+    echo -e "  ${AMBER}br env init [file]${NC}                 create .env"
+    echo -e "  ${AMBER}br env list [file]${NC}                 list vars"
+    echo -e "  ${AMBER}br env edit [file]${NC}                 open editor\n"
+    echo -e "  ${BOLD}variables${NC}"
+    echo -e "  ${AMBER}br env get <file> <key>${NC}            get value"
+    echo -e "  ${AMBER}br env set <file> <key> <val>${NC}      set var"
+    echo -e "  ${AMBER}br env unset <file> <key>${NC}          remove var"
+    echo -e "  ${AMBER}br env export [file]${NC}               export to shell\n"
+    echo -e "  ${BOLD}ops${NC}"
+    echo -e "  ${AMBER}br env copy <src> <dest>${NC}           copy file"
+    echo -e "  ${AMBER}br env diff <file1> <file2>${NC}        diff files"
+    echo -e "  ${AMBER}br env validate [file]${NC}             validate\n"
+    echo -e "  ${DIM}Secrets (TOKEN/KEY/SECRET/PASSWORD) are masked${NC}"
 }
 
 # Main dispatch

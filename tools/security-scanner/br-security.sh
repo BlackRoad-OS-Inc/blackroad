@@ -1,12 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/security-scanner.db"
@@ -246,68 +243,27 @@ cmd_report() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-🔒 Security Scanner
-
-USAGE:
-  br security <command> [options]
-
-SCANS:
-  secrets                Scan for API keys, passwords, tokens
-  dependencies           Check for vulnerable dependencies
-  code                   Scan code for security issues
-  licenses               Check package licenses
-  all                    Run all scans
-
-REPORTING:
-  report                 Show scan history
-
-EXAMPLES:
-  # Quick scans
-  br security secrets
-  br security dependencies
-  br security code
-
-  # Full scan
-  br security all
-
-  # View history
-  br security report
-
-WHAT IT CHECKS:
-  Secrets:
-    - API keys, tokens
-    - Passwords, credentials
-    - Private keys
-    - Cloud provider keys
-
-  Dependencies:
-    - Known vulnerabilities (CVEs)
-    - Outdated packages
-    - Security advisories
-
-  Code:
-    - SQL injection patterns
-    - eval() usage
-    - Hardcoded credentials
-    - Insecure random
-
-  Licenses:
-    - Package licenses
-    - License compatibility
-    - Restrictive licenses
-
-NOTES:
-  - Scans exclude node_modules, .git, dist, build
-  - Install language-specific tools for full features:
-    npm: npm audit
-    Python: safety, pip-licenses
-    Rust: cargo-audit, cargo-license
-    Go: govulncheck
-
-EOF
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR SECURITY${NC}  ${DIM}Vulnerability scanning that never sleeps.${NC}"
+  echo -e "  ${DIM}Know your risk. Patch before they find it.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  scan [path]                     ${NC} Full security scan"
+  echo -e "  ${AMBER}  secrets                         ${NC} Scan for exposed secrets"
+  echo -e "  ${AMBER}  deps                            ${NC} Dependency vulnerability check"
+  echo -e "  ${AMBER}  ports                           ${NC} Open port scan"
+  echo -e "  ${AMBER}  report                          ${NC} Security report"
+  echo -e "  ${AMBER}  watch                           ${NC} Continuous security monitoring"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br security scan .${NC}"
+  echo -e "  ${DIM}  br security secrets${NC}"
+  echo -e "  ${DIM}  br security ports${NC}"
+  echo -e "  ${DIM}  br security report${NC}"
+  echo -e ""
 }
-
 # Main dispatch
 init_db
 

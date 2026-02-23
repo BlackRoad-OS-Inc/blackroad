@@ -1,12 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/code-quality.db"
@@ -300,73 +297,14 @@ cmd_report() {
 }
 
 cmd_help() {
-    cat << 'EOF'
-✨ Code Quality Checker
-
-USAGE:
-  br quality <command> [options]
-
-COMMANDS:
-  lint [path]               Run linters on code
-  format [--check]          Format code (or check formatting)
-  complexity                Analyze code complexity
-  smell                     Detect code smells
-  score                     Calculate quality score
-  report                    Show check history
-
-EXAMPLES:
-  # Run linters
-  br quality lint
-  br quality lint src/
-
-  # Format code
-  br quality format
-  br quality format --check
-
-  # Analyze
-  br quality complexity
-  br quality smell
-  br quality score
-
-  # History
-  br quality report
-
-SUPPORTED LANGUAGES:
-  JavaScript/TypeScript: ESLint, Prettier
-  Python:                Pylint, Ruff, Black, Radon
-  Go:                    golangci-lint, gofmt, gocyclo
-  Rust:                  Clippy, rustfmt
-  Shell:                 ShellCheck
-
-WHAT IT CHECKS:
-  Linting:
-    - Code style violations
-    - Potential bugs
-    - Best practice violations
-
-  Formatting:
-    - Indentation
-    - Spacing
-    - Code organization
-
-  Complexity:
-    - Cyclomatic complexity
-    - Function length
-    - Nesting depth
-
-  Code Smells:
-    - Long functions
-    - Duplicate code
-    - Large files
-    - TODO/FIXME comments
-
-INSTALL TOOLS:
-  JavaScript: npm install -g eslint prettier
-  Python:     pip install pylint ruff black radon
-  Go:         go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-  Rust:       rustup component add clippy rustfmt
-
-EOF
+    echo -e "  ${AMBER}${BOLD}◆ BR QUALITY${NC}  code quality checker\n"
+    echo -e "  ${AMBER}br quality lint [path]${NC}      run linters"
+    echo -e "  ${AMBER}br quality format [--check]${NC} format code"
+    echo -e "  ${AMBER}br quality complexity${NC}       analyze complexity"
+    echo -e "  ${AMBER}br quality smell${NC}             detect code smells"
+    echo -e "  ${AMBER}br quality score${NC}             quality score"
+    echo -e "  ${AMBER}br quality report${NC}            check history\n"
+    echo -e "  ${DIM}JS: eslint prettier  ·  Python: pylint ruff black  ·  Go: golangci-lint${NC}"
 }
 
 # Main dispatch

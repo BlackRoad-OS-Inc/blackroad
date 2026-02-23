@@ -1,7 +1,9 @@
 #!/usr/bin/env zsh
 # BR Vercel - Vercel deployment manager
 
-GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BLUE='\033[0;34m'; NC='\033[0m'
+AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
+GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 VERCEL_CMD=$(which vercel 2>/dev/null || which vc 2>/dev/null)
 
@@ -13,20 +15,17 @@ check_vercel() {
 }
 
 show_help() {
-    echo "${CYAN}╔══════════════════════════════════════════════════════╗${NC}"
-    echo "${CYAN}║  ▲ BR Vercel - Deployment Manager                    ║${NC}"
-    echo "${CYAN}╠══════════════════════════════════════════════════════╣${NC}"
-    echo "${CYAN}║${NC}  br vercel deploy        - Deploy to preview          ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br vercel prod          - Deploy to production        ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br vercel list          - List deployments            ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br vercel logs [url]    - Tail deployment logs        ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br vercel domains       - List domains                ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br vercel env           - List env variables          ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br vercel env set K V   - Set env variable            ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br vercel projects      - List all projects           ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br vercel open          - Open latest deployment      ${CYAN}║${NC}"
-    echo "${CYAN}║${NC}  br vercel status        - Deployment status           ${CYAN}║${NC}"
-    echo "${CYAN}╚══════════════════════════════════════════════════════╝${NC}"
+    echo -e "  ${AMBER}${BOLD}◆ BR VERCEL${NC}  deployment manager\n"
+    echo -e "  ${AMBER}br vercel deploy${NC}         preview deploy"
+    echo -e "  ${AMBER}br vercel prod${NC}            production deploy"
+    echo -e "  ${AMBER}br vercel list${NC}            list deployments"
+    echo -e "  ${AMBER}br vercel logs [url]${NC}      tail logs"
+    echo -e "  ${AMBER}br vercel domains${NC}         list domains"
+    echo -e "  ${AMBER}br vercel env${NC}             list env vars"
+    echo -e "  ${AMBER}br vercel env set K V${NC}     set env var"
+    echo -e "  ${AMBER}br vercel projects${NC}        list projects"
+    echo -e "  ${AMBER}br vercel open${NC}            open latest"
+    echo -e "  ${AMBER}br vercel status${NC}          deployment status"
 }
 
 cmd_deploy() {
