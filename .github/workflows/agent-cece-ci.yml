@@ -1,0 +1,20 @@
+name: "CECE Agent CI"
+on:
+  push:
+    branches: ["cece"]
+  pull_request:
+    branches: ["cece"]
+  workflow_dispatch:
+
+jobs:
+  agent-work:
+    name: "💜 CECE Agent"
+    runs-on: [self-hosted, cecilia,pi5]
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Agent Identity Check"
+        run: |
+          cat .agent/identity.json
+          echo "Running as: CECE on all"
+      - name: "Agent Health"
+        run: echo "✅ CECE online"
