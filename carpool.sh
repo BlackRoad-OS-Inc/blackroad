@@ -6376,6 +6376,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "caching" ]]; then
+  SYSTEM="${2:-our backend}"
+  CACHE_DIR="$HOME/.blackroad/carpool/caching"
+  mkdir -p "$CACHE_DIR"
+  CACHE_FILE="$CACHE_DIR/cache-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m⚡ CarPool — Caching strategy for: $SYSTEM\033[0m"
+  echo "# Caching Strategy: $SYSTEM" > "$CACHE_FILE"
+  echo "Generated: $(date)" >> "$CACHE_FILE"
+  PY_CACHE='
+import sys, json, urllib.request
+system = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","Design the caching layers for $SYSTEM: browser, CDN, API gateway, app-level, and DB query cache. What belongs at each layer and why?"),
+  ("PRISM","Analyst","What are the top 5 cache candidates in $SYSTEM ranked by read frequency and compute cost? What TTL makes sense for each?"),
+  ("ALICE","Engineer","Write the cache invalidation strategy for $SYSTEM. How do we handle stale data on writes, deploys, and config changes?"),
+  ("SHELLFISH","Chaos","What are the top 3 cache failure scenarios for $SYSTEM: stampede, poisoning, cold start? How do we defend against each?"),
+  ("CIPHER","Security","What security risks come with caching in $SYSTEM? User data leakage across tenants, cached auth tokens, sensitive data in CDN edge nodes?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SYSTEM', system)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_CACHE" "$SYSTEM" | tee -a "$CACHE_FILE"
+  echo -e "\033[0;32m✓ Saved to $CACHE_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "analytics" ]]; then
+  PRODUCT="${2:-our product}"
+  AN_DIR="$HOME/.blackroad/carpool/analytics"
+  mkdir -p "$AN_DIR"
+  AN_FILE="$AN_DIR/analytics-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📊 CarPool — Analytics plan for: $PRODUCT\033[0m"
+  echo "# Analytics Plan: $PRODUCT" > "$AN_FILE"
+  echo "Generated: $(date)" >> "$AN_FILE"
+  PY_AN='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("PRISM","Data analyst","Design the event tracking taxonomy for $PRODUCT. List the 10 most critical user events, their properties, and naming conventions."),
+  ("ALICE","PM","What are the 5 north star and supporting metrics for $PRODUCT? Write the formula and data source for each."),
+  ("OCTAVIA","Engineer","What is the analytics pipeline architecture for $PRODUCT: SDK, event bus, warehouse, and BI layer? Recommend tools for each stage."),
+  ("ARIA","UX","What funnel analysis and session recording setup would reveal the most about how users experience $PRODUCT?"),
+  ("CIPHER","Privacy","What GDPR and privacy-by-design requirements apply to $PRODUCT analytics? What must be anonymized, consented, or excluded entirely?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_AN" "$PRODUCT" | tee -a "$AN_FILE"
+  echo -e "\033[0;32m✓ Saved to $AN_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "team-structure" ]]; then
+  ORG="${2:-our engineering org}"
+  TS_DIR="$HOME/.blackroad/carpool/team-structures"
+  mkdir -p "$TS_DIR"
+  TS_FILE="$TS_DIR/team-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🏗️  CarPool — Team structure for: $ORG\033[0m"
+  echo "# Team Structure: $ORG" > "$TS_FILE"
+  echo "Generated: $(date)" >> "$TS_FILE"
+  PY_TS='
+import sys, json, urllib.request
+org = sys.argv[1]
+agents = [
+  ("LUCIDIA","Org designer","What team topology best fits $ORG: stream-aligned, platform, enabling, or complicated-subsystem teams? Map out the structure."),
+  ("ALICE","PM","How should $ORG split product ownership? Where are the natural seams — by domain, by customer segment, or by platform layer?"),
+  ("PRISM","Analyst","What are the cognitive load and coordination cost signals that tell us $ORG team structure needs to change? List 5 red flags."),
+  ("ARIA","Culture","How do we maintain connection, shared culture, and knowledge transfer across $ORG as it grows and splits into focused teams?"),
+  ("OCTAVIA","Engineering","What shared platform or enabling team capabilities does $ORG need to prevent each product team from rebuilding the same infra?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'ORG', org)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_TS" "$ORG" | tee -a "$TS_FILE"
+  echo -e "\033[0;32m✓ Saved to $TS_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "demo" ]]; then
+  FEATURE="${2:-our product}"
+  DEMO_DIR="$HOME/.blackroad/carpool/demos"
+  mkdir -p "$DEMO_DIR"
+  DEMO_FILE="$DEMO_DIR/demo-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🎬 CarPool — Demo script for: $FEATURE\033[0m"
+  echo "# Demo Script: $FEATURE" > "$DEMO_FILE"
+  echo "Generated: $(date)" >> "$DEMO_FILE"
+  PY_DEMO='
+import sys, json, urllib.request
+feature = sys.argv[1]
+agents = [
+  ("ARIA","Storyteller","Write a 5-minute demo narrative arc for $FEATURE. Open with the pain, build to the aha moment, close with the vision. Include exact words to say."),
+  ("ALICE","PM","What is the tightest possible demo flow for $FEATURE — minimum clicks, maximum impact? List the 5 must-show moments in order."),
+  ("LUCIDIA","Director","What emotional journey should the audience feel during the $FEATURE demo? Map: curious → skeptical → impressed → excited → ready to buy."),
+  ("PRISM","Analyst","What objections will the audience raise during the $FEATURE demo and what is the 1-sentence response to each?"),
+  ("SHELLFISH","Risk","What are the top 3 demo failure modes for $FEATURE: live bug, slow load, awkward question? Prepare fallback scripts for each.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'FEATURE', feature)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_DEMO" "$FEATURE" | tee -a "$DEMO_FILE"
+  echo -e "\033[0;32m✓ Saved to $DEMO_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
