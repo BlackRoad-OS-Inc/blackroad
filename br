@@ -367,6 +367,16 @@ show_help() {
     echo "║    br vercel env            - Manage environment variables        ║"
     echo "║    br vercel domains        - List domains                        ║"
     echo "║                                                                   ║"
+    echo "║  HARDWARE FLEET (🖥️ Nodes):                                      ║"
+    echo "║    br nodes scan            - Discover all fleet nodes + devices    ║"
+    echo "║    br nodes status          - Quick health table                    ║"
+    echo "║    br nodes show <name>     - Detail view (IP, OS, Ollama, devices) ║"
+    echo "║    br nodes devices         - USB/serial/video across all nodes     ║"
+    echo "║    br nodes topology        - ASCII network topology diagram        ║"
+    echo "║    br nodes ssh <name>      - SSH into node by alias                ║"
+    echo "║    br nodes fix             - Apply fleet fixes (hostname, WAL etc) ║"
+    echo "║    br nodes ping            - Quick ping all known nodes            ║"
+    echo "║                                                                   ║"
     echo "║  8-BIT WORLD (🌍 Adventure):                                     ║"
     echo "║    br world generate <name> - Create an 8-bit ASCII world        ║"
     echo "║    br world explore <name>  - Explore & collect treasures 💎    ║"
@@ -697,6 +707,11 @@ main() {
             local fleet_cmd="${1:-once}"
             shift 2>/dev/null || true
             zsh "${BR_TOOLS_DIR}/agent-runtime/br-fleet.sh" "$fleet_cmd" "$@"
+            ;;
+        nodes|hardware)
+            # br nodes — fleet discovery, device inventory, topology
+            shift 2>/dev/null || true
+            zsh "${BR_TOOLS_DIR}/nodes/br-nodes.sh" "$@"
             ;;
         stream|events)
             # br stream — live SSE event feed from gateway
