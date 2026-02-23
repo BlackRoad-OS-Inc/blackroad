@@ -4995,6 +4995,138 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── OBSERVABILITY — logging, metrics, tracing plan ────────────────────
+if [[ "$1" == "observability" || "$1" == "observe" ]]; then
+  shift
+  SERVICE="$*"
+  [[ -z "$SERVICE" ]] && echo "Usage: br carpool observability <service or system>" && exit 1
+  echo ""
+  echo -e "\033[1;36m🔭 OBSERVABILITY PLAN: $SERVICE\033[0m"
+  echo ""
+  OB_FILE="$HOME/.blackroad/carpool/observability/$(echo "$SERVICE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/observability"
+  printf "# Observability: %s\nDate: %s\n\n" "$SERVICE" "$(date '+%Y-%m-%d')" > "$OB_FILE"
+  for entry in "PRISM|METRICS|The 5 golden metrics to track. For each: name, unit, how to compute, alert threshold. USE method where applicable." "OCTAVIA|LOGGING STRATEGY|What to log at DEBUG/INFO/WARN/ERROR. Structured log fields. What never to log (secrets, PII)." "ALICE|TRACING|Which operations to instrument with spans. Trace propagation across services. Sampling strategy." "CIPHER|ALERTING RULES|PagerDuty-style alert conditions. Severity levels. Runbook link per alert. On-call escalation path." "LUCIDIA|DASHBOARDS|The 3 dashboards to build: operations (live), debugging (deep-dive), business (trends). Key panels for each."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing observability for: \"${SERVICE}\"
+Section: ${section}
+${lens}
+Real metric names, real log fields, real tool names (Prometheus/Grafana/Datadog/OTel).
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$OB_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $OB_FILE\033[0m"
+  exit 0
+fi
+
+# ── ACCESSIBILITY — a11y audit + remediation plan ─────────────────────
+if [[ "$1" == "accessibility" || "$1" == "a11y" ]]; then
+  shift
+  FEATURE="$*"
+  [[ -z "$FEATURE" ]] && echo "Usage: br carpool accessibility <feature or component>" && exit 1
+  echo ""
+  echo -e "\033[1;35m♿ ACCESSIBILITY AUDIT: $FEATURE\033[0m"
+  echo ""
+  A11_FILE="$HOME/.blackroad/carpool/accessibility/$(echo "$FEATURE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/accessibility"
+  printf "# Accessibility: %s\nDate: %s\n\n" "$FEATURE" "$(date '+%Y-%m-%d')" > "$A11_FILE"
+  for entry in "ARIA|WCAG CHECKLIST|The WCAG 2.2 criteria most likely to fail for this feature. Level A first, then AA. Real criterion numbers." "ALICE|KEYBOARD NAVIGATION|Full keyboard path through this feature. Focus order, trapped focus, skip links, visible focus indicator." "LUCIDIA|SCREEN READER EXPERIENCE|What VoiceOver/NVDA announces at each step. Missing labels, confusing announcements, live region needs." "OCTAVIA|CODE FIXES|Specific HTML/ARIA attributes to add or change. Before/after code snippets for the top 3 issues." "PRISM|TESTING APPROACH|Tools (axe, Lighthouse, NVDA, VoiceOver) + manual test scenarios + acceptance criteria for each fix."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} auditing accessibility for: \"${FEATURE}\"
+Section: ${section}
+${lens}
+Specific and actionable. Real WCAG criteria, real ARIA attributes, real tool names.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$A11_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $A11_FILE\033[0m"
+  exit 0
+fi
+
+# ── CAPACITY — capacity planning for a service ────────────────────────
+if [[ "$1" == "capacity" ]]; then
+  shift
+  SERVICE="$*"
+  [[ -z "$SERVICE" ]] && echo "Usage: br carpool capacity <service>" && exit 1
+  echo ""
+  echo -e "\033[1;33m📦 CAPACITY PLAN: $SERVICE\033[0m"
+  echo ""
+  CAP_FILE="$HOME/.blackroad/carpool/capacity/$(echo "$SERVICE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/capacity"
+  printf "# Capacity Plan: %s\nDate: %s\n\n" "$SERVICE" "$(date '+%Y-%m-%d')" > "$CAP_FILE"
+  for entry in "PRISM|CURRENT BASELINE|What to measure today: RPS, p99 latency, CPU%, memory%, DB connections. Establish the numbers before projecting." "OCTAVIA|SCALING MODEL|How this service scales. Vertical ceiling, horizontal triggers, stateless vs stateful constraints." "ALICE|GROWTH PROJECTIONS|3x, 10x, 100x traffic: what breaks first and at which multiplier. The honest conversation." "CIPHER|SINGLE POINTS OF FAILURE|Every component that has no redundancy. What a failure looks like. Priority order to fix." "LUCIDIA|ARCHITECTURE CHANGES NEEDED|What must change architecturally to reach 10x without a full rewrite. The minimum viable scaling investments."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} planning capacity for: \"${SERVICE}\"
+Section: ${section}
+${lens}
+Real numbers, real infrastructure terms, real failure modes.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$CAP_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $CAP_FILE\033[0m"
+  exit 0
+fi
+
+# ── MIGRATION — plan a tech migration ────────────────────────────────
+if [[ "$1" == "migration" || "$1" == "migrate" ]]; then
+  shift
+  PLAN="$*"
+  [[ -z "$PLAN" ]] && echo "Usage: br carpool migration <from X to Y, e.g. 'REST to GraphQL'>" && exit 1
+  echo ""
+  echo -e "\033[1;34m🚚 MIGRATION PLAN: $PLAN\033[0m"
+  echo ""
+  MIG_FILE="$HOME/.blackroad/carpool/migrations/$(echo "$PLAN" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/migrations"
+  printf "# Migration: %s\nDate: %s\n\n" "$PLAN" "$(date '+%Y-%m-%d')" > "$MIG_FILE"
+  for entry in "LUCIDIA|WHY & WHEN|The real reason to migrate (not the marketing reason). When is it worth it vs when to stay put." "ALICE|MIGRATION PHASES|Phase 0 (prep) → Phase 1 (parallel run) → Phase 2 (cutover) → Phase 3 (cleanup). Milestones per phase." "OCTAVIA|TECHNICAL STEPS|The concrete engineering work per phase. Scripts to write, configs to change, tests to add." "CIPHER|ROLLBACK PLAN|Exactly how to undo this if it goes wrong. Feature flag? Blue/green? Data migration reversal?" "PRISM|SUCCESS CRITERIA|How we know the migration worked. Before/after metrics. The moment we can delete the old code."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} planning a migration: \"${PLAN}\"
+Section: ${section}
+${lens}
+Honest and specific. Real migration patterns, real tooling, real risks.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$MIG_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $MIG_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1

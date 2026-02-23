@@ -1,0 +1,79 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --amber:   #F5A623;
+  --pink:    #FF1D6C;
+  --violet:  #9C27B0;
+  --blue:    #2979FF;
+  --green:   #4ade80;
+  --red:     #f43f5e;
+  --bg:      #000;
+  --surface: #0a0a0a;
+  --surface2:#111;
+  --border:  #1c1c1c;
+  --text:    #fff;
+  --muted:   #555;
+  --grad: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  --radius: 10px;
+}
+
+html, body, #root { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Utilities */
+.grad-text {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.muted { color: var(--muted); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.badge.online  { background: rgba(74,222,128,.12); color: var(--green); }
+.badge.standby { background: rgba(245,166,35,.12);  color: var(--amber); }
+.badge.offline { background: rgba(244,63,94,.12);   color: var(--red);   }
+.badge.success { background: rgba(74,222,128,.12);  color: var(--green); }
+.badge.failure { background: rgba(244,63,94,.12);   color: var(--red);   }
+.badge.in_progress { background: rgba(41,121,255,.12); color: var(--blue); }
+.badge.queued  { background: rgba(85,85,85,.2);     color: var(--muted); }
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: var(--font);
+}
+
+input, textarea {
+  font-family: var(--font);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 10px 14px;
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus, textarea:focus { border-color: var(--amber); }
