@@ -6516,6 +6516,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "rate-limiting" ]]; then
+  API="${2:-our API}"
+  RL_DIR="$HOME/.blackroad/carpool/rate-limiting"
+  mkdir -p "$RL_DIR"
+  RL_FILE="$RL_DIR/ratelimit-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🚦 CarPool — Rate limiting strategy: $API\033[0m"
+  echo "# Rate Limiting: $API" > "$RL_FILE"
+  echo "Generated: $(date)" >> "$RL_FILE"
+  PY_RL='
+import sys, json, urllib.request
+api = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","Design the rate limiting tiers for $API: by IP, by API key, by user, by plan. What algorithm — token bucket, sliding window, fixed counter?"),
+  ("ALICE","PM","What rate limits should free vs pro vs enterprise plans have for $API? Write the limits table with burst allowances and daily caps."),
+  ("CIPHER","Security","What attack patterns does rate limiting on $API need to stop: credential stuffing, scraping, DDoS, enumeration? How does each require different rules?"),
+  ("PRISM","Analyst","How do we detect when rate limit thresholds are wrong for $API? What signals show limits are too tight or too loose?"),
+  ("ARIA","UX","How should $API communicate rate limit errors to developers? Write the ideal 429 error response body, headers, and documentation language.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'API', api)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_RL" "$API" | tee -a "$RL_FILE"
+  echo -e "\033[0;32m✓ Saved to $RL_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "email" ]]; then
+  CAMPAIGN="${2:-our launch campaign}"
+  EM_DIR="$HOME/.blackroad/carpool/emails"
+  mkdir -p "$EM_DIR"
+  EM_FILE="$EM_DIR/email-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m✉️  CarPool — Email campaign: $CAMPAIGN\033[0m"
+  echo "# Email Campaign: $CAMPAIGN" > "$EM_FILE"
+  echo "Generated: $(date)" >> "$EM_FILE"
+  PY_EM='
+import sys, json, urllib.request
+campaign = sys.argv[1]
+agents = [
+  ("ARIA","Copywriter","Write 3 subject line options for $CAMPAIGN (one curiosity, one urgency, one benefit-led). Include preview text for each."),
+  ("LUCIDIA","Storyteller","Write the body copy for the hero email in $CAMPAIGN. Open with a story, build tension, resolve with the offer. Under 200 words."),
+  ("ALICE","PM","Design the full drip sequence for $CAMPAIGN: how many emails, cadence (days between), goal of each email, and when to stop sending."),
+  ("PRISM","Analyst","What are the key metrics for $CAMPAIGN and what benchmarks should we hit? Open rate, CTR, conversion, unsubscribe — what is good vs bad?"),
+  ("CIPHER","Compliance","What CAN-SPAM, GDPR, and deliverability requirements apply to $CAMPAIGN? Checklist of must-haves before sending.")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'CAMPAIGN', campaign)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_EM" "$CAMPAIGN" | tee -a "$EM_FILE"
+  echo -e "\033[0;32m✓ Saved to $EM_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "search" ]]; then
+  SYSTEM="${2:-our app}"
+  SR_DIR="$HOME/.blackroad/carpool/search"
+  mkdir -p "$SR_DIR"
+  SR_FILE="$SR_DIR/search-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🔍 CarPool — Search architecture for: $SYSTEM\033[0m"
+  echo "# Search Architecture: $SYSTEM" > "$SR_FILE"
+  echo "Generated: $(date)" >> "$SR_FILE"
+  PY_SR='
+import sys, json, urllib.request
+system = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","What search stack fits $SYSTEM: Elasticsearch, Typesense, Meilisearch, Postgres FTS, or vector search? Compare tradeoffs for our scale."),
+  ("PRISM","Analyst","What are the top 10 search queries users will run in $SYSTEM? How do these shape index design, ranking, and facets?"),
+  ("ALICE","PM","What search UX features must $SYSTEM have at launch vs later: autocomplete, typo tolerance, filters, synonyms, personalization?"),
+  ("ARIA","UX","Design the search experience for $SYSTEM: empty state, no-results state, loading state, result card anatomy, and query highlighting."),
+  ("SHELLFISH","Performance","What are the query performance and index size risks as $SYSTEM search scales to 10M documents? How do we stay under 100ms p99?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SYSTEM', system)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_SR" "$SYSTEM" | tee -a "$SR_FILE"
+  echo -e "\033[0;32m✓ Saved to $SR_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "devex" ]]; then
+  TOOL="${2:-our developer tools}"
+  DX_DIR="$HOME/.blackroad/carpool/devex"
+  mkdir -p "$DX_DIR"
+  DX_FILE="$DX_DIR/devex-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🛠️  CarPool — Developer experience review: $TOOL\033[0m"
+  echo "# Developer Experience: $TOOL" > "$DX_FILE"
+  echo "Generated: $(date)" >> "$DX_FILE"
+  PY_DX='
+import sys, json, urllib.request
+tool = sys.argv[1]
+agents = [
+  ("ARIA","DX designer","Audit the developer experience of $TOOL. What are the top 5 friction points from first install to first successful use?"),
+  ("ALICE","PM","What does a great day-1 experience look like for $TOOL? Map the ideal path: discover, install, hello world, first real use — with time targets for each."),
+  ("OCTAVIA","Engineer","What local dev setup improvements would make $TOOL faster to work with: hot reload, better error messages, local mocking, faster builds?"),
+  ("LUCIDIA","Educator","What learning curve does $TOOL create for new developers? Where do people get stuck and what docs, examples, or interactive guides would help most?"),
+  ("PRISM","Analyst","How do we measure DX quality for $TOOL? What metrics — time-to-hello-world, docs search success rate, GitHub issue sentiment — tell us if we are improving?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'TOOL', tool)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_DX" "$TOOL" | tee -a "$DX_FILE"
+  echo -e "\033[0;32m✓ Saved to $DX_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
