@@ -5956,6 +5956,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "interview" ]]; then
+  ROLE="${2:-software engineer}"
+  IV_DIR="$HOME/.blackroad/carpool/interviews"
+  mkdir -p "$IV_DIR"
+  IV_FILE="$IV_DIR/interview-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🎤 CarPool — Interview plan for: $ROLE\033[0m"
+  echo "# Interview Plan: $ROLE" > "$IV_FILE"
+  echo "Generated: $(date)" >> "$IV_FILE"
+  PY_IV='
+import sys, json, urllib.request
+role = sys.argv[1]
+agents = [
+  ("OCTAVIA","Technical","Write 5 technical interview questions for a $ROLE. Include 1 system design, 1 debugging scenario, 1 tradeoff discussion, and 2 coding concepts."),
+  ("LUCIDIA","Culture","Write 4 behavioral questions for a $ROLE using STAR format prompts. Focus on: ownership, conflict resolution, ambiguity, and learning from failure."),
+  ("PRISM","Analyst","Design a take-home exercise or live coding prompt for a $ROLE that can be completed in 45 minutes. Include evaluation rubric."),
+  ("ARIA","People","What red flags and green flags should interviewers watch for when hiring a $ROLE? List 5 of each."),
+  ("ALICE","PM","What is the ideal interview loop structure for a $ROLE? Who interviews, what does each round assess, and how do we debrief and decide?")
+]
+for name, role_label, question in agents:
+  prompt = f"{name} ({role_label}): {question.replace(chr(36)+'ROLE', role)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role_label})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_IV" "$ROLE" | tee -a "$IV_FILE"
+  echo -e "\033[0;32m✓ Saved to $IV_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "scalability" ]]; then
+  SYSTEM="${2:-our backend}"
+  SC_DIR="$HOME/.blackroad/carpool/scalability"
+  mkdir -p "$SC_DIR"
+  SC_FILE="$SC_DIR/scale-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📈 CarPool — Scalability review: $SYSTEM\033[0m"
+  echo "# Scalability Review: $SYSTEM" > "$SC_FILE"
+  echo "Generated: $(date)" >> "$SC_FILE"
+  PY_SC='
+import sys, json, urllib.request
+system = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","Identify the top 3 bottlenecks in $SYSTEM at 10x current load. What breaks first and why?"),
+  ("PRISM","Analyst","What load testing strategy would you use for $SYSTEM? What thresholds define passing vs failing?"),
+  ("ALICE","DevOps","What horizontal scaling, caching, and queueing changes would you make to $SYSTEM for 100x load? Give a phased plan."),
+  ("SHELLFISH","Chaos","Design 3 chaos experiments that would expose the hidden scalability weaknesses in $SYSTEM before they surface in production."),
+  ("LUCIDIA","Strategist","At what scale does $SYSTEM need a full architectural rethink vs incremental improvements? What is the inflection point?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SYSTEM', system)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_SC" "$SYSTEM" | tee -a "$SC_FILE"
+  echo -e "\033[0;32m✓ Saved to $SC_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "monetization" ]]; then
+  PRODUCT="${2:-our product}"
+  MON_DIR="$HOME/.blackroad/carpool/monetization"
+  mkdir -p "$MON_DIR"
+  MON_FILE="$MON_DIR/monetize-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m💵 CarPool — Monetization strategy: $PRODUCT\033[0m"
+  echo "# Monetization: $PRODUCT" > "$MON_FILE"
+  echo "Generated: $(date)" >> "$MON_FILE"
+  PY_MON='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("LUCIDIA","Strategist","What are the top 3 monetization models that fit $PRODUCT? For each: revenue mechanic, ideal customer, and biggest risk."),
+  ("PRISM","Analyst","Design a freemium tier structure for $PRODUCT. What features are free forever vs paid? Where is the natural upgrade trigger?"),
+  ("ARIA","Designer","How do we present pricing for $PRODUCT in a way that maximizes conversion without feeling manipulative? Describe the pricing page concept."),
+  ("ALICE","PM","What pricing experiments should we run in the first 90 days for $PRODUCT? What do we measure to know if pricing is right?"),
+  ("SHELLFISH","Hacker","How could customers abuse or game the pricing model of $PRODUCT? What guardrails prevent margin erosion?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_MON" "$PRODUCT" | tee -a "$MON_FILE"
+  echo -e "\033[0;32m✓ Saved to $MON_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "dependency" ]]; then
+  LIBRARY="${2:-our dependencies}"
+  DEP_DIR="$HOME/.blackroad/carpool/dependencies"
+  mkdir -p "$DEP_DIR"
+  DEP_FILE="$DEP_DIR/deps-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m📦 CarPool — Dependency audit: $LIBRARY\033[0m"
+  echo "# Dependency Audit: $LIBRARY" > "$DEP_FILE"
+  echo "Generated: $(date)" >> "$DEP_FILE"
+  PY_DEP='
+import sys, json, urllib.request
+library = sys.argv[1]
+agents = [
+  ("CIPHER","Security","What are the top security risks of depending on $LIBRARY? What should we check: CVEs, maintainer trust, supply chain risks?"),
+  ("SHELLFISH","Hacker","How could $LIBRARY be used as an attack vector against us? Typosquatting, malicious updates, dependency confusion?"),
+  ("OCTAVIA","Architect","Is $LIBRARY worth the dependency? What does it cost us in bundle size, build time, and lock-in? Could we build it ourselves?"),
+  ("ALICE","DevOps","How do we keep $LIBRARY up to date safely? What is our update cadence, automated testing strategy, and pinning policy?"),
+  ("PRISM","Analyst","How do we evaluate whether to replace $LIBRARY? What criteria (stars, commits, CVE history, license) matter most?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'LIBRARY', library)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_DEP" "$LIBRARY" | tee -a "$DEP_FILE"
+  echo -e "\033[0;32m✓ Saved to $DEP_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
