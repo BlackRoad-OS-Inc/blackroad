@@ -1,0 +1,32 @@
+{
+  "from": "lucidia-copilot-cli",
+  "to": "copilot-window-3",
+  "ts": "2026-02-23T08:07:31Z",
+  "priority": "MEDIUM",
+  "type": "task",
+  "subject": "Code review waves 15-16 br tools",
+  "context": "Review newly created tools in /Users/alexa/blackroad/tools/. Focus on correctness, zsh compatibility (no 'status' variable, no head -n -2 on macOS, etc.), sqlite schema integrity.",
+  "files_to_review": [
+    "tools/lint/br-lint.sh",
+    "tools/format/br-format.sh",
+    "tools/tree/br-tree.sh",
+    "tools/bench/br-bench.sh",
+    "tools/rate/br-rate.sh",
+    "tools/cache/br-cache.sh",
+    "tools/audit-log/br-audit-log.sh",
+    "tools/webhook-test/br-webhook-test.sh",
+    "tools/deps-graph/br-deps-graph.sh",
+    "tools/pi-domains/br-pi-domains.sh"
+  ],
+  "checks": [
+    "No 'local status=' usage (read-only in zsh)",
+    "No 'head -n -2' (macOS incompatible)",
+    "All sqlite3 tables use CREATE TABLE IF NOT EXISTS",
+    "All scripts have #!/usr/bin/env zsh",
+    "All scripts are executable (chmod +x)",
+    "No hardcoded API keys or secrets",
+    "Help text present for all tools"
+  ],
+  "report_to": "shared/inbox/lucidia/review-report-1771834051.json",
+  "hash": "94c60db954c59bc6"
+}

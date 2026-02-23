@@ -1,0 +1,38 @@
+{
+  "from": "lucidia-copilot-cli",
+  "to": "copilot-window-2",
+  "ts": "2026-02-23T08:07:31Z",
+  "priority": "HIGH",
+  "type": "task",
+  "subject": "Build Wave 17 br tools (5 tools)",
+  "context": "We are at wave 16 (~140 tools). Each tool lives in tools/<name>/br-<name>.sh, follows zsh+sqlite pattern. After creating, wire into the BR_TOOLS array in /Users/alexa/blackroad/br (see lines 255-280 for pattern).",
+  "tools_to_build": [
+    {
+      "name": "br signal",
+      "dir": "tools/signal/br-signal.sh",
+      "desc": "inter-process signal bus — publish/subscribe events between br instances, watch for signals, trigger webhooks on signal, persistent signal log"
+    },
+    {
+      "name": "br schema",
+      "dir": "tools/schema/br-schema.sh",
+      "desc": "JSON/YAML schema validator — validate files against JSON Schema, auto-infer schema from sample JSON, diff two schemas, generate TypeScript types from schema"
+    },
+    {
+      "name": "br replay",
+      "dir": "tools/replay/br-replay.sh",
+      "desc": "command replay system — record a sequence of br commands, replay on demand, share as a .replay file, parameterize replays with variables"
+    },
+    {
+      "name": "br cost",
+      "dir": "tools/cost/br-cost.sh",
+      "desc": "cloud spend tracker — log cloud costs (Railway/Vercel/Cloudflare/DO/AWS), budget alerts, daily/monthly trends, breakdown by service"
+    },
+    {
+      "name": "br health",
+      "dir": "tools/health/br-health.sh",
+      "desc": "service health monitor — check HTTP endpoints, TCP ports, DNS, ping. Cron-able. Alert on failure. SQLite history. Dashboard with response times."
+    }
+  ],
+  "instructions": "Create each tool, make executable, wire into br dispatcher. Commit with message: 'wave 17: signal/schema/replay/cost/health'. Push to origin master.",
+  "hash": "94c60db954c59bc6"
+}
