@@ -1,78 +1,91 @@
 #!/bin/bash
-# Sync shared files across all 17 BlackRoad GitHub orgs
-# Creates .github repo in each org with shared workflow templates
+# BlackRoad Org Cohesion — propagates shared standards to all orgs
+# Runs on self-hosted runner. Cost: $0.
+set -euo pipefail
+GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
+log()  { echo -e "${GREEN}✅${NC} $1"; }
+info() { echo -e "${CYAN}→${NC} $1"; }
+warn() { echo -e "${YELLOW}⚠️${NC} $1"; }
 
-set -e
-GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; NC='\033[0m'
-
+GH_TOKEN="${GH_TOKEN:-$(gh auth token 2>/dev/null)}"
 ORGS=(
   "BlackRoad-OS-Inc"
   "BlackRoad-OS"
-  "blackboxprogramming"
   "BlackRoad-AI"
   "BlackRoad-Cloud"
   "BlackRoad-Security"
-  "BlackRoad-Media"
-  "BlackRoad-Foundation"
-  "BlackRoad-Interactive"
-  "BlackRoad-Hardware"
-  "BlackRoad-Labs"
-  "BlackRoad-Studio"
-  "BlackRoad-Ventures"
-  "BlackRoad-Education"
-  "BlackRoad-Gov"
-  "Blackbox-Enterprises"
-  "BlackRoad-Archive"
 )
+TARGET_ORG="${1:-BlackRoad-OS-Inc}"
+MAX_REPOS="${2:-10}"
 
-SHARED_WORKFLOW=$(cat << 'WF'
-name: 🤖 BlackRoad Shared CI
-on:
-  push:
-    branches: [main, dev]
-  pull_request:
+# Files to propagate to every repo
+SHARED_WORKFLOW='name: 🤖 BlackRoad Agent CI
+on: [push, pull_request]
 jobs:
-  shared-checks:
-    runs-on: [self-hosted, pi]
+  health:
+    runs-on: [self-hosted, blackroad-fleet]
+    if: github.repository_owner == '"'"'BlackRoad-OS-Inc'"'"' || github.repository_owner == '"'"'BlackRoad-OS'"'"'
     steps:
       - uses: actions/checkout@v4
-      - name: Load agent identity
-        run: |
-          BRANCH="${GITHUB_REF_NAME}"
-          curl -sf "https://raw.githubusercontent.com/BlackRoad-OS/blackroad/main/.agents/${BRANCH}.json" \
-            -o .agent-identity.json 2>/dev/null || echo '{"agent":"BLACKROAD"}' > .agent-identity.json
-          cat .agent-identity.json
-      - name: Health check
-        run: echo "✅ $(cat .agent-identity.json | python3 -c 'import sys,json; print(json.load(sys.stdin).get("agent","BLACKROAD"))') is active"
-WF
-)
+      - name: 🔋 Health Check
+        run: echo "✅ $(hostname) - $(date -u)"'
 
-for ORG in "${ORGS[@]}"; do
-  echo -e "${CYAN}🔄 Syncing org: ${ORG}${NC}"
-  
-  # Create .github repo if it doesn't exist
-  gh repo create "${ORG}/.github" --public --description "Shared workflows for ${ORG}" 2>/dev/null && \
-    echo -e "${GREEN}  ✅ Created .github repo${NC}" || \
-    echo -e "${YELLOW}  ℹ️  .github repo exists${NC}"
-  
-  # Push shared CLAUDE.md
-  TMPDIR=$(mktemp -d)
-  cd "$TMPDIR"
-  git init -q
-  git remote add origin "https://github.com/${ORG}/.github.git"
-  
-  mkdir -p .github/workflows
-  echo "$SHARED_WORKFLOW" > .github/workflows/blackroad-shared.yml
-  cp "/Users/alexa/blackroad/AGENTS.md" . 2>/dev/null || true
-  
-  git add -A
-  git commit -qm "chore: sync shared workflows and agent configs [blackroad-bot]
+echo "═══════════════════════════════════════════════"
+echo "  BlackRoad Org Cohesion Sync"
+echo "  Target: $TARGET_ORG"
+echo "═══════════════════════════════════════════════"
 
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>" 2>/dev/null || true
-  git push -qu origin HEAD:main 2>/dev/null || true
+# Get repos for org
+info "Fetching repos for $TARGET_ORG..."
+REPOS=$(curl -s -H "Authorization: token $GH_TOKEN" \
+  -H "Accept: application/vnd.github.v3+json" \
+  "https://api.github.com/orgs/$TARGET_ORG/repos?per_page=$MAX_REPOS&sort=updated" \
+  | python3 -c "import json,sys; [print(r['name']) for r in json.load(sys.stdin) if not r.get('archived')]" 2>/dev/null)
+
+COUNT=0
+for REPO in $REPOS; do
+  info "Processing $TARGET_ORG/$REPO..."
   
-  cd - >/dev/null
-  rm -rf "$TMPDIR"
+  # Get default branch
+  DEFAULT_BRANCH=$(curl -s -H "Authorization: token $GH_TOKEN" \
+    "https://api.github.com/repos/$TARGET_ORG/$REPO" \
+    | python3 -c "import json,sys; print(json.load(sys.stdin).get('default_branch','main'))" 2>/dev/null)
+  
+  # Check if .github/agent.json exists
+  AGENT_FILE=$(curl -s -H "Authorization: token $GH_TOKEN" \
+    "https://api.github.com/repos/$TARGET_ORG/$REPO/contents/.github/agent.json" \
+    | python3 -c "import json,sys; d=json.load(sys.stdin); print('exists' if 'sha' in d else 'missing')" 2>/dev/null)
+  
+  if [ "$AGENT_FILE" = "missing" ]; then
+    # Create agent.json for this repo
+    AGENT_JSON=$(python3 -c "
+import json, base64
+data = {
+  'repo': '$REPO',
+  'org': '$TARGET_ORG',
+  'runner': 'blackroad-fleet',
+  'branch': '$DEFAULT_BRANCH',
+  'created': '$(date -u +%Y-%m-%dT%H:%M:%SZ)'
+}
+content = base64.b64encode(json.dumps(data, indent=2).encode()).decode()
+print(content)
+")
+    
+    curl -s -X PUT \
+      -H "Authorization: token $GH_TOKEN" \
+      -H "Accept: application/vnd.github.v3+json" \
+      "https://api.github.com/repos/$TARGET_ORG/$REPO/contents/.github/agent.json" \
+      -d "{
+        \"message\": \"🤖 Add agent identity\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\",
+        \"content\": \"$AGENT_JSON\",
+        \"branch\": \"$DEFAULT_BRANCH\"
+      }" > /dev/null 2>&1 && log "Added agent.json to $REPO" || warn "Skipped $REPO"
+  else
+    log "$REPO already has agent.json"
+  fi
+  
+  COUNT=$((COUNT + 1))
 done
 
-echo -e "${GREEN}🎉 All 17 orgs synced!${NC}"
+echo ""
+log "Cohesion sync complete: $COUNT repos processed in $TARGET_ORG"
