@@ -35,12 +35,8 @@ jobs:
           if [ -n "$ZONE_ID" ]; then
             echo "Zone ID: $ZONE_ID"
             curl -sf "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&page=1&per_page=20" \
-              -H "Authorization: Bearer $CF_TOKEN" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-for r in data.get('result', []):
-    print(f\"  {r['name']} → {r['content']} (proxied: {r['proxied']})\")
-" 2>/dev/null
+              -H "Authorization: Bearer $CF_TOKEN" | \
+              python3 -c "import sys,json;[print(f\"  {r['name']} -> {r['content']} proxied={r['proxied']}\") for r in json.load(sys.stdin).get('result',[])]" 2>/dev/null
           else
             echo "Could not get Zone ID — check CF_TOKEN secret"
           fi
