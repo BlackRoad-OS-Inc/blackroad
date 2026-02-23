@@ -8336,6 +8336,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "brand-voice" ]]; then
+  BRAND="${2:-our brand}"
+  AGENTS=("Brand" "Copywriter" "Marketing" "Customer" "Design")
+  QUESTIONS=(
+    "How would you describe the personality and tone of $BRAND in three words, and why?"
+    "What words and phrases should $BRAND always use — and never use?"
+    "How does $BRAND sound different across channels: ads, docs, social, support?"
+    "Write a one-paragraph brand voice guide for anyone writing copy for $BRAND."
+    "How does $BRAND evolve its voice as it moves upmarket without losing authenticity?"
+  )
+  echo ""
+  echo "🎙️  CARPOOL: BRAND VOICE — $BRAND"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Brand voice roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "service-mesh" ]]; then
+  SYSTEM="${2:-our microservices}"
+  AGENTS=("Infra" "Networking" "SRE" "Security" "Backend")
+  QUESTIONS=(
+    "Does $SYSTEM actually need a service mesh, or is it overkill right now?"
+    "Compare Istio, Linkerd, and Consul Connect for $SYSTEM — which fits best?"
+    "How does a service mesh improve observability and traffic control for $SYSTEM?"
+    "What are the operational costs and complexity tradeoffs of adding a mesh to $SYSTEM?"
+    "How do we roll out a service mesh for $SYSTEM without a big-bang migration?"
+  )
+  echo ""
+  echo "🕸️  CARPOOL: SERVICE MESH — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Service mesh design complete."
+  exit 0
+fi
+
+if [[ "$1" == "fundraising" ]]; then
+  COMPANY="${2:-our startup}"
+  AGENTS=("Founder" "VC" "CFO" "Advisor" "Investor")
+  QUESTIONS=(
+    "What milestones should $COMPANY hit before raising its next round?"
+    "How do we build and work a pipeline of investors for $COMPANY efficiently?"
+    "What does a compelling narrative and deck structure look like for $COMPANY?"
+    "How should $COMPANY handle term sheet negotiations and pick the right lead?"
+    "What are the biggest fundraising mistakes $COMPANY must avoid?"
+  )
+  echo ""
+  echo "💰 CARPOOL: FUNDRAISING — $COMPANY"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Fundraising strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "ab-testing" ]]; then
+  FEATURE="${2:-our feature}"
+  AGENTS=("Data" "Product" "Growth" "Engineer" "Stats")
+  QUESTIONS=(
+    "What hypothesis should we test first for $FEATURE and how do we frame it?"
+    "How do we calculate sample size and run time for a valid $FEATURE experiment?"
+    "What metrics are primary, secondary, and guardrail for the $FEATURE test?"
+    "How do we avoid common A/B testing pitfalls (peeking, novelty effects) with $FEATURE?"
+    "When the $FEATURE test ends, how do we decide what to ship, iterate, or drop?"
+  )
+  echo ""
+  echo "🧪 CARPOOL: A/B TESTING — $FEATURE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ A/B testing strategy complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
