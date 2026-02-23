@@ -4863,6 +4863,138 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── DATAMODEL — design database schema + relationships ───────────────
+if [[ "$1" == "datamodel" || "$1" == "schema" ]]; then
+  shift
+  FEATURE="$*"
+  [[ -z "$FEATURE" ]] && echo "Usage: br carpool datamodel <feature or domain>" && exit 1
+  echo ""
+  echo -e "\033[1;34m🗄️  DATA MODEL: $FEATURE\033[0m"
+  echo ""
+  DM_FILE="$HOME/.blackroad/carpool/datamodels/$(echo "$FEATURE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/datamodels"
+  printf "# Data Model: %s\nDate: %s\n\n" "$FEATURE" "$(date '+%Y-%m-%d')" > "$DM_FILE"
+  for entry in "OCTAVIA|ENTITIES & FIELDS|All tables/collections. For each: name, key fields with types, primary key, nullable vs required." "ALICE|RELATIONSHIPS|Foreign keys, join tables, one-to-many vs many-to-many. Diagram in text: Entity A ──< Entity B." "PRISM|INDEXES & QUERY PATTERNS|The 5 most common queries. Which columns to index. Composite index candidates." "CIPHER|SENSITIVE FIELDS|Which fields contain PII, secrets, or regulated data. Encryption at rest, masking in logs, access control." "LUCIDIA|EVOLUTION STRATEGY|How this schema changes as the product grows. Migration path, soft deletes vs hard deletes, versioning approach."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing a data model for: \"${FEATURE}\"
+Section: ${section}
+${lens}
+Use real SQL/NoSQL conventions. Specific field names and types.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$DM_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $DM_FILE\033[0m"
+  exit 0
+fi
+
+# ── CODEREV — multi-agent code review checklist ───────────────────────
+if [[ "$1" == "coderev" || "$1" == "review" ]]; then
+  shift
+  PR="$*"
+  [[ -z "$PR" ]] && echo "Usage: br carpool coderev <PR description or diff summary>" && exit 1
+  echo ""
+  echo -e "\033[1;36m🔍 CODE REVIEW: $PR\033[0m"
+  echo ""
+  CR_FILE="$HOME/.blackroad/carpool/codereviews/$(echo "$PR" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/codereviews"
+  printf "# Code Review: %s\nDate: %s\n\n" "$PR" "$(date '+%Y-%m-%d')" > "$CR_FILE"
+  for entry in "CIPHER|SECURITY REVIEW|SQL injection, XSS, auth bypass, secrets in code, input validation gaps. Specific line-level concerns." "OCTAVIA|PERFORMANCE REVIEW|N+1 queries, missing indexes, unbounded loops, memory leaks, blocking I/O. Concrete suggestions." "SHELLFISH|EDGE CASES|What inputs or states will break this? Null, empty, max, concurrent, unexpected order." "ALICE|MAINTAINABILITY|Is it readable in 6 months? Naming, complexity, test coverage, dead code, magic numbers." "PRISM|VERDICT|APPROVE / REQUEST CHANGES / NEEDS DISCUSSION. The single most important thing to fix before merge."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} reviewing a PR: \"${PR}\"
+Section: ${section}
+${lens}
+Be a tough but fair reviewer. Specific, actionable feedback.
+Format: - <finding>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$CR_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $CR_FILE\033[0m"
+  exit 0
+fi
+
+# ── FLOW — design a user onboarding or product flow ───────────────────
+if [[ "$1" == "flow" || "$1" == "userflow" ]]; then
+  shift
+  FLOW="$*"
+  [[ -z "$FLOW" ]] && echo "Usage: br carpool flow <flow name, e.g. 'user onboarding' or 'checkout'>" && exit 1
+  echo ""
+  echo -e "\033[1;32m🌊 USER FLOW: $FLOW\033[0m"
+  echo ""
+  FL_FILE="$HOME/.blackroad/carpool/flows/$(echo "$FLOW" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/flows"
+  printf "# User Flow: %s\nDate: %s\n\n" "$FLOW" "$(date '+%Y-%m-%d')" > "$FL_FILE"
+  for entry in "ARIA|STEP-BY-STEP FLOW|Every screen or step the user touches, in order. Format: Step N → [screen name]: what user sees + what they do." "LUCIDIA|AHA MOMENT|The single moment this flow must deliver. Before the user reaches it they are skeptical. After, they are sold." "ALICE|HAPPY PATH VS EDGE CASES|The ideal path, plus 3 variants (error, slow, returning user). What happens at each branch." "PRISM|DROP-OFF POINTS|Where users abandon this flow today (or will). The top 3 friction points and how to reduce each." "OCTAVIA|TECHNICAL TOUCHPOINTS|APIs called, state changes, emails triggered, analytics events fired — in the order they happen."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing the flow: \"${FLOW}\"
+Section: ${section}
+${lens}
+Be specific. Real screen names, real state names, real event names.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$FL_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $FL_FILE\033[0m"
+  exit 0
+fi
+
+# ── GROWTH — growth strategy + acquisition channel analysis ──────────
+if [[ "$1" == "growth" ]]; then
+  shift
+  PRODUCT="$*"
+  [[ -z "$PRODUCT" ]] && echo "Usage: br carpool growth <product>" && exit 1
+  echo ""
+  echo -e "\033[1;33m📈 GROWTH STRATEGY: $PRODUCT\033[0m"
+  echo ""
+  GR_FILE="$HOME/.blackroad/carpool/growth/$(echo "$PRODUCT" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/growth"
+  printf "# Growth Strategy: %s\nDate: %s\n\n" "$PRODUCT" "$(date '+%Y-%m-%d')" > "$GR_FILE"
+  for entry in "PRISM|ACQUISITION CHANNELS|Top 5 channels ranked by expected CAC and volume. Why each fits this product specifically." "ARIA|VIRAL LOOP|The in-product mechanic that makes users bring more users. Must be native to the core value." "ALICE|ACTIVATION METRIC|The one action that predicts retention. How to instrument it. How to shorten time-to-activation." "LUCIDIA|RETENTION ENGINE|Why users come back tomorrow, next week, next month. Habit loop, network effect, or switching cost?" "SHELLFISH|GROWTH ANTI-PATTERNS|The 3 growth tactics that will hurt long-term. Dark patterns, churn-masking, vanity metrics to avoid."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} building a growth strategy for: \"${PRODUCT}\"
+Section: ${section}
+${lens}
+Specific and honest. Real channel names, real mechanics, real numbers where possible.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$GR_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $GR_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
