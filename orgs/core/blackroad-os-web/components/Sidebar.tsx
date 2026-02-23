@@ -36,6 +36,7 @@ export default function Sidebar() {
     { name: 'Verify',         href: '/verify',         icon: ShieldCheck },
     { name: 'Governance',     href: '/governance',     icon: Shield },
     { name: 'Fleet',          href: '/fleet',          icon: Server },
+    { name: 'Network',        href: '/network',        icon: Globe },
     { name: 'Workers',        href: '/workers',        icon: Zap },
     { name: 'Onboarding',     href: '/onboarding',     icon: Sparkles },
     { name: 'Settings',       href: '/settings',       icon: Settings },

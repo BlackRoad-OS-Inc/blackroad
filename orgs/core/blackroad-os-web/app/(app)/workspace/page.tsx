@@ -23,7 +23,7 @@ const QUICK_STARTS = [
   { id: 'new-shellfish', icon: '🔐', agent: 'Shellfish', title: 'Security scan', desc: 'Audit, harden, verify', href: '/conversations/new?agent=shellfish' },
 ];
 
-const INFRA_STATS = [
+const INFRA_STATS_STATIC = [
   { label: 'CF Workers', value: '499', sub: 'edge functions', color: '#F5A623', icon: Radio },
   { label: 'CF Zones', value: '20', sub: 'domains managed', color: '#2979FF', icon: Globe },
   { label: 'Agent Capacity', value: '30,000', sub: 'across 3 nodes', color: '#FF1D6C', icon: Bot },
