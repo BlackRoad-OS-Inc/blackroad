@@ -328,6 +328,14 @@ show_help() {
     echo "║    br carpool --brief <t>   - Quick 1-turn, no workers            ║"
     echo "║    br carpool --fast <t>    - tinyllama, 2 turns                  ║"
     echo "║    br carpool --smart <t>   - llama3.2:1b, 3 turns                ║"
+    echo "║    br carpool pr <repo#N>   - Agents code-review a GitHub PR       ║"
+    echo "║    br carpool template      - list / sprint / security / ux / arch ║"
+    echo "║    br carpool debate A B    - Structured 1v1 head-to-head          ║"
+    echo "║    br carpool digest        - AI digest of memory sessions         ║"
+    echo "║    br carpool score         - Agent leaderboard across sessions    ║"
+    echo "║    br carpool agenda <file> - Run topics from file as chain        ║"
+    echo "║    br carpool spotlight A   - Single-agent deep-dive (3 turns)     ║"
+    echo "║    br carpool poll Q A B C  - Structured multi-choice vote         ║"
     echo "║    br carpool react <f/url> - Quick reaction: brief+context        ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
@@ -786,6 +794,10 @@ main() {
                 template|t) bash /Users/alexa/blackroad/carpool.sh template "$@" ;;
                 debate)     bash /Users/alexa/blackroad/carpool.sh debate "$@" ;;
                 digest)     bash /Users/alexa/blackroad/carpool.sh digest ;;
+                score)      bash /Users/alexa/blackroad/carpool.sh score ;;
+                agenda)     bash /Users/alexa/blackroad/carpool.sh agenda "$@" ;;
+                spotlight)  bash /Users/alexa/blackroad/carpool.sh spotlight "$@" ;;
+                poll)       bash /Users/alexa/blackroad/carpool.sh poll "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
@@ -834,6 +846,10 @@ main() {
         hofstadter|loop|fugue)
             # shorthand aliases: br loop, br fugue
             zsh "${BR_TOOLS_DIR}/geb/br-geb.sh" "${cmd}" "$@"
+            ;;
+        oracle|reflect)
+            # br oracle — system introspection via local LLM (CECE reflects)
+            zsh "${BR_TOOLS_DIR}/oracle/br-oracle.sh" "$@"
             ;;
         stream|events)
             # br stream — live SSE event feed from gateway

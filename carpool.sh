@@ -1279,7 +1279,144 @@ print(json.dumps({
   exit 0
 fi
 
-# ── LAUNCHER ──────────────────────────────────────────────────
+# ── SCORE — agent leaderboard across all saved sessions ──────
+if [[ "$1" == "score" ]]; then
+  [[ ! -d "$SAVE_DIR" ]] && echo "No saved sessions yet." && exit 0
+  echo -e "${WHITE}🏆 CarPool Leaderboard${NC}\n"
+
+  declare -A _wins _apps _dispatches _mentions
+  ALL_AGENT_NAMES="LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER ARIA SHELLFISH"
+
+  for f in "$SAVE_DIR"/*.txt; do
+    [[ -f "$f" ]] || continue
+    for name in $ALL_AGENT_NAMES; do
+      # Count approvals/rejections where this agent voted
+      _vote=$(grep -c "^${name} votes YES" "$f" 2>/dev/null || echo 0)
+      _apps[$name]=$(( ${_apps[$name]:-0} + _vote ))
+      # Count dispatches
+      _d=$(grep -c "\[dispatch\].*${name}\|${name}.*dispatch" "$f" 2>/dev/null || echo 0)
+      _dispatches[$name]=$(( ${_dispatches[$name]:-0} + _d ))
+      # Count total lines mentioning the agent
+      _m=$(grep -c "^${name}:" "$f" 2>/dev/null || echo 0)
+      _mentions[$name]=$(( ${_mentions[$name]:-0} + _m ))
+    done
+    # Award "win" to agents in winning-side sessions
+    v=$(grep "^VERDICT:" "$f" 2>/dev/null | tail -1)
+    if echo "$v" | grep -qi "approved\|yes\|ship"; then
+      for name in $ALL_AGENT_NAMES; do
+        if grep -q "^${name} votes YES" "$f" 2>/dev/null; then
+          _wins[$name]=$(( ${_wins[$name]:-0} + 1 ))
+        fi
+      done
+    fi
+  done
+
+  # Print table
+  printf "  %-12s %6s %6s %6s %6s\n" "AGENT" "LINES" "YES" "DISPATCH" "WINS"
+  printf "  %-12s %6s %6s %6s %6s\n" "────────────" "─────" "─────" "────────" "────"
+  for name in $ALL_AGENT_NAMES; do
+    agent_meta "$name"
+    _c="\033[${COLOR_CODE}m"
+    printf "  ${_c}%-12s${NC} %6d %6d %8d %6d\n" \
+      "${EMOJI} ${name}" \
+      "${_mentions[$name]:-0}" \
+      "${_apps[$name]:-0}" \
+      "${_dispatches[$name]:-0}" \
+      "${_wins[$name]:-0}"
+  done
+
+  session_total=$(ls "$SAVE_DIR"/*.txt 2>/dev/null | wc -l | tr -d ' ')
+  echo -e "\n${DIM}across ${session_total} sessions  ·  br carpool history for full list${NC}"
+  exit 0
+fi
+
+# ── AGENDA — run topics from a file as a chain ───────────────
+if [[ "$1" == "agenda" ]]; then
+  agenda_file="${2:-}"
+  [[ -z "$agenda_file" ]] && echo -e "${RED}Usage: br carpool agenda <file>${NC}" && exit 1
+  [[ ! -f "$agenda_file" ]] && echo -e "${RED}File not found: ${agenda_file}${NC}" && exit 1
+
+  # Read non-empty, non-comment lines
+  mapfile_topics=()
+  while IFS= read -r line; do
+    line="${line#"${line%%[![:space:]]*}"}"  # ltrim
+    [[ -z "$line" || "${line:0:1}" == "#" ]] && continue
+    mapfile_topics+=("$line")
+  done < "$agenda_file"
+
+  count="${#mapfile_topics[@]}"
+  [[ $count -eq 0 ]] && echo "No topics found in ${agenda_file}" && exit 1
+
+  echo -e "${WHITE}📋 CarPool Agenda${NC}  ${DIM}${agenda_file} · ${count} topics${NC}\n"
+  for i in "${!mapfile_topics[@]}"; do
+    echo -e "  ${CYAN}$((i+1)).${NC} ${mapfile_topics[$i]}"
+  done
+  echo ""
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" chain "${mapfile_topics[@]}"
+fi
+
+# ── SPOTLIGHT — one-agent deep dive, 3 focused turns ─────────
+if [[ "$1" == "spotlight" ]]; then
+  _agent="${2:-}"
+  _topic="${3:-}"
+  if [[ -z "$_agent" ]]; then
+    echo -e "${CYAN}Spotlight which agent? (LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER ARIA SHELLFISH): ${NC}"
+    read -r _agent
+  fi
+  _valid="LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER ARIA SHELLFISH"
+  echo "$_valid" | grep -qw "$_agent" || { echo -e "${RED}Unknown agent: ${_agent}${NC}"; exit 1; }
+
+  if [[ -z "$_topic" ]]; then
+    agent_meta "$_agent"
+    echo -ne "${CYAN}Topic for ${EMOJI} ${_agent}: ${NC}"
+    read -r _topic
+    [[ -z "$_topic" ]] && _topic="What is your honest take on the current state of AI development?"
+  fi
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  echo -e "\n${WHITE}🔦 Spotlight:${NC} ${_agent}  ${DIM}${_topic}${NC}\n"
+  exec bash "$SCRIPT_PATH" --crew "$_agent" --turns 3 --smart "$_topic"
+fi
+
+# ── POLL — structured multi-choice vote ──────────────────────
+if [[ "$1" == "poll" ]]; then
+  _question="${2:-}"
+  shift 2 2>/dev/null || shift "$#" 2>/dev/null
+  _options=("$@")
+
+  if [[ -z "$_question" ]]; then
+    echo -ne "${CYAN}Poll question: ${NC}"; read -r _question
+  fi
+  if [[ ${#_options[@]} -eq 0 ]]; then
+    echo -ne "${CYAN}Option A: ${NC}"; read -r _oa
+    echo -ne "${CYAN}Option B: ${NC}"; read -r _ob
+    echo -ne "${CYAN}Option C (blank to skip): ${NC}"; read -r _oc
+    _options=("$_oa" "$_ob")
+    [[ -n "$_oc" ]] && _options+=("$_oc")
+  fi
+
+  # Build option list string
+  _opts_str=""
+  _letter=A
+  for _o in "${_options[@]}"; do
+    _opts_str="${_opts_str}${_letter}) ${_o}  "
+    _letter=$(echo "$_letter" | tr 'A-Y' 'B-Z')
+  done
+
+  _poll_topic="${_question} | Options: ${_opts_str}Each agent: pick one option (A/B/C...) and explain why in 1-2 sentences. End your turn with: VOTE: <letter>"
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  echo -e "\n${WHITE}🗳️  CarPool Poll${NC}"
+  echo -e "  ${_question}"
+  _i=1; _letter=A
+  for _o in "${_options[@]}"; do
+    echo -e "  ${CYAN}${_letter})${NC} ${_o}"; _letter=$(echo "$_letter" | tr 'A-Y' 'B-Z')
+  done
+  echo ""
+  exec bash "$SCRIPT_PATH" --brief "$_poll_topic"
+fi
 # br carpool last → open most recent saved session
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
