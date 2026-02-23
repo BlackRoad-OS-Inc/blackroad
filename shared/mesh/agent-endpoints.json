@@ -36,14 +36,20 @@
       "qdrant_peer": "192.168.4.49:6333"
     },
     "LUCIDIA": {
-      "host": "192.168.4.64",
-      "ports": {
-        "api": 4010,
-        "ollama": 11434
-      },
+      "id": "lucidia-pi5",
+      "name": "LUCIDIA",
+      "hostname": "lucidia-pi5",
       "role": "secondary-compute",
-      "capacity": 7500,
-      "status": "OPERATIONAL"
+      "status": "online",
+      "github_runner": "lucidia-pi5",
+      "runner_labels": [
+        "self-hosted",
+        "Linux",
+        "ARM64",
+        "pi5",
+        "lucidia"
+      ],
+      "note": "Was already online as runner \u2014 separate from lucidia 192.168.4.64"
     },
     "SHELLFISH": {
       "host": "159.65.43.12",
@@ -165,17 +171,33 @@
     }
   },
   "pi_fleet_summary": {
-    "octavia_pi": {
-      "ip": "192.168.4.38",
-      "role": "primary-compute-runner"
-    },
     "alice_pi": {
       "ip": "192.168.4.49",
-      "role": "task-queue-qdrant"
+      "role": "primary-domain-tunnel-task-queue-qdrant",
+      "runner": "alice-pi"
+    },
+    "octavia_pi5": {
+      "role": "primary-compute-runner",
+      "runner": "octavia-pi5"
+    },
+    "lucidia_pi5": {
+      "role": "secondary-compute-runner",
+      "runner": "lucidia-pi5"
+    },
+    "aria_pi4": {
+      "role": "frontend-cloudflare-runner",
+      "runner": "aria-pi4"
+    },
+    "cecilia": {
+      "role": "pi5-hailo-nvme-runner",
+      "runner": "cecilia"
     },
     "gematria_do": {
       "ip": "159.65.43.12",
-      "role": "108-model-server-runner"
-    }
+      "role": "108-model-server-runner",
+      "runner": "gematria-do"
+    },
+    "total_runners": 6,
+    "cost": "$0/month (all self-hosted)"
   }
 }
