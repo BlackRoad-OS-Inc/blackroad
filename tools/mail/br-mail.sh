@@ -208,8 +208,17 @@ cmd_dns() {
   # MX
   echo -e "  ${BOLD}MX Records${NC}"
   local mx; mx=$(dig +short MX blackroad.io 2>/dev/null || nslookup -type=MX blackroad.io 2>/dev/null | grep "mail exchanger")
-  if echo "$mx" | grep -qi "cloudflare\|mx."; then
-    echo -e "  ${GREEN}●${NC} MX configured  ${DIM}${mx}${NC}"
+  if echo "$mx" | grep -qi "cloudflare\|route[12]\.mx"; then
+    echo -e "  ${GREEN}●${NC} MX → Cloudflare  ${DIM}(Email Routing ready)${NC}"
+    echo -e "  ${DIM}  ${mx}${NC}"
+  elif echo "$mx" | grep -qi "google\|aspmx"; then
+    echo -e "  ${YELLOW}◌${NC} MX → Google Workspace"
+    echo -e "  ${DIM}  ${mx}${NC}"
+    echo -e "\n  ${BOLD}To enable Cloudflare Email Routing, replace MX records:${NC}"
+    echo -e "  ${DIM}  Remove:  *.google.com MX records${NC}"
+    echo -e "  ${DIM}  Add:     MX  10  route1.mx.cloudflare.net${NC}"
+    echo -e "  ${DIM}           MX  20  route2.mx.cloudflare.net${NC}"
+    echo -e "  ${DIM}  Note: this will stop Google Workspace mail — use forwarding if needed${NC}"
   elif [[ -z "$mx" ]]; then
     echo -e "  ${RED}○${NC} No MX records found"
     echo -e "  ${DIM}  Add to Cloudflare DNS:${NC}"
@@ -272,12 +281,27 @@ cmd_setup() {
   _cf() { curl -sf -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" "$@"; }
   _ok() { python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('success') else str(d.get('errors',d)))" 2>/dev/null; }
 
-  # 1. Get zone ID
+  # Validate token first
+  local whoami; whoami=$(_cf "${BASE}/user/tokens/verify" 2>/dev/null)
+  if ! echo "$whoami" | python3 -c "import sys,json; sys.exit(0 if json.load(sys.stdin).get('success') else 1)" 2>/dev/null; then
+    echo -e "  ${RED}✗ Invalid API token${NC}"
+    echo -e "  ${DIM}  Get one at: https://dash.cloudflare.com/profile/api-tokens${NC}"
+    echo -e "  ${DIM}  Needs: Zone:Email Routing:Edit + Account:Email Routing Addresses:Edit${NC}\n"
+    exit 1
+  fi
+  echo -e "  ${GREEN}✓${NC} Token valid"
+
+  # 1. Get zone ID — search by name only (no account filter)
   echo -e "  ${BOLD}→ Zone lookup${NC}"
+  local zone_raw; zone_raw=$(_cf "${BASE}/zones?name=${DOMAIN}&per_page=5")
   local zone_id
-  zone_id=$(_cf "${BASE}/zones?name=${DOMAIN}&account.id=${ACCOUNT}" | \
-    python3 -c "import sys,json; z=json.load(sys.stdin)['result']; print(z[0]['id'] if z else '')" 2>/dev/null)
-  [[ -z "$zone_id" ]] && { echo -e "  ${RED}✗ Zone not found for ${DOMAIN}${NC}\n"; exit 1; }
+  zone_id=$(echo "$zone_raw" | python3 -c "import sys,json; z=json.load(sys.stdin).get('result',[]); print(z[0]['id'] if z else '')" 2>/dev/null)
+  if [[ -z "$zone_id" ]]; then
+    echo -e "  ${RED}✗ Zone not found for ${DOMAIN}${NC}"
+    echo -e "  ${DIM}  Make sure blackroad.io is active in your Cloudflare account${NC}"
+    echo -e "  ${DIM}  Raw: $(echo "$zone_raw" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('errors', d.get('result','')))" 2>/dev/null)${NC}\n"
+    exit 1
+  fi
   echo -e "  ${GREEN}✓${NC} zone: ${DIM}${zone_id}${NC}"
 
   # 2. Enable email routing
@@ -329,10 +353,15 @@ cmd_status() {
 
   _cf() { curl -sf -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" "$@"; }
 
+  # Token check
+  if ! _cf "${BASE}/user/tokens/verify" 2>/dev/null | python3 -c "import sys,json; sys.exit(0 if json.load(sys.stdin).get('success') else 1)" 2>/dev/null; then
+    echo -e "  ${RED}✗ Invalid API token — set CLOUDFLARE_API_TOKEN${NC}\n"; exit 1
+  fi
+
   local zone_id
-  zone_id=$(_cf "${BASE}/zones?name=${DOMAIN}&account.id=${ACCOUNT}" | \
-    python3 -c "import sys,json; z=json.load(sys.stdin)['result']; print(z[0]['id'] if z else '')" 2>/dev/null)
-  [[ -z "$zone_id" ]] && { echo -e "  ${RED}✗ Zone not found${NC}\n"; exit 1; }
+  zone_id=$(_cf "${BASE}/zones?name=${DOMAIN}&per_page=5" | \
+    python3 -c "import sys,json; z=json.load(sys.stdin).get('result',[]); print(z[0]['id'] if z else '')" 2>/dev/null)
+  [[ -z "$zone_id" ]] && { echo -e "  ${RED}✗ Zone ${DOMAIN} not found in this CF account${NC}\n"; exit 1; }
 
   # Routing enabled?
   _cf "${BASE}/zones/${zone_id}/email/routing" 2>/dev/null | python3 -c "
