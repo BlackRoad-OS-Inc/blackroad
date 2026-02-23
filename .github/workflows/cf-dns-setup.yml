@@ -1,0 +1,35 @@
+name: 🌐 CF DNS Record Setup
+on:
+  workflow_dispatch:
+jobs:
+  create-dns-records:
+    runs-on: [self-hosted, pi, blackroad]
+    steps:
+      - name: Create missing CNAME records for alice-pi tunnel
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+        run: |
+          TUNNEL_ID="52915859-da18-4aa6-add5-7bd9fcac2e0b"
+          TUNNEL_CNAME="${TUNNEL_ID}.cfargotunnel.com"
+          
+          for SUBDOMAIN in qdrant tasks vector shellfish; do
+            echo "Creating ${SUBDOMAIN}.blackroad.io → ${TUNNEL_CNAME}"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/dns_records" \
+              -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{
+                \"type\": \"CNAME\",
+                \"name\": \"${SUBDOMAIN}.blackroad.io\",
+                \"content\": \"${TUNNEL_CNAME}\",
+                \"proxied\": true,
+                \"ttl\": 1
+              }" | python3 -c "import sys,json; r=json.load(sys.stdin); print('✅' if r.get('success') else '❌', r.get('result',{}).get('name',''), r.get('errors',''))"
+          done
+
+      - name: Verify DNS
+        run: |
+          for sub in qdrant tasks vector shellfish; do
+            echo -n "${sub}.blackroad.io: "
+            dig +short ${sub}.blackroad.io | head -1
+          done
