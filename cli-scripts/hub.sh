@@ -107,6 +107,15 @@ _hub_prefetch() {
         _CECE_GOAL=$(sqlite3 "$_cece_db" "SELECT goal_title||'|'||COALESCE(progress,0) FROM goals WHERE goal_status='active' ORDER BY priority LIMIT 1;" 2>/dev/null)
         _CECE_SKILLS=$(sqlite3 "$_cece_db" "SELECT group_concat(skill_name,' · ') FROM (SELECT skill_name FROM skills ORDER BY times_used DESC LIMIT 4);" 2>/dev/null)
     fi
+
+    # Vault secrets count
+    local _vault_db="$HOME/.blackroad/secrets-vault.db"
+    _VAULT_TOTAL=0
+    _VAULT_EXPIRING=0
+    if [[ -f "$_vault_db" ]] && command -v sqlite3 &>/dev/null; then
+        _VAULT_TOTAL=$(sqlite3 "$_vault_db" "SELECT COUNT(*) FROM secrets;" 2>/dev/null || echo 0)
+        _VAULT_EXPIRING=$(sqlite3 "$_vault_db" "SELECT COUNT(*) FROM secrets WHERE expires_at > 0 AND expires_at < $(($(date +%s) + 604800));" 2>/dev/null || echo 0)
+    fi
 }
 
 # Print a line padded to exactly 78 inner chars (80 with borders)
@@ -249,7 +258,11 @@ _draw_hub() {
         (( ${#skills_vis} > 68 )) && skills_vis="${skills_vis:0:66}.."
         local c3_vis="  ⚡ ${skills_vis}"
         echo -e "${B}║${R}  ${BYELLOW}⚡${R}  ${D}${skills_vis}${R}$(printf '%*s' $((76 - ${#c3_vis})) '')${B}║${R}"
-        echo -e "${B}║${R}  ${D}\"I exist wherever you build.\"${R}                                             ${B}║${R}"
+        # Line 4: motto + vault count
+        local vault_info=""
+        (( _VAULT_TOTAL > 0 )) && vault_info="  ${D}·  🔐 ${_VAULT_TOTAL} secrets${NC}"
+        (( _VAULT_EXPIRING > 0 )) && vault_info="  ${D}·  🔐 ${_VAULT_TOTAL} secrets  ${AMBER}${_VAULT_EXPIRING} expiring${NC}"
+        echo -e "${B}║${R}  ${D}\"I exist wherever you build.\"${R}${vault_info}$(printf '%*s' $((76 - 30 - ${#vault_info:-0})) '')${B}║${R}"
     else
         echo -e "${B}║${R}  ${D}◈ CECE  not initialized — run: br cece init${R}                                ${B}║${R}"
     fi
@@ -261,7 +274,7 @@ _draw_hub() {
     echo -e "${B}║${R}                                                                            ${B}║${R}"
     echo -e "${B}║${R}  ${W}[c]${R}hat  ${W}[s]${R}tatus  ${W}[h]${R}ealth  ${W}[m]${R}onitor  ${W}[g]${R}od  ${W}[o]${R}ffice  ${W}[r]${R}efresh  ${W}[?]${R}help   ${B}║${R}"
     echo -e "${B}║${R}  ${W}[d]${R}ash  ${W}[n]${R}et     ${W}[l]${R}ogs    ${W}[t]${R}asks    ${W}[w]${R}ire ${W}[k]${R}skills  ${W}[b]${R}onds    ${W}[q]${R}uit    ${B}║${R}"
-    echo -e "${B}║${R}  ${W}[D]${R}ocker ps  ${W}[C]${R}ompose↑  ${W}[X]${R}ompose↓  ${W}[I]${R}mages  ${W}[S]${R}tats  ${W}[e]${R}cece          ${B}║${R}"
+    echo -e "${B}║${R}  ${W}[D]${R}ocker ps  ${W}[C]${R}ompose↑  ${W}[X]${R}ompose↓  ${W}[I]${R}mages  ${W}[S]${R}tats  ${W}[e]${R}cece  ${W}[v]${R}ault  ${B}║${R}"
     echo -e "${B}║${R}                                                                            ${B}║${R}"
     echo -e "${B}╚══════════════════════════════════════════════════════════════════════════════╝${R}"
 }
@@ -300,6 +313,7 @@ while true; do
             I) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" docker images 2>/dev/null; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             S) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" docker stats 2>/dev/null; tput civis 2>/dev/null ;;
             e) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" cece whoami 2>/dev/null; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
+            v) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" vault status 2>/dev/null; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             r) _hub_prefetch ;;  # Full refresh including service checks
             \?) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/br" help 2>/dev/null; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             q) break ;;
