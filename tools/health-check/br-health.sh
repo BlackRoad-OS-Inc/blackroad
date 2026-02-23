@@ -82,9 +82,14 @@ else
 fi
 
 r=$(_ping_port localhost 8787); st="${r%%:*}"; ms="${r#*:}"
-[[ "$st" == "ok" ]] \
-    && _chk "BR Gateway :8787" "ok" "${GREEN}online${NC}" "$ms" \
-    || _chk "BR Gateway :8787" "warn" "${AMBER}offline -- tokenless gateway${NC}"
+r2=$(_ping_port localhost 8080); st2="${r2%%:*}"; ms2="${r2#*:}"
+if [[ "$st" == "ok" ]]; then
+    _chk "BR Gateway :8787" "ok" "${GREEN}online${NC}" "$ms"
+elif [[ "$st2" == "ok" ]]; then
+    _chk "BR Gateway :8080" "ok" "${GREEN}online (alt port)${NC}" "$ms2"
+else
+    _chk "BR Gateway" "warn" "${AMBER}offline -- br gateway start${NC}"
+fi
 
 r=$(_ping_port 127.0.0.1 8420); st="${r%%:*}"; ms="${r#*:}"
 [[ "$st" == "ok" ]] \
