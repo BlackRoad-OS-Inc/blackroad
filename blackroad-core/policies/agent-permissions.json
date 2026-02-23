@@ -4,18 +4,34 @@
     "rate_limit_per_minute": 120,
     "max_concurrent_requests": 20,
     "cost_tracking": true,
-    "log_level": "info"
+    "log_level": "info",
+    "preferred_provider": "ollama",
+    "ollama_bridge": "http://192.168.4.38:4010",
+    "cost_target": "$0",
+    "cost_notes": "All agents prefer local Ollama on octavia Pi (192.168.4.38:4010). Paid providers only used as final fallback."
   },
   "agents": {
     "planner": {
       "description": "Strategic planning and analysis agent",
-      "allowed_intents": ["analyze", "plan"],
-      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
+      "allowed_intents": [
+        "analyze",
+        "plan"
+      ],
+      "allowed_providers": [
+        "ollama",
+        "claude",
+        "openai",
+        "gemini"
+      ],
       "default_provider": "ollama",
-      "fallback_chain": ["ollama", "claude", "openai"],
+      "fallback_chain": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
       "intent_routes": {
         "analyze": "ollama",
-        "plan": "claude"
+        "plan": "ollama"
       },
       "max_input_bytes": 20000,
       "rate_limit_per_minute": 30,
@@ -23,13 +39,27 @@
     },
     "octavia": {
       "description": "Systems architecture and infrastructure design agent",
-      "allowed_intents": ["architect", "review", "optimize", "diagnose"],
-      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
-      "default_provider": "claude",
-      "fallback_chain": ["claude", "openai", "ollama"],
+      "allowed_intents": [
+        "architect",
+        "review",
+        "optimize",
+        "diagnose"
+      ],
+      "allowed_providers": [
+        "ollama",
+        "claude",
+        "openai",
+        "gemini"
+      ],
+      "default_provider": "ollama",
+      "fallback_chain": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
       "intent_routes": {
-        "architect": "claude",
-        "review": "claude",
+        "architect": "ollama",
+        "review": "ollama",
         "optimize": "ollama",
         "diagnose": "ollama"
       },
@@ -39,13 +69,27 @@
     },
     "lucidia": {
       "description": "Creative vision, synthesis, and mentorship agent",
-      "allowed_intents": ["vision", "synthesize", "mentor", "explore"],
-      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
-      "default_provider": "claude",
-      "fallback_chain": ["claude", "gemini", "openai"],
+      "allowed_intents": [
+        "vision",
+        "synthesize",
+        "mentor",
+        "explore"
+      ],
+      "allowed_providers": [
+        "ollama",
+        "claude",
+        "openai",
+        "gemini"
+      ],
+      "default_provider": "ollama",
+      "fallback_chain": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
       "intent_routes": {
-        "vision": "claude",
-        "synthesize": "claude",
+        "vision": "ollama",
+        "synthesize": "ollama",
         "mentor": "ollama",
         "explore": "ollama"
       },
@@ -55,10 +99,24 @@
     },
     "alice": {
       "description": "DevOps, deployment automation, and routing agent",
-      "allowed_intents": ["deploy", "automate", "route", "monitor"],
-      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
+      "allowed_intents": [
+        "deploy",
+        "automate",
+        "route",
+        "monitor"
+      ],
+      "allowed_providers": [
+        "ollama",
+        "claude",
+        "openai",
+        "gemini"
+      ],
       "default_provider": "ollama",
-      "fallback_chain": ["ollama", "openai", "claude"],
+      "fallback_chain": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
       "intent_routes": {
         "deploy": "ollama",
         "automate": "ollama",
@@ -71,13 +129,26 @@
     },
     "cipher": {
       "description": "Security auditing, hardening, and vulnerability scanning agent",
-      "allowed_intents": ["audit", "harden", "scan", "encrypt"],
-      "allowed_providers": ["ollama", "claude", "openai"],
-      "default_provider": "claude",
-      "fallback_chain": ["claude", "openai", "ollama"],
+      "allowed_intents": [
+        "audit",
+        "harden",
+        "scan",
+        "encrypt"
+      ],
+      "allowed_providers": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
+      "default_provider": "ollama",
+      "fallback_chain": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
       "intent_routes": {
-        "audit": "claude",
-        "harden": "claude",
+        "audit": "ollama",
+        "harden": "ollama",
         "scan": "ollama",
         "encrypt": "ollama"
       },
@@ -87,19 +158,102 @@
     },
     "prism": {
       "description": "Data analysis, pattern recognition, and forecasting agent",
-      "allowed_intents": ["analyze", "correlate", "report", "forecast"],
-      "allowed_providers": ["ollama", "claude", "openai", "gemini"],
+      "allowed_intents": [
+        "analyze",
+        "correlate",
+        "report",
+        "forecast"
+      ],
+      "allowed_providers": [
+        "ollama",
+        "claude",
+        "openai",
+        "gemini"
+      ],
       "default_provider": "ollama",
-      "fallback_chain": ["ollama", "gemini", "openai"],
+      "fallback_chain": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
       "intent_routes": {
         "analyze": "ollama",
         "correlate": "ollama",
-        "report": "claude",
-        "forecast": "gemini"
+        "report": "ollama",
+        "forecast": "ollama"
       },
       "max_input_bytes": 80000,
       "rate_limit_per_minute": 30,
       "cost_tier": "standard"
+    },
+    "shellfish": {
+      "description": "Security research and exploit analysis agent",
+      "allowed_intents": [
+        "scan",
+        "audit",
+        "exploit",
+        "harden"
+      ],
+      "allowed_providers": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
+      "default_provider": "ollama",
+      "fallback_chain": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
+      "max_input_bytes": 20000,
+      "rate_limit_per_minute": 30,
+      "cost_tier": "free"
+    },
+    "aria": {
+      "description": "Frontend and UX design agent",
+      "allowed_intents": [
+        "design",
+        "review",
+        "generate",
+        "optimize"
+      ],
+      "allowed_providers": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
+      "default_provider": "ollama",
+      "fallback_chain": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
+      "max_input_bytes": 20000,
+      "rate_limit_per_minute": 30,
+      "cost_tier": "free"
+    },
+    "echo": {
+      "description": "Memory and knowledge recall agent",
+      "allowed_intents": [
+        "recall",
+        "store",
+        "search",
+        "synthesize"
+      ],
+      "allowed_providers": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
+      "default_provider": "ollama",
+      "fallback_chain": [
+        "ollama",
+        "claude",
+        "openai"
+      ],
+      "max_input_bytes": 20000,
+      "rate_limit_per_minute": 30,
+      "cost_tier": "free"
     }
   },
   "cost_tiers": {

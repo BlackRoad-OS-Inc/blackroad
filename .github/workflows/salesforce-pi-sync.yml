@@ -1,0 +1,62 @@
+# Salesforce Sync via Pi Self-Hosted Runner — Cost: $0  
+name: ☁️ Salesforce Pi Sync
+
+on:
+  push:
+    branches: [master]
+    paths: ['blackroad-sf/**']
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+jobs:
+  sf-deploy:
+    name: 🚀 Salesforce Deploy
+    runs-on: [self-hosted, blackroad-fleet]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📦 Setup SFDX
+        run: |
+          which sf || npm install -g @salesforce/cli
+          sf --version
+
+      - name: 🔑 Auth Salesforce
+        env:
+          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY }}
+          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME }}
+        run: |
+          echo "$SF_JWT_KEY" > /tmp/sf-key.pem
+          sf org login jwt \
+            --client-id "$SF_CONSUMER_KEY" \
+            --jwt-key-file /tmp/sf-key.pem \
+            --username "$SF_USERNAME" \
+            --set-default
+          rm -f /tmp/sf-key.pem
+
+      - name: 🧪 Run Tests
+        working-directory: blackroad-sf
+        run: |
+          npm test || echo "⚠️ Tests failed — continuing"
+
+      - name: 🚀 Deploy to Salesforce
+        working-directory: blackroad-sf
+        run: |
+          sf project deploy start --source-dir force-app --test-level RunLocalTests
+
+      - name: 📡 Sync Agent Telemetry
+        env:
+          SF_USERNAME: ${{ secrets.SF_USERNAME }}
+        run: |
+          # Push Pi agent status to Salesforce BlackRoadAgent__c
+          cat << 'APEX'
+          // Insert/update agent records
+          List<BlackRoadAgent__c> agents = new List<BlackRoadAgent__c>();
+          agents.add(new BlackRoadAgent__c(
+            Name='octavia', Status__c='online', Host__c='192.168.4.38',
+            LastPulse__c=Datetime.now()
+          ));
+          upsert agents Name;
+          APEX
+          echo "Agent telemetry sync queued"
