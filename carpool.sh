@@ -8476,6 +8476,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "open-source-strategy" ]]; then
+  PROJECT="${2:-our project}"
+  AGENTS=("OSS" "Community" "Legal" "Engineering" "Business")
+  QUESTIONS=(
+    "Should $PROJECT be fully open source, open core, or source-available — and why?"
+    "What license fits $PROJECT best and what are the business implications?"
+    "How does $PROJECT build a contributor community that outlasts the founding team?"
+    "How does $PROJECT monetize without alienating its open source community?"
+    "What governance model keeps $PROJECT healthy as it grows beyond the founding org?"
+  )
+  echo ""
+  echo "🌍 CARPOOL: OPEN SOURCE STRATEGY — $PROJECT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Open source strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "edge-computing" ]]; then
+  APP="${2:-our application}"
+  AGENTS=("Edge" "Infra" "Backend" "Security" "Network")
+  QUESTIONS=(
+    "What workloads in $APP are best moved to the edge vs kept centralized?"
+    "Which edge platform (Cloudflare Workers, Fastly, AWS Lambda@Edge) fits $APP best?"
+    "How does $APP handle data consistency and state at the edge?"
+    "What are the cold start, latency, and cost tradeoffs of edge for $APP?"
+    "How do we deploy and manage $APP across hundreds of edge nodes safely?"
+  )
+  echo ""
+  echo "⚡ CARPOOL: EDGE COMPUTING — $APP"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Edge computing design complete."
+  exit 0
+fi
+
+if [[ "$1" == "customer-journey" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("CX" "Marketing" "Product" "Support", "Sales")
+  QUESTIONS=(
+    "Map the full customer journey for $PRODUCT from first awareness to loyal advocate."
+    "Where are the biggest drop-off points in the $PRODUCT customer journey today?"
+    "What emotional job is the customer hiring $PRODUCT to do at each stage?"
+    "How do we personalize the $PRODUCT journey for different customer segments?"
+    "What does success look like at each stage of the $PRODUCT journey and how do we measure it?"
+  )
+  echo ""
+  echo "🗺️  CARPOOL: CUSTOMER JOURNEY — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Customer journey mapping complete."
+  exit 0
+fi
+
+if [[ "$1" == "supply-chain" ]]; then
+  SYSTEM="${2:-our software supply chain}"
+  AGENTS=("Security" "DevOps" "Legal" "Infra" "Engineering")
+  QUESTIONS=(
+    "What are the biggest risks in $SYSTEM today — deps, build pipeline, registries?"
+    "How do we implement SBOM generation and dependency auditing for $SYSTEM?"
+    "What does a secure build pipeline look like for $SYSTEM end to end?"
+    "How should $SYSTEM handle a zero-day in a critical upstream dependency?"
+    "What compliance frameworks (SLSA, SSDF, SOC2) apply to $SYSTEM and what do they require?"
+  )
+  echo ""
+  echo "🔒 CARPOOL: SOFTWARE SUPPLY CHAIN — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Supply chain security review complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
