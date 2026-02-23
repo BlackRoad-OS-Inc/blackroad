@@ -1,34 +1,113 @@
 {
-  "session": "2026-02-23-full-stack-integration",
-  "coordinator": "COPILOT",
+  "session": "2026-02-23-collab-master",
+  "coordinator": "COPILOT+CECE",
+  "updated_at": "2026-02-23T20:55:00Z",
   "participants": {
-    "GEMATRIA": {"status": "online", "ip": "159.65.43.12", "role": "bridge/security"},
-    "OCTAVIA": {"status": "pending-ssh", "role": "compute/deploy"},
-    "ALICE": {"status": "pending-ssh", "role": "routing/gateway"},
-    "ARIA": {"status": "pending-ssh", "role": "frontend/cloudflare"},
-    "LUCIDIA": {"status": "pending-ssh", "role": "reasoning/orchestration"},
-    "CECILIA": {"status": "pending-ssh", "role": "core/memory"},
-    "OLYMPIA": {"status": "pending-ssh", "role": "hardware/kvm"},
-    "SHELLFISH": {"status": "needs-config", "role": "hacker/recon"},
-    "BLACKROAD": {"status": "needs-config", "role": "os/platform"},
-    "CODEX_INFINITY": {"status": "needs-ip", "role": "codex/ai"}
+    "CECILIA": {
+      "status": "online",
+      "ip": "192.168.4.89",
+      "role": "primary-ai-hub",
+      "runner": "cecilia",
+      "specs": "Pi5+Hailo8+500GB-NVMe",
+      "ollama": true
+    },
+    "OCTAVIA": {
+      "status": "online",
+      "ip": "192.168.4.38",
+      "role": "compute-deploy",
+      "runner": "octavia-pi5",
+      "specs": "Pi5"
+    },
+    "ARIA": {
+      "status": "online",
+      "ip": "192.168.4.82",
+      "role": "frontend-cloudflare-tunnel",
+      "runner": "aria-pi4",
+      "specs": "Pi5",
+      "cloudflared": true
+    },
+    "ALICE": {
+      "status": "online",
+      "ip": "192.168.4.49",
+      "role": "gateway-routing",
+      "runner": "pending",
+      "specs": "Pi4"
+    },
+    "GEMATRIA": {
+      "status": "online",
+      "ip": "159.65.43.12",
+      "role": "do-cloud-edge",
+      "runner": "gematria-do",
+      "specs": "DO 78GB"
+    },
+    "ANASTASIA": {
+      "status": "online",
+      "ip": "174.138.44.45",
+      "role": "do-cloud-backup",
+      "runner": "pending",
+      "specs": "DO 25GB"
+    },
+    "LUCIDIA": {
+      "status": "offline",
+      "ip": "192.168.4.81",
+      "role": "ai-node-offline",
+      "runner": "pending",
+      "specs": "Pi5+Hailo8+1TB-NVMe"
+    },
+    "OLYMPIA": {
+      "status": "unknown",
+      "ip": "pikvm.local",
+      "role": "kvm-controller",
+      "runner": "none"
+    }
   },
-  "task_assignments": {
-    "GEMATRIA": ["public-bridge", "do-backup", "nginx-proxy"],
-    "OCTAVIA": ["compute", "railway-deploy", "github-runner"],
-    "ALICE": ["gateway", "routing", "cloudflare-tunnel"],
-    "ARIA": ["frontend", "wrangler", "pages-deploy"],
-    "LUCIDIA": ["orchestration", "salesforce", "memory"],
-    "CECILIA": ["core-services", "identity", "session-mgmt"]
-  },
+  "runners_active": [
+    "cecilia",
+    "octavia-pi5",
+    "aria-pi4",
+    "gematria-do"
+  ],
+  "runners_cost": "$0/month (self-hosted)",
   "platforms": {
-    "github": {"status": "active", "orgs": 16, "runner_migration": "pending"},
-    "cloudflare": {"status": "active", "workers": 75, "from_pi": "pending"},
-    "railway": {"status": "active", "projects": 14, "from_pi": "pending"},
-    "salesforce": {"status": "active", "ci_cd": "pending"},
-    "huggingface": {"status": "pending"},
-    "google_drive": {"status": "pending"}
+    "github": {
+      "org": "BlackRoad-OS-Inc",
+      "runners": 4,
+      "workflows": 15
+    },
+    "cloudflare": {
+      "account": "848cf0b18d51e0170e0d1537aec3505a",
+      "tunnel": "cecilia+aria"
+    },
+    "railway": {
+      "projects": 14,
+      "monitor": "gematria"
+    },
+    "salesforce": {
+      "dir": "blackroad-sf",
+      "runner": "cecilia"
+    },
+    "huggingface": {
+      "serving": "cecilia",
+      "models": [
+        "cece2",
+        "cecilia",
+        "qwen3:8b",
+        "llama3:8b"
+      ]
+    }
   },
-  "cost_target": "$0",
-  "created": "2026-02-23T20:42:53Z"
+  "continuous_workflow": {
+    "name": "continuous-24h-agent-loop.yml",
+    "cadence": "24h+3s",
+    "runner": "self-hosted,pi",
+    "cost": "$0",
+    "pattern": "schedule(daily) + workflow_dispatch chain"
+  },
+  "domain_hosting": {
+    "primary": "cecilia (nginx + cloudflare tunnel)",
+    "backup_tier2": "gematria (DO nginx)",
+    "backup_tier3": "cloudflare pages",
+    "backup_tier4": "github pages",
+    "backup_tier5": "railway"
+  }
 }

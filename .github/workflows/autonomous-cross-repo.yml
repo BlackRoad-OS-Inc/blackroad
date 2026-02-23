@@ -45,7 +45,7 @@ jobs:
   # ============================================
   identify-repos:
     name: "Identify Affected Repos"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
     outputs:
       repos: ${{ steps.find.outputs.repos }}
       sync_files: ${{ steps.changes.outputs.files }}
@@ -96,7 +96,7 @@ jobs:
     name: "Sync Workflows"
     needs: identify-repos
     if: github.event.inputs.sync_type == 'workflows' || github.event.inputs.sync_type == 'all' || contains(needs.identify-repos.outputs.sync_files, '.github/workflows')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
     strategy:
       matrix:
         repo: ${{ fromJSON(needs.identify-repos.outputs.repos) }}
@@ -186,7 +186,7 @@ jobs:
     name: "Sync Configurations"
     needs: identify-repos
     if: github.event.inputs.sync_type == 'config' || github.event.inputs.sync_type == 'all'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
     strategy:
       matrix:
         repo: ${{ fromJSON(needs.identify-repos.outputs.repos) }}
@@ -263,7 +263,7 @@ jobs:
     name: "Sync Dependencies"
     needs: identify-repos
     if: github.event.inputs.sync_type == 'dependencies' || github.event.inputs.sync_type == 'all'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - uses: actions/checkout@v4
@@ -301,7 +301,7 @@ jobs:
     name: "Broadcast Changes"
     needs: [sync-workflows, sync-config, sync-deps]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - name: Notify Coordination System

@@ -14,7 +14,7 @@ on:
 jobs:
   assign-identity:
     name: "Assign Agent to Branch"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
     outputs:
       agent_name: ${{ steps.resolve.outputs.agent_name }}
       agent_emoji: ${{ steps.resolve.outputs.agent_emoji }}
@@ -66,7 +66,7 @@ jobs:
 
   tag-pr:
     name: "Tag PR with Agent Identity"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
     needs: assign-identity
     if: github.event_name == 'pull_request'
     steps:

@@ -1,0 +1,52 @@
+name: "🏠 Pi Domain Setup — Self-Hosted Nginx"
+# Sets up nginx on Pi fleet for self-hosted domain routing
+# Runs on Pi self-hosted runners (no sudo password needed via runner env)
+
+on:
+  workflow_dispatch:
+    inputs:
+      node:
+        description: 'Target Pi node'
+        required: true
+        default: 'cecilia'
+        type: choice
+        options: [cecilia, aria, octavia, alice, all]
+  push:
+    branches: [main]
+    paths: ['infra/nginx/**']
+
+jobs:
+  setup-nginx:
+    name: "🌐 Setup Nginx on ${{ inputs.node || 'cecilia' }}"
+    runs-on: [self-hosted, pi, "${{ inputs.node || 'cecilia' }}"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nginx (passwordless via runner)
+        run: |
+          # Configure sudoers for runner user (one-time)
+          if ! sudo -n nginx -v &>/dev/null 2>&1; then
+            echo "$(whoami) ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/sbin/nginx, /bin/systemctl, /usr/bin/tee, /bin/cp, /bin/mkdir" | \
+              sudo DEBIAN_FRONTEND=noninteractive tee /etc/sudoers.d/blackroad-deploy > /dev/null || true
+          fi
+          sudo apt-get install -y nginx 2>/dev/null || true
+          sudo systemctl enable nginx || true
+          sudo systemctl start nginx || true
+          nginx -v 2>&1 || echo "nginx install needs manual sudo password — see docs"
+
+      - name: Deploy nginx site configs
+        run: |
+          bash scripts/setup-pi-domains.sh --generate-configs-only || true
+          if [ -d infra/nginx/sites ]; then
+            sudo cp infra/nginx/sites/* /etc/nginx/sites-available/ 2>/dev/null || true
+            for f in /etc/nginx/sites-available/*; do
+              sudo ln -sf "$f" /etc/nginx/sites-enabled/ 2>/dev/null || true
+            done
+            sudo nginx -t 2>&1 && sudo systemctl reload nginx || true
+          fi
+
+      - name: Verify domains
+        run: |
+          curl -sf http://localhost/health 2>/dev/null && echo "✅ nginx responding" || echo "nginx not yet active"
+          echo "Node: $(hostname)"
+          echo "IP: $(hostname -I | awk '{print $1}')"

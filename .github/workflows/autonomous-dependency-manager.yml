@@ -33,7 +33,7 @@ jobs:
   # ============================================
   analyze:
     name: "Analyze Dependencies"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
     outputs:
       has_npm: ${{ steps.detect.outputs.npm }}
       has_python: ${{ steps.detect.outputs.python }}
@@ -83,7 +83,7 @@ jobs:
     name: "Update npm Dependencies"
     needs: analyze
     if: needs.analyze.outputs.has_npm == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - uses: actions/checkout@v4
@@ -196,7 +196,7 @@ jobs:
     name: "Update Python Dependencies"
     needs: analyze
     if: needs.analyze.outputs.has_python == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - uses: actions/checkout@v4
@@ -273,7 +273,7 @@ jobs:
     name: "Generate Report"
     needs: [analyze, update-npm, update-python]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - name: Create Summary

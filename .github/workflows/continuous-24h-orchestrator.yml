@@ -100,7 +100,7 @@ jobs:
   # ── Phase 6: Org Cohesion ─────────────────────────────────
   org-cohesion:
     name: "🔗 Org Cohesion Check"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi, blackroad]
     needs: health-check
     if: github.event_name == 'schedule'
     steps:
@@ -115,7 +115,7 @@ jobs:
   # ── Phase 7: Completion + Re-queue ───────────────────────
   complete-and-requeue:
     name: "✅ Cycle Complete"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi, blackroad]
     needs: [salesforce-sync, cloudflare-workers, railway-status, pi-agent-sync]
     if: always()
     steps:

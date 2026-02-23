@@ -57,7 +57,7 @@ jobs:
   # ============================================
   analyze:
     name: "Analyze Repository"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
     outputs:
       project_type: ${{ steps.detect.outputs.type }}
       has_tests: ${{ steps.detect.outputs.has_tests }}
@@ -194,7 +194,7 @@ jobs:
   test-and-build:
     name: "Test & Build"
     needs: analyze
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
     if: needs.analyze.outputs.project_type != 'unknown'
     outputs:
       test_result: ${{ steps.test.outputs.result }}
@@ -295,7 +295,7 @@ jobs:
   security-scan:
     name: "Security Scan"
     needs: analyze
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
     outputs:
       vulnerabilities: ${{ steps.scan.outputs.vulns }}
       severity: ${{ steps.scan.outputs.max_severity }}
@@ -357,7 +357,7 @@ jobs:
     name: "AI Code Review"
     needs: [analyze, test-and-build]
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - uses: actions/checkout@v4
@@ -436,7 +436,7 @@ jobs:
       needs.test-and-build.outputs.test_result != 'failed' &&
       needs.test-and-build.outputs.build_result != 'failed' &&
       needs.security-scan.outputs.severity != 'critical'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - name: Enable Auto-Merge
@@ -467,7 +467,7 @@ jobs:
       github.ref == 'refs/heads/main' &&
       needs.test-and-build.outputs.test_result != 'failed' &&
       needs.security-scan.outputs.severity != 'critical'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - uses: actions/checkout@v4
@@ -510,7 +510,7 @@ jobs:
     name: "Persist Memory"
     needs: [test-and-build, security-scan]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - name: Save Run Memory
@@ -536,7 +536,7 @@ jobs:
     name: "Issue Triage"
     needs: analyze
     if: github.event_name == 'issues' && github.event.action == 'opened'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - name: AI Issue Analysis
@@ -596,7 +596,7 @@ jobs:
     name: "Scheduled Maintenance"
     needs: analyze
     if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pi]
 
     steps:
       - uses: actions/checkout@v4
