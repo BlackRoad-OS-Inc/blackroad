@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Plus, Bot, Search, Clock } from 'lucide-react';
+import { MessageSquare, Plus, Bot, Search, Clock, Loader2 } from 'lucide-react';
 
 interface Conversation {
   id: string;
@@ -14,7 +14,16 @@ interface Conversation {
   status: 'active' | 'ended';
 }
 
-const SAMPLE_CONVERSATIONS: Conversation[] = [
+const AGENT_COLORS: Record<string, string> = {
+  lucidia: '#2979FF',
+  alice: '#22c55e',
+  octavia: '#F5A623',
+  cecilia: '#9C27B0',
+  aria: '#FF1D6C',
+  shellfish: '#ef4444',
+};
+
+const SEED_CONVERSATIONS: Conversation[] = [
   {
     id: 'lucidia-1',
     agent: 'Lucidia',
@@ -72,11 +81,51 @@ const AGENTS = [
   { name: 'Shellfish', value: 'Shellfish', color: '#ef4444' },
 ];
 
+function formatTimestamp(ts: string): string {
+  try {
+    const d = new Date(ts);
+    const now = Date.now();
+    const diff = now - d.getTime();
+    if (diff < 60000) return 'just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    if (diff < 172800000) return 'Yesterday';
+    return d.toLocaleDateString();
+  } catch { return ts; }
+}
+
 export default function ConversationsPage() {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [conversations, setConversations] = useState<Conversation[]>(SEED_CONVERSATIONS);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = SAMPLE_CONVERSATIONS.filter((c) => {
+  useEffect(() => {
+    fetch('/api/conversations')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.conversations?.length) {
+          const live: Conversation[] = data.conversations.map((c: {
+            id: string; agent?: string; title?: string; updatedAt?: string; messages?: {role: string; content: string}[];
+          }) => ({
+            id: c.id,
+            agent: c.agent || 'Agent',
+            agentColor: AGENT_COLORS[(c.agent || '').toLowerCase()] || '#888',
+            title: c.title || 'Untitled',
+            lastMessage: c.messages?.[c.messages.length - 1]?.content?.slice(0, 80) || '—',
+            timestamp: formatTimestamp(c.updatedAt || ''),
+            status: 'ended' as const,
+          }));
+          // Merge: live first, then seed ones not already in live
+          const liveIds = new Set(live.map(c => c.id));
+          setConversations([...live, ...SEED_CONVERSATIONS.filter(c => !liveIds.has(c.id))]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = conversations.filter((c) => {
     if (filter !== 'all' && c.agent !== filter) return false;
     if (search && !c.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
@@ -88,7 +137,9 @@ export default function ConversationsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Conversations</h1>
-          <p className="text-gray-500 text-sm mt-1">{SAMPLE_CONVERSATIONS.length} conversations · All agents</p>
+          <p className="text-gray-500 text-sm mt-1 flex items-center gap-2">
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : `${conversations.length} conversations`} · All agents
+          </p>
         </div>
         <Link
           href="/conversations/new"

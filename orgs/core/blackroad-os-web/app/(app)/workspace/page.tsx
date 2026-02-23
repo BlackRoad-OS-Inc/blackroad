@@ -17,20 +17,24 @@ interface StatusData {
 }
 
 const QUICK_STARTS = [
-  { id: 'new-1', icon: '🌀', agent: 'Lucidia', title: 'Deep analysis', desc: 'Recursive reasoning & strategy', href: '/conversations/lucidia-1' },
-  { id: 'new-2', icon: '🚪', agent: 'Alice', title: 'Run a task', desc: 'Deploy, automate, execute', href: '/conversations/alice-1' },
-  { id: 'new-3', icon: '⚡', agent: 'Octavia', title: 'Infra review', desc: 'Architecture & system health', href: '/conversations/octavia-1' },
-  { id: 'new-4', icon: '🔐', agent: 'Shellfish', title: 'Security scan', desc: 'Audit, harden, verify', href: '/conversations/shellfish-1' },
+  { id: 'new-lucidia', icon: '🌀', agent: 'Lucidia', title: 'Deep analysis', desc: 'Recursive reasoning & strategy', href: '/conversations/new?agent=lucidia' },
+  { id: 'new-alice', icon: '🚪', agent: 'Alice', title: 'Run a task', desc: 'Deploy, automate, execute', href: '/conversations/new?agent=alice' },
+  { id: 'new-octavia', icon: '⚡', agent: 'Octavia', title: 'Infra review', desc: 'Architecture & system health', href: '/conversations/new?agent=octavia' },
+  { id: 'new-shellfish', icon: '🔐', agent: 'Shellfish', title: 'Security scan', desc: 'Audit, harden, verify', href: '/conversations/new?agent=shellfish' },
 ];
 
 export default function WorkspacePage() {
   const user = useAuthStore((state) => state.user);
   const [agentData, setAgentData] = useState<AgentData | null>(null);
   const [statusData, setStatusData] = useState<StatusData | null>(null);
+  const [recentConvs, setRecentConvs] = useState<{ id: string; title: string; agent: string; updatedAt?: string }[]>([]);
 
   useEffect(() => {
     fetch('/api/agents').then(r => r.json()).then(setAgentData).catch(() => {});
     fetch('/api/status').then(r => r.json()).then(setStatusData).catch(() => {});
+    fetch('/api/conversations').then(r => r.ok ? r.json() : null).then(d => {
+      if (d?.conversations?.length) setRecentConvs(d.conversations.slice(0, 3));
+    }).catch(() => {});
   }, []);
 
   const hour = new Date().getHours();
@@ -104,7 +108,7 @@ export default function WorkspacePage() {
           ]).map((agent) => (
             <Link
               key={agent.id}
-              href={`/conversations/${agent.id}-${Date.now()}`}
+              href={`/conversations/new?agent=${agent.id}`}
               className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:border-white/20 transition-all group"
             >
               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: agent.color }} />
@@ -120,6 +124,27 @@ export default function WorkspacePage() {
           ))}
         </div>
       </div>
+
+      {/* Recent conversations */}
+      {recentConvs.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Recent Conversations</h2>
+            <Link href="/conversations" className="text-xs text-gray-600 hover:text-white transition-colors">View all →</Link>
+          </div>
+          <div className="space-y-2">
+            {recentConvs.map(c => (
+              <Link key={c.id} href={`/conversations/${c.id}`}
+                className="flex items-center gap-3 px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:border-white/20 transition-all"
+              >
+                <span className="text-xs font-medium text-gray-500 w-16 truncate">{c.agent}</span>
+                <span className="text-sm text-white truncate flex-1">{c.title}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Terminal shortcut */}
       <div className="bg-black border border-white/10 rounded-xl p-4 font-mono text-sm">
