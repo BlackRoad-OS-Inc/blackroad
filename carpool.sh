@@ -5127,6 +5127,141 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── TRAFFICLIGHT — GREEN/YELLOW/RED status assessment ─────────────────
+if [[ "$1" == "trafficlight" || "$1" == "tl" ]]; then
+  shift
+  PROJECT="$*"
+  PROJECT="${PROJECT:-this project}"
+  echo ""
+  echo -e "\033[1;33m🚦 TRAFFIC LIGHT ASSESSMENT: $PROJECT\033[0m"
+  echo ""
+  HIST=""
+  [[ -f "$HOME/.blackroad/carpool/memory.txt" ]] && HIST=$(tail -20 "$HOME/.blackroad/carpool/memory.txt")
+  TL_FILE="$HOME/.blackroad/carpool/trafficlights/$(echo "$PROJECT" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/trafficlights"
+  printf "# Traffic Light: %s\nDate: %s\n\n" "$PROJECT" "$(date '+%Y-%m-%d')" > "$TL_FILE"
+  for entry in "CIPHER|SECURITY SIGNAL|Rate RED/YELLOW/GREEN. Known vulns, exposed secrets, auth gaps, last security review date." "OCTAVIA|INFRASTRUCTURE SIGNAL|Rate RED/YELLOW/GREEN. Uptime trend, deployment frequency, SPOF exposure, monitoring coverage." "PRISM|QUALITY SIGNAL|Rate RED/YELLOW/GREEN. Test coverage, known bugs, error rate, p99 latency vs target." "ALICE|OPERATIONS SIGNAL|Rate RED/YELLOW/GREEN. On-call load, runbook freshness, incident frequency, toil level." "LUCIDIA|OVERALL VERDICT|🟢 GREEN / 🟡 YELLOW / 🔴 RED with one sentence reason. The honest operator view."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json, sys
+hist = sys.argv[1]
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} assessing the traffic light status of: \"${PROJECT}\"
+{\"Context: \" + hist[:400] if hist else \"\"}
+Section: ${section}
+${lens}
+Start with the color (🟢/🟡/🔴). Then 2-3 specific reasons.
+Format: <color> — <reason 1> | <reason 2> | <reason 3>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" "$HIST" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$TL_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $TL_FILE\033[0m"
+  exit 0
+fi
+
+# ── DOMAIN-EVENTS — design event sourcing for a feature ───────────────
+if [[ "$1" == "domain-events" || "$1" == "events" ]]; then
+  shift
+  FEATURE="$*"
+  [[ -z "$FEATURE" ]] && echo "Usage: br carpool domain-events <feature or aggregate>" && exit 1
+  echo ""
+  echo -e "\033[1;34m📡 DOMAIN EVENTS: $FEATURE\033[0m"
+  echo ""
+  DE_FILE="$HOME/.blackroad/carpool/domain-events/$(echo "$FEATURE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/domain-events"
+  printf "# Domain Events: %s\nDate: %s\n\n" "$FEATURE" "$(date '+%Y-%m-%d')" > "$DE_FILE"
+  for entry in "LUCIDIA|EVENT CATALOG|All domain events for this feature. PascalCase names, past tense. What triggered each, what it means to the business." "OCTAVIA|EVENT PAYLOADS|JSON payload schema for the 3 most important events. Include: id, timestamp, aggregate_id, version, data fields." "ALICE|EVENT FLOW|Sequence of events for the happy path. Which service emits, which services subscribe, in order." "CIPHER|EVENT SECURITY|Which events contain PII or sensitive data. Encryption requirements, access control, audit log needs." "PRISM|PROJECTIONS & READ MODELS|The read models built from these events. What queries they answer. How far behind they can lag."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing domain events for: \"${FEATURE}\"
+Section: ${section}
+${lens}
+Use real event sourcing conventions. Past-tense event names, real JSON field names.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$DE_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $DE_FILE\033[0m"
+  exit 0
+fi
+
+# ── NEWSLETTER — write a developer newsletter issue ────────────────────
+if [[ "$1" == "newsletter" ]]; then
+  shift
+  TOPIC="$*"
+  [[ -z "$TOPIC" ]] && echo "Usage: br carpool newsletter <topic or this week's theme>" && exit 1
+  echo ""
+  echo -e "\033[1;35m📰 NEWSLETTER: $TOPIC\033[0m"
+  echo ""
+  NL_FILE="$HOME/.blackroad/carpool/newsletters/$(echo "$TOPIC" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/newsletters"
+  printf "# Newsletter: %s\nDate: %s\n\n" "$TOPIC" "$(date '+%Y-%m-%d')" > "$NL_FILE"
+  for entry in "ARIA|SUBJECT LINE & PREVIEW|3 subject line options (curiosity / benefit / direct) + preview text. Under 50 chars each." "LUCIDIA|OPENING HOOK|First 2-3 sentences. Must make the reader stop scrolling. No 'hope this email finds you well'." "ALICE|MAIN CONTENT|The meat: 3-5 numbered items or a short essay. Scannable. Each item with a bold lead-in." "PRISM|DATA OR INSIGHT|One surprising number, chart description, or insight that readers will forward to a colleague." "OCTAVIA|CLOSING & CTA|Sign-off that sounds human. One clear CTA. What should the reader do right now?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} writing a developer newsletter about: \"${TOPIC}\"
+Section: ${section}
+${lens}
+Write actual copy, not instructions. Punchy, human, no corporate speak.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$NL_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $NL_FILE\033[0m"
+  exit 0
+fi
+
+# ── OPS-RUNBOOK — write an operations runbook ─────────────────────────
+if [[ "$1" == "ops-runbook" || "$1" == "runbook" ]]; then
+  shift
+  SERVICE="$*"
+  [[ -z "$SERVICE" ]] && echo "Usage: br carpool ops-runbook <service or procedure>" && exit 1
+  echo ""
+  echo -e "\033[1;32m📖 OPS RUNBOOK: $SERVICE\033[0m"
+  echo ""
+  RB_FILE="$HOME/.blackroad/carpool/runbooks/$(echo "$SERVICE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/runbooks"
+  printf "# Runbook: %s\nDate: %s\n\n" "$SERVICE" "$(date '+%Y-%m-%d')" > "$RB_FILE"
+  for entry in "ALICE|QUICK REFERENCE|Service owner, repo link, deploy command, restart command, log location. One glance, have everything." "OCTAVIA|COMMON PROCEDURES|Deploy, rollback, restart, scale up/down. Exact commands for each. Copy-paste ready." "PRISM|HEALTH CHECKS|Commands to verify the service is healthy. Expected output vs problem output for each check." "CIPHER|SECRETS & ACCESS|Where secrets live, how to rotate them, who has access, emergency access procedure." "SHELLFISH|BREAK-GLASS PROCEDURES|Nuclear options: force restart, drain traffic, kill switch. When to use each, who approves."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} writing an ops runbook for: \"${SERVICE}\"
+Section: ${section}
+${lens}
+Real commands, real paths, real tool names. An on-call engineer at 3am will use this.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$RB_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $RB_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1

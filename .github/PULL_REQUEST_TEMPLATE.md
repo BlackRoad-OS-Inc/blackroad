@@ -1,53 +1,23 @@
 ## Summary
-
-<!-- What does this PR do? 1-3 bullet points. -->
-
--
+<!-- What does this PR do? -->
 
 ## Type
-
-<!-- Check one: -->
-- [ ] Feature
-- [ ] Bug fix
-- [ ] Refactor
-- [ ] Infrastructure / CI
-- [ ] Documentation
-- [ ] Agent task
-- [ ] Config change
+- [ ] 🚀 Feature
+- [ ] 🐛 Bug Fix
+- [ ] 🔧 Chore / Refactor
+- [ ] 📚 Documentation
+- [ ] 🔒 Security
 
 ## Changes
-
-<!-- Key files or areas changed. -->
-
+<!-- List key changes -->
 -
 
 ## Testing
-
-<!-- How was this tested? -->
-
-- [ ] Manual testing
 - [ ] Unit tests pass
-- [ ] Lint passes
-- [ ] Deployed to staging
-- [ ] Verified on device (Pi/droplet)
-- [ ] N/A
-
-## Traffic Light
-
-<!-- Current status of affected project(s): -->
-- [ ] No traffic light impact
-- [ ] Checked `blackroad-traffic-light.sh summary`
+- [ ] Manual testing done
+- [ ] No regressions
 
 ## Checklist
-
-- [ ] No secrets or tokens committed
-- [ ] Shell scripts have `set -e` where appropriate
-- [ ] Brand colors match `BLACKROAD_BRAND_SYSTEM.md` (if UI)
-- [ ] Memory logged for significant changes (`memory-system.sh log`)
-- [ ] CLAUDE.md updated (if adding new commands/features)
-
-## Related
-
-<!-- Link issues, tasks, or other PRs. -->
-
-Closes #
+- [ ] CHANGELOG.md updated
+- [ ] No secrets committed
+- [ ] CI passes

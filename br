@@ -173,6 +173,11 @@ BR_TOOLS=(
     tmpl        "${BR_TOOLS_DIR}/template/br-template.sh"
     fleet       "${BR_TOOLS_DIR}/fleet/br-fleet.sh"
     nodes       "${BR_TOOLS_DIR}/fleet/br-fleet.sh"
+    radar       "${BR_TOOLS_DIR}/context-radar/br-context-radar.sh"
+    ctx-radar   "${BR_TOOLS_DIR}/context-radar/br-context-radar.sh"
+    pdf         "${BR_TOOLS_DIR}/pdf-read/br-pdf-read.sh"
+    pdf-read    "${BR_TOOLS_DIR}/pdf-read/br-pdf-read.sh"
+    deploy      "${BR_TOOLS_DIR}/deploy-cmd/br-deploy-cmd.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -470,6 +475,10 @@ show_help() {
     echo "║    br carpool accessibility <> - WCAG audit + keyboard + code fixes   ║"
     echo "║    br carpool capacity <>   - Baseline + scaling model + SPOFs        ║"
     echo "║    br carpool migration <>  - Phases + rollback + success criteria    ║"
+    echo "║    br carpool trafficlight <> - 🚦 GREEN/YELLOW/RED status assessment ║"
+    echo "║    br carpool domain-events <> - Event catalog + payloads + flow      ║"
+    echo "║    br carpool newsletter <> - Subject + hook + content + CTA          ║"
+    echo "║    br carpool ops-runbook <> - Quick ref + procedures + break-glass   ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
     echo "║    br carpool ask <q>       - Inject follow-up into live session   ║"
@@ -1177,6 +1186,10 @@ main() {
                 accessibility|a11y) bash /Users/alexa/blackroad/carpool.sh accessibility "$@" ;;
                 capacity)   bash /Users/alexa/blackroad/carpool.sh capacity "$@" ;;
                 migration|migrate) bash /Users/alexa/blackroad/carpool.sh migration "$@" ;;
+                trafficlight|tl) bash /Users/alexa/blackroad/carpool.sh trafficlight "$@" ;;
+                domain-events|events) bash /Users/alexa/blackroad/carpool.sh domain-events "$@" ;;
+                newsletter)  bash /Users/alexa/blackroad/carpool.sh newsletter "$@" ;;
+                ops-runbook|runbook) bash /Users/alexa/blackroad/carpool.sh ops-runbook "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
