@@ -53,6 +53,7 @@ check_key_set() {
 # ── Commands ────────────────────────────────────────────────────────────────
 
 cmd_list() {
+  local p_entry p_name p_label p_key_env p_free p_icon p_key_status p_free_badge
   echo ""
   echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
   echo -e "${BOLD}${CYAN}║           BR PROVIDER — Configured AI Providers              ║${NC}"
@@ -61,7 +62,6 @@ cmd_list() {
   echo -e "  ${BOLD}  PROVIDER       LABEL                    KEY        FREE${NC}"
   echo -e "  ${CYAN}──────────────────────────────────────────────────────────────${NC}"
   for p_entry in "${PROVIDERS[@]}"; do
-    local p_name p_label p_key_env p_free p_icon p_key_status p_free_badge
     p_name=$(echo "$p_entry"    | cut -d'|' -f1)
     p_label=$(echo "$p_entry"   | cut -d'|' -f2)
     p_key_env=$(echo "$p_entry" | cut -d'|' -f4)
@@ -166,6 +166,7 @@ cmd_set() {
 }
 
 cmd_status() {
+  local entry name url key_env icon
   echo ""
   echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════════════╗${NC}"
   echo -e "${BOLD}${CYAN}║         BR PROVIDER — Reachability Status        ║${NC}"
@@ -180,7 +181,6 @@ cmd_status() {
   fi
   echo ""
   for entry in "${PROVIDERS[@]}"; do
-    local name url key_env free icon
     name=$(echo "$entry"    | cut -d'|' -f1)
     url=$(echo "$entry"     | cut -d'|' -f3)
     key_env=$(echo "$entry" | cut -d'|' -f4)

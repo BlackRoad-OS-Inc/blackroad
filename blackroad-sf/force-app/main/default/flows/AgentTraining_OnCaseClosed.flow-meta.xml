@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>65.0</apiVersion>
+    <label>Agent Training — On Case Closed (PR Merged)</label>
+    <status>Active</status>
+    <interviewLabel>Agent Training {!$Flow.CurrentDateTime}</interviewLabel>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>176</locationX>
+        <locationY>48</locationY>
+        <object>AgentTrainingEvent__e</object>
+        <connector>
+            <targetReference>Log_Training_Start</targetReference>
+        </connector>
+    </start>
+
+    <!-- Step 1: Create AgentTask for training run -->
+    <recordCreates>
+        <name>Log_Training_Start</name>
+        <label>Create Training Task</label>
+        <locationX>176</locationX>
+        <locationY>168</locationY>
+        <inputAssignments>
+            <field>Name</field>
+            <value>
+                <elementReference>$Record.TrainingProject__c</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>TaskId__c</field>
+            <value>
+                <elementReference>$Record.CaseId__c</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Description__c</field>
+            <value>
+                <stringValue>Agent training triggered by merged PR (Case closed).
+Checkpoint will be saved to Pi fleet Ollama.</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Priority__c</field>
+            <value><stringValue>high</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status__c</field>
+            <value><stringValue>in_progress</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Model__c</field>
+            <value>
+                <elementReference>$Record.ModelCheckpoint__c</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>CostUSD__c</field>
+            <value><numberValue>0.0</numberValue></value>
+        </inputAssignments>
+        <object>AgentTask__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+        <connector>
+            <targetReference>Create_Deployment_Record</targetReference>
+        </connector>
+    </recordCreates>
+
+    <!-- Step 2: Log deployment -->
+    <recordCreates>
+        <name>Create_Deployment_Record</name>
+        <label>Log Deployment</label>
+        <locationX>176</locationX>
+        <locationY>288</locationY>
+        <inputAssignments>
+            <field>DeployType__c</field>
+            <value><stringValue>agent_training</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status__c</field>
+            <value><stringValue>in_progress</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>TriggerSource__c</field>
+            <value><stringValue>salesforce_flow</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>TargetOrg__c</field>
+            <value><stringValue>BlackRoad-OS-Inc</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Notes__c</field>
+            <value>
+                <elementReference>$Record.TrainingProject__c</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>CostUSD__c</field>
+            <value><numberValue>0.0</numberValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>DeployedAt__c</field>
+            <value><elementReference>$Flow.CurrentDateTime</elementReference></value>
+        </inputAssignments>
+        <object>AgentDeployment__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+        <connector>
+            <targetReference>Update_Agent_Status</targetReference>
+        </connector>
+    </recordCreates>
+
+    <!-- Step 3: Update agent status to training -->
+    <recordUpdates>
+        <name>Update_Agent_Status</name>
+        <label>Set Agent → training</label>
+        <locationX>176</locationX>
+        <locationY>408</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>AgentId__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.AgentId__c</elementReference>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Status__c</field>
+            <value><stringValue>training</stringValue></value>
+        </inputAssignments>
+        <object>Agent__c</object>
+    </recordUpdates>
+
+</Flow>

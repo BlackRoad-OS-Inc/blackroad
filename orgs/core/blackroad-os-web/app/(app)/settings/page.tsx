@@ -3,26 +3,39 @@
 import { useState } from 'react';
 import { Settings, Cpu, Key, Globe, Bell, Moon, Zap, Save, CheckCircle, RefreshCw } from 'lucide-react';
 
+const DEFAULT_SETTINGS = {
+  gatewayUrl: 'http://127.0.0.1:8787',
+  workerUrl: 'https://blackroad-os-api.amundsonalexa.workers.dev',
+  defaultModel: 'cece3b',
+  theme: 'dark',
+  notifications: true,
+  streamResponses: true,
+  maxTokens: '4096',
+  temperature: '0.7',
+  workspaceName: 'BlackRoad OS',
+  displayName: 'Alexa',
+  email: 'alexa@blackroad.io',
+};
+
 export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
-  const [form, setForm] = useState({
-    gatewayUrl: 'http://127.0.0.1:8787',
-    workerUrl: 'https://blackroad-os-api.amundsonalexa.workers.dev',
-    defaultModel: 'cece3b',
-    theme: 'dark',
-    notifications: true,
-    streamResponses: true,
-    maxTokens: '4096',
-    temperature: '0.7',
-    workspaceName: 'BlackRoad OS',
-    displayName: 'Alexa',
-    email: 'alexa@blackroad.io',
+  const [form, setForm] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('br-settings');
+        if (stored) return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+      } catch { /* ignore */ }
+    }
+    return DEFAULT_SETTINGS;
+  });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   });
 
   const update = (key: string, value: string | boolean) =>
     setForm(f => ({ ...f, [key]: value }));
 
   const handleSave = () => {
+    try { localStorage.setItem('br-settings', JSON.stringify(form)); } catch { /* ignore */ }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

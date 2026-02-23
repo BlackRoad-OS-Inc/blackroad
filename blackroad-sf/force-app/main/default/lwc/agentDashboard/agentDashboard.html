@@ -1,0 +1,201 @@
+<template>
+    <div class="blackroad-command-center">
+
+        <!-- ── Header ── -->
+        <div class="cc-header">
+            <div class="cc-header-left">
+                <span class="cc-logo">◈</span>
+                <div>
+                    <h1>BlackRoad OS — Command Center</h1>
+                    <p class="cc-sub">17 Orgs · 1,825+ Repos · 193 Agents · Stripe · Excel — $0/mo</p>
+                </div>
+            </div>
+            <div class="cc-header-right">
+                <lightning-button label="Sync GitHub" icon-name="utility:refresh"
+                    onclick={syncGitHub} variant="brand" class="mr8"></lightning-button>
+                <lightning-button label="Sync Stripe" icon-name="utility:moneybag"
+                    onclick={syncStripe} variant="success" class="mr8"></lightning-button>
+                <lightning-button label="🌌 Universe Sync" icon-name="utility:upload"
+                    onclick={triggerUniverseSync} variant="brand-outline"></lightning-button>
+            </div>
+        </div>
+
+        <!-- ── Command Stats Bar ── -->
+        <template if:true={cmdStats}>
+            <div class="stats-bar">
+                <div class="stat-card agents">
+                    <span class="stat-number">{cmdStats.agents}</span>
+                    <span class="stat-label">🤖 Agents</span>
+                </div>
+                <div class="stat-card repos">
+                    <span class="stat-number">{cmdStats.repos}</span>
+                    <span class="stat-label">📦 Repos</span>
+                </div>
+                <div class="stat-card orgs">
+                    <span class="stat-number">{cmdStats.orgs}</span>
+                    <span class="stat-label">🏢 GitHub Orgs</span>
+                </div>
+                <div class="stat-card tasks">
+                    <span class="stat-number">{cmdStats.tasks}</span>
+                    <span class="stat-label">🏹 Pending Tasks</span>
+                </div>
+                <div class="stat-card deploys">
+                    <span class="stat-number">{cmdStats.deployments}</span>
+                    <span class="stat-label">🚀 Deployments</span>
+                </div>
+                <div class="stat-card stripe">
+                    <span class="stat-number">{cmdStats.stripeCustomers}</span>
+                    <span class="stat-label">💳 Customers</span>
+                </div>
+                <div class="stat-card cost">
+                    <span class="stat-number">{cmdStats.totalCost}</span>
+                    <span class="stat-label">💚 Monthly Cost</span>
+                </div>
+            </div>
+        </template>
+
+        <!-- ── Main Tabs ── -->
+        <lightning-tabset active-tab-value="github">
+
+            <!-- GITHUB ORGS -->
+            <lightning-tab label="🐙 GitHub Orgs" value="github">
+                <div class="section-header">
+                    <h3>All 17 BlackRoad GitHub Organizations</h3>
+                    <lightning-button label="Seed Orgs" onclick={seedOrgs} variant="brand-outline" size="small"></lightning-button>
+                </div>
+                <div class="org-grid">
+                    <template for:each={githubOrgs} for:item="org">
+                        <div key={org.Id} class="org-card">
+                            <div class="org-name">
+                                <a href={org.OrgUrl__c} target="_blank">{org.Name}</a>
+                                <span class={org.syncClass}>{org.SyncStatus__c}</span>
+                            </div>
+                            <p class="org-purpose">{org.Purpose__c}</p>
+                            <div class="org-stats">
+                                <span>📦 {org.TotalRepos__c} repos</span>
+                                <span>🤖 {org.TotalAgents__c} agents</span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </lightning-tab>
+
+            <!-- REPOS -->
+            <lightning-tab label="📦 Repos" value="repos">
+                <div class="section-header">
+                    <lightning-combobox label="" placeholder="Filter by org"
+                        value={repoOrgFilter} options={orgOptions}
+                        onchange={handleOrgFilter} class="org-filter">
+                    </lightning-combobox>
+                    <span class="repo-count">{repos.length} repos</span>
+                </div>
+                <lightning-datatable
+                    key-field="Id"
+                    data={repos}
+                    columns={repoColumns}
+                    hide-checkbox-column
+                    sorted-by={sortedBy}
+                    sorted-direction={sortedDir}
+                    onsort={handleSort}>
+                </lightning-datatable>
+            </lightning-tab>
+
+            <!-- AGENTS -->
+            <lightning-tab label="🤖 Agents" value="agents">
+                <div class="agent-grid">
+                    <template for:each={agents} for:item="agent">
+                        <div key={agent.Id} class="agent-card">
+                            <div class="agent-header">
+                                <span class="agent-symbol">{agent.Symbol__c}</span>
+                                <span class="agent-name">{agent.Name}</span>
+                                <span class={agent.statusClass}>{agent.Status__c}</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-role">{agent.Role__c}</p>
+                                <p class="agent-domain">{agent.Domain__c}</p>
+                                <div class="agent-meta">
+                                    <span class="deploy-target">{agent.DeployTarget__c}</span>
+                                    <span class="model">{agent.OllamaModel__c}</span>
+                                </div>
+                            </div>
+                            <div class="agent-footer">
+                                <lightning-button-icon icon-name="utility:play"
+                                    title="Invoke" onclick={invokeAgent}
+                                    data-agent={agent.AgentId__c}
+                                    variant="border-filled" size="small">
+                                </lightning-button-icon>
+                                <span class="cost-label">$0</span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </lightning-tab>
+
+            <!-- STRIPE -->
+            <lightning-tab label="💳 Stripe" value="stripe">
+                <div class="section-header">
+                    <lightning-combobox label="" placeholder="Filter type"
+                        value={stripeTypeFilter} options={stripeTypeOptions}
+                        onchange={handleStripeFilter}>
+                    </lightning-combobox>
+                    <lightning-button label="Sync Stripe Now" onclick={syncStripe}
+                        variant="success" size="small"></lightning-button>
+                </div>
+                <lightning-datatable
+                    key-field="Id"
+                    data={stripeRecords}
+                    columns={stripeColumns}
+                    hide-checkbox-column>
+                </lightning-datatable>
+            </lightning-tab>
+
+            <!-- IMPORT (Excel / CSV) -->
+            <lightning-tab label="📊 Import" value="import">
+                <div class="import-section">
+                    <h3>Import Excel / CSV Data</h3>
+                    <p>Drop any spreadsheet export — agents, repos, Stripe, business data. Cost: $0.</p>
+                    <lightning-combobox label="Target Object"
+                        value={importTarget} options={importTargetOptions}
+                        onchange={handleImportTarget}>
+                    </lightning-combobox>
+                    <lightning-file-upload
+                        label="Upload CSV / Excel Export"
+                        name="csvUpload"
+                        accept=".csv,.xlsx,.xls"
+                        record-id={recordId}
+                        onuploadfinished={handleFileUpload}
+                        multiple="false">
+                    </lightning-file-upload>
+                    <template if:true={importResult}>
+                        <div class="import-result">{importResult}</div>
+                    </template>
+                </div>
+            </lightning-tab>
+
+            <!-- DEPLOY -->
+            <lightning-tab label="🚀 Deploy" value="deploy">
+                <div class="deploy-section">
+                    <h3>Universe Sync — BlackRoad-OS-Inc → All 17 Orgs (1,825+ repos)</h3>
+                    <p class="cost-green">Cost: $0. Your infrastructure. Your rules.</p>
+                    <lightning-combobox label="Sync Payload" value={syncPayload}
+                        options={payloadOptions} onchange={handlePayloadChange}>
+                    </lightning-combobox>
+                    <lightning-button label="🌌 Trigger Universe Sync"
+                        onclick={triggerUniverseSync} variant="brand" class="sync-btn">
+                    </lightning-button>
+                </div>
+            </lightning-tab>
+
+            <!-- TASKS -->
+            <lightning-tab label="🏹 Tasks" value="tasks">
+                <lightning-datatable
+                    key-field="Id"
+                    data={pendingTasks}
+                    columns={taskColumns}
+                    hide-checkbox-column>
+                </lightning-datatable>
+            </lightning-tab>
+
+        </lightning-tabset>
+    </div>
+</template>

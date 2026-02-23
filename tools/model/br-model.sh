@@ -88,6 +88,7 @@ get_field() {
 # ── Commands ─────────────────────────────────────────────────────────────────
 
 cmd_list() {
+  local entry model provider ctx speed cost icon current_provider=""
   echo ""
   echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════════════════════════════════╗${NC}"
   echo -e "${BOLD}${CYAN}║              BR MODEL — Full AI Model Catalog                        ║${NC}"
@@ -96,7 +97,6 @@ cmd_list() {
   local current_provider=""
   # Sort by provider for grouped display
   for entry in "${CATALOG[@]}"; do
-    local model provider ctx speed cost tags icon
     model=$(get_field "$entry" 1)
     provider=$(get_field "$entry" 2)
     ctx=$(get_field "$entry" 3)
@@ -104,7 +104,7 @@ cmd_list() {
     cost=$(get_field "$entry" 5)
     icon=$(provider_icon "$provider")
     if [[ "$provider" != "$current_provider" ]]; then
-      echo -e "  ${BOLD}${icon} ${provider^^}${NC}"
+      echo -e "  ${BOLD}${icon} ${(U)provider}${NC}"
       current_provider="$provider"
     fi
     printf "    %-26s  ctx:%-7s  speed:%-12s  cost:%s\n" \
@@ -119,17 +119,15 @@ cmd_list() {
 }
 
 cmd_search() {
-  local term="$1"
+  local term="$1" entry model provider ctx speed cost tags icon found=0
   if [[ -z "$term" ]]; then
     echo -e "${RED}Usage: br model search <term>${NC}"; exit 1
   fi
   echo ""
   echo -e "${BOLD}${CYAN}Model Search:${NC} \"${term}\""
   echo -e "${CYAN}──────────────────────────────────────────────────────${NC}"
-  local found=0
   for entry in "${CATALOG[@]}"; do
     if echo "$entry" | grep -qi "$term"; then
-      local model provider ctx speed cost icon
       model=$(get_field "$entry" 1)
       provider=$(get_field "$entry" 2)
       ctx=$(get_field "$entry" 3)
@@ -149,16 +147,13 @@ cmd_search() {
 }
 
 cmd_info() {
-  local name="$1"
+  local name="$1" entry model provider ctx speed cost tags icon found=0
   if [[ -z "$name" ]]; then
     echo -e "${RED}Usage: br model info <name>${NC}"; exit 1
   fi
-  local found=0
   for entry in "${CATALOG[@]}"; do
-    local model
     model=$(get_field "$entry" 1)
     if [[ "$model" == "$name" ]]; then
-      local provider ctx speed cost tags icon
       provider=$(get_field "$entry" 2)
       ctx=$(get_field "$entry" 3)
       speed=$(get_field "$entry" 4)
@@ -195,13 +190,11 @@ cmd_info() {
 }
 
 cmd_compare() {
-  local a="$1" b="$2"
+  local a="$1" b="$2" ea="" eb="" entry model va vb ci
   if [[ -z "$a" || -z "$b" ]]; then
     echo -e "${RED}Usage: br model compare <model-a> <model-b>${NC}"; exit 1
   fi
-  local ea="" eb=""
   for entry in "${CATALOG[@]}"; do
-    local model
     model=$(get_field "$entry" 1)
     [[ "$model" == "$a" ]] && ea="$entry"
     [[ "$model" == "$b" ]] && eb="$entry"
@@ -250,7 +243,7 @@ cmd_recommend() {
   fi
   echo ""
   echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════════════╗${NC}"
-  echo -e "${BOLD}${CYAN}║  Best models for: ${task^^}${NC}"
+  echo -e "${BOLD}${CYAN}║  Best models for: ${(U)task}${NC}"
   echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════════╝${NC}"
   echo ""
   local rank=1

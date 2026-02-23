@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>65.0</apiVersion>
+    <label>PR Review — Assign Agent on Case Created</label>
+    <status>Active</status>
+    <interviewLabel>PR Review Agent Assign {!$Flow.CurrentDateTime}</interviewLabel>
+    <processType>AutoLaunchedFlow</processType>
+    <triggerType>RecordAfterSave</triggerType>
+    <start>
+        <locationX>176</locationX>
+        <locationY>48</locationY>
+        <object>Case</object>
+        <triggerType>RecordAfterSave</triggerType>
+        <recordTriggerType>Create</recordTriggerType>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>PullRequestUrl__c</field>
+            <operator>IsNull</operator>
+            <value><booleanValue>false</booleanValue></value>
+        </filters>
+        <connector>
+            <targetReference>Route_To_Agent</targetReference>
+        </connector>
+    </start>
+
+    <!-- Decision: route to code-review agent vs general agent -->
+    <decisions>
+        <name>Route_To_Agent</name>
+        <label>Is Training PR?</label>
+        <locationX>176</locationX>
+        <locationY>168</locationY>
+        <defaultConnectorLabel>General Review</defaultConnectorLabel>
+        <defaultConnector>
+            <targetReference>Assign_Review_Agent</targetReference>
+        </defaultConnector>
+        <rules>
+            <name>Is_Training</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.IsAgentTraining__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue><booleanValue>true</booleanValue></rightValue>
+            </conditions>
+            <label>Is Training PR</label>
+            <connector>
+                <targetReference>Assign_Training_Agent</targetReference>
+            </connector>
+        </rules>
+    </decisions>
+
+    <!-- Assign code-review agent for training PRs -->
+    <recordUpdates>
+        <name>Assign_Training_Agent</name>
+        <label>Assign Training Agent</label>
+        <locationX>50</locationX>
+        <locationY>288</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value><elementReference>$Record.Id</elementReference></value>
+        </filters>
+        <inputAssignments>
+            <field>AgentId__c</field>
+            <value><stringValue>core-alice</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>ReviewStatus__c</field>
+            <value><stringValue>open</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>CIStatus__c</field>
+            <value><stringValue>pending</stringValue></value>
+        </inputAssignments>
+        <object>Case</object>
+    </recordUpdates>
+
+    <!-- Assign general review agent -->
+    <recordUpdates>
+        <name>Assign_Review_Agent</name>
+        <label>Assign Review Agent</label>
+        <locationX>300</locationX>
+        <locationY>288</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value><elementReference>$Record.Id</elementReference></value>
+        </filters>
+        <inputAssignments>
+            <field>AgentId__c</field>
+            <value><stringValue>core-octavia</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>ReviewStatus__c</field>
+            <value><stringValue>open</stringValue></value>
+        </inputAssignments>
+        <object>Case</object>
+    </recordUpdates>
+
+</Flow>
