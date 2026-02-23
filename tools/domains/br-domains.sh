@@ -1,181 +1,169 @@
 #!/bin/zsh
-# BR DOMAINS — Cloudflare DNS Manager
-export PATH="/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+# BR Domains — Route all BlackRoad domains to Pi fleet via Cloudflare tunnel
+# Usage: br domains [route|failover|status|update]
 
-GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'
-BLUE='\033[0;34m'; GRAY='\033[0;37m'; BOLD='\033[1m'; NC='\033[0m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 
-CF_ACCOUNT_ID="848cf0b18d51e0170e0d1537aec3505a"
+TUNNEL_ID="${CLOUDFLARE_TUNNEL_ID:-52915859-da18-4aa6-add5-7bd9fcac2e0b}"
+CF_ACCOUNT="${CLOUDFLARE_ACCOUNT_ID:-848cf0b18d51e0170e0d1537aec3505a}"
+CF_TOKEN="${CLOUDFLARE_API_TOKEN:-}"
+PI_PRIMARY="192.168.4.38"    # octavia
+PI_SECONDARY="192.168.4.82"  # aria
+DO_FALLBACK="159.65.43.12"   # gematria
 
-get_token() {
-  local tf="$HOME/.blackroad/kv_token"
-  local tok=""
-  [[ -f "$tf" ]] && IFS= read -r tok < "$tf"
-  [[ -z "$tok" ]] && tok="${CLOUDFLARE_API_TOKEN:-}"
-  printf '%s' "$tok"
-}
+# Domains to route to Pi fleet
+DOMAINS=(
+  "blackroad.io" "api.blackroad.io" "agents.blackroad.io" "docs.blackroad.io"
+  "dashboard.blackroad.io" "console.blackroad.io" "ai.blackroad.io"
+  "blackroad.ai" "api.blackroad.ai" "agents.blackroad.ai"
+  "blackroad.network" "blackroad.systems" "blackroad.me"
+  "lucidia.earth" "lucidia.studio"
+)
 
-cf_api() {
-  local url="$1"; shift
-  local token; token=$(get_token)
-  [[ -z "$token" ]] && { echo -e "${RED}x${NC} No CF token. Run: br kv auth <token>" >&2; return 1; }
-  /usr/bin/curl -s -H "Authorization: Bearer $token" -H "Content-Type: application/json" "$@" "$url"
-}
-
-# Get zone ID for a domain name
-get_zone_id() {
-  local name="$1"
-  cf_api "https://api.cloudflare.com/client/v4/zones?name=$name" | \
-    /usr/bin/python3 -c "import sys,json;d=json.load(sys.stdin);r=d.get('result',[]);print(r[0]['id'] if r else '')" 2>/dev/null
-}
-
-cmd_zones() {
-  echo -e "\n${CYAN}${BOLD}  ZONES${NC}\n"
-  cf_api "https://api.cloudflare.com/client/v4/zones?per_page=50&account.id=$CF_ACCOUNT_ID" | \
-    /usr/bin/python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-zones=d.get('result',[])
-print(f'  {len(zones)} zones\n')
-for z in sorted(zones,key=lambda x:x['name']):
-    status = z.get('status','?')
-    icon = '●' if status=='active' else '○'
-    plan = z.get('plan',{}).get('name','?')[:10]
-    ns = ', '.join(z.get('name_servers',[])[:2])
-    print(f'  {icon} {z[\"name\"]:<35} {plan:<12} {z[\"id\"][:8]}...')
-" 2>/dev/null
+cmd_status() {
+  echo -e "${CYAN}═══ Domain Fleet Status ══════════════════════${NC}"
+  echo -e "${CYAN}Cloudflare Tunnel: ${YELLOW}$TUNNEL_ID${NC}"
   echo ""
+  for domain in "${DOMAINS[@]}"; do
+    IP=$(dig +short "$domain" 2>/dev/null | head -1)
+    if [ -n "$IP" ]; then
+      echo -e "${GREEN}✅ $domain${NC} → $IP"
+    else
+      echo -e "${YELLOW}⚠️  $domain${NC} → not resolving"
+    fi
+  done
 }
 
-cmd_records() {
+cmd_route() {
+  echo -e "${CYAN}🌐 Routing domains to Pi fleet via Cloudflare tunnel...${NC}"
+  if [ -z "$CF_TOKEN" ]; then
+    echo -e "${RED}✗ CLOUDFLARE_API_TOKEN not set${NC}"
+    echo -e "${YELLOW}  export CLOUDFLARE_API_TOKEN=your_token${NC}"
+    echo ""
+    echo -e "${CYAN}Manual steps:${NC}"
+    echo "1. Go to Cloudflare → Zero Trust → Networks → Tunnels"
+    echo "2. Select tunnel: $TUNNEL_ID"
+    echo "3. Add public hostnames:"
+    for domain in "${DOMAINS[@]}"; do
+      echo "   $domain → http://localhost:80"
+    done
+    return 1
+  fi
+  
+  # Generate cloudflared tunnel config
+  local config_file="$HOME/.cloudflared/config.yml"
+  mkdir -p "$HOME/.cloudflared"
+  cat > "$config_file" << CFCONFIG
+tunnel: $TUNNEL_ID
+credentials-file: $HOME/.cloudflared/${TUNNEL_ID}.json
+
+ingress:
+  # API endpoints
+  - hostname: api.blackroad.io
+    service: http://localhost:8787
+  - hostname: api.blackroad.ai
+    service: http://localhost:8787
+  - hostname: agents.blackroad.io
+    service: http://localhost:4010
+  - hostname: agents.blackroad.ai
+    service: http://localhost:4010
+  # Docs / Web
+  - hostname: docs.blackroad.io
+    service: http://localhost:3001
+  - hostname: dashboard.blackroad.io
+    service: http://localhost:3000
+  - hostname: console.blackroad.io
+    service: http://localhost:3000
+  # Wildcard blackroad.io → nginx
+  - hostname: "*.blackroad.io"
+    service: http://localhost:80
+  - hostname: "*.blackroad.ai"
+    service: http://localhost:80
+  - hostname: blackroad.network
+    service: http://localhost:80
+  - hostname: blackroad.systems
+    service: http://localhost:80
+  - hostname: blackroad.me
+    service: http://localhost:80
+  - hostname: lucidia.earth
+    service: http://localhost:80
+  - hostname: lucidia.studio
+    service: http://localhost:80
+  # Fallback
+  - service: http_status:404
+CFCONFIG
+  
+  echo -e "${GREEN}✅ Tunnel config written to $config_file${NC}"
+  echo -e "${CYAN}   Deploy: ${NC}ssh octavia 'sudo cp ~/.cloudflared/config.yml /etc/cloudflared/ && sudo systemctl restart cloudflared'"
+  
+  # Push config to octavia (Cloudflare tunnel runs there)
+  scp "$config_file" octavia:/tmp/cloudflared-config.yml 2>/dev/null && \
+    ssh octavia "mkdir -p ~/.cloudflared && cp /tmp/cloudflared-config.yml ~/.cloudflared/config.yml && echo '✅ Tunnel config deployed to octavia'" 2>/dev/null || \
+    echo -e "${YELLOW}⚠️  Manual: copy $config_file to octavia:~/.cloudflared/config.yml${NC}"
+}
+
+cmd_failover() {
+  echo -e "${CYAN}🔄 4-Layer Failover Architecture${NC}"
+  echo ""
+  echo "Layer 1: Pi fleet (self-hosted, free)"
+  echo "  Primary:    octavia ($PI_PRIMARY:80)"
+  echo "  Secondary:  aria    ($PI_SECONDARY:80)"
+  echo ""
+  echo "Layer 2: DigitalOcean droplet"
+  echo "  Fallback:   gematria ($DO_FALLBACK:80)"
+  echo ""
+  echo "Layer 3: Cloudflare Pages (static fallback)"
+  echo "  Auto-deployed via .github/workflows/deploy-cloudflare.yml"
+  echo ""
+  echo "Layer 4: GitHub Pages"
+  echo "  Auto-deployed via GitHub Actions on push to main"
+  echo ""
+  echo -e "${CYAN}Health Check URLs:${NC}"
+  echo "  Pi:          http://$PI_PRIMARY/health"
+  echo "  DO:          http://$DO_FALLBACK/health"
+  echo "  Cloudflare:  https://blackroad.io/health"
+  echo ""
+  echo -e "${CYAN}Nginx failover rule (already in infra/nginx/nginx.conf):${NC}"
+  echo "  error_page 502 503 504 @do_fallback → $DO_FALLBACK"
+}
+
+cmd_update() {
   local domain="$1"
-  if [[ -z "$domain" ]]; then echo -e "${RED}x${NC} Usage: br domains records <domain>"; exit 1; fi
-  echo -e "\n${CYAN}${BOLD}  DNS: $domain${NC}\n"
-  local zone_id; zone_id=$(get_zone_id "$domain")
-  [[ -z "$zone_id" ]] && { echo -e "${RED}x${NC} Zone not found: $domain"; exit 1; }
-  cf_api "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records?per_page=100" | \
-    /usr/bin/python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-recs=d.get('result',[])
-print(f'  {len(recs)} records  (zone: $(echo $zone_id | head -c 8)...)\n')
-for r in recs:
-    proxy = '🟠' if r.get('proxied') else '⚪'
-    name = r['name']
-    rtype = r['type']
-    content = r['content'][:60]
-    ttl = r.get('ttl',0)
-    ttl_s = 'auto' if ttl==1 else str(ttl)
-    print(f'  {proxy} {rtype:<6} {name:<45} {content}')
-" 2>/dev/null
-  echo ""
-}
-
-cmd_add() {
-  local domain="$1" rtype="$2" name="$3" content="$4"
-  if [[ -z "$domain" || -z "$rtype" || -z "$name" || -z "$content" ]]; then
-    echo -e "${RED}x${NC} Usage: br domains add <domain> <type> <name> <content> [proxied=true]"
-    echo -e "  Example: br domains add blackroad.io A sub 1.2.3.4"
-    exit 1
+  local target="$2"
+  if [ -z "$domain" ] || [ -z "$target" ]; then
+    echo "Usage: br domains update <domain> <target>"
+    echo "Example: br domains update api.blackroad.io http://localhost:8787"
+    return 1
   fi
-  local proxied="${5:-true}"
-  local zone_id; zone_id=$(get_zone_id "$domain")
-  [[ -z "$zone_id" ]] && { echo -e "${RED}x${NC} Zone not found: $domain"; exit 1; }
-  local body; body=$(/usr/bin/python3 -c "import json; print(json.dumps({'type':'$rtype','name':'$name','content':'$content','proxied':$proxied,'ttl':1}))")
-  local result; result=$(cf_api "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records" -X POST -d "$body")
-  echo "$result" | /usr/bin/python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-if d.get('success'):
-    r=d['result']
-    print(f'  ✓ Created: {r[\"type\"]} {r[\"name\"]} → {r[\"content\"]}')
-else:
-    errs=d.get('errors',[])
-    print('  x Failed: ' + str(errs))
-" 2>/dev/null
-}
-
-cmd_delete() {
-  local domain="$1" record_id="$2"
-  if [[ -z "$domain" || -z "$record_id" ]]; then
-    echo -e "${RED}x${NC} Usage: br domains delete <domain> <record_id>"
-    exit 1
+  echo -e "${CYAN}Updating $domain → $target${NC}"
+  # Update cloudflared config
+  if grep -q "$domain" "$HOME/.cloudflared/config.yml" 2>/dev/null; then
+    sed -i.bak "s|hostname: $domain.*|hostname: $domain\n    service: $target|" "$HOME/.cloudflared/config.yml"
+    echo -e "${GREEN}✅ Updated${NC}"
+  else
+    echo -e "${YELLOW}Domain not found in config — adding...${NC}"
+    cmd_route
   fi
-  local zone_id; zone_id=$(get_zone_id "$domain")
-  [[ -z "$zone_id" ]] && { echo -e "${RED}x${NC} Zone not found: $domain"; exit 1; }
-  local result; result=$(cf_api "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" -X DELETE)
-  echo "$result" | /usr/bin/python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-if d.get('success'):
-    print('  ✓ Deleted')
-else:
-    print('  x Failed: ' + str(d.get('errors',[])))
-" 2>/dev/null
-}
-
-cmd_search() {
-  local domain="$1" query="$2"
-  if [[ -z "$domain" || -z "$query" ]]; then
-    echo -e "${RED}x${NC} Usage: br domains search <domain> <query>"
-    exit 1
-  fi
-  local zone_id; zone_id=$(get_zone_id "$domain")
-  [[ -z "$zone_id" ]] && { echo -e "${RED}x${NC} Zone not found"; exit 1; }
-  echo -e "\n${CYAN}  Search: ${BOLD}$query${NC}${CYAN} in $domain${NC}\n"
-  cf_api "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records?per_page=100&search=$query" | \
-    /usr/bin/python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-recs=d.get('result',[])
-for r in recs:
-    proxy='🟠' if r.get('proxied') else '⚪'
-    print(f'  {proxy} {r[\"type\"]:<6} {r[\"name\"]:<45} {r[\"content\"]}  [{r[\"id\"][:8]}]')
-print(f'\n  {len(recs)} matches')
-" 2>/dev/null
-  echo ""
-}
-
-cmd_purge() {
-  local domain="$1"
-  if [[ -z "$domain" ]]; then echo -e "${RED}x${NC} Usage: br domains purge <domain>"; exit 1; fi
-  local zone_id; zone_id=$(get_zone_id "$domain")
-  [[ -z "$zone_id" ]] && { echo -e "${RED}x${NC} Zone not found: $domain"; exit 1; }
-  echo -e "${YELLOW}  Purging cache for $domain...${NC}"
-  local result; result=$(cf_api "https://api.cloudflare.com/client/v4/zones/$zone_id/purge_cache" -X POST -d '{"purge_everything":true}')
-  echo "$result" | /usr/bin/python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-if d.get('success'):
-    print('  ✓ Cache purged')
-else:
-    print('  x Failed: ' + str(d.get('errors',[])))
-" 2>/dev/null
 }
 
 show_help() {
-  echo -e "\n${BOLD}  BR DOMAINS${NC}  Cloudflare DNS Manager\n"
-  echo -e "  ${CYAN}br domains zones${NC}                        List all zones"
-  echo -e "  ${CYAN}br domains records <domain>${NC}             Show DNS records"
-  echo -e "  ${CYAN}br domains search <domain> <query>${NC}      Search records"
-  echo -e "  ${CYAN}br domains add <domain> <type> <name> <content>${NC}  Add record"
-  echo -e "  ${CYAN}br domains delete <domain> <record-id>${NC}  Delete record"
-  echo -e "  ${CYAN}br domains purge <domain>${NC}               Purge CF cache"
-  echo -e ""
-  echo -e "  ${GRAY}Examples:${NC}"
-  echo -e "  ${GRAY}  br domains records blackroad.io${NC}"
-  echo -e "  ${GRAY}  br domains search blackroad.io api${NC}"
-  echo -e "  ${GRAY}  br domains add blackroad.io A myapp 159.65.43.12${NC}"
-  echo -e "  ${GRAY}  br domains purge blackroad.io${NC}"
+  echo -e "${CYAN}BR Domains — Self-Hosted Domain Router${NC}"
   echo ""
+  echo "Commands:"
+  echo "  status    — Check all domain DNS resolution"
+  echo "  route     — Generate Cloudflare tunnel config + deploy"
+  echo "  failover  — Show 4-layer failover architecture"
+  echo "  update    — Update a domain's routing target"
+  echo ""
+  echo "Environment:"
+  echo "  CLOUDFLARE_API_TOKEN  — CF API token (required for route)"
+  echo "  CLOUDFLARE_TUNNEL_ID  — Tunnel ID (default: $TUNNEL_ID)"
 }
 
-case "$1" in
-  zones|list|ls)       cmd_zones ;;
-  records|show)        cmd_records "$2" ;;
-  search|find)         cmd_search "$2" "$3" ;;
-  add|create)          cmd_add "$2" "$3" "$4" "$5" "$6" ;;
-  delete|del|rm)       cmd_delete "$2" "$3" ;;
-  purge|flush)         cmd_purge "$2" ;;
-  *)                   show_help ;;
+case "${1:-help}" in
+  status)   cmd_status ;;
+  route)    cmd_route ;;
+  failover) cmd_failover ;;
+  update)   cmd_update "$2" "$3" ;;
+  *)        show_help ;;
 esac
