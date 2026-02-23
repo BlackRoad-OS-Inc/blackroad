@@ -1,0 +1,66 @@
+# BlackRoad Pi Cluster — Caddy config
+# Deploy to: /etc/caddy/Caddyfile on each Pi
+# Uses Cloudflare DNS challenge for auto-HTTPS
+
+{
+  email amundsonalexa@gmail.com
+  acme_dns cloudflare {env.CF_API_TOKEN}
+}
+
+# ── Core Platform ─────────────────────────────────────
+blackroad.io, www.blackroad.io {
+  reverse_proxy localhost:3000
+}
+
+api.blackroad.io {
+  reverse_proxy localhost:8787
+  header X-Agent-Node {env.HOSTNAME}
+}
+
+agents.blackroad.io {
+  reverse_proxy localhost:8080
+}
+
+dashboard.blackroad.io {
+  reverse_proxy localhost:3001
+}
+
+# ── Agent Endpoints ────────────────────────────────────
+alice.blackroad.io {
+  reverse_proxy alice-ts.tailnet:8787
+}
+
+octavia.blackroad.io {
+  reverse_proxy octavia-ts.tailnet:8787
+}
+
+aria.blackroad.io {
+  reverse_proxy aria-ts.tailnet:3000
+}
+
+lucidia.blackroad.io {
+  reverse_proxy lucidia-ts.tailnet:8787
+}
+
+cecilia.blackroad.io {
+  reverse_proxy cecilia-ts.tailnet:8787
+}
+
+gematria.blackroad.io {
+  reverse_proxy 159.65.43.12:8787
+}
+
+# ── Console + Ops ──────────────────────────────────────
+ops.blackroad.io {
+  reverse_proxy localhost:8011
+}
+
+console.blackroad.io {
+  reverse_proxy localhost:3002
+}
+
+# ── Fallback health check ──────────────────────────────
+:80 {
+  respond /health "OK" 200
+  redir https://{host}{uri} 301
+}

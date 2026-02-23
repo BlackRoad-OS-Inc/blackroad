@@ -112,9 +112,9 @@ jobs:
           echo "Org cohesion check: $(date -u)"
           gh workflow run cross-org-sync.yml --repo BlackRoad-OS/blackroad 2>/dev/null || echo "Cross-org sync triggered"
 
-  # ── Phase 7: Completion + Re-queue ───────────────────────
+  # ── Phase 7: Completion + Always Re-queue ────────────────
   complete-and-requeue:
-    name: "✅ Cycle Complete"
+    name: "✅ Cycle Complete → Requeue"
     runs-on: [self-hosted, pi, blackroad]
     needs: [salesforce-sync, cloudflare-workers, railway-status, pi-agent-sync]
     if: always()
@@ -123,16 +123,19 @@ jobs:
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "♾️  CYCLE COMPLETE: $(date -u)"
-          echo "Next cycle in 24 hours"
+          echo "Status: ${{ contains(needs.*.result, 'failure') && 'PARTIAL FAILURE' || 'SUCCESS' }}"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 3-second delay on failure then requeue
-        if: failure()
+      - name: Wait 24h then requeue (continuous loop)
         run: |
-          echo "⚠️ Failure detected — waiting 3 seconds then re-queueing..."
+          echo "⏳ Sleeping 24 hours (86400s)..."
+          sleep 86400
+          echo "⏱️  +3s gap to avoid duplicate detection..."
           sleep 3
-          curl -X POST \
+          echo "🔄 Re-queueing next cycle: $(date -u)"
+          curl -s -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/actions/workflows/continuous-24h-orchestrator.yml/dispatches" \
-            -d '{"ref":"master"}' || echo "Requeue attempted"
+            -d '{"ref":"master","inputs":{"force_cycle":"false"}}' \
+            && echo "✅ Next cycle queued" || echo "⚠️ Requeue via workflow_run fallback"

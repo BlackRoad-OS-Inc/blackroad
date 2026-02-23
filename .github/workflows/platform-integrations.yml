@@ -1,0 +1,102 @@
+# ============================================================
+# BlackRoad Platform Integrations
+# Runs on self-hosted Pi/Gematria runners — $0 cost
+# Integrates: Salesforce, Railway, Cloudflare, HuggingFace
+# ============================================================
+name: "🔌 Platform Integrations"
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'blackroad-sf/**'
+      - 'scripts/setup-railway-integration.sh'
+      - 'shared/mesh/**'
+  schedule:
+    - cron: '30 0 * * *'  # Daily 12:30 AM (30 min after main orchestrator)
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to integrate'
+        type: choice
+        options: [all, salesforce, railway, cloudflare, huggingface, pi-models]
+        default: all
+
+jobs:
+  salesforce:
+    name: "☁️ Salesforce Sync"
+    runs-on: [self-hosted, pi, blackroad]
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'salesforce' || github.event_name != 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate SF metadata
+        working-directory: blackroad-sf
+        run: |
+          echo "Salesforce project: $(cat package.json | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d[\"name\"])')"
+          ls force-app/main/default/classes/BlackRoadPiService.cls && echo "✅ Pi service class present"
+      - name: Test Pi webhook endpoint
+        run: |
+          curl -sf http://localhost:4010/health && echo "✅ Pi agent webhook ready" || echo "⚠️ Pi agent not responding"
+          curl -sf https://agents.blackroad.io/health 2>/dev/null && echo "✅ Public webhook ready" || echo "⚠️ Public endpoint check"
+
+  railway:
+    name: "🚂 Railway Fleet Sync"
+    runs-on: [self-hosted, pi, blackroad]
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'railway' || github.event_name != 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Pi gateway accessibility
+        run: |
+          curl -sf http://localhost:4010/ && echo "✅ Pi gateway up"
+          curl -sf http://localhost:8787/ 2>/dev/null && echo "✅ BlackRoad gateway up"
+      - name: Update Railway env vars
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [[ -n "$RAILWAY_TOKEN" ]]; then
+            bash scripts/setup-railway-integration.sh
+          else
+            echo "⚠️ RAILWAY_TOKEN not set — skipping Railway var update"
+          fi
+
+  cloudflare:
+    name: "🔥 Cloudflare Workers"
+    runs-on: [self-hosted, gematria, blackroad]
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'cloudflare' || github.event_name != 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Cloudflare tunnels
+        run: |
+          echo "Active tunnels on gematria:"
+          cloudflared tunnel list 2>/dev/null | grep -v "^You" || echo "cloudflared check skipped"
+      - name: Verify model server
+        run: |
+          curl -sf http://localhost:8787/ | python3 -c "
+          import sys,json
+          d=json.load(sys.stdin)
+          print(f'Models: {d[\"total_models\"]} total, {d[\"live\"]} live')
+          " 2>/dev/null
+
+  huggingface:
+    name: "🤗 HuggingFace Sync"
+    runs-on: [self-hosted, gematria, blackroad]
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'huggingface' || github.event_name != 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync model catalog to HF
+        env:
+          HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+        run: |
+          bash scripts/setup-huggingface-integration.sh
+
+  pi-model-status:
+    name: "🍓 Pi Model Health"
+    runs-on: [self-hosted, pi, blackroad]
+    steps:
+      - name: Ollama model status
+        run: |
+          echo "=== Octavia Pi Ollama Models ==="
+          ollama list 2>/dev/null || echo "ollama check"
+          echo ""
+          echo "=== Gematria Model Server (via internal) ==="
+          curl -sf http://192.168.4.38:4010/health 2>/dev/null && echo "agent API healthy"
