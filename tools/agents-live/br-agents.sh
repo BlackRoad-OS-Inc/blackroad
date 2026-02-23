@@ -1,0 +1,313 @@
+#!/usr/bin/env zsh
+# BR Agents — live agent roster, status, spawn, task dispatch
+# br agents list|status|spawn|wake|task|kill|logs|models
+
+AMBER=$'\033[38;5;214m'; PINK=$'\033[38;5;205m'; VIOLET=$'\033[38;5;135m'
+CYAN=$'\033[0;36m'; GREEN=$'\033[0;32m'; RED=$'\033[0;31m'
+YELLOW=$'\033[1;33m'; BOLD=$'\033[1m'; DIM=$'\033[2m'; NC=$'\033[0m'
+
+BR_ROOT="${BR_ROOT:-$HOME/blackroad}"
+AGENTS_DIR="$BR_ROOT/agents"
+ACTIVE_DIR="$AGENTS_DIR/active"
+IDLE_DIR="$AGENTS_DIR/idle"
+MANIFEST="$AGENTS_DIR/manifest.json"
+OLLAMA_URL="${OLLAMA_URL:-http://localhost:11434}"
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+ollama_ok() { curl -sf --max-time 1 "$OLLAMA_URL/api/tags" &>/dev/null; }
+
+pick_model() {
+  local preferred=("tinyllama:latest" "llama3.2:1b" "qwen2.5:1.5b" "llama3.2:3b")
+  local available
+  available=$(curl -sf --max-time 3 "$OLLAMA_URL/api/tags" | python3 -c "
+import json,sys
+models = [m['name'] for m in json.load(sys.stdin).get('models',[])]
+print('\n'.join(models))
+" 2>/dev/null)
+  for m in "${preferred[@]}"; do
+    echo "$available" | grep -qx "$m" && { echo "$m"; return; }
+  done
+  echo "$available" | head -1
+}
+
+agent_color() {
+  case "$1" in
+    LUCIDIA)  echo "$VIOLET" ;;
+    ALICE)    echo "$GREEN"  ;;
+    OCTAVIA)  echo "$CYAN"   ;;
+    CIPHER)   echo "$RED"    ;;
+    ARIA)     echo "$PINK"   ;;
+    SHELLFISH) echo "$AMBER" ;;
+    *)        echo "$YELLOW" ;;
+  esac
+}
+
+agent_icon() {
+  case "$1" in
+    LUCIDIA)  echo "🌀" ;;
+    ALICE)    echo "🚪" ;;
+    OCTAVIA)  echo "⚡" ;;
+    CIPHER)   echo "🔐" ;;
+    ARIA)     echo "🎨" ;;
+    SHELLFISH) echo "🐚" ;;
+    *)        echo "🤖" ;;
+  esac
+}
+
+# ── Commands ───────────────────────────────────────────────────────────────────
+
+cmd_list() {
+  echo ""
+  echo "  ${BOLD}${PINK}◈ BLACKROAD AGENTS${NC}  ${DIM}live roster${NC}"
+  echo "  ${DIM}────────────────────────────────────────────────────────${NC}"
+  echo ""
+
+  # Named agents from active dir
+  local any=0
+  for f in "$ACTIVE_DIR"/*.json; do
+    [[ ! -f "$f" ]] && continue
+    any=1
+    python3 -c "
+import json
+d = json.load(open('$f'))
+name   = d.get('name','?')
+status = d.get('status','?')
+model  = d.get('model','?')
+task   = d.get('current_task') or ''
+ts     = d.get('updated_at','')[:16].replace('T',' ')
+pid    = d.get('pid', '')
+host   = d.get('host','local')
+scol = '\033[32m' if status in ('idle','active') else '\033[33m' if status == 'busy' else '\033[31m'
+icon = {'LUCIDIA':'🌀','ALICE':'🚪','OCTAVIA':'⚡','CIPHER':'🔐','ARIA':'🎨','SHELLFISH':'🐚'}.get(name,'🤖')
+print(f'  {icon}  \033[1m{name:<12}\033[0m  {scol}{status:<8}\033[0m  \033[2m{model:<20}\033[0m  \033[2mpid:{pid}  {ts}\033[0m')
+if task: print(f'       \033[33m▸ {task[:70]}\033[0m')
+"
+  done
+
+  [[ "$any" -eq 0 ]] && echo "  ${DIM}No active agents — use 'br agents spawn <NAME>' to wake one${NC}"
+
+  # Idle agents
+  local idle_count=$(ls "$IDLE_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+  [[ "$idle_count" -gt 0 ]] && echo "" && echo "  ${DIM}$idle_count agent(s) in idle pool${NC}"
+
+  echo ""
+
+  # Manifest summary
+  if [[ -f "$MANIFEST" ]]; then
+    python3 -c "
+import json
+d = json.load(open('$MANIFEST'))
+total = d.get('total_agents', 0)
+dist  = d.get('task_distribution', {})
+print(f'  \033[2mTotal fleet: {total:,}  |  ', end='')
+parts = [f'{k}: {v:,}' for k,v in list(dist.items())[:4]]
+print('  '.join(parts) + '\033[0m')
+" 2>/dev/null
+  fi
+  echo ""
+}
+
+cmd_status() {
+  local name="${1:u}"  # uppercase
+  [[ -z "$name" ]] && { cmd_list; return; }
+
+  local f="$ACTIVE_DIR/${name}.json"
+  [[ ! -f "$f" ]] && { echo "  ${RED}Agent $name not found in active roster${NC}"; return 1; }
+
+  echo ""
+  local icon=$(agent_icon "$name")
+  local col=$(agent_color "$name")
+  echo "  ${col}${BOLD}$icon $name${NC}"
+  echo "  ${DIM}────────────────────────${NC}"
+  python3 -c "
+import json
+d = json.load(open('$f'))
+for k,v in d.items():
+    print(f'  \033[2m{k:<16}\033[0m \033[1m{v}\033[0m')
+"
+  echo ""
+}
+
+cmd_spawn() {
+  local name="${1:u}"
+  [[ -z "$name" ]] && { echo "  Usage: br agents spawn <NAME> [model]"; return 1; }
+
+  local model="${2:-}"
+  if [[ -z "$model" ]]; then
+    ollama_ok || { echo "  ${RED}Ollama not running${NC}  →  start Ollama first"; return 1; }
+    model=$(pick_model)
+  fi
+
+  local f="$ACTIVE_DIR/${name}.json"
+  local ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  local icon=$(agent_icon "$name")
+  local col=$(agent_color "$name")
+
+  echo ""
+  echo "  ${col}${BOLD}$icon Spawning $name…${NC}  ${DIM}model: $model${NC}"
+
+  python3 -c "
+import json, datetime
+f = '$f'
+ts = '$ts'
+name = '$name'
+model = '$model'
+entry = {
+  'name': name,
+  'model': model,
+  'pid': None,
+  'status': 'idle',
+  'host': 'local',
+  'endpoint': 'http://localhost:11434',
+  'current_task': None,
+  'started_at': ts,
+  'updated_at': ts
+}
+import json
+with open(f, 'w') as fp:
+    json.dump(entry, fp, indent=2)
+print(f'  \033[32m✓\033[0m Registered {name}')
+"
+
+  # Write wake thought via Ollama
+  if ollama_ok; then
+    local prompt="You are $name, a BlackRoad OS AI agent. You've just been spawned. State your name, purpose in one sentence, and readiness in 2 sentences max. Be direct and vivid."
+    echo ""
+    local response
+    response=$(curl -sf --max-time 20 "$OLLAMA_URL/api/generate" \
+      -H "Content-Type: application/json" \
+      -d "{\"model\":\"$model\",\"prompt\":\"$prompt\",\"stream\":false}" \
+      | python3 -c "import json,sys; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    [[ -n "$response" ]] && echo "  ${col}\"${response}\"${NC}"
+  fi
+  echo ""
+  echo "  ${GREEN}✓ $name is online${NC}"
+  echo ""
+}
+
+cmd_wake() {
+  # Alias: wake an agent by name (same as spawn but friendlier messaging)
+  local name="${1:u}"
+  [[ -z "$name" ]] && { echo "  Usage: br agents wake <NAME>"; return 1; }
+  local f="$ACTIVE_DIR/${name}.json"
+  if [[ -f "$f" ]]; then
+    echo "  ${DIM}$name already active — refreshing…${NC}"
+    python3 -c "
+import json, datetime
+d = json.load(open('$f'))
+d['status'] = 'idle'
+d['updated_at'] = '$( date -u +"%Y-%m-%dT%H:%M:%SZ")'
+json.dump(d, open('$f','w'), indent=2)
+"
+  fi
+  cmd_spawn "$name" "$2"
+}
+
+cmd_task() {
+  local name="${1:u}"; shift
+  local task="$*"
+  [[ -z "$name" || -z "$task" ]] && { echo "  Usage: br agents task <NAME> <task description>"; return 1; }
+
+  local f="$ACTIVE_DIR/${name}.json"
+  [[ ! -f "$f" ]] && { echo "  ${RED}$name not in active roster — spawn first${NC}"; return 1; }
+
+  ollama_ok || { echo "  ${RED}Ollama not running${NC}"; return 1; }
+  local model=$(python3 -c "import json; print(json.load(open('$f')).get('model','tinyllama:latest'))" 2>/dev/null)
+
+  # Update status
+  python3 -c "
+import json
+d = json.load(open('$f'))
+d['status'] = 'busy'
+d['current_task'] = '$task'
+d['updated_at'] = '$(date -u +%Y-%m-%dT%H:%M:%SZ)'
+json.dump(d, open('$f','w'), indent=2)
+"
+
+  local col=$(agent_color "$name")
+  local icon=$(agent_icon "$name")
+  echo ""
+  echo "  ${col}${BOLD}$icon $name${NC}  ${DIM}→ $task${NC}"
+  echo "  ${DIM}────────────────────────────────────────${NC}"
+
+  local prompt="You are $name, a BlackRoad OS AI agent. Task: $task\n\nRespond as $name would — direct, focused, in-character. Max 3 sentences."
+  curl -sf --max-time 30 "$OLLAMA_URL/api/generate" \
+    -H "Content-Type: application/json" \
+    -d "{\"model\":\"$model\",\"prompt\":\"$prompt\",\"stream\":false}" \
+    | python3 -c "
+import json,sys
+r = json.load(sys.stdin).get('response','').strip()
+for line in r.split('\n'):
+    print(f'  {line}')
+" 2>/dev/null
+
+  # Mark idle again
+  python3 -c "
+import json
+d = json.load(open('$f'))
+d['status'] = 'idle'
+d['current_task'] = None
+d['updated_at'] = '$(date -u +%Y-%m-%dT%H:%M:%SZ)'
+json.dump(d, open('$f','w'), indent=2)
+"
+  echo ""
+}
+
+cmd_models() {
+  ollama_ok || { echo "  ${RED}Ollama not running${NC}"; return 1; }
+  echo ""
+  echo "  ${BOLD}Available Ollama Models${NC}"
+  echo ""
+  curl -sf --max-time 5 "$OLLAMA_URL/api/tags" | python3 -c "
+import json, sys
+models = json.load(sys.stdin).get('models', [])
+for m in models:
+    name = m['name']
+    size = m.get('size', 0)
+    size_str = f'{size/1e9:.1f}GB' if size > 1e9 else f'{size/1e6:.0f}MB'
+    mod = m.get('modified_at','')[:10]
+    print(f'  \033[36m{name:<30}\033[0m  {size_str:<8}  \033[2m{mod}\033[0m')
+"
+  echo ""
+}
+
+cmd_kill() {
+  local name="${1:u}"
+  [[ -z "$name" ]] && { echo "  Usage: br agents kill <NAME>"; return 1; }
+  local f="$ACTIVE_DIR/${name}.json"
+  if [[ -f "$f" ]]; then
+    rm "$f"
+    echo "  ${GREEN}✓ $name removed from active roster${NC}"
+  else
+    echo "  ${YELLOW}$name not found in active roster${NC}"
+  fi
+}
+
+show_help() {
+  echo ""
+  echo "  ${PINK}${BOLD}br agents${NC}  — live agent roster & dispatch"
+  echo ""
+  echo "  ${BOLD}Commands:${NC}"
+  echo "    ${CYAN}list${NC}                     Live roster of all active agents"
+  echo "    ${CYAN}status [NAME]${NC}            Detailed status for one agent"
+  echo "    ${CYAN}spawn <NAME> [model]${NC}     Spawn an agent (generates wake message)"
+  echo "    ${CYAN}wake <NAME>${NC}              Wake/refresh an agent"
+  echo "    ${CYAN}task <NAME> <task>${NC}       Send task to agent, get response"
+  echo "    ${CYAN}models${NC}                   List available Ollama models"
+  echo "    ${CYAN}kill <NAME>${NC}              Remove agent from active roster"
+  echo ""
+  echo "  ${BOLD}Named agents:${NC}  LUCIDIA  ALICE  OCTAVIA  CIPHER  ARIA  SHELLFISH"
+  echo ""
+}
+
+case "${1:-list}" in
+  list|roster|ls)   cmd_list ;;
+  status|info)      cmd_status "$2" ;;
+  spawn|start|new)  cmd_spawn "$2" "$3" ;;
+  wake|refresh)     cmd_wake "$2" "$3" ;;
+  task|send|do)     shift; cmd_task "$@" ;;
+  models|model)     cmd_models ;;
+  kill|stop|rm)     cmd_kill "$2" ;;
+  help|*)           show_help ;;
+esac
