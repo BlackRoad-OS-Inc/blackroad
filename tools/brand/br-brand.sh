@@ -192,17 +192,40 @@ document.querySelectorAll(".animate-in").forEach((el, i) => {
 # ─── HELPERS ──────────────────────────────────────────────────────────────
 _html_head() {
   local title="$1" desc="$2"
+  # Pull OG/social meta from env (exported by _cmd_site/_cmd_new --config)
+  local og_title="${BR_BRAND_OG_TITLE:-${title}}"
+  local og_desc="${BR_BRAND_OG_DESC:-${desc}}"
+  local og_image="${BR_BRAND_OG_IMAGE:-}"
+  local og_url="${BR_BRAND_OG_URL:-}"
+  local og_type="${BR_BRAND_OG_TYPE:-website}"
+  local tw_handle="${BR_BRAND_TWITTER:-}"
+  local site_name="${BR_BRAND_SITE_NAME:-BlackRoad OS}"
+  local favicon="${BR_BRAND_FAVICON:-}"
+
+  local og_image_tag="" og_url_tag="" tw_handle_tag="" favicon_tag=""
+  [[ -n "$og_image" ]] && og_image_tag="  <meta property=\"og:image\" content=\"${og_image}\" />"$'\n'
+  [[ -n "$og_url"   ]] && og_url_tag="  <meta property=\"og:url\" content=\"${og_url}\" />"$'\n'
+  [[ -n "$tw_handle" ]] && tw_handle_tag="  <meta name=\"twitter:site\" content=\"${tw_handle}\" />"$'\n'
+  [[ -n "$favicon"  ]] && favicon_tag="  <link rel=\"icon\" href=\"${favicon}\" />"$'\n'
+
   cat <<EOF
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${title} — BlackRoad OS</title>
+  <title>${title} — ${site_name}</title>
   <meta name="description" content="${desc}" />
-  <meta property="og:title" content="${title}" />
-  <meta property="og:description" content="${desc}" />
-  <style>${BRAND_CSS}</style>
+  <!-- Open Graph -->
+  <meta property="og:type" content="${og_type}" />
+  <meta property="og:site_name" content="${site_name}" />
+  <meta property="og:title" content="${og_title}" />
+  <meta property="og:description" content="${og_desc}" />
+${og_image_tag}${og_url_tag}  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${og_title}" />
+  <meta name="twitter:description" content="${og_desc}" />
+${og_image_tag}${tw_handle_tag}${favicon_tag}  <style>${BRAND_CSS}</style>
 </head>
 <body>
 <div id="scroll-bar" class="scroll-progress"></div>
@@ -213,8 +236,14 @@ EOF
 }
 
 _html_nav() {
-  local logo="${1:-BlackRoad OS}" nav_links="${2:-${BR_BRAND_NAV:-}}"
-  echo "<nav><div class=\"nav-logo\">${logo}</div><div class=\"nav-links\">${nav_links}</div></nav>"
+  local logo_text="${1:-BlackRoad OS}" nav_links="${2:-${BR_BRAND_NAV:-}}"
+  local logo_html
+  if [[ -n "${BR_BRAND_LOGO:-}" ]]; then
+    logo_html="<img src=\"${BR_BRAND_LOGO}\" alt=\"${logo_text}\" style=\"height:28px;width:auto;object-fit:contain;\" />"
+  else
+    logo_html="${logo_text}"
+  fi
+  echo "<nav><div class=\"nav-logo\">${logo_html}</div><div class=\"nav-links\">${nav_links}</div></nav>"
 }
 
 _html_footer() {
@@ -812,15 +841,21 @@ _cmd_list() {
   echo -e "  ${GREEN}hero${NC}         Full-width hero section — gradient headline, dual CTAs"
   echo -e "  ${GREEN}stats${NC}        Horizontal stats bar — value + label tiles"
   echo -e "  ${GREEN}testimonial${NC}  Quote card grid — avatar initial, name, role, quote"
-  echo -e "  ${GREEN}codeblock${NC}    Styled dark code block with copy-button chrome"
+  echo -e "  ${GREEN}codeblock${NC}     Styled dark code block with copy-button chrome"
+  echo -e "  ${GREEN}coming-soon${NC}  Live countdown + email capture (no back-end required)"
+  echo -e "  ${GREEN}changelog${NC}    Release notes — version badge, date, tagged bullet lists"
+  echo -e "  ${GREEN}team${NC}         Team member card grid — avatar, name, role, bio, link"
   echo ""
   echo -e "${YELLOW}Commands:${NC}"
   echo ""
   echo -e "  ${CYAN}br brand init${NC} [brand.json]              Interactive setup wizard"
   echo -e "  ${CYAN}br brand site${NC} [--config brand.json]     Generate full 5-page site"
   echo -e "  ${CYAN}br brand new <template> [flags]${NC}         Generate a page"
-  echo -e "  ${CYAN}br brand deploy${NC} --project x --file y   Push to Cloudflare Pages"
+  echo -e "  ${CYAN}br brand deploy${NC} --project x --dir y    Push to Cloudflare Pages"
   echo -e "  ${CYAN}br brand audit${NC} <file.html>              Check brand compliance"
+  echo -e "  ${CYAN}br brand watch${NC} [--config brand.json]    Auto-rebuild on file change"
+  echo -e "  ${CYAN}br brand open${NC} [file.html]               Open in browser"
+  echo -e "  ${CYAN}br brand export${NC} [--dir ./site]          Zip all pages"
   echo -e "  ${CYAN}br brand preview <template>${NC}             Show template structure"
   echo ""
   echo -e "${YELLOW}Key flags:${NC}"
@@ -837,6 +872,9 @@ _cmd_list() {
   echo -e "  stats       : --title --subtitle --stat \"30K|Agents\" --output"
   echo -e "  testimonial : --title --subtitle --testimonial \"A|Alice|CEO|Great product\" --output"
   echo -e "  codeblock   : --title --language bash --code \"echo hi\" --output"
+  echo -e "  coming-soon : --title --tagline --launch-date \"2026-04-01T00:00:00\" --output"
+  echo -e "  changelog   : --title --subtitle --entry \"v1.0|2026-01-01|Added X,Fixed Y|feature,fix\" --output"
+  echo -e "  team        : --title --subtitle --member \"A|Alice|CEO|Bio here|https://github.com/...\" --output"
   echo ""
   echo -e "  ${YELLOW}All templates accept:${NC} --config brand.json  (pre-fill from config file)"
   echo ""
@@ -859,6 +897,9 @@ _cmd_preview() {
     stats)       echo -e "${CYAN}stats${NC}:       Centered stats bar — value tiles with brand gradient values" ;;
     testimonial) echo -e "${CYAN}testimonial${NC}: Quote card grid — avatar initial, name, role, pull-quote" ;;
     codeblock)   echo -e "${CYAN}codeblock${NC}:   Dark code panel — language tab, line numbers, copy button chrome" ;;
+    coming-soon) echo -e "${CYAN}coming-soon${NC}: Full-gradient page — live countdown, email capture form" ;;
+    changelog)   echo -e "${CYAN}changelog${NC}:   Release log — version + date + tagged bullets per entry" ;;
+    team)        echo -e "${CYAN}team${NC}:        Card grid — avatar initial, name, role, bio, GitHub link" ;;
     *)           echo -e "${RED}Unknown template: $1${NC}"; _cmd_list ;;
   esac
 }
@@ -875,8 +916,9 @@ _cmd_new() {
   local icon="✦" badge="" link="#"
   local secondary_cta="" secondary_url="#"
   local language="bash" code_text=""
+  local launch_date=""
   local output="" config_file=""
-  local -a features skills sections tiers items stats testimonials
+  local -a features skills sections tiers items stats testimonials members entries
 
   # Pre-scan for --config so we can load defaults before flag parsing
   local -a _argv=("$@")
@@ -902,6 +944,14 @@ items=d.get('nav',[])
 print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
 " 2>/dev/null)
     export BR_BRAND_FOOTER=$(_cfg_get "$config_file" "footer" "")
+    export BR_BRAND_SITE_NAME=$(_cfg_get "$config_file" "name" "BlackRoad OS")
+    export BR_BRAND_OG_TITLE=$(_cfg_get "$config_file" "name" "")
+    export BR_BRAND_OG_DESC=$(_cfg_get "$config_file" "description" "")
+    export BR_BRAND_OG_IMAGE=$(_cfg_get "$config_file" "og_image" "")
+    export BR_BRAND_OG_URL=$(_cfg_get "$config_file" "og_url" "")
+    export BR_BRAND_TWITTER=$(_cfg_get "$config_file" "twitter" "")
+    export BR_BRAND_LOGO=$(_cfg_get "$config_file" "logo" "")
+    export BR_BRAND_FAVICON=$(_cfg_get "$config_file" "favicon" "")
   fi
 
   # Parse flags
@@ -935,6 +985,9 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
       --testimonial)   testimonials+=("$2");  shift 2 ;;
       --language)      language="$2";         shift 2 ;;
       --code)          code_text="$2";        shift 2 ;;
+      --launch-date)   launch_date="$2";      shift 2 ;;
+      --entry)         entries+=("$2");       shift 2 ;;
+      --member)        members+=("$2");       shift 2 ;;
       --output)        output="$2";           shift 2 ;;
       --config)        shift 2 ;;  # already processed above
       *) shift ;;
@@ -990,6 +1043,15 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
     codeblock)
       _tpl_codeblock "$title" "$language" "$code_text" "$output"
       ;;
+    coming-soon)
+      _tpl_coming_soon "$title" "$tagline" "$launch_date" "$output"
+      ;;
+    changelog)
+      _tpl_changelog "$title" "$subtitle" "$output" "${entries[@]}"
+      ;;
+    team)
+      _tpl_team "$title" "$subtitle" "$output" "${members[@]}"
+      ;;
     *)
       echo -e "${RED}Unknown template: ${tpl}${NC}"
       echo "Run: br brand list"
@@ -1043,7 +1105,7 @@ _cmd_init() {
   echo -e "  Press ${YELLOW}Enter${NC} to accept the default shown in brackets."
   echo ""
 
-  local name tagline desc cta_text cta_url footer_text nav_str
+  local name tagline desc cta_text cta_url footer_text nav_str og_image twitter logo
 
   printf "${CYAN}Site / product name${NC} [BlackRoad OS]: "
   read name; [[ -z "$name" ]] && name="BlackRoad OS"
@@ -1060,11 +1122,20 @@ _cmd_init() {
   printf "${CYAN}Primary CTA URL${NC} [/docs]: "
   read cta_url; [[ -z "$cta_url" ]] && cta_url="/docs"
 
-  printf "${CYAN}Footer text${NC} [© 2026 BlackRoad OS, Inc.]: "
-  read footer_text; [[ -z "$footer_text" ]] && footer_text="© 2026 BlackRoad OS, Inc."
+  printf "${CYAN}Footer text${NC} [© $(date +%Y) ${name}]: "
+  read footer_text; [[ -z "$footer_text" ]] && footer_text="© $(date +%Y) ${name}"
 
-  printf "${CYAN}Nav links — comma-separated label:url${NC}\n  [Docs:/docs,Pricing:/pricing,Agents:/agents]: "
-  read nav_str; [[ -z "$nav_str" ]] && nav_str="Docs:/docs,Pricing:/pricing,Agents:/agents"
+  printf "${CYAN}Nav links — comma-separated label:url${NC}\n  [Docs:/docs,Pricing:/pricing,Team:/team]: "
+  read nav_str; [[ -z "$nav_str" ]] && nav_str="Docs:/docs,Pricing:/pricing,Team:/team"
+
+  printf "${CYAN}OG/Twitter social image URL${NC} (optional, press Enter to skip): "
+  read og_image
+
+  printf "${CYAN}Twitter/X handle${NC} (e.g. @blackroadOS, optional): "
+  read twitter
+
+  printf "${CYAN}Logo image URL${NC} (optional, used in nav instead of text): "
+  read logo
 
   # Build nav JSON array
   local nav_json='['
@@ -1085,6 +1156,9 @@ _cmd_init() {
   desc="${desc//\"/\\\"}"
   cta_text="${cta_text//\"/\\\"}"
   footer_text="${footer_text//\"/\\\"}"
+  og_image="${og_image//\"/\\\"}"
+  twitter="${twitter//\"/\\\"}"
+  logo="${logo//\"/\\\"}"
 
   cat > "$output" <<JSON
 {
@@ -1094,6 +1168,9 @@ _cmd_init() {
   "cta_text": "${cta_text}",
   "cta_url": "${cta_url}",
   "footer": "${footer_text}",
+  "og_image": "${og_image}",
+  "twitter": "${twitter}",
+  "logo": "${logo}",
   "nav": ${nav_json}
 }
 JSON
@@ -1103,6 +1180,7 @@ JSON
   echo ""
   echo -e "  Next steps:"
   echo -e "  ${CYAN}br brand site --config ${output}${NC}              Generate full 5-page site"
+  echo -e "  ${CYAN}br brand watch --config ${output}${NC}             Watch & auto-rebuild"
   echo -e "  ${CYAN}br brand new landing --config ${output}${NC}       Generate landing page"
   echo ""
 }
@@ -1707,6 +1785,11 @@ _cmd_site() {
   local cta_text=$(_cfg_get "$config" "cta_text" "Get Started")
   local cta_url=$(_cfg_get "$config" "cta_url" "/docs")
   local footer_text=$(_cfg_get "$config" "footer" "© 2026 BlackRoad OS, Inc.")
+  local og_image=$(_cfg_get "$config" "og_image" "")
+  local og_url=$(_cfg_get "$config" "og_url" "")
+  local twitter=$(_cfg_get "$config" "twitter" "")
+  local logo=$(_cfg_get "$config" "logo" "")
+  local favicon=$(_cfg_get "$config" "favicon" "")
 
   # Build nav HTML from brand.json nav array and export for all templates
   local nav_html
@@ -1718,6 +1801,25 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
 " 2>/dev/null)
   export BR_BRAND_NAV="$nav_html"
   export BR_BRAND_FOOTER="$footer_text"
+  export BR_BRAND_SITE_NAME="$name"
+  export BR_BRAND_OG_TITLE="$name"
+  export BR_BRAND_OG_DESC="$desc"
+  export BR_BRAND_OG_IMAGE="$og_image"
+  export BR_BRAND_OG_URL="$og_url"
+  export BR_BRAND_TWITTER="$twitter"
+  export BR_BRAND_LOGO="$logo"
+  export BR_BRAND_FAVICON="$favicon"
+
+  # Check for optional extended pages in config
+  local has_team has_changelog has_coming_soon
+  has_team=$(python3 -c "import json;d=json.load(open('$config'));print('yes' if d.get('team') else '')" 2>/dev/null)
+  has_changelog=$(python3 -c "import json;d=json.load(open('$config'));print('yes' if d.get('changelog') else '')" 2>/dev/null)
+  has_coming_soon=$(python3 -c "import json;d=json.load(open('$config'));print('yes' if d.get('launch_date') else '')" 2>/dev/null)
+
+  local page_count=5
+  [[ -n "$has_team" ]]        && (( page_count++ ))
+  [[ -n "$has_changelog" ]]   && (( page_count++ ))
+  [[ -n "$has_coming_soon" ]] && (( page_count++ ))
 
   mkdir -p "$out_dir" "${out_dir}/pricing" "${out_dir}/docs" "${out_dir}/about"
 
@@ -1739,7 +1841,7 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
   _tpl_docs "${name} Docs" "Getting Started" "${name}" "${out_dir}/docs/index.html" \
     "Installation|Install the CLI: npm install -g @blackroad/cli" \
     "Quick Start|Run br brand init to scaffold your brand config, then br brand site to generate your site." \
-    "Templates|Use br brand list to see all 12 available templates." \
+    "Templates|Use br brand list to see all 15 available templates." \
     "Deploy|Run br brand deploy --project my-site --dir ./site to publish to Cloudflare Pages."
   echo -e "  ${GREEN}✓${NC} ${out_dir}/docs/index.html     (docs)"
 
@@ -1747,18 +1849,135 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
   _tpl_docs "About ${name}" "Our Story" "${name}" "${out_dir}/about/index.html" \
     "Mission|${desc}" \
     "Philosophy|${tagline}" \
-    "Built With|BlackRoad OS Brand Kit — br-brand.sh. Embedded design system, 12 templates, zero dependencies."
+    "Built With|BlackRoad OS Brand Kit — br-brand.sh. Embedded design system, 15 templates, zero dependencies."
   echo -e "  ${GREEN}✓${NC} ${out_dir}/about/index.html    (docs)"
 
   # 404.html
   _tpl_404 "404 — Not Found" "This page doesn't exist in ${name}." "/" "${out_dir}/404.html"
   echo -e "  ${GREEN}✓${NC} ${out_dir}/404.html             (404)"
 
+  # Optional: team page from config's "team" array
+  if [[ -n "$has_team" ]]; then
+    mkdir -p "${out_dir}/team"
+    local team_members
+    team_members=($(python3 -c "
+import json
+d=json.load(open('$config'))
+for m in d.get('team',[]):
+    init=m.get('initial',m.get('name','?')[0].upper())
+    name=m.get('name','')
+    role=m.get('role','')
+    bio=m.get('bio','')
+    gh=m.get('github','#')
+    print(f'{init}|{name}|{role}|{bio}|{gh}')
+" 2>/dev/null))
+    _tpl_team "The Team" "Meet the people behind ${name}." "${out_dir}/team/index.html" "${team_members[@]}"
+    echo -e "  ${GREEN}✓${NC} ${out_dir}/team/index.html       (team)"
+  fi
+
+  # Optional: changelog page from config's "changelog" array
+  if [[ -n "$has_changelog" ]]; then
+    mkdir -p "${out_dir}/changelog"
+    local cl_entries
+    cl_entries=($(python3 -c "
+import json
+d=json.load(open('$config'))
+for e in d.get('changelog',[]):
+    ver=e.get('version','')
+    dt=e.get('date','')
+    changes=','.join(e.get('changes',[]))
+    tags=','.join(e.get('tags',['feature']))
+    print(f'{ver}|{dt}|{changes}|{tags}')
+" 2>/dev/null))
+    _tpl_changelog "Changelog" "Release notes for ${name}." "${out_dir}/changelog/index.html" "${cl_entries[@]}"
+    echo -e "  ${GREEN}✓${NC} ${out_dir}/changelog/index.html  (changelog)"
+  fi
+
+  # Optional: coming-soon page
+  if [[ -n "$has_coming_soon" ]]; then
+    local launch_dt=$(_cfg_get "$config" "launch_date" "")
+    _tpl_coming_soon "$name" "$tagline" "$launch_dt" "${out_dir}/coming-soon.html"
+    echo -e "  ${GREEN}✓${NC} ${out_dir}/coming-soon.html       (coming-soon)"
+  fi
+
   echo ""
-  echo -e "${GREEN}✓ Site complete:${NC} ${out_dir}/ (5 pages)"
+  echo -e "${GREEN}✓ Site complete:${NC} ${out_dir}/ (${page_count} pages)"
   echo ""
   echo -e "  Preview : ${YELLOW}open ${out_dir}/index.html${NC}"
+  echo -e "  Watch   : ${YELLOW}br brand watch --config ${config}${NC}"
   echo -e "  Deploy  : ${YELLOW}br brand deploy --project my-site --dir ${out_dir}${NC}"
+  echo -e "  Export  : ${YELLOW}br brand export --dir ${out_dir}${NC}"
+  echo ""
+}
+
+# ─── OPEN ──────────────────────────────────────────────────────────────────
+_cmd_open() {
+  local target=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dir|--file) target="$2"; shift 2 ;;
+      *) [[ -z "$target" ]] && target="$1"; shift ;;
+    esac
+  done
+
+  # Default: look for most recent generated file
+  if [[ -z "$target" ]]; then
+    target=$(ls -t "${OUT_DIR}"/*.html "${OUT_DIR}"/*/index.html 2>/dev/null | head -1)
+  fi
+
+  if [[ -z "$target" || ! -e "$target" ]]; then
+    echo -e "${RED}✗ Nothing to open. Specify a file: br brand open <file.html>${NC}"
+    exit 1
+  fi
+
+  echo -e "${CYAN}Opening:${NC} ${target}"
+  if command -v open &>/dev/null; then
+    open "$target"
+  elif command -v xdg-open &>/dev/null; then
+    xdg-open "$target"
+  else
+    echo -e "${YELLOW}No browser opener found. File is at: ${target}${NC}"
+  fi
+}
+
+# ─── EXPORT ────────────────────────────────────────────────────────────────
+_cmd_export() {
+  local src_dir="./site" out_zip=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dir)    src_dir="$2"; shift 2 ;;
+      --output) out_zip="$2"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+
+  if [[ ! -d "$src_dir" ]]; then
+    echo -e "${RED}✗ Directory not found: ${src_dir}${NC}"
+    echo -e "  Run: ${CYAN}br brand site${NC} first"
+    exit 1
+  fi
+
+  [[ -z "$out_zip" ]] && out_zip="${src_dir%/}-$(date +%Y%m%d-%H%M%S).zip"
+
+  if ! command -v zip &>/dev/null; then
+    echo -e "${RED}✗ zip not found. Install: brew install zip${NC}"
+    exit 1
+  fi
+
+  local page_count
+  page_count=$(find "$src_dir" -name "*.html" | wc -l | tr -d ' ')
+
+  (cd "$(dirname "$src_dir")" && zip -rq "$(basename "$out_zip")" "$(basename "$src_dir")")
+  # If out_zip has a directory component, move it there
+  local zip_name; zip_name="$(basename "$out_zip")"
+  local zip_dest; zip_dest="$(dirname "$out_zip")"
+  [[ "$zip_dest" != "." && "$zip_dest" != "$(dirname "$src_dir")" ]] && mv "$(dirname "$src_dir")/${zip_name}" "$out_zip" 2>/dev/null || true
+
+  echo ""
+  echo -e "${GREEN}✓ Exported:${NC} ${out_zip}"
+  echo -e "  Pages: ${page_count}"
+  local size; size=$(du -sh "$out_zip" 2>/dev/null | cut -f1)
+  echo -e "  Size:  ${size}"
   echo ""
 }
 
@@ -1771,9 +1990,12 @@ case "${1:-list}" in
   site)       _cmd_site "${@:2}" ;;
   deploy)     _cmd_deploy "${@:2}" ;;
   audit)      _cmd_audit "$2" ;;
+  watch)      _cmd_watch "${@:2}" ;;
+  open)       _cmd_open "${@:2}" ;;
+  export)     _cmd_export "${@:2}" ;;
   *)
     echo -e "${RED}Unknown command: $1${NC}"
-    echo "Usage: br brand [list | init | new <template> | site | deploy | audit | preview]"
+    echo "Usage: br brand [list | init | new <template> | site | deploy | audit | watch | open | export | preview]"
     exit 1
     ;;
 esac

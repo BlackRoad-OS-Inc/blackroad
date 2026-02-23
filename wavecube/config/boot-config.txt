@@ -1,0 +1,38 @@
+# WaveQube DLP2000 DPI Configuration
+# Add these lines to /boot/config.txt on the Raspberry Pi
+#
+# This configures the Pi's parallel display interface (DPI) to output
+# 640x360 @ 60Hz via GPIO to the DLP2000 module through the MickMake
+# PCB adapter.
+#
+# After editing, reboot the Pi for changes to take effect.
+
+# Enable DPI 18-bit output
+dtoverlay=dpi18
+
+# Disable overscan
+overscan_left=0
+overscan_right=0
+overscan_top=0
+overscan_bottom=0
+
+# Set framebuffer to DLP2000 native resolution
+framebuffer_width=640
+framebuffer_height=360
+
+# Enable DPI LCD output
+enable_dpi_lcd=1
+display_default_lcd=1
+
+# DPI output format: 18-bit RGB666
+dpi_group=2
+dpi_mode=87
+dpi_output_format=0x6f016
+
+# Custom timing for 640x360 @ 60Hz
+# Format: hdisplay hsyncstart hsyncend htotal vdisplay vsyncstart vsyncend vtotal
+#         hsyncpolarity vsyncpolarity dblclkpolarity pxclkpolarity clock_freq dotclock
+dpi_timings=640 0 14 4 12 360 0 2 3 9 0 0 0 60 0 32000000 6
+
+# GPU memory allocation (minimum for headless + framebuffer)
+gpu_mem=64

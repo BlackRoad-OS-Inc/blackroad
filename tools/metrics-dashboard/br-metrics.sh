@@ -68,12 +68,12 @@ collect_system_metrics() {
         local total_mb=$(( $(sysctl -n hw.memsize) / 1048576 ))
         memory_usage=$(echo "$used_mb $total_mb" | awk '{printf "%.1f", ($1/$2)*100}')
         disk_usage=$(df -h / | tail -1 | awk '{print $5}' | sed 's/%//')
-        load_avg=$(uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | sed 's/,//')
+        load_avg=$(sysctl -n vm.loadavg | awk '{printf "%.2f", $2+0}')
     else
         cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | sed 's/%us,//')
         memory_usage=$(free | grep Mem | awk '{print ($3/$2) * 100.0}')
         disk_usage=$(df -h / | tail -1 | awk '{print $5}' | sed 's/%//')
-        load_avg=$(uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | sed 's/,//')
+        load_avg=$(sysctl -n vm.loadavg | awk '{printf "%.2f", $2+0}' 2>/dev/null || uptime | awk -F: '{print $NF}' | awk '{print $1}' | tr -d ',')
     fi
     
     # Store in database

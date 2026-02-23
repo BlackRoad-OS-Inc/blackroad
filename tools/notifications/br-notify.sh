@@ -1,15 +1,18 @@
 #!/usr/bin/env zsh
-# 🔔 Notification System - Feature #30
-# Multi-channel notifications: Desktop, Email, Slack, Webhook, SMS
+# BR Notify — Multi-channel notifications: Desktop, Slack, Webhook
 
-# Colors
+# ── Brand Palette ──────────────────────────────────────────────────────────────
+AMBER='\033[38;5;214m'
+PINK='\033[38;5;205m'
+VIOLET='\033[38;5;135m'
+BBLUE='\033[38;5;69m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+DIM='\033[2m'
+BOLD='\033[1m'
 NC='\033[0m'
+# compat aliases
+BLUE="$BBLUE"; CYAN="$AMBER"; YELLOW="$PINK"; MAGENTA="$VIOLET"
 
 DB_FILE="$HOME/.blackroad/notifications.db"
 CONFIG_FILE="$HOME/.blackroad/notify.conf"
@@ -114,24 +117,38 @@ cmd_send() {
 cmd_send_desktop() {
     local title="${1}"
     local message="${2}"
-    local priority="${3}"
-    
-    # macOS
-    if command -v osascript &> /dev/null; then
-        osascript -e "display notification \"$message\" with title \"$title\"" 2>/dev/null
+    local priority="${3:-normal}"
+
+    # macOS — subtitle shows priority, sound for high/critical
+    if command -v osascript &>/dev/null; then
+        local sound=""
+        [[ "$priority" == "high" || "$priority" == "critical" ]] && sound=' sound name "Basso"'
+        local subtitle="BlackRoad OS"
+        [[ "$priority" == "critical" ]] && subtitle="⚠ CRITICAL"
+        [[ "$priority" == "high" ]] && subtitle="◆ HIGH PRIORITY"
+        osascript -e "display notification \"$message\" with title \"$title\" subtitle \"$subtitle\"$sound" 2>/dev/null
         return $?
     fi
-    
     # Linux
-    if command -v notify-send &> /dev/null; then
-        notify-send "$title" "$message"
+    if command -v notify-send &>/dev/null; then
+        local urgency="normal"
+        [[ "$priority" == "high" ]] && urgency="critical"
+        notify-send -u "$urgency" "$title" "$message"
         return $?
     fi
-    
-    # Fallback: terminal bell and message
-    echo -e "\a${MAGENTA}🔔 $title${NC}"
-    echo -e "$message"
-    return 0
+    # Fallback
+    printf "\a"
+    echo -e "${AMBER}◆ ${BOLD}$title${NC}  $message"
+}
+
+# Quick critical desktop alert — br notify alert "title" "message"
+cmd_alert() {
+    local title="${1:-BlackRoad Alert}"
+    local message="${2:-System needs attention}"
+    cmd_send_desktop "$title" "$message" "critical"
+    # Log it
+    sqlite3 "$DB_FILE" "INSERT INTO notifications (title, message, priority, channels, status, sent_at, created_at) VALUES ('$title', '$message', 'critical', 'desktop', 'sent', $(date +%s), $(date +%s));" 2>/dev/null
+    echo -e "  ${PINK}◆${NC} ${BOLD}$title${NC}  ${DIM}$message${NC}  ${DIM}→ desktop${NC}"
 }
 
 # Send email notification
@@ -447,8 +464,9 @@ EOF
 # Main dispatch
 init_db
 
-case "${1:-help}" in
+case "${1:-list}" in
     send|s) cmd_send "${@:2}" ;;
+    alert|a) cmd_alert "${@:2}" ;;
     test|t) cmd_test "${@:2}" ;;
     add-channel|add) cmd_add_channel "${@:2}" ;;
     list-channels|channels|lc) cmd_list_channels ;;
