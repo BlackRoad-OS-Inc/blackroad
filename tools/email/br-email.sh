@@ -187,15 +187,43 @@ show_help() {
   echo "  ${CYAN}br email <agent>${NC}        show agent card"
   echo "  ${CYAN}br email me${NC}             show alexa@blackroad.io"
   echo "  ${CYAN}br email cloudflare${NC}     print Cloudflare routing rules"
+  echo "  ${CYAN}br email deploy${NC}         deploy the Cloudflare Email Worker"
+  echo "  ${CYAN}br email api${NC}            query worker API (inbox)"
   echo ""
   echo "  ${DIM}Agents: lucidia alice octavia aria cecilia cipher${NC}"
   echo "  ${DIM}        prism echo oracle atlas shellfish gematria anastasia${NC}"
   echo ""
 }
 
+# ─── Deploy worker ────────────────────────────────────────────────────────────
+cmd_deploy() {
+  local worker_dir
+  worker_dir="$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)/workers/email"
+  if [[ ! -d "$worker_dir" ]]; then
+    echo "${RED}✗ Worker not found: $worker_dir${NC}"; exit 1
+  fi
+  echo "${CYAN}→ deploying blackroad-email worker${NC}"
+  echo "  ${DIM}${worker_dir}${NC}"
+  echo ""
+  cd "$worker_dir" && wrangler deploy
+}
+
+# ─── Query worker API ─────────────────────────────────────────────────────────
+cmd_api() {
+  local agent="${1:-}"
+  local base="https://blackroad-email.amundsonalexa.workers.dev"
+  local url="${agent:+${base}/inbox/${agent}}"
+  url="${url:-${base}/inbox}"
+  echo "${CYAN}GET ${url}${NC}"
+  curl -s "$url" | python3 -m json.tool 2>/dev/null || curl -s "$url"
+  echo ""
+}
+
 case "${1:-list}" in
-  list|ls|"")   cmd_list ;;
-  cloudflare|cf|routing) cmd_cloudflare ;;
-  help|--help|-h) show_help ;;
-  *)            cmd_show "$1" ;;
+  list|ls|"")             cmd_list ;;
+  cloudflare|cf|routing)  cmd_cloudflare ;;
+  deploy)                 cmd_deploy ;;
+  api|inbox)              cmd_api "${2:-}" ;;
+  help|--help|-h)         show_help ;;
+  *)                      cmd_show "$1" ;;
 esac
