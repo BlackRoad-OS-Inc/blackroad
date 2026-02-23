@@ -47,39 +47,25 @@ const HTML_TEMPLATE = (commands) => `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🚗 CarPool — AI Roundtables</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; min-height: 100vh; }
-    header { padding: 40px 40px 20px; border-bottom: 1px solid #1a1a1a; }
-    header h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    header p { color: #666; margin-top: 8px; font-size: 0.9rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 32px 40px; }
-    .card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; text-decoration: none; color: inherit; display: block; }
-    .card:hover { border-color: #FF1D6C; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(255,29,108,0.15); }
-    .card-emoji { font-size: 1.8rem; margin-bottom: 10px; }
-    .card-cmd { font-size: 0.75rem; font-family: monospace; color: #FF1D6C; margin-bottom: 6px; }
-    .card-desc { font-size: 0.85rem; color: #888; line-height: 1.4; }
-    .run-area { padding: 0 40px 40px; }
-    .run-area h2 { font-size: 1.1rem; color: #666; margin-bottom: 16px; }
-    #output { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; padding: 24px; font-family: monospace; font-size: 0.85rem; line-height: 1.6; min-height: 200px; white-space: pre-wrap; color: #0f0; display: none; }
-    #output.active { display: block; }
-    .badge { display: inline-block; background: #111; border: 1px solid #222; border-radius: 20px; padding: 4px 12px; font-size: 0.75rem; color: #666; margin-right: 8px; }
-  </style>
+  <title>CarPool — AI Roundtables</title>
 </head>
 <body>
-  <header>
-    <h1>🚗 CarPool</h1>
-    <p>AI-powered expert roundtables • Running on BlackRoad OS • <span class="badge">${commands.length} sessions</span><span class="badge">5 agents each</span></p>
-  </header>
-  <div class="grid">
-    ${commands.map(c => `
-    <a class="card" href="/run/${c.cmd}" target="_blank">
-      <div class="card-emoji">${c.emoji}</div>
-      <div class="card-cmd">br carpool ${c.cmd}</div>
-      <div class="card-desc">${c.desc}</div>
-    </a>`).join('')}
-  </div>
+
+<h1>CarPool</h1>
+<p>AI-powered expert roundtables — BlackRoad OS — ${commands.length} sessions, 5 agents each</p>
+
+<hr>
+
+<h2>Roundtable Sessions</h2>
+<p>Click any session to run it. Output streams as plain text.</p>
+
+<ul>
+  ${commands.map(c => `<li>${c.emoji} <a href="/run/${c.cmd}"><code>br carpool ${c.cmd}</code></a> — ${c.desc}</li>`).join('\n  ')}
+</ul>
+
+<hr>
+<p><a href="/health">Health check</a> | <a href="https://github.com/BlackRoad-OS-Inc/blackroad">GitHub</a></p>
+
 </body>
 </html>`;
 
