@@ -2108,6 +2108,149 @@ Now give your ADVICE: 3 specific, actionable bullet points based on everything t
   exit 0
 fi
 
+# ── MAP — ASCII concept map of last session ───────────────────
+if [[ "$1" == "map" ]]; then
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  [[ ! -f "$MEMORY_FILE" ]] && echo "No memory yet." && exit 0
+  last_topic=$(grep "^TOPIC:" "$MEMORY_FILE" | tail -1 | sed 's/^TOPIC: //')
+  last_synth=$(tail -25 "$MEMORY_FILE" | grep -v "^---\|^DATE:\|^TOPIC:\|^VERDICT:")
+  echo -e "\n${WHITE}🗺  Concept Map${NC}  ${DIM}${last_topic}${NC}\n"
+  _map_payload=$(python3 -c "
+import json,sys
+synth=sys.argv[1]; topic=sys.argv[2]
+prompt=f'''From this synthesis on \"{topic}\", create an ASCII concept map.
+Format:
+{topic}
+├── [Theme 1]
+│   ├── key point
+│   └── key point
+├── [Theme 2]
+│   ├── key point
+│   └── key point
+└── [Theme 3]
+    └── key point
+
+Use only what is in the synthesis. 3-4 themes max. Short labels.
+SYNTHESIS:
+{synth}
+
+MAP:'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':220,'temperature':0.3,'stop':['---','Note:']}}))" \
+  "$last_synth" "$last_topic" 2>/dev/null)
+  curl -s -m 60 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_map_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null
+  echo ""
+  exit 0
+fi
+
+# ── COACH — personal coaching session on a goal ──────────────
+if [[ "$1" == "coach" ]]; then
+  _goal="${*:2}"
+  [[ -z "$_goal" ]] && echo -e "${RED}Usage: br carpool coach <your goal>${NC}" && exit 1
+  echo -e "\n${WHITE}🏋 CarPool Coach${NC}  ${DIM}${_goal}${NC}\n"
+  COACH_AGENTS=(LUCIDIA OCTAVIA ALICE PRISM)
+  COACH_LENS=("mindset & strategy" "systems & execution" "tools & automation" "data & measurement")
+  for i in 0 1 2 3; do
+    _ca="${COACH_AGENTS[$i]}"
+    _cl="${COACH_LENS[$i]}"
+    agent_meta "$_ca"
+    _cc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,goal,lens=sys.argv[1],sys.argv[2],sys.argv[3]
+prompt=f'''You are {agent}, coaching on {lens}.
+Goal: \"{goal}\"
+Give 3 coaching bullets (CHALLENGE: / STEP: / WATCH:). Short, direct, actionable.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':130,'temperature':0.7,'stop':['---']}}))" "$_ca" "$_goal" "$_cl" 2>/dev/null)
+    echo -ne "${_cc}${EMOJI} ${_ca}${NC}  ${DIM}${_cl}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_cc}${EMOJI} ${_ca}${NC}  ${DIM}${_cl}${NC}"
+    echo -e "${_resp}\n"
+  done
+  exit 0
+fi
+
+# ── FLASHCARD — Q&A study cards from last session ────────────
+if [[ "$1" == "flashcard" || "$1" == "flash" ]]; then
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  [[ ! -f "$MEMORY_FILE" ]] && echo "No memory yet." && exit 0
+  last_topic=$(grep "^TOPIC:" "$MEMORY_FILE" | tail -1 | sed 's/^TOPIC: //')
+  last_synth=$(tail -25 "$MEMORY_FILE" | grep -v "^---\|^DATE:\|^TOPIC:\|^VERDICT:")
+  FLASH_FILE="$HOME/.blackroad/carpool/flashcards.md"
+  echo -e "\n${WHITE}🃏 Flashcards${NC}  ${DIM}${last_topic}${NC}\n"
+  _fc_payload=$(python3 -c "
+import json,sys
+synth=sys.argv[1]; topic=sys.argv[2]
+prompt=f'''From this synthesis on \"{topic}\", create 5 flashcards.
+Format each exactly as:
+Q: <question>
+A: <concise answer>
+
+Cover different aspects. Questions should test real understanding.
+SYNTHESIS:
+{synth}
+
+FLASHCARDS:'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':260,'temperature':0.4,'stop':['---','Note:']}}))" \
+  "$last_synth" "$last_topic" 2>/dev/null)
+  _cards=$(curl -s -m 60 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_fc_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  echo "$_cards"
+  # Interactive drill mode
+  echo -e "\n${DIM}── drill mode (enter to reveal, q to quit) ──${NC}\n"
+  while IFS= read -r line; do
+    if [[ "$line" == Q:* ]]; then
+      echo -e "${CYAN}${line}${NC}"
+      read -r _ans
+      [[ "$_ans" == "q" ]] && break
+    elif [[ "$line" == A:* ]]; then
+      echo -e "${GREEN}${line}${NC}\n"
+    fi
+  done <<< "$_cards"
+  # Save
+  { echo ""; echo "## $(date '+%Y-%m-%d') — ${last_topic}"; echo ""; echo "$_cards"; } >> "$FLASH_FILE"
+  echo -e "${DIM}Saved → ${FLASH_FILE}${NC}"
+  exit 0
+fi
+
+# ── ASK1 — route a quick question to best-fit agent ──────────
+if [[ "$1" == "ask1" || "$1" == "quick" ]]; then
+  _q="${*:2}"
+  [[ -z "$_q" ]] && echo -e "${RED}Usage: br carpool ask1 <question>${NC}" && exit 1
+  # Pick best agent based on keywords
+  _pick="LUCIDIA"
+  echo "$_q" | grep -iqE "secur|hack|vuln|auth|encr|threat" && _pick="CIPHER"
+  echo "$_q" | grep -iqE "deploy|infra|ci|cd|docker|devops|server|scale" && _pick="OCTAVIA"
+  echo "$_q" | grep -iqE "data|analyt|metric|pattern|trend|sql|stats" && _pick="PRISM"
+  echo "$_q" | grep -iqE "memory|history|context|past|remem|before" && _pick="ECHO"
+  echo "$_q" | grep -iqE "ui|ux|design|user|front|component|visual" && _pick="ARIA"
+  echo "$_q" | grep -iqE "automat|script|tool|workflow|integr|api" && _pick="ALICE"
+  echo "$_q" | grep -iqE "exploit|bypass|pentest|reverse|ctf|shell" && _pick="SHELLFISH"
+  agent_meta "$_pick"
+  _ac="\033[${COLOR_CODE}m"
+  echo -e "\n${_ac}${EMOJI} ${_pick}${NC}  ${DIM}${ROLE}${NC}\n"
+  _payload=$(python3 -c "
+import json,sys
+agent,role,persona,q=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'You are {agent}, {role}. {persona}\nAnswer concisely and directly:\n{q}'
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':180,'temperature':0.7,'stop':['---']}}))" \
+  "$_pick" "$ROLE" "$PERSONA" "$_q" 2>/dev/null)
+  curl -s -m 45 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null
+  echo ""
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1

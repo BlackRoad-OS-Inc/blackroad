@@ -369,6 +369,10 @@ show_help() {
     echo "║    br carpool config        - Persistent defaults: model/turns/crew ║"
     echo "║    br carpool tts [voice]   - Speak last synthesis aloud (macOS)   ║"
     echo "║    br carpool ama <AGENT>   - Agent asks YOU 3 Qs, gives advice    ║"
+    echo "║    br carpool map           - ASCII concept map of last session    ║"
+    echo "║    br carpool coach <goal>  - 4-agent personal coaching session    ║"
+    echo "║    br carpool flashcard     - Q&A study cards + drill mode         ║"
+    echo "║    br carpool ask1 <q>      - Route question to best-fit agent     ║"
     echo "║    br carpool react <f/url> - Quick reaction: brief+context        ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
@@ -530,6 +534,21 @@ show_help() {
     echo "║    br pulse watch [N]       - Live pulse, refresh every N sec     ║"
     echo "║    br pulse line            - Single-line ticker                  ║"
     echo "║    br agents chat [NAME]    - Persistent multi-turn agent chat    ║"
+    echo "║                                                                   ║"
+    echo "║  ORG / NOTIFY / CRON:                                            ║"
+    echo "║    br org                   - GitHub org summary (BlackRoad-OS-Inc) ║"
+    echo "║    br org list [N]          - List all org repos                  ║"
+    echo "║    br org status            - Local subrepo branch/dirty status   ║"
+    echo "║    br org stale [days]      - Repos not pushed in N days          ║"
+    echo "║    br notify test           - Send test notification              ║"
+    echo "║    br notify send <l> <t> <msg> - Send to all channels            ║"
+    echo "║    br notify webhook add <n> <url> - Register webhook             ║"
+    echo "║    br notify watch [N]      - Watch queue, notify on changes      ║"
+    echo "║    br cron list             - List scheduled commands             ║"
+    echo "║    br cron add <n> <cmd> [sched] - Schedule a br command          ║"
+    echo "║    br cron run <name>       - Run a schedule now                  ║"
+    echo "║    br cron install          - Install all → system crontab        ║"
+    echo "║    br cron defaults         - Add sensible default schedules      ║"
     echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
@@ -884,6 +903,10 @@ main() {
                 config)     bash /Users/alexa/blackroad/carpool.sh config "$@" ;;
                 tts|say)    bash /Users/alexa/blackroad/carpool.sh tts "$@" ;;
                 ama)        bash /Users/alexa/blackroad/carpool.sh ama "$@" ;;
+                map)        bash /Users/alexa/blackroad/carpool.sh map ;;
+                coach)      bash /Users/alexa/blackroad/carpool.sh coach "$@" ;;
+                flashcard|flash) bash /Users/alexa/blackroad/carpool.sh flashcard ;;
+                ask1|quick) bash /Users/alexa/blackroad/carpool.sh ask1 "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
