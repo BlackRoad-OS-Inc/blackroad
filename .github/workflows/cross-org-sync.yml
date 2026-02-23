@@ -1,0 +1,41 @@
+name: Cross-Org Sync
+on:
+  schedule:
+    - cron: '0 4 * * 1'  # Every Monday 4 AM
+  workflow_dispatch:
+    inputs:
+      direction:
+        description: 'Sync direction'
+        required: true
+        default: 'downstream'
+        type: choice
+        options: [downstream, upstream, both]
+
+jobs:
+  sync-manifest:
+    name: Sync Agent Manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync agents/manifest.json to BlackRoad-OS
+        run: |
+          echo "Syncing agent manifest to downstream orgs..."
+          echo "agents/manifest.json version: $(cat agents/manifest.json | python3 -c 'import sys,json; print(json.load(sys.stdin).get("version","unknown"))' 2>/dev/null || echo 'n/a')"
+          # In production: use gh CLI to update manifest in downstream repos
+          echo "✅ Manifest sync complete (dry run)"
+
+      - name: Check Pi tunnel health
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.blackroad.io/health 2>/dev/null || echo "000")
+          echo "Pi tunnel status: $STATUS"
+          [ "$STATUS" = "200" ] && echo "✅ Tunnel healthy" || echo "⚠️ Tunnel may be down: $STATUS"
+
+      - name: Generate sync report
+        run: |
+          echo "## Cross-Org Sync Report" >> $GITHUB_STEP_SUMMARY
+          echo "- Date: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "- Orgs: BlackRoad-OS-Inc, BlackRoad-OS, blackboxprogramming, Blackbox-Enterprises" >> $GITHUB_STEP_SUMMARY
+          echo "- Direction: ${{ github.event.inputs.direction || 'scheduled' }}" >> $GITHUB_STEP_SUMMARY
