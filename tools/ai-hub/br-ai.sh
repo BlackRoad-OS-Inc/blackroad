@@ -157,8 +157,21 @@ except: print('Error: gateway unavailable')
 "
 }
 
+pick_best_model() {
+  # Auto-detect best available ollama model
+  local models
+  models=$(curl -sf --max-time 3 "$OLLAMA/api/tags" | python3 -c \
+    "import json,sys; ms=[m['name'] for m in json.load(sys.stdin).get('models',[])]; print('\n'.join(ms))" 2>/dev/null)
+  for preferred in "qwen2.5:7b" "qwen2.5:3b" "llama3.2" "llama3.2:1b" "lucidia:latest" "tinyllama:latest"; do
+    echo "$models" | grep -q "^${preferred}" && { echo "$preferred"; return; }
+  done
+  echo "$models" | head -1
+}
+
 cmd_ask() {
-  local model="${BR_AI_MODEL:-llama3.2}"
+  local model="${BR_AI_MODEL:-}"
+  [[ -z "$model" ]] && model=$(pick_best_model)
+  [[ -z "$model" ]] && model="llama3.2"
   local system="You are a helpful AI assistant integrated with BlackRoad OS."
   local prompt=""
   # Parse flags
@@ -196,7 +209,9 @@ cmd_ask() {
 }
 
 cmd_code() {
-  local model="${BR_AI_MODEL:-llama3.2}"
+  local model="${BR_AI_MODEL:-}"
+  [[ -z "$model" ]] && model=$(pick_best_model)
+  [[ -z "$model" ]] && model="llama3.2"
   local lang="general"
   local prompt=""
   while [[ "$#" -gt 0 ]]; do
@@ -282,7 +297,9 @@ except: pass
 }
 
 cmd_chat() {
-  local model="${1:-llama3.2}"
+  local model="${1:-}"
+  [[ -z "$model" ]] && model=$(pick_best_model)
+  [[ -z "$model" ]] && model="llama3.2"
   local provider; provider=$(detect_provider "$model")
   echo ""
   echo -e "${PURPLE}${BOLD}💬 Chat with $model${NC} ${CYAN}(${provider})${NC}"

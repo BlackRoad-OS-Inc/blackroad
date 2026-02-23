@@ -178,7 +178,7 @@ cmd_list() {
     echo ""
   fi
   # File scripts
-  if ls "$REPLAY_DIR"/*.replay &>/dev/null; then
+  if ls "$REPLAY_DIR"/*.replay 2>/dev/null | grep -q .; then
     echo -e "  ${BLUE}File scripts ($REPLAY_DIR):${NC}"
     for f in "$REPLAY_DIR"/*.replay; do
       local nm; nm=$(basename "$f" .replay)
