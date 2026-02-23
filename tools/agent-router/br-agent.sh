@@ -441,11 +441,11 @@ cmd_tasks_list() {
 # ── Interactive agent chat ─────────────────────────────────────────────────
 cmd_chat() {
     local agent="${1:-}"
-    local model
+    local model backend
 
-    # Pick best available model
-    model=$(curl -s --max-time 2 http://localhost:11434/api/tags 2>/dev/null \
-        | python3 -c "
+    # Detect backend: Ollama preferred, gateway fallback
+    local ollama_models
+    ollama_models=$(curl -s --max-time 2 http://localhost:11434/api/tags 2>/dev/null         | python3 -c "
 import sys,json
 models=[m['name'] for m in json.load(sys.stdin).get('models',[])]
 pref=['lucidia:latest','llama3.2','qwen2.5','tinyllama']
@@ -455,10 +455,36 @@ for p in pref:
 if models: print(models[0])
 " 2>/dev/null)
 
-    if [[ -z "$model" ]]; then
-        echo -e "${RED}x${NC}  Ollama not running. Start with: ${AMBER}ollama serve${NC}"
-        exit 1
+    if [[ -n "$ollama_models" ]]; then
+        model="$ollama_models"
+        backend="ollama"
+    else
+        # Try BR gateway
+        local gw_health; gw_health=$(curl -s --max-time 2 "${BLACKROAD_GATEWAY_URL:-http://127.0.0.1:8787}/health" 2>/dev/null)
+        if [[ -n "$gw_health" ]]; then
+            backend="gateway"
+            model="gateway"
+        else
+            echo -e "  ${RED}✗${NC}  No backend available."
+            echo -e "  ${DIM}Start Ollama:  ollama serve${NC}"
+            echo -e "  ${DIM}Or gateway:    br gateway start${NC}"
+            exit 1
+        fi
     fi
+
+    # Init chat history DB
+    local chat_db="${HOME}/.blackroad/chat-history.db"
+    sqlite3 "$chat_db" "CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        agent TEXT, model TEXT, backend TEXT,
+        started_at INTEGER, ended_at INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER, role TEXT, content TEXT, ts INTEGER
+    );" 2>/dev/null
+    local session_id
+    session_id=$(sqlite3 "$chat_db" "INSERT INTO sessions (agent,model,backend,started_at) VALUES ('${agent:-?}','$model','$backend',$(date +%s)); SELECT last_insert_rowid();")
 
     # Agent picker if not specified
     if [[ -z "$agent" ]]; then
@@ -521,7 +547,13 @@ if models: print(models[0])
         fi
 
         if [[ "$input" == "/help" ]]; then
-            echo -e "  ${DIM}/exit  /switch  /clear  /model  /history${NC}"
+            echo -e "  ${DIM}/exit     quit session${NC}"
+            echo -e "  ${DIM}/switch   choose different agent${NC}"
+            echo -e "  ${DIM}/clear    clear history${NC}"
+            echo -e "  ${DIM}/model    show current model${NC}"
+            echo -e "  ${DIM}/backend  show backend (ollama/gateway)${NC}"
+            echo -e "  ${DIM}/history  show conversation so far${NC}"
+            echo -e "  ${DIM}/save     export chat to file${NC}"
             echo ""
             continue
         fi
@@ -538,26 +570,60 @@ if models: print(models[0])
             continue
         fi
 
+        if [[ "$input" == "/save" ]]; then
+            local ts_label; ts_label=$(date +%Y%m%d-%H%M)
+            local export_file="${HOME}/.blackroad/chat-${agent,,}-${ts_label}.txt"
+            echo "$history" > "$export_file"
+            echo -e "  ${GREEN}✓${NC}  saved to ${DIM}$export_file${NC}"
+            echo ""
+            continue
+        fi
+
+        if [[ "$input" == "/backend" ]]; then
+            echo -e "  ${DIM}backend: ${backend}  model: ${model}${NC}"
+            echo ""
+            continue
+        fi
+
         history="${history}
 Human: ${input}"
+        sqlite3 "$chat_db" "INSERT INTO messages (session_id,role,content,ts) VALUES ($session_id,'user','$(echo "$input"|sed "s/'"'"'/'"'"''"'"''"'"'/g")',$(date +%s));" 2>/dev/null
 
-        local prompt="${sys}
+        echo ""
+        echo -ne "  ${col}${BOLD}${em} ${agent}${NC}  "
+
+        local resp
+        if [[ "$backend" == "ollama" ]]; then
+            local full_prompt="${sys}
 
 Conversation so far:
 ${history}
 
 ${agent}:"
+            resp=$(printf '%s' "$full_prompt" | ollama run "$model" 2>/dev/null)
+        else
+            # Gateway backend
+            resp=$(curl -s --max-time 30                 "${BLACKROAD_GATEWAY_URL:-http://127.0.0.1:8787}/chat"                 -H "Content-Type: application/json"                 -d "$(python3 -c "
+import json, sys
+print(json.dumps({
+    'agent': '${agent}',
+    'message': '${input}'.replace("'","'").replace('"','\\"'),
+    'history': '${history}'.replace("'","'"),
+    'system': '${sys}'.replace("'","'")
+}))" 2>/dev/null)" 2>/dev/null                 | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('response',d.get('content','[no response]')))" 2>/dev/null)
+            [[ -z "$resp" ]] && resp="[gateway error — check: br gateway status]"
+        fi
 
-        echo ""
-        echo -ne "  ${col}${BOLD}${em} ${agent}${NC}  "
-        local resp
-        resp=$(printf '%s' "$prompt" | ollama run "$model" 2>/dev/null)
         echo -e "${col}${resp}${NC}"
         echo ""
 
         history="${history}
 ${agent}: ${resp}"
+        sqlite3 "$chat_db" "INSERT INTO messages (session_id,role,content,ts) VALUES ($session_id,'assistant','$(echo "$resp"|sed "s/'"'"'/'"'"''"'"''"'"'/g")',$(date +%s));" 2>/dev/null
     done
+
+    # Close session
+    sqlite3 "$chat_db" "UPDATE sessions SET ended_at=$(date +%s) WHERE id=$session_id;" 2>/dev/null
 
     echo -e "  ${DIM}Session ended.${NC}"
     echo ""
@@ -575,6 +641,12 @@ AGENT MANAGEMENT:
   register <name> [type] [spec] [endpoint]  Register new agent
   list                                      List all agents
   status                                    System status
+
+CHAT:
+  chat [agent]                              Chat with an agent via Ollama or gateway
+    /save      save conversation
+    /backend   toggle ollama↔gateway
+    /help      show commands
 
 TASK MANAGEMENT:
   task <type> <payload> [priority]          Submit task

@@ -73,24 +73,143 @@ deploy_status() {
         done
 }
 
+
+deploy_watch() {
+    local platform="${1:-auto}"
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR DEPLOY${NC}  ${DIM}watching  ·  $platform  ·  Ctrl+C to exit${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+
+    case "$platform" in
+        railway)
+            command -v railway &>/dev/null || { echo -e "  ${RED}✗${NC} railway CLI not found"; return 1; }
+            railway logs --tail 2>&1
+            ;;
+        vercel)
+            command -v vercel &>/dev/null || { echo -e "  ${RED}✗${NC} vercel CLI not found"; return 1; }
+            # Tail most recent deployment
+            local deploy_id; deploy_id=$(vercel ls --json 2>/dev/null | python3 -c "import json,sys; d=json.loads(sys.stdin.read()); print(d[0]['uid'])" 2>/dev/null)
+            [[ -z "$deploy_id" ]] && { echo -e "  ${RED}✗${NC} no recent deployment found"; return 1; }
+            vercel logs "$deploy_id" --follow 2>&1
+            ;;
+        cloudflare|cf)
+            command -v wrangler &>/dev/null || { echo -e "  ${RED}✗${NC} wrangler not found"; return 1; }
+            wrangler tail 2>&1
+            ;;
+        github|gh|actions)
+            # Live GitHub Actions tail via gh CLI
+            local repo; repo=$(git remote get-url origin 2>/dev/null | sed "s|.*github.com[:/]||;s|\.git$||")
+            [[ -z "$repo" ]] && { echo -e "  ${RED}✗${NC} no GitHub remote detected"; return 1; }
+            echo -e "  ${DIM}repo: $repo${NC}\n"
+            # Get latest in-progress or queued run
+            local run_id; run_id=$(gh api "repos/${repo}/actions/runs?status=in_progress&per_page=1"                 --jq ".workflow_runs[0].id" 2>/dev/null)
+            if [[ -z "$run_id" || "$run_id" == "null" ]]; then
+                run_id=$(gh api "repos/${repo}/actions/runs?per_page=1" --jq ".workflow_runs[0].id" 2>/dev/null)
+            fi
+            [[ -z "$run_id" ]] && { echo -e "  ${RED}✗${NC} no runs found"; return 1; }
+            echo -e "  ${DIM}run #$run_id — streaming logs...${NC}\n"
+            gh run watch "$run_id" --repo "$repo" 2>&1
+            ;;
+        auto|*)
+            # Smart auto-detect
+            if [[ -f "wrangler.toml" ]]; then
+                deploy_watch cloudflare
+            elif [[ -f "railway.toml" ]]; then
+                deploy_watch railway
+            elif [[ -f "vercel.json" ]] || [[ -f ".vercel/project.json" ]]; then
+                deploy_watch github
+            else
+                deploy_watch github
+            fi
+            ;;
+    esac
+}
+
+deploy_rollback() {
+    local platform="${1:-auto}"
+    local target="${2:-}"
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR DEPLOY${NC}  ${DIM}rollback  ·  $platform${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo ""
+
+    case "$platform" in
+        vercel)
+            command -v vercel &>/dev/null || { echo -e "  ${RED}✗${NC} vercel CLI not found"; return 1; }
+            if [[ -n "$target" ]]; then
+                vercel rollback "$target" 2>&1
+            else
+                # List last 5 deployments and pick previous
+                local prev; prev=$(vercel ls --json 2>/dev/null | python3 -c "
+import json,sys
+d=json.loads(sys.stdin.read())
+if len(d) > 1: print(d[1]['''uid'''])
+" 2>/dev/null)
+                [[ -z "$prev" ]] && { echo -e "  ${RED}✗${NC} no previous deployment found"; return 1; }
+                echo -e "  ${DIM}rolling back to: $prev${NC}"
+                vercel rollback "$prev" 2>&1
+            fi
+            ;;
+        railway)
+            command -v railway &>/dev/null || { echo -e "  ${RED}✗${NC} railway CLI not found"; return 1; }
+            railway rollback 2>&1
+            ;;
+        cloudflare|cf)
+            command -v wrangler &>/dev/null || { echo -e "  ${RED}✗${NC} wrangler not found"; return 1; }
+            # List recent versions
+            local worker; worker=$(grep "^name" wrangler.toml 2>/dev/null | head -1 | sed "s/.*= *\"\?//;s/\"\?$//")
+            [[ -z "$worker" ]] && { echo -e "  ${RED}✗${NC} no worker name found in wrangler.toml"; return 1; }
+            echo -e "  ${DIM}worker: $worker${NC}"
+            wrangler rollback "${target:-}" 2>&1
+            ;;
+        github|gh)
+            local repo; repo=$(git remote get-url origin 2>/dev/null | sed "s|.*github.com[:/]||;s|\.git$||")
+            [[ -z "$repo" ]] && { echo -e "  ${RED}✗${NC} no GitHub remote detected"; return 1; }
+            # Re-run last successful deployment workflow
+            local run_id; run_id=$(gh api "repos/${repo}/actions/runs?status=success&per_page=2"                 --jq ".workflow_runs[1].id" 2>/dev/null)
+            [[ -z "$run_id" ]] && { echo -e "  ${RED}✗${NC} no previous successful run found"; return 1; }
+            echo -e "  ${DIM}re-running: run #$run_id${NC}"
+            gh run rerun "$run_id" --repo "$repo" 2>&1 && echo -e "  ${GREEN}✓${NC}  rollback triggered"
+            ;;
+        *)
+            echo -e "  ${DIM}usage: br deploy rollback <platform> [target]${NC}"
+            echo -e "  ${DIM}platforms: vercel · railway · cloudflare · github${NC}"
+            ;;
+    esac
+    echo ""
+}
+
 show_help() {
-    echo -e "  ${AMBER}${BOLD}◆ BR DEPLOY${NC}  deployment manager\n"
-    echo -e "  ${AMBER}br deploy detect${NC}        auto-detect platforms"
-    echo -e "  ${AMBER}br deploy quick${NC}         smart auto-deploy"
-    echo -e "  ${AMBER}br deploy vercel [prod]${NC}  deploy to Vercel"
-    echo -e "  ${AMBER}br deploy netlify [prod]${NC} deploy to Netlify"
-    echo -e "  ${AMBER}br deploy heroku${NC}         push to Heroku"
-    echo -e "  ${AMBER}br deploy docker [tag]${NC}   build Docker image"
-    echo -e "  ${AMBER}br deploy status${NC}         deployment history"
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR DEPLOY${NC}  ${DIM}Ship code. Watch it land. Roll back in seconds.${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo ""
+    echo -e "  ${AMBER}watch${NC}    [platform]        stream live deploy logs"
+    echo -e "  ${AMBER}rollback${NC} <platform> [id]   revert to previous deploy"
+    echo -e "  ${AMBER}detect${NC}                     auto-detect platforms"
+    echo -e "  ${AMBER}quick${NC}                      smart auto-deploy"
+    echo -e "  ${AMBER}vercel${NC}   [prod]             deploy to Vercel"
+    echo -e "  ${AMBER}netlify${NC}  [prod]             deploy to Netlify"
+    echo -e "  ${AMBER}railway${NC}                    deploy to Railway"
+    echo -e "  ${AMBER}cf${NC}                         deploy Cloudflare worker"
+    echo -e "  ${AMBER}docker${NC}   [tag]              build Docker image"
+    echo -e "  ${AMBER}status${NC}                     deployment history"
+    echo ""
+    echo -e "  ${DIM}platforms: vercel · railway · cloudflare · github · netlify${NC}"
+    echo ""
 }
 
 init_db
 case ${1:-detect} in
     detect|d|"") detect ;;
     quick|q) quick ;;
+    watch|w|tail|live) deploy_watch "${2:-auto}" ;;
+    rollback|rb|revert) deploy_rollback "${2:-auto}" "${3:-}" ;;
     vercel|v) deploy_vercel "$2" ;;
     netlify|n) deploy_netlify "$2" ;;
     heroku|h) deploy_heroku ;;
+    railway|r) railway up 2>&1 ;;
+    cf|cloudflare|wrangler) wrangler deploy 2>&1 ;;
     docker) deploy_docker "$2" ;;
     status|s|history) deploy_status ;;
     help|--help|-h) show_help ;;

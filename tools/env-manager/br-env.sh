@@ -1,10 +1,9 @@
 #!/usr/bin/env zsh
 
 # Colors
-AMBER='[38;5;214m'; PINK='[38;5;205m'; VIOLET='[38;5;135m'; BBLUE='[38;5;69m'
-GREEN='[0;32m'; RED='[0;31m'; BOLD='[1m'; DIM='[2m'; NC='[0m'
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
 CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
-NC='\033[0m'
 
 DB_FILE="$HOME/.blackroad/env-manager.db"
 
@@ -283,44 +282,244 @@ cmd_export() {
     done < "$file"
 }
 
+cmd_vault_push() {
+    # br env push [file]  — encrypt and push .env to br vault
+    local envfile="${1:-.env}"
+    [[ ! -f "$envfile" ]] && { echo -e "  ${RED}✗${NC} file not found: $envfile"; return 1; }
+
+    local vault_dir="${HOME}/.blackroad/vault"
+    local master_key="${vault_dir}/.master.key"
+    mkdir -p "$vault_dir"
+
+    [[ ! -f "$master_key" ]] && {
+        openssl rand -base64 32 > "$master_key"
+        chmod 400 "$master_key"
+        echo -e "  ${GREEN}✓${NC}  vault key created: $master_key"
+    }
+
+    local project; project=$(basename "$(pwd)")
+    local dest="${vault_dir}/${project}.env.enc"
+    openssl enc -aes-256-cbc -pbkdf2 -pass "file:${master_key}" -in "$envfile" -out "$dest" 2>/dev/null
+    local count; count=$(grep -c '=' "$envfile" 2>/dev/null || echo 0)
+
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR ENV${NC}  ${DIM}vault push${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo -e "  ${GREEN}✓${NC}  encrypted $count vars → ${BOLD}${dest}${NC}"
+    echo -e "  ${DIM}→  br env pull to restore${NC}"
+    echo ""
+}
+
+cmd_vault_pull() {
+    # br env pull [project] [dest]  — decrypt from vault to .env
+    local project="${1:-$(basename "$(pwd)")}"
+    local dest="${2:-.env}"
+
+    local vault_dir="${HOME}/.blackroad/vault"
+    local master_key="${vault_dir}/.master.key"
+    local src="${vault_dir}/${project}.env.enc"
+
+    [[ ! -f "$src" ]] && { echo -e "  ${RED}✗${NC} no vault entry for: $project  (run: br env push)"; return 1; }
+    [[ ! -f "$master_key" ]] && { echo -e "  ${RED}✗${NC} vault key missing: $master_key"; return 1; }
+
+    openssl enc -d -aes-256-cbc -pbkdf2 -pass "file:${master_key}" -in "$src" -out "$dest" 2>/dev/null
+    local count; count=$(grep -c '=' "$dest" 2>/dev/null || echo 0)
+
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR ENV${NC}  ${DIM}vault pull${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo -e "  ${GREEN}✓${NC}  decrypted $count vars → ${BOLD}${dest}${NC}"
+    echo ""
+}
+
+cmd_vault_diff() {
+    # br env diff [file] — compare .env vs vault snapshot
+    local envfile="${1:-.env}"
+    local project; project=$(basename "$(pwd)")
+
+    local vault_dir="${HOME}/.blackroad/vault"
+    local master_key="${vault_dir}/.master.key"
+    local src="${vault_dir}/${project}.env.enc"
+
+    [[ ! -f "$envfile" ]] && { echo -e "  ${RED}✗${NC} file not found: $envfile"; return 1; }
+    [[ ! -f "$src" ]] && { echo -e "  ${RED}✗${NC} no vault entry for: $project  (run: br env push)"; return 1; }
+
+    local tmp; tmp=$(mktemp)
+    openssl enc -d -aes-256-cbc -pbkdf2 -pass "file:${master_key}" -in "$src" -out "$tmp" 2>/dev/null
+
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR ENV${NC}  ${DIM}diff  ·  $envfile  vs  vault/${project}${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo ""
+
+    python3 - "$envfile" "$tmp" << 'PYEOF'
+import sys, re
+
+def parse_env(path):
+    d = {}
+    for line in open(path):
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line: continue
+        k, _, v = line.partition('=')
+        d[k.strip()] = v.strip()
+    return d
+
+AMBER = '\033[38;5;214m'; PINK = '\033[38;5;205m'
+GREEN = '\033[0;32m';     DIM  = '\033[2m'; NC = '\033[0m'
+BOLD  = '\033[1m'
+
+local_env = parse_env(sys.argv[1])
+vault_env = parse_env(sys.argv[2])
+
+all_keys = sorted(set(local_env) | set(vault_env))
+changes = 0
+for k in all_keys:
+    lv = local_env.get(k)
+    vv = vault_env.get(k)
+    secret = any(x in k.upper() for x in ['TOKEN','KEY','SECRET','PASS','PWD'])
+    def mask(v): return v[:4]+'*'*(len(v)-4) if v and secret and len(v)>4 else v
+    if lv is None:
+        print(f"  {PINK}+{NC}  {BOLD}{k}{NC}  {PINK}(only in vault){NC}"); changes+=1
+    elif vv is None:
+        print(f"  {GREEN}+{NC}  {BOLD}{k}{NC}  {GREEN}(new in local){NC}"); changes+=1
+    elif lv != vv:
+        print(f"  {AMBER}~{NC}  {BOLD}{k}{NC}  {DIM}{mask(vv)}{NC}  →  {AMBER}{mask(lv)}{NC}"); changes+=1
+    else:
+        print(f"  {DIM}={NC}  {DIM}{k}{NC}")
+
+print(f"\n  {DIM}{changes} change(s){NC}")
+PYEOF
+    rm -f "$tmp"
+    echo ""
+}
+
+cmd_audit() {
+    # br env audit [file]  — check .env vs .env.example for missing/extra keys
+    local envfile="${1:-.env}"
+    local example="${2:-.env.example}"
+
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR ENV${NC}  ${DIM}audit  ·  $envfile vs $example${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo ""
+
+    [[ ! -f "$envfile" ]] && { echo -e "  ${RED}✗${NC} not found: $envfile"; return 1; }
+    [[ ! -f "$example" ]] && { echo -e "  ${DIM}no $example found — scanning for empty values only${NC}"; echo ""; }
+
+    python3 - "$envfile" "${example}" << 'PYEOF'
+import sys, os
+
+def parse_keys(path):
+    keys = {}
+    if not os.path.exists(path): return keys
+    for line in open(path):
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line: continue
+        k, _, v = line.partition('=')
+        keys[k.strip()] = v.strip()
+    return keys
+
+GREEN = '\033[0;32m'; RED = '\033[0;31m'; AMBER = '\033[38;5;214m'
+PINK = '\033[38;5;205m'; DIM = '\033[2m'; BOLD = '\033[1m'; NC = '\033[0m'
+
+local_env = parse_keys(sys.argv[1])
+example   = parse_keys(sys.argv[2]) if os.path.exists(sys.argv[2]) else {}
+
+issues = 0
+
+# Missing keys (in example but not in local)
+for k in sorted(example):
+    if k not in local_env:
+        print(f"  {RED}✗{NC}  {BOLD}{k}{NC}  {RED}MISSING{NC}"); issues+=1
+
+# Empty values
+for k, v in sorted(local_env.items()):
+    if not v:
+        print(f"  {AMBER}⚠{NC}  {BOLD}{k}{NC}  {AMBER}EMPTY{NC}"); issues+=1
+
+# Extra keys (in local but not in example)
+if example:
+    for k in sorted(local_env):
+        if k not in example:
+            print(f"  {DIM}+  {k}  (not in example){NC}")
+
+if issues == 0:
+    print(f"  {GREEN}✓{NC}  all keys present and non-empty")
+else:
+    print(f"\n  {RED}{issues} issue(s) found{NC}")
+PYEOF
+    echo ""
+}
+
+cmd_vault_list() {
+    local vault_dir="${HOME}/.blackroad/vault"
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR ENV${NC}  ${DIM}vault contents${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo ""
+    local count=0
+    for f in "${vault_dir}"/*.env.enc(N); do
+        count=$((count+1))
+        local name; name=$(basename "$f" .env.enc)
+        local size; size=$(wc -c < "$f" 2>/dev/null | tr -d ' ')
+        local ts; ts=$(python3 -c "import os; t=os.path.getmtime('$f'); import time; print(time.strftime('%Y-%m-%d %H:%M', time.localtime(t)))")
+        printf "  ${AMBER}%-20s${NC}  ${DIM}%s bytes  %s${NC}\n" "$name" "$size" "$ts"
+    done
+    [[ $count -eq 0 ]] && echo -e "  ${DIM}vault is empty.  br env push${NC}"
+    echo ""
+}
+
 cmd_help() {
-    echo -e "  ${AMBER}${BOLD}◆ BR ENV${NC}  environment manager\n"
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR ENV${NC}  ${DIM}Manage env files. Encrypt them. Audit them.${NC}"
+    echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+    echo ""
+    echo -e "  ${BOLD}vault${NC}"
+    echo -e "  ${AMBER}push${NC}   [file]                encrypt .env → vault"
+    echo -e "  ${AMBER}pull${NC}   [project] [dest]      decrypt from vault → .env"
+    echo -e "  ${AMBER}vdiff${NC}  [file]                diff local vs vault snapshot"
+    echo -e "  ${AMBER}vlist${NC}                        list vault contents"
+    echo -e "  ${AMBER}audit${NC}  [file] [example]      missing/empty/extra keys"
+    echo ""
     echo -e "  ${BOLD}files${NC}"
-    echo -e "  ${AMBER}br env init [file]${NC}                 create .env"
-    echo -e "  ${AMBER}br env list [file]${NC}                 list vars"
-    echo -e "  ${AMBER}br env edit [file]${NC}                 open editor\n"
-    echo -e "  ${BOLD}variables${NC}"
-    echo -e "  ${AMBER}br env get <file> <key>${NC}            get value"
-    echo -e "  ${AMBER}br env set <file> <key> <val>${NC}      set var"
-    echo -e "  ${AMBER}br env unset <file> <key>${NC}          remove var"
-    echo -e "  ${AMBER}br env export [file]${NC}               export to shell\n"
-    echo -e "  ${BOLD}ops${NC}"
-    echo -e "  ${AMBER}br env copy <src> <dest>${NC}           copy file"
-    echo -e "  ${AMBER}br env diff <file1> <file2>${NC}        diff files"
-    echo -e "  ${AMBER}br env validate [file]${NC}             validate\n"
-    echo -e "  ${DIM}Secrets (TOKEN/KEY/SECRET/PASSWORD) are masked${NC}"
+    echo -e "  ${AMBER}init${NC}   [file]                create .env"
+    echo -e "  ${AMBER}list${NC}   [file]                list vars (masked)"
+    echo -e "  ${AMBER}diff${NC}   <file1> <file2>       diff two env files"
+    echo -e "  ${AMBER}validate${NC} [file]              validate syntax"
+    echo ""
+    echo -e "  ${BOLD}vars${NC}"
+    echo -e "  ${AMBER}get${NC}    <file> <key>          get value"
+    echo -e "  ${AMBER}set${NC}    <file> <key> <val>    set var"
+    echo -e "  ${AMBER}unset${NC}  <file> <key>          remove var"
+    echo -e "  ${AMBER}export${NC} [file]                export to shell"
+    echo ""
 }
 
 # Main dispatch
 init_db
 
 case "${1:-help}" in
-    init) cmd_init "${@:2}" ;;
-    list|ls) cmd_list "${@:2}" ;;
+    push|encrypt)        cmd_vault_push "${@:2}" ;;
+    pull|decrypt)        cmd_vault_pull "${@:2}" ;;
+    vdiff|vault-diff)    cmd_vault_diff "${@:2}" ;;
+    vlist|vault-list)    cmd_vault_list ;;
+    audit)               cmd_audit "${@:2}" ;;
+    init)                cmd_init "${@:2}" ;;
+    list|ls)             cmd_list "${@:2}" ;;
     edit)
         file="${2:-.env}"
         ${EDITOR:-vim} "$file"
         ;;
-    get) cmd_get "${@:2}" ;;
-    set) cmd_set "${@:2}" ;;
-    unset|rm) cmd_unset "${@:2}" ;;
-    copy|cp) cmd_copy "${@:2}" ;;
-    diff) cmd_diff "${@:2}" ;;
-    validate|check) cmd_validate "${@:2}" ;;
-    export) cmd_export "${@:2}" ;;
-    help|--help|-h) cmd_help ;;
+    get)                 cmd_get "${@:2}" ;;
+    set)                 cmd_set "${@:2}" ;;
+    unset|rm)            cmd_unset "${@:2}" ;;
+    copy|cp)             cmd_copy "${@:2}" ;;
+    diff)                cmd_diff "${@:2}" ;;
+    validate|check)      cmd_validate "${@:2}" ;;
+    export)              cmd_export "${@:2}" ;;
+    help|--help|-h)      cmd_help ;;
     *)
-        echo -e "${RED}❌ Unknown command: $1${NC}"
+        echo -e "${RED}✗${NC} unknown: $1"
         cmd_help
         exit 1
         ;;
