@@ -442,11 +442,14 @@ cmd_help() {
 init_db
 
 case "${1:-help}" in
+    scan|all|a) cmd_pci; cmd_hipaa; cmd_soc2; cmd_gdpr ;;
     pci|pci-dss) cmd_pci ;;
     hipaa) cmd_hipaa ;;
     soc2|soc) cmd_soc2 ;;
     gdpr) cmd_gdpr ;;
-    report|r) cmd_report ;;
+    report|r|history) cmd_report ;;
+    rules) echo -e "\n  Active frameworks: PCI-DSS · HIPAA · SOC2 · GDPR\n  Run: br comply <framework>\n" ;;
+    fix) echo -e "\n  💡 Auto-fix: br comply scan then br comply report\n" ;;
     help|--help|-h) cmd_help ;;
     *)
         echo -e "${RED}❌ Unknown command: $1${NC}"

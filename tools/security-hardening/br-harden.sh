@@ -367,9 +367,11 @@ cmd_help() {
 init_db
 
 case "${1:-help}" in
-    check|c) cmd_check ;;
-    report|r) cmd_report ;;
-    fix|f) cmd_fix "${@:2}" ;;
+    scan|check|c) cmd_check ;;
+    apply|fix|f) cmd_fix "${@:2}" ;;
+    report|r|status) cmd_report ;;
+    ssh) echo -e "\n  💡 SSH hardening check included in: br harden scan\n" ; cmd_check ;;
+    firewall) echo -e "\n  💡 Firewall check included in: br harden scan\n" ; cmd_check ;;
     help|--help|-h) cmd_help ;;
     *)
         echo -e "${RED}❌ Unknown command: $1${NC}"
