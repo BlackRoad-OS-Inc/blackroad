@@ -9036,6 +9036,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "internationalization" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("i18n" "Engineering" "Design" "Legal" "Growth")
+  QUESTIONS=(
+    "What markets should $PRODUCT expand into first and what localization depth do they require?"
+    "How do we architect $PRODUCT from the start to support i18n without a painful rewrite?"
+    "What are the hardest i18n edge cases $PRODUCT will hit — RTL, pluralization, date formats?"
+    "How do we manage translation workflows and keep $PRODUCT strings in sync across languages?"
+    "What compliance and legal requirements does $PRODUCT face when entering new markets?"
+  )
+  echo ""
+  echo "🌏 CARPOOL: INTERNATIONALIZATION — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Internationalization strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "zero-trust" ]]; then
+  SYSTEM="${2:-our infrastructure}"
+  AGENTS=("Security" "Infra" "Identity" "Engineering" "Compliance")
+  QUESTIONS=(
+    "What does a zero-trust architecture look like for $SYSTEM — never trust, always verify?"
+    "How do we implement identity-based access control across $SYSTEM without friction?"
+    "What network segmentation and micro-perimeter strategy fits $SYSTEM?"
+    "How do we migrate $SYSTEM from perimeter-based to zero-trust without a big bang?"
+    "What zero-trust tooling (BeyondCorp, Tailscale, Cloudflare Access) fits $SYSTEM best?"
+  )
+  echo ""
+  echo "🔐 CARPOOL: ZERO TRUST — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Zero trust architecture complete."
+  exit 0
+fi
+
+if [[ "$1" == "growth-model" ]]; then
+  BUSINESS="${2:-our business}"
+  AGENTS=("Growth" "Finance" "Product" "Marketing" "Data")
+  QUESTIONS=(
+    "What is the core growth loop that drives compounding growth for $BUSINESS?"
+    "What are the input metrics that most reliably predict revenue growth for $BUSINESS?"
+    "How do we model CAC, LTV, and payback period for $BUSINESS accurately?"
+    "What growth experiments should $BUSINESS run in the next 90 days?"
+    "How do we build a growth model for $BUSINESS that the whole team can rally around?"
+  )
+  echo ""
+  echo "📊 CARPOOL: GROWTH MODEL — $BUSINESS"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Growth model roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "eng-levels" ]]; then
+  ORG="${2:-our engineering org}"
+  AGENTS=("CTO" "EM" "Staff Eng" "HR" "IC")
+  QUESTIONS=(
+    "What engineering levels does $ORG need and what distinguishes each from the next?"
+    "How do we define the staff and principal engineer role at $ORG without it becoming a dead end?"
+    "What does the IC vs management track look like at $ORG and how do we keep both valued?"
+    "How do we calibrate levels consistently across teams in $ORG to avoid grade inflation?"
+    "What does a promotion process look like for $ORG that feels fair, fast, and transparent?"
+  )
+  echo ""
+  echo "🎖️  CARPOOL: ENGINEERING LEVELS — $ORG"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Engineering levels design complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
