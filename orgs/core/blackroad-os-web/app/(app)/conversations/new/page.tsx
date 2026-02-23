@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, MessageSquare, Zap, Shield, Activity, Brain, Archive, Cpu } from 'lucide-react';
 import Link from 'next/link';
 
@@ -79,7 +79,8 @@ const STARTERS = [
 
 export default function NewConversationPage() {
   const router = useRouter();
-  const [selected, setSelected] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [selected, setSelected] = useState<string | null>(searchParams.get('agent'));
   const [prompt, setPrompt] = useState('');
 
   const start = () => {
