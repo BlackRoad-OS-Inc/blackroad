@@ -2,7 +2,8 @@
 # BR CARPOOL 🚗 — parallel multi-agent AI roundtable
 # Tab 0: all 8 agents active simultaneously, synced per round
 # Tabs 1-8: per-agent worker tabs (background investigation)
-# Tab 9: live summary feed → final synthesis + session save
+# Tab 9: live summary feed → synthesis → vote tally
+# Tab 10: vote tab — 8 agents cast YES/NO simultaneously
 
 SESSION="carpool"
 WORK_DIR="/tmp/br_carpool"
@@ -41,9 +42,332 @@ if [[ "$1" == "--list" || "$1" == "list" ]]; then
   echo -e "${WHITE}🚗 CarPool — Saved Sessions${NC}"
   echo -e "${DIM}$(ls -1t "$SAVE_DIR" 2>/dev/null | wc -l | tr -d ' ') sessions in $SAVE_DIR${NC}\n"
   ls -1t "$SAVE_DIR" 2>/dev/null | while read -r f; do
+    topic=$(grep "^Topic:" "$SAVE_DIR/$f" 2>/dev/null | sed 's/^Topic: //')
     size=$(wc -l < "$SAVE_DIR/$f" | tr -d ' ')
     echo -e "  ${CYAN}${f}${NC}  ${DIM}${size} lines${NC}"
+    [[ -n "$topic" ]] && echo -e "  ${DIM}  ↳ ${topic}${NC}"
   done
+  exit 0
+fi
+
+# ── ATTACH TO RUNNING SESSION ─────────────────────────────────
+if [[ "$1" == "attach" || "$1" == "--attach" ]]; then
+  if tmux has-session -t "$SESSION" 2>/dev/null; then
+    if [[ -n "$TMUX" ]]; then
+      tmux switch-client -t "$SESSION"
+    else
+      tmux attach -t "$SESSION"
+    fi
+  else
+    echo -e "${RED}No running CarPool session.${NC} Start one with: br carpool <topic>"
+    exit 1
+  fi
+  exit 0
+fi
+
+# ── LIVE FOLLOW-UP INJECTION ──────────────────────────────────
+if [[ "$1" == "ask" || "$1" == "--ask" ]]; then
+  question="${*:2}"
+  [[ -z "$question" ]] && echo -ne "${CYAN}Follow-up question: ${NC}" && read -r question
+  [[ -z "$question" ]] && exit 1
+  if [[ ! -d "$WORK_DIR" ]]; then
+    echo -e "${RED}No active CarPool session.${NC} Start one with: br carpool <topic>"
+    exit 1
+  fi
+  echo "$question" > "$WORK_DIR/followup.txt"
+  echo -e "${GREEN}✓${NC} Follow-up queued — agents will pick it up next round"
+  echo -e "${DIM}  ❝ ${question} ❞${NC}"
+  exit 0
+fi
+
+# ── EXPORT SESSION AS MARKDOWN ────────────────────────────────
+if [[ "$1" == "export" || "$1" == "--export" ]]; then
+  file="$2"
+  if [[ -z "$file" ]]; then
+    file=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
+    [[ -z "$file" ]] && echo "No sessions found." && exit 1
+    file="$SAVE_DIR/$file"
+  elif [[ ! -f "$file" ]]; then
+    file="$SAVE_DIR/$file"
+  fi
+  [[ ! -f "$file" ]] && echo "Session not found: $2" && exit 1
+
+  topic=$(grep "^Topic:" "$file" | sed 's/^Topic: //')
+  meta=$(grep "^Model:" "$file" | sed 's/^Model: //')
+  date_str=$(grep "^Date:" "$file" | sed 's/^Date:  //')
+  out="${file%.txt}.md"
+
+  {
+    echo "# 🚗 CarPool: ${topic}"
+    echo ""
+    echo "*${date_str}*  "
+    echo "*${meta}*"
+    echo ""
+    echo "---"
+    echo ""
+    echo "## Discussion"
+    echo ""
+
+    in_section="convo"; skip=0
+    while IFS= read -r line; do
+      [[ $skip -lt 5 ]] && ((skip++)) && continue
+      if [[ "$line" =~ ^═+ || "$line" =~ ^─+ ]]; then continue; fi
+      if [[ "$line" == "SYNTHESIS" ]]; then in_section="synthesis"; echo "---"; echo ""; echo "## Synthesis"; echo ""; continue; fi
+      if [[ "$line" == "DISPATCHES" ]]; then in_section="dispatches"; echo ""; echo "---"; echo ""; echo "## Dispatches"; echo ""; continue; fi
+      if [[ "$line" =~ ^VOTE:\ (.+) ]]; then
+        verdict="${line#VOTE: }"
+        echo ""; echo "---"; echo ""; echo "## Vote: ${verdict}"; echo ""
+        echo "| Agent | Vote |"; echo "|-------|------|"
+        in_section="vote"; continue
+      fi
+      [[ -z "$line" ]] && echo "" && continue
+
+      if [[ "$in_section" == "convo" ]]; then
+        speaker="${line%%:*}"; text="${line#*: }"
+        agent_meta "$speaker"
+        if [[ "$EMOJI" != "●" ]]; then
+          echo "**${EMOJI} ${speaker}** *(${ROLE})*  "
+          echo "${text}"; echo ""
+        fi
+      elif [[ "$in_section" == "synthesis" ]]; then
+        echo "${line}  "
+      elif [[ "$in_section" == "vote" ]]; then
+        if [[ "$line" =~ ^\ +([A-Z]+):\ (YES|NO|ABSTAIN) ]]; then
+          name="${BASH_REMATCH[1]}"; v="${BASH_REMATCH[2]}"
+          agent_meta "$name"
+          [[ "$v" == "YES" ]] && mark="✅" || mark="❌"
+          echo "| ${EMOJI} ${name} | ${mark} ${v} |"
+        fi
+      elif [[ "$in_section" == "dispatches" ]]; then
+        if [[ "$line" =~ ^\[([A-Z]+)\] ]]; then
+          name="${BASH_REMATCH[1]}"; agent_meta "$name"
+          echo "### ${EMOJI} ${name}"
+        else
+          echo "- ${line}"
+        fi
+      fi
+    done < "$file"
+  } > "$out"
+
+  echo -e "${GREEN}✓${NC} Exported → ${CYAN}${out}${NC}"
+  exit 0
+fi
+
+# ── CLEAN OLD SESSIONS ────────────────────────────────────────
+if [[ "$1" == "clean" || "$1" == "--clean" ]]; then
+  keep="${2:-10}"
+  total=$(ls -1t "$SAVE_DIR" 2>/dev/null | wc -l | tr -d ' ')
+  if [[ $total -le $keep ]]; then
+    echo -e "${DIM}${total} sessions — nothing to clean (keeping last ${keep})${NC}"
+    exit 0
+  fi
+  delete=$((total - keep))
+  echo -e "${YELLOW}Removing ${delete} old sessions (keeping last ${keep})...${NC}"
+  ls -1t "$SAVE_DIR" 2>/dev/null | tail -n "$delete" | while read -r f; do
+    rm -f "$SAVE_DIR/$f" "$SAVE_DIR/${f%.txt}.md" 2>/dev/null
+    echo -e "  ${DIM}removed: ${f}${NC}"
+  done
+  echo -e "${GREEN}✓ Done${NC}"
+  exit 0
+fi
+
+# ── AVAILABLE OLLAMA MODELS ───────────────────────────────────
+if [[ "$1" == "models" || "$1" == "--models" ]]; then
+  echo -e "${WHITE}🚗 CarPool — Available Models on cecilia${NC}\n"
+  raw=$(curl -s -m 6 http://localhost:11434/api/tags 2>/dev/null)
+  if [[ -z "$raw" ]]; then
+    echo -e "${RED}Cannot reach ollama (localhost:11434). Is the SSH tunnel up?${NC}"
+    exit 1
+  fi
+  echo "$raw" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+models = sorted(data.get('models', []), key=lambda x: x.get('size', 0))
+ratings = {
+  'tinyllama': ('⚡ fastest', '★★☆☆☆'),
+  'llama3.2:1b': ('🔥 fast', '★★★☆☆'),
+  'llama3.2': ('🧠 smart', '★★★★☆'),
+  'qwen2.5-coder:3b': ('💻 coder', '★★★☆☆'),
+  'qwen3:8b': ('🔬 best', '★★★★★'),
+  'cece': ('💜 custom', '★★★☆☆'),
+}
+for m in models:
+    name = m['name']
+    size = m.get('size', 0) / 1e9
+    base = name.split(':')[0] if ':' in name else name
+    speed, stars = ratings.get(name, ratings.get(base, ('', '★★★☆☆')))
+    print(f'  {stars}  {speed:<12}  {name:<30}  {size:.1f}GB')
+print()
+print('  Usage:  br carpool --model <name> \"topic\"')
+print('  Presets: --fast (tinyllama) | --smart (llama3.2:1b) | --turbo')
+"
+  exit 0
+fi
+
+# ── STREAM LIVE CONVO (outside tmux) ─────────────────────────
+if [[ "$1" == "log" || "$1" == "--log" ]]; then
+  if [[ ! -d "$WORK_DIR" ]]; then
+    echo -e "${RED}No active CarPool session.${NC}"
+    exit 1
+  fi
+  echo -e "${WHITE}🚗 CarPool Live Log${NC}  ${DIM}Ctrl+C to exit${NC}\n"
+  topic=$(cat "$WORK_DIR/topic.txt" 2>/dev/null)
+  echo -e "${DIM}❝ ${topic} ❞${NC}\n"
+  tail -f "$WORK_DIR/convo.txt" 2>/dev/null | while IFS= read -r line; do
+    speaker="${line%%:*}"; text="${line#*: }"
+    agent_meta "$speaker"
+    if [[ "$EMOJI" != "●" ]]; then
+      COLOR="\033[${COLOR_CODE}m"
+      echo -e "${COLOR}${EMOJI} ${speaker}${NC}  ${text}"
+    else
+      echo -e "${DIM}${line}${NC}"
+    fi
+  done
+  exit 0
+fi
+
+# ── SEARCH SAVED SESSIONS ─────────────────────────────────────
+if [[ "$1" == "search" || "$1" == "--search" ]]; then
+  query="${*:2}"
+  [[ -z "$query" ]] && echo "Usage: br carpool search <keyword>" && exit 1
+  echo -e "${WHITE}🔍 Searching: ${CYAN}${query}${NC}\n"
+  found=0
+  for f in $(ls -1t "$SAVE_DIR" 2>/dev/null); do
+    matches=$(grep -i "$query" "$SAVE_DIR/$f" 2>/dev/null | grep -v "^Topic:\|^Date:\|^Model:\|^═\|^─\|^VOTE\|^\[" | head -3)
+    [[ -z "$matches" ]] && continue
+    ((found++))
+    topic=$(grep "^Topic:" "$SAVE_DIR/$f" | sed 's/^Topic: //')
+    echo -e "  ${CYAN}${f}${NC}"
+    echo -e "  ${DIM}↳ ${topic}${NC}"
+    echo "$matches" | while IFS= read -r m; do
+      echo -e "    ${DIM}${m:0:120}${NC}"
+    done
+    echo ""
+  done
+  [[ $found -eq 0 ]] && echo -e "${DIM}No matches found.${NC}"
+  exit 0
+fi
+
+# ── TOPIC HISTORY ─────────────────────────────────────────────
+if [[ "$1" == "history" || "$1" == "--history" ]]; then
+  echo -e "${WHITE}🚗 CarPool — Topic History${NC}\n"
+  grep -h "^Topic:" "$SAVE_DIR"/*.txt 2>/dev/null \
+    | sed 's/^Topic: //' | sort -u \
+    | while IFS= read -r t; do
+        count=$(grep -rl "^Topic: ${t}$" "$SAVE_DIR" 2>/dev/null | wc -l | tr -d ' ')
+        echo -e "  ${CYAN}${t}${NC}  ${DIM}(×${count})${NC}"
+      done
+  exit 0
+fi
+
+# ── SESSION STATS ─────────────────────────────────────────────
+if [[ "$1" == "stats" || "$1" == "--stats" ]]; then
+  echo -e "${WHITE}🚗 CarPool — Stats${NC}\n"
+  total=$(ls -1 "$SAVE_DIR"/*.txt 2>/dev/null | wc -l | tr -d ' ')
+  turns=$(grep -h "^[A-Z]*: " "$SAVE_DIR"/*.txt 2>/dev/null | grep -c "." || echo 0)
+  words=$(grep -h "^[A-Z]*: " "$SAVE_DIR"/*.txt 2>/dev/null | wc -w | tr -d ' ')
+  approved=$(grep -h "^VOTE: APPROVED" "$SAVE_DIR"/*.txt 2>/dev/null | wc -l | tr -d ' ')
+  rejected=$(grep -h "^VOTE: REJECTED" "$SAVE_DIR"/*.txt 2>/dev/null | wc -l | tr -d ' ')
+  echo -e "  Sessions     ${WHITE}${total}${NC}"
+  echo -e "  Agent turns  ${WHITE}${turns}${NC}"
+  echo -e "  Words spoken ${WHITE}${words}${NC}"
+  echo -e "  Votes:       ${GREEN}${approved} approved${NC}  ${RED}${rejected} rejected${NC}\n"
+  echo -e "  ${DIM}Most vocal agents:${NC}"
+  for name in "${ALL_NAMES[@]}"; do
+    agent_meta "$name"; C="\033[${COLOR_CODE}m"
+    cnt=$(grep -h "^${name}: " "$SAVE_DIR"/*.txt 2>/dev/null | wc -l | tr -d ' ')
+    bar=$(python3 -c "print('▓' * min(int(${cnt:-0}/2), 30))" 2>/dev/null)
+    printf "    ${C}${EMOJI} %-10s${NC}  ${DIM}%3s turns  %s${NC}\n" "$name" "$cnt" "$bar"
+  done
+  exit 0
+fi
+
+# ── PIN NOTE TO RUNNING SESSION ───────────────────────────────
+if [[ "$1" == "pin" || "$1" == "--pin" ]]; then
+  note="${*:2}"
+  [[ -z "$note" ]] && echo -ne "${CYAN}Note to pin: ${NC}" && read -r note
+  [[ -z "$note" ]] && exit 1
+  if [[ ! -d "$WORK_DIR" ]]; then
+    echo -e "${RED}No active session.${NC}"; exit 1
+  fi
+  ts=$(date "+%H:%M")
+  echo "[${ts}] 📌 ${note}" >> "$WORK_DIR/convo.txt"
+  echo -e "${GREEN}✓ Pinned at ${ts}:${NC} ${note}"
+  exit 0
+fi
+
+# ── SHARE — COPY EXPORT TO CLIPBOARD ─────────────────────────
+if [[ "$1" == "share" || "$1" == "--share" ]]; then
+  # Auto-export if no .md exists
+  md=$(ls -1t "$SAVE_DIR"/*.md 2>/dev/null | head -1)
+  if [[ -z "$md" ]]; then
+    txt=$(ls -1t "$SAVE_DIR"/*.txt 2>/dev/null | head -1)
+    [[ -z "$txt" ]] && echo "No sessions found." && exit 1
+    bash "$0" export "$txt" >/dev/null
+    md="${txt%.txt}.md"
+  fi
+  if command -v pbcopy &>/dev/null; then
+    pbcopy < "$md"
+  elif command -v xclip &>/dev/null; then
+    xclip -selection clipboard < "$md"
+  else
+    echo -e "${YELLOW}No clipboard command found (pbcopy/xclip).${NC}"; exit 1
+  fi
+  echo -e "${GREEN}✓ Copied to clipboard:${NC} $(basename "$md")"
+  exit 0
+fi
+
+# ── REPLAY SAVED SESSION ──────────────────────────────────────
+if [[ "$1" == "replay" || "$1" == "--replay" ]]; then
+  file="$2"
+  if [[ -z "$file" ]]; then
+    file=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
+    [[ -z "$file" ]] && echo "No sessions found." && exit 1
+    file="$SAVE_DIR/$file"
+  elif [[ ! -f "$file" ]]; then
+    file="$SAVE_DIR/$file"
+  fi
+  [[ ! -f "$file" ]] && echo "Session not found: $2" && exit 1
+
+  # Print header lines
+  head -5 "$file" | while IFS= read -r line; do
+    echo -e "${DIM}${line}${NC}"
+  done
+  echo ""
+
+  in_section="header"; skip=0
+  while IFS= read -r line; do
+    [[ $skip -lt 5 ]] && ((skip++)) && continue
+    if [[ "$line" =~ ^═+ ]]; then continue; fi
+    if [[ "$line" == "SYNTHESIS" ]]; then in_section="synthesis"; continue; fi
+    if [[ "$line" == "DISPATCHES" ]]; then in_section="dispatches"; continue; fi
+    if [[ "$line" =~ ^─+ ]]; then continue; fi
+    if [[ -z "$line" ]]; then echo ""; continue; fi
+
+    if [[ "$in_section" != "dispatches" ]]; then
+      speaker="${line%%:*}"
+      text="${line#*: }"
+      agent_meta "$speaker"
+      if [[ "$EMOJI" != "●" ]]; then
+        COLOR="\033[${COLOR_CODE}m"
+        if [[ "$in_section" == "synthesis" ]]; then
+          echo -e "${YELLOW}${line}${NC}"; sleep 0.04
+        else
+          echo -e "${COLOR}${EMOJI} ${speaker}${NC}  ${text}"; sleep 0.05
+        fi
+      elif [[ "$in_section" == "synthesis" ]]; then
+        echo -e "${YELLOW}${line}${NC}"
+      fi
+    else
+      if [[ "$line" =~ ^\[ ]]; then
+        name="${line//[\[\]]/}"
+        agent_meta "$name"; COLOR="\033[${COLOR_CODE}m"
+        echo -e "\n${COLOR}${EMOJI} ${name}${NC}"
+      else
+        echo -e "  ${DIM}${line}${NC}"
+      fi
+    fi
+  done < "$file"
   exit 0
 fi
 
@@ -100,6 +424,19 @@ if [[ "$1" == "--convo" ]]; then
 
     recent=$(tail -6 "$CONVO_FILE" 2>/dev/null)
 
+    # Check for live follow-up injected via `br carpool ask`
+    followup=""
+    if [[ -f "$WORK_DIR/followup.txt" ]]; then
+      followup=$(cat "$WORK_DIR/followup.txt")
+    fi
+
+    # Final round = challenge mode: push back on something
+    if [[ $((turn+1)) -eq $TURNS && $TURNS -gt 1 ]]; then
+      challenge_hint="Challenge or find a flaw in the team's thinking so far. Be specific. "
+    else
+      challenge_hint=""
+    fi
+
     # Round 2+: pick one other agent's last line to react to
     if [[ $turn -gt 0 && -n "$recent" ]]; then
       other_line=$(grep -v "^${NAME}:" "$CONVO_FILE" 2>/dev/null | tail -1)
@@ -110,30 +447,50 @@ if [[ "$1" == "--convo" ]]; then
       reaction=""
     fi
 
+    followup_line=""
+    [[ -n "$followup" ]] && followup_line="NEW QUESTION from user: ${followup}"
+
     prompt="[BlackRoad team on: ${TOPIC}]
 ${recent}
+${followup_line}
 ${NAME} is ${PERSONA}.
-${reaction}${NAME}: \""
+${challenge_hint}${reaction}${NAME}: \""
 
     payload=$(python3 -c "
 import json,sys
 print(json.dumps({
-  'model':'$MODEL','prompt':sys.stdin.read(),'stream':False,
+  'model':'$MODEL','prompt':sys.stdin.read(),'stream':True,
   'options':{'num_predict':70,'temperature':0.85,'stop':['\n','\"']}
 }))" <<< "$prompt")
 
-    raw=$(curl -s -m 40 -X POST http://localhost:11434/api/generate \
+    STREAM_RAW="$WORK_DIR/${NAME}.raw"
+    printf "\r\033[K"
+    printf "${COLOR}${EMOJI} ${NAME}${NC} ${DIM}[r$((turn+1))]${NC} "
+    curl -s -m 40 -X POST http://localhost:11434/api/generate \
       -H "Content-Type: application/json" -d "$payload" \
-      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+      | env STREAM_RAW="$STREAM_RAW" python3 -c "
+import sys,json,os
+out=[]; f=open(os.environ['STREAM_RAW'],'w')
+for line in sys.stdin:
+    line=line.strip()
+    if not line: continue
+    try:
+        d=json.loads(line)
+        t=d.get('response','')
+        if t: print(t,end='',flush=True); out.append(t)
+        if d.get('done'): break
+    except: pass
+f.write(''.join(out)); f.close()
+" 2>/dev/null
+    echo ""
+    raw=$(cat "$STREAM_RAW" 2>/dev/null)
 
-    speech=$(echo "$raw" | sed 's/^[",: ]*//' | sed "s/^${NAME}[: ]*//" | head -1 | cut -c1-200)
+    speech=$(echo "$raw" | sed 's/^[",: ]*//' | sed "s/^${NAME}[: ]*//" | tr -d '"' | head -1 | cut -c1-200)
     [[ -z "$speech" || ${#speech} -lt 5 ]] && speech="Need more context before committing to a position."
 
     short_topic=$(echo "$TOPIC" | cut -c1-55)
     dispatch="${DISPATCH_TMPL}${short_topic}"
 
-    printf "\r\033[K"
-    echo -e "${COLOR}${EMOJI} ${NAME}${NC} ${DIM}[r$((turn+1))]${NC} ${speech}"
     echo -e "   ${DIM}↳ queued: ${dispatch}${NC}\n"
 
     echo "${NAME}: ${speech}" >> "$CONVO_FILE"
@@ -147,6 +504,10 @@ print(json.dumps({
     if [[ $done_count -ge $TOTAL ]]; then
       echo "go" > "$WORK_DIR/round.$((turn+1)).go"
     fi
+
+    # Update shared progress for tmux status bar
+    fin_done=$(ls "$WORK_DIR/"*.r${turn}.done 2>/dev/null | wc -l | tr -d ' ')
+    echo "r$((turn+1))/${TURNS} · ${fin_done}/${TOTAL} done" > "$WORK_DIR/progress.txt"
   done
 
   # Mark globally finished
@@ -191,7 +552,6 @@ if [[ "$1" == "--worker" ]]; then
         echo -e "${COLOR}┌─ Task #${task_num} ───────────────────────────────────┐${NC}"
         echo -e "${COLOR}│${NC} ${task}"
         echo -e "${COLOR}└────────────────────────────────────────────────────┘${NC}"
-        echo -ne "${DIM}${SPIN[$((tick % 10))]} working...${NC}"
 
         prompt="You are ${NAME}, ${ROLE} on the BlackRoad team.
 Task: ${task}
@@ -201,17 +561,28 @@ Provide 3 specific findings or action items. Start immediately:"
         payload=$(python3 -c "
 import json,sys
 print(json.dumps({
-  'model':'$MODEL','prompt':sys.stdin.read(),'stream':False,
+  'model':'$MODEL','prompt':sys.stdin.read(),'stream':True,
   'options':{'num_predict':180,'temperature':0.7}
 }))" <<< "$prompt")
 
-        result=$(curl -s -m 50 -X POST http://localhost:11434/api/generate \
+        STREAM_RAW="$WORK_DIR/${NAME}.worker.raw"
+        curl -s -m 50 -X POST http://localhost:11434/api/generate \
           -H "Content-Type: application/json" -d "$payload" \
-          | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
-
-        printf "\r\033[K"
-        echo -e "${GREEN}✓ done${NC}\n"
-        echo -e "$result\n"
+          | env STREAM_RAW="$STREAM_RAW" python3 -c "
+import sys,json,os
+f=open(os.environ['STREAM_RAW'],'w'); out=[]
+for line in sys.stdin:
+    line=line.strip()
+    if not line: continue
+    try:
+        d=json.loads(line)
+        t=d.get('response','')
+        if t: print(t,end='',flush=True); out.append(t)
+        if d.get('done'): break
+    except: pass
+f.write(''.join(out)); f.close()
+" 2>/dev/null
+        echo ""
         echo -e "${COLOR}${DIM}────────────────────────────────────────────────────${NC}\n"
         ((tick++))
       done
@@ -309,7 +680,8 @@ print(json.dumps({
   # ── SAVE SESSION ──────────────────────────────────────────
   mkdir -p "$SAVE_DIR"
   slug=$(echo "$TOPIC" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd '[:alnum:]-' | cut -c1-35)
-  session_file="${SAVE_DIR}/$(date +%Y-%m-%d_%H-%M)_${slug}.txt"
+  name_part="${SESSION_NAME:+${SESSION_NAME}-}"
+  session_file="${SAVE_DIR}/$(date +%Y-%m-%d_%H-%M)_${name_part}${slug}.txt"
   {
     echo "CarPool Session"
     echo "Date:  $(date)"
@@ -324,6 +696,69 @@ print(json.dumps({
     echo "$(printf '%.0s─' {1..60})"
     echo "$synthesis"
     echo ""
+  } > "$session_file"
+  # (dispatches + vote tally appended below)
+
+  echo -e "${DIM}Session saved → ${GREEN}${session_file}${NC}"
+  echo -e "${DIM}tip: br carpool list | br carpool replay${NC}\n"
+
+  # Auto-jump to vote tab
+  sleep 1
+  tmux select-window -t "$SESSION:🗳️ vote" 2>/dev/null
+
+  # ── VOTE TALLY ─────────────────────────────────────────────
+  echo -e "${WHITE}${BOLD}$(printf '%.0s━' {1..60})${NC}"
+  echo -e "${WHITE}${BOLD}  🗳️  VOTE TALLY — waiting for agents...${NC}"
+  echo -e "${WHITE}${BOLD}$(printf '%.0s━' {1..60})${NC}\n"
+
+  while true; do
+    vcount=$(ls "$WORK_DIR/"*.voted 2>/dev/null | wc -l | tr -d ' ')
+    [[ $vcount -ge $TOTAL ]] && break
+    echo -ne "\r${DIM}  ${vcount}/${TOTAL} votes in...${NC}"
+    sleep 0.6
+  done
+  printf "\r\033[K"
+
+  yes_count=0; no_count=0; yes_names=""; no_names=""
+  for name in "${ALL_NAMES[@]}"; do
+    v=$(cat "$WORK_DIR/${name}.voted" 2>/dev/null | tr -d '[:space:]')
+    agent_meta "$name"; C="\033[${COLOR_CODE}m"
+    if [[ "$v" == "YES" ]]; then
+      ((yes_count++)); yes_names="${yes_names}${C}${EMOJI}${name}${NC} "
+    else
+      ((no_count++)); no_names="${no_names}${C}${EMOJI}${name}${NC} "
+    fi
+  done
+
+  yes_bar=$(python3 -c "print('█' * $((yes_count * 4)))")
+  no_bar=$(python3 -c "print('█' * $((no_count * 4)))")
+
+  echo -e "  ${GREEN}${BOLD}YES  ${yes_count}  ${yes_bar}${NC}"
+  echo -e "  ${DIM}       ${yes_names}${NC}\n"
+  echo -e "  ${RED}${BOLD}NO   ${no_count}  ${no_bar}${NC}"
+  echo -e "  ${DIM}       ${no_names}${NC}\n"
+
+  if [[ $yes_count -gt $no_count ]]; then
+    echo -e "${GREEN}${BOLD}  ✓  APPROVED  ${yes_count}–${no_count}${NC}\n"
+    verdict="APPROVED ${yes_count}–${no_count}"
+  elif [[ $no_count -gt $yes_count ]]; then
+    echo -e "${RED}${BOLD}  ✗  REJECTED  ${no_count}–${yes_count}${NC}\n"
+    verdict="REJECTED ${no_count}–${yes_count}"
+  else
+    echo -e "${YELLOW}${BOLD}  ~  SPLIT VOTE  ${yes_count}–${no_count}${NC}\n"
+    verdict="SPLIT ${yes_count}–${no_count}"
+  fi
+
+  # Append dispatches + vote tally to session file
+  {
+    echo "$(printf '%.0s═' {1..60})"
+    echo "VOTE: ${verdict}"
+    echo "$(printf '%.0s─' {1..60})"
+    for name in "${ALL_NAMES[@]}"; do
+      v=$(cat "$WORK_DIR/${name}.voted" 2>/dev/null | tr -d '[:space:]')
+      echo "  ${name}: ${v:-ABSTAIN}"
+    done
+    echo ""
     echo "$(printf '%.0s═' {1..60})"
     echo "DISPATCHES"
     echo "$(printf '%.0s─' {1..60})"
@@ -332,11 +767,8 @@ print(json.dumps({
       cat "$WORK_DIR/${name}.queue" 2>/dev/null
       echo ""
     done
-  } > "$session_file"
+  } >> "$session_file"
 
-  echo -e "${DIM}Session saved → ${GREEN}${session_file}${NC}"
-  echo ""
-  echo -e "${DIM}tip: br carpool list | br carpool last${NC}"
   while true; do sleep 60; done
 fi
 
@@ -392,8 +824,10 @@ print(json.dumps({
 
   if echo "$vote" | grep -qi "^NO"; then
     VOTE_COLOR="\033[1;31m"; VOTE_WORD="╳  NO "
+    echo "NO" > "$WORK_DIR/${NAME}.voted"
   else
     VOTE_COLOR="\033[1;32m"; VOTE_WORD="✓  YES"
+    echo "YES" > "$WORK_DIR/${NAME}.voted"
   fi
 
   echo -e "${COLOR}${BOLD}${EMOJI} ${NAME}${NC}\n"
@@ -413,7 +847,72 @@ if [[ "$1" == "last" ]]; then
   exit 0
 fi
 
-TOPIC="${1:-What should BlackRoad build next?}"
+# ── PARSE SPEED FLAGS ──────────────────────────────────────────
+SESSION_NAME=""
+BRIEF=0
+while [[ "${1:0:2}" == "--" ]]; do
+  case "$1" in
+    --fast)    MODEL="tinyllama"; TURNS=2; shift ;;
+    --smart)   MODEL="llama3.2:1b"; TURNS=3; shift ;;
+    --turbo)   MODEL="llama3.2:1b"; TURNS=2; shift ;;
+    --brief)   TURNS=1; BRIEF=1; shift ;;
+    --model|-m) MODEL="$2"; shift 2 ;;
+    --turns|-t) TURNS="$2"; shift 2 ;;
+    --name|-n)  SESSION_NAME="$2"; shift 2 ;;
+    *) break ;;
+  esac
+done
+
+TOPIC="${1:-}"
+
+# ── TOPIC SUGGESTIONS when none given ────────────────────────
+if [[ -z "$TOPIC" ]]; then
+  SUGGESTIONS=(
+    "Should BlackRoad rebuild the CLI in Rust?"
+    "How do we scale CarPool to 30,000 agents?"
+    "What would make BlackRoad OS enterprise-ready?"
+    "How should we handle AI model failures gracefully?"
+    "Should we open-source part of BlackRoad?"
+    "What's the fastest path to a paid product?"
+  )
+  echo -e "${WHITE}🚗 CarPool${NC}  ${DIM}model:${NC} ${MODEL}  ${DIM}turns:${NC} ${TURNS}\n"
+  echo -e "${DIM}Suggested topics:${NC}"
+  for i in "${!SUGGESTIONS[@]}"; do
+    echo -e "  ${CYAN}$((i+1))${NC}  ${SUGGESTIONS[$i]}"
+  done
+  echo -e "  ${CYAN}?${NC}  ${DIM}or type your own${NC}\n"
+  echo -ne "${WHITE}Topic [1-6 or text]: ${NC}"
+  read -r topic_input
+  if [[ "$topic_input" =~ ^[1-6]$ ]]; then
+    TOPIC="${SUGGESTIONS[$((topic_input-1))]}"
+  elif [[ -n "$topic_input" ]]; then
+    TOPIC="$topic_input"
+  else
+    TOPIC="What should BlackRoad build next?"
+  fi
+fi
+
+# ── MODEL AUTO-DETECT ─────────────────────────────────────────
+_model_available() {
+  curl -s -m 5 http://localhost:11434/api/tags 2>/dev/null \
+    | python3 -c "
+import sys,json
+data=json.load(sys.stdin)
+names=[m['name'] for m in data.get('models',[])]
+t=sys.argv[1]
+print('yes' if any(n==t or n.startswith(t+':') for n in names) else 'no')
+" "$1" 2>/dev/null
+}
+
+if [[ $(_model_available "$MODEL") != "yes" ]]; then
+  echo -e "${YELLOW}⚠ Model '${MODEL}' not found on cecilia. Checking alternatives...${NC}"
+  for fallback in tinyllama llama3.2:1b llama3.2 cece qwen2.5-coder:3b; do
+    if [[ $(_model_available "$fallback") == "yes" ]]; then
+      echo -e "${GREEN}✓ Using: ${fallback}${NC}\n"
+      MODEL="$fallback"; break
+    fi
+  done
+fi
 rm -rf "$WORK_DIR" && mkdir -p "$WORK_DIR"
 echo "$TOPIC" > "$WORK_DIR/topic.txt"
 > "$WORK_DIR/convo.txt"
@@ -445,24 +944,37 @@ for (( i=1; i<${#AGENT_LIST[@]}; i++ )); do
   tmux select-layout -t "$GROUP_WIN" tiled
 done
 
-# Worker tabs
-for entry in "${AGENT_LIST[@]}"; do
-  IFS='|' read -r n _ _ _ <<< "$entry"
-  tmux new-window -t "$SESSION" -n "$n" "bash '$SCRIPT_PATH' --worker $n"
-done
+# Status bar: model + topic + live round counter
+tmux set-option -t "$SESSION" status on
+tmux set-option -t "$SESSION" status-interval 2
+tmux set-option -t "$SESSION" status-style "bg=black,fg=white"
+tmux set-option -t "$SESSION" status-left "#[fg=yellow,bold] 🚗 CarPool #[fg=white,dim] ${MODEL} · ${TURNS}t · #(cat /tmp/br_carpool/progress.txt 2>/dev/null || echo 'starting') "
+tmux set-option -t "$SESSION" status-right "#[fg=cyan,dim] ${TOPIC:0:50} "
+tmux set-option -t "$SESSION" status-left-length 50
+tmux set-option -t "$SESSION" status-right-length 55
+
+# Worker tabs (skip in brief mode)
+if [[ $BRIEF -eq 0 ]]; then
+  for entry in "${AGENT_LIST[@]}"; do
+    IFS='|' read -r n _ _ _ <<< "$entry"
+    tmux new-window -t "$SESSION" -n "$n" "bash '$SCRIPT_PATH' --worker $n"
+  done
+fi
 
 # Summary tab
 tmux new-window -t "$SESSION" -n "📋 summary" "bash '$SCRIPT_PATH' --summary"
 
-# Vote tab — 8 tiled panes, each agent casts YES/NO after synthesis
-IFS='|' read -r n _ _ _ <<< "${AGENT_LIST[0]}"
-tmux new-window -t "$SESSION" -n "🗳️ vote" "bash '$SCRIPT_PATH' --vote $n"
-VOTE_WIN="$SESSION:🗳️ vote"
-for (( i=1; i<${#AGENT_LIST[@]}; i++ )); do
-  IFS='|' read -r n _ _ _ <<< "${AGENT_LIST[$i]}"
-  tmux split-window -t "$VOTE_WIN" "bash '$SCRIPT_PATH' --vote $n"
-  tmux select-layout -t "$VOTE_WIN" tiled
-done
+# Vote tab — skip in brief mode
+if [[ $BRIEF -eq 0 ]]; then
+  IFS='|' read -r n _ _ _ <<< "${AGENT_LIST[0]}"
+  tmux new-window -t "$SESSION" -n "🗳️ vote" "bash '$SCRIPT_PATH' --vote $n"
+  VOTE_WIN="$SESSION:🗳️ vote"
+  for (( i=1; i<${#AGENT_LIST[@]}; i++ )); do
+    IFS='|' read -r n _ _ _ <<< "${AGENT_LIST[$i]}"
+    tmux split-window -t "$VOTE_WIN" "bash '$SCRIPT_PATH' --vote $n"
+    tmux select-layout -t "$VOTE_WIN" tiled
+  done
+fi
 
 tmux select-window -t "$GROUP_WIN"
 

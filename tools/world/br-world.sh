@@ -1,14 +1,16 @@
 #!/bin/zsh
-# BR World - 8-bit ASCII World Generator & Explorer
+# BR World - 8-bit ASCII World Generator & Explorer  v2
 
-# Colors
+# Brand palette
+AMBER='\033[38;5;214m'
+VIOLET='\033[38;5;135m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
+BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m'
+# Compat aliases
+CYAN="$AMBER"; YELLOW="$AMBER"; BLUE="$VIOLET"; PURPLE="$VIOLET"
 
 DB_FILE="$HOME/.blackroad/world.db"
 
@@ -63,7 +65,9 @@ generate_world() {
     local height="${3:-24}"
     local seed="${RANDOM}"
     
-    echo -e "${CYAN}🌍 Generating 8-bit world: ${GREEN}$name${NC}"
+    echo -e "  ${AMBER}${BOLD}◆ BR WORLD${NC}  ${DIM}generating: $name${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    echo ""
     
     # Create world
     sqlite3 "$DB_FILE" "INSERT OR REPLACE INTO worlds (name, width, height, seed) VALUES ('$name', $width, $height, $seed);"
@@ -96,9 +100,10 @@ generate_world() {
     local py=$((RANDOM % (height - 5) + 2))
     sqlite3 "$DB_FILE" "INSERT OR REPLACE INTO player_state (world_name, x, y) VALUES ('$name', $px, $py);"
     
-    echo -e "${GREEN}✓${NC} World generated with ${YELLOW}$num_objects${NC} objects"
-    echo -e "${CYAN}👤${NC} Player spawned at ($px, $py)"
-    echo -e "\nUse: ${YELLOW}br world explore $name${NC} to start exploring!"
+    echo -e "  ${GREEN}✓${NC} World ${BOLD}$name${NC} generated — ${AMBER}$num_objects${NC} objects"
+    echo -e "  ${DIM}👤 Player spawned at ($px, $py)${NC}"
+    echo -e "  ${DIM}→  br world explore $name${NC}"
+    echo ""
 }
 
 explore_world() {
@@ -252,34 +257,17 @@ delete_world() {
 }
 
 show_help() {
-    cat << 'EOF'
-🌍 BR World - 8-bit ASCII World Generator & Explorer
-
-USAGE:
-    br world <command> [args]
-
-COMMANDS:
-    generate <name> [width] [height]  Create a new 8-bit world
-    explore <name>                     Explore a world (WASD/HJKL to move)
-    list                               List all worlds
-    delete <name>                      Delete a world
-    help                               Show this help
-
-EXAMPLES:
-    br world generate adventure         # Create default 80x24 world
-    br world generate dungeon 100 30    # Create larger world
-    br world explore adventure          # Start exploring
-    br world list                       # See all worlds
-
-CONTROLS (in explore mode):
-    W/K     - Move up
-    S/J     - Move down
-    A/H     - Move left
-    D/L     - Move right
-    Q       - Quit and save
-
-Collect treasures 💎, items ⚔️, and encounter creatures 🐉!
-EOF
+    echo ""
+    echo -e "  ${AMBER}${BOLD}BR WORLD${NC}  ${DIM}8-bit ASCII world generator${NC}"
+    echo ""
+    echo -e "  ${BOLD}br world generate <name>${NC}     ${DIM}create new world${NC}"
+    echo -e "  ${BOLD}br world explore <name>${NC}      ${DIM}explore (WASD/HJKL)${NC}"
+    echo -e "  ${BOLD}br world list${NC}                ${DIM}list all worlds${NC}"
+    echo -e "  ${BOLD}br world delete <name>${NC}       ${DIM}delete a world${NC}"
+    echo ""
+    echo -e "  ${DIM}Controls: W/K up  S/J down  A/H left  D/L right  Q quit${NC}"
+    echo -e "  ${DIM}Collect 💎 treasures, ⚔️ items, encounter 🐉 creatures!${NC}"
+    echo ""
 }
 
 # Initialize database

@@ -1,13 +1,17 @@
 #!/usr/bin/env zsh
+# BR Test - Test Suite Manager  v2
 
-# Colors
+# Brand palette
+AMBER='\033[38;5;214m'
+PINK='\033[38;5;205m'
+VIOLET='\033[38;5;135m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
+BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m'
+# Compat aliases
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$VIOLET"; MAGENTA="$VIOLET"
 
 DB_FILE="$HOME/.blackroad/test-suite.db"
 
@@ -57,267 +61,147 @@ cmd_run() {
     init_db
     local pattern="${1:-}"
     
-    echo -e "${CYAN}🧪 Detecting test framework...${NC}\n"
+    echo -e "  ${AMBER}${BOLD}◆ BR TEST${NC}  ${DIM}detecting framework…${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    echo ""
     
-    local framework=$(detect_framework)
-    local start_time=$(date +%s)
+    local framework; framework=$(detect_framework)
+    local start_time; start_time=$(date +%s)
+    echo -e "  ${VIOLET}framework${NC}  $framework"
+    echo ""
     
     case "$framework" in
         jest)
-            echo -e "${BLUE}Framework:${NC} Jest"
-            if [[ -n "$pattern" ]]; then
-                npm test -- "$pattern"
-            else
-                npm test
-            fi
-            ;;
+            [[ -n "$pattern" ]] && npm test -- "$pattern" || npm test ;;
         vitest)
-            echo -e "${BLUE}Framework:${NC} Vitest"
-            if [[ -n "$pattern" ]]; then
-                npx vitest run "$pattern"
-            else
-                npx vitest run
-            fi
-            ;;
+            [[ -n "$pattern" ]] && npx vitest run "$pattern" || npx vitest run ;;
         mocha)
-            echo -e "${BLUE}Framework:${NC} Mocha"
-            npm test
-            ;;
+            npm test ;;
         pytest)
-            echo -e "${BLUE}Framework:${NC} Pytest"
-            if [[ -n "$pattern" ]]; then
-                pytest -v -k "$pattern"
-            else
-                pytest -v
-            fi
-            ;;
+            [[ -n "$pattern" ]] && pytest -v -k "$pattern" || pytest -v ;;
         go)
-            echo -e "${BLUE}Framework:${NC} Go Test"
-            if [[ -n "$pattern" ]]; then
-                go test -v -run "$pattern" ./...
-            else
-                go test -v ./...
-            fi
-            ;;
+            [[ -n "$pattern" ]] && go test -v -run "$pattern" ./... || go test -v ./... ;;
         cargo)
-            echo -e "${BLUE}Framework:${NC} Cargo Test"
-            if [[ -n "$pattern" ]]; then
-                cargo test "$pattern"
-            else
-                cargo test
-            fi
-            ;;
+            [[ -n "$pattern" ]] && cargo test "$pattern" || cargo test ;;
         phpunit)
-            echo -e "${BLUE}Framework:${NC} PHPUnit"
-            vendor/bin/phpunit
-            ;;
+            vendor/bin/phpunit ;;
         npm)
-            echo -e "${BLUE}Framework:${NC} npm test"
-            npm test
-            ;;
+            npm test ;;
         *)
-            echo -e "${RED}❌ No test framework detected${NC}"
-            echo "Supported: Jest, Vitest, Mocha, Pytest, Go, Cargo, PHPUnit"
-            exit 1
-            ;;
+            echo -e "  ${RED}✗${NC} No test framework detected"
+            echo -e "  ${DIM}Supported: Jest, Vitest, Mocha, Pytest, Go, Cargo, PHPUnit${NC}"
+            exit 1 ;;
     esac
     
-    local end_time=$(date +%s)
-    local duration=$((end_time - start_time))
+    local end_time; end_time=$(date +%s)
+    local duration=$(( end_time - start_time ))
     
-    echo -e "\n${GREEN}✓ Tests completed in ${duration}s${NC}"
+    echo -e "  ${GREEN}✓${NC} Tests completed in ${AMBER}${duration}s${NC}"
     
     sqlite3 "$DB_FILE" "INSERT INTO test_runs (project_name, framework, duration, ran_at) VALUES ('$(basename $(pwd))', '$framework', $duration, $(date +%s));"
 }
 
 cmd_coverage() {
     init_db
-    echo -e "${CYAN}📊 Running tests with coverage...${NC}\n"
-    
-    local framework=$(detect_framework)
-    
+    echo -e "  ${AMBER}${BOLD}◆ BR TEST${NC}  ${DIM}coverage${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    echo ""
+    local framework; framework=$(detect_framework)
+    echo -e "  ${VIOLET}framework${NC}  $framework"
+    echo ""
     case "$framework" in
-        jest)
-            npm test -- --coverage
-            ;;
-        vitest)
-            npx vitest run --coverage
-            ;;
-        pytest)
-            pytest --cov=. --cov-report=html --cov-report=term
-            echo -e "\n${BLUE}Coverage report:${NC} htmlcov/index.html"
-            ;;
-        go)
-            go test -coverprofile=coverage.out ./...
-            go tool cover -html=coverage.out -o coverage.html
-            echo -e "\n${BLUE}Coverage report:${NC} coverage.html"
-            ;;
-        cargo)
-            cargo test --no-fail-fast
-            if command -v cargo-tarpaulin &> /dev/null; then
-                cargo tarpaulin --out Html
-                echo -e "\n${BLUE}Coverage report:${NC} tarpaulin-report.html"
-            else
-                echo -e "\n${YELLOW}⚠️  Install cargo-tarpaulin for coverage${NC}"
-            fi
-            ;;
-        *)
-            echo -e "${RED}❌ Coverage not supported for this framework${NC}"
-            exit 1
-            ;;
+        jest)   npm test -- --coverage ;;
+        vitest) npx vitest run --coverage ;;
+        pytest) pytest --cov=. --cov-report=html --cov-report=term
+                echo -e "  ${DIM}→  htmlcov/index.html${NC}" ;;
+        go)     go test -coverprofile=coverage.out ./...
+                go tool cover -html=coverage.out -o coverage.html
+                echo -e "  ${DIM}→  coverage.html${NC}" ;;
+        cargo)  cargo test --no-fail-fast
+                command -v cargo-tarpaulin &>/dev/null && cargo tarpaulin --out Html \
+                  && echo -e "  ${DIM}→  tarpaulin-report.html${NC}" \
+                  || echo -e "  ${PINK}⚠${NC}  install cargo-tarpaulin for coverage" ;;
+        *)      echo -e "  ${RED}✗${NC} Coverage not supported for $framework"; exit 1 ;;
     esac
 }
 
 cmd_watch() {
-    echo -e "${CYAN}👁️  Starting test watcher...${NC}"
-    echo -e "${YELLOW}Press Ctrl+C to stop${NC}\n"
-    
-    local framework=$(detect_framework)
-    
+    echo -e "  ${AMBER}${BOLD}◆ BR TEST${NC}  ${DIM}watch mode — Ctrl+C to stop${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    echo ""
+    local framework; framework=$(detect_framework)
     case "$framework" in
-        jest)
-            npm test -- --watch
-            ;;
-        vitest)
-            npx vitest
-            ;;
-        pytest)
-            if command -v pytest-watch &> /dev/null; then
-                ptw
-            else
-                echo -e "${YELLOW}⚠️  Install pytest-watch: pip install pytest-watch${NC}"
-                pytest --looponfail
-            fi
-            ;;
-        go)
-            if command -v gotest &> /dev/null; then
-                gotest -v ./...
-            else
-                echo -e "${YELLOW}⚠️  Install gotest: go install github.com/rakyll/gotest@latest${NC}"
-                while true; do
-                    go test -v ./...
-                    sleep 2
-                done
-            fi
-            ;;
-        cargo)
-            cargo watch -x test
-            ;;
-        *)
-            echo -e "${RED}❌ Watch mode not supported${NC}"
-            exit 1
-            ;;
+        jest)   npm test -- --watch ;;
+        vitest) npx vitest ;;
+        pytest) command -v ptw &>/dev/null && ptw || pytest --looponfail ;;
+        go)     command -v gotest &>/dev/null && gotest -v ./... || while true; do go test -v ./...; sleep 2; done ;;
+        cargo)  cargo watch -x test ;;
+        *)      echo -e "  ${RED}✗${NC} Watch not supported for $framework"; exit 1 ;;
     esac
 }
 
 cmd_benchmark() {
-    echo -e "${CYAN}⚡ Running benchmarks...${NC}\n"
-    
-    local framework=$(detect_framework)
-    
+    echo -e "  ${AMBER}${BOLD}◆ BR TEST${NC}  ${DIM}benchmarks${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    echo ""
+    local framework; framework=$(detect_framework)
     case "$framework" in
-        go)
-            go test -bench=. -benchmem ./...
-            ;;
-        cargo)
-            cargo bench
-            ;;
-        pytest)
-            pytest --benchmark-only
-            ;;
-        *)
-            echo -e "${YELLOW}⚠️  Benchmarks not available for this framework${NC}"
-            ;;
+        go)     go test -bench=. -benchmem ./... ;;
+        cargo)  cargo bench ;;
+        pytest) pytest --benchmark-only ;;
+        *)      echo -e "  ${PINK}⚠${NC}  benchmarks not available for $framework" ;;
     esac
 }
 
 cmd_report() {
     init_db
-    echo -e "${CYAN}📈 Test History:${NC}\n"
-    
-    sqlite3 -separator $'\t' "$DB_FILE" "SELECT framework, total_tests, passed, failed, duration, datetime(ran_at, 'unixepoch') FROM test_runs ORDER BY ran_at DESC LIMIT 10;" | while IFS=$'\t' read -r fw total pass fail dur time; do
-        if [[ "$fail" == "0" ]] || [[ -z "$fail" ]]; then
-            echo -e "${GREEN}✓${NC} $time - $fw"
-        else
-            echo -e "${RED}✗${NC} $time - $fw"
-        fi
-        if [[ -n "$total" ]]; then
-            echo -e "  Tests: $pass passed, $fail failed (${dur}s)"
-        else
-            echo -e "  Duration: ${dur}s"
-        fi
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR TEST${NC}  ${DIM}history${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    echo ""
+    sqlite3 -separator $'\t' "$DB_FILE" \
+      "SELECT framework, total_tests, passed, failed, duration, datetime(ran_at,'unixepoch') FROM test_runs ORDER BY ran_at DESC LIMIT 10;" \
+    | while IFS=$'\t' read -r fw total pass fail dur time; do
+        local icon="${GREEN}✓${NC}"; [[ -n "$fail" && "$fail" != "0" ]] && icon="${RED}✗${NC}"
+        echo -e "  $icon  ${BOLD}$fw${NC}  ${DIM}$time${NC}"
+        [[ -n "$total" ]] && echo -e "     ${DIM}$pass passed  $fail failed  ${dur}s${NC}" || echo -e "     ${DIM}${dur}s${NC}"
         echo ""
     done
 }
 
 cmd_stats() {
     init_db
-    echo -e "${CYAN}📊 Test Statistics:${NC}\n"
-    
-    local total_runs=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM test_runs;")
-    local avg_duration=$(sqlite3 "$DB_FILE" "SELECT AVG(duration) FROM test_runs;" | awk '{printf "%.1f", $1}')
-    
-    echo -e "${BLUE}Total test runs:${NC} $total_runs"
-    echo -e "${BLUE}Average duration:${NC} ${avg_duration}s"
-    
-    echo -e "\n${CYAN}Runs by framework:${NC}"
-    sqlite3 -separator $'\t' "$DB_FILE" "SELECT framework, COUNT(*) as cnt FROM test_runs GROUP BY framework ORDER BY cnt DESC;" | while IFS=$'\t' read -r fw count; do
-        echo -e "  ${GREEN}$fw${NC}: $count runs"
+    echo ""
+    echo -e "  ${AMBER}${BOLD}◆ BR TEST${NC}  ${DIM}statistics${NC}"
+    echo -e "  ${DIM}──────────────────────────────────────────────${NC}"
+    echo ""
+    local total_runs; total_runs=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM test_runs;")
+    local avg_dur; avg_dur=$(sqlite3 "$DB_FILE" "SELECT AVG(duration) FROM test_runs;" | awk '{printf "%.1f", $1}')
+    echo -e "  $(printf '%-16s' 'total runs')${AMBER}$total_runs${NC}"
+    echo -e "  $(printf '%-16s' 'avg duration')${AMBER}${avg_dur}s${NC}"
+    echo ""
+    echo -e "  ${DIM}by framework:${NC}"
+    sqlite3 -separator $'\t' "$DB_FILE" \
+      "SELECT framework, COUNT(*) FROM test_runs GROUP BY framework ORDER BY COUNT(*) DESC;" \
+    | while IFS=$'\t' read -r fw cnt; do
+        echo -e "  ${VIOLET}$fw${NC}  $cnt"
     done
+    echo ""
 }
 
 cmd_help() {
-    cat << 'EOF'
-🧪 Test Suite Manager
-
-USAGE:
-  br test <command> [options]
-
-RUNNING TESTS:
-  run [pattern]          Run all tests (or filter by pattern)
-  coverage               Run with coverage report
-  watch                  Watch mode (auto-rerun on changes)
-  benchmark              Run performance benchmarks
-
-REPORTING:
-  report                 Show test history
-  stats                  Show test statistics
-
-SUPPORTED FRAMEWORKS:
-  JavaScript:  Jest, Vitest, Mocha
-  Python:      Pytest
-  Go:          go test
-  Rust:        cargo test
-  PHP:         PHPUnit
-
-EXAMPLES:
-  # Run all tests
-  br test run
-
-  # Run specific tests
-  br test run UserService
-  br test run "api.*"
-
-  # Coverage
-  br test coverage
-
-  # Watch mode (auto-rerun)
-  br test watch
-
-  # Benchmarks
-  br test benchmark
-
-  # Reports
-  br test report
-  br test stats
-
-NOTES:
-  - Auto-detects test framework from project files
-  - Tracks test history in database
-  - Coverage reports saved to project directory
-  - Install framework-specific tools for full features
-
-EOF
+    echo ""
+    echo -e "  ${AMBER}${BOLD}BR TEST${NC}  ${DIM}auto-detect & run tests${NC}"
+    echo ""
+    echo -e "  ${BOLD}br test run [pattern]${NC}    ${DIM}run tests (filter optional)${NC}"
+    echo -e "  ${BOLD}br test coverage${NC}         ${DIM}run with coverage report${NC}"
+    echo -e "  ${BOLD}br test watch${NC}            ${DIM}watch mode — rerun on change${NC}"
+    echo -e "  ${BOLD}br test benchmark${NC}        ${DIM}run benchmarks${NC}"
+    echo -e "  ${BOLD}br test report${NC}           ${DIM}test history${NC}"
+    echo -e "  ${BOLD}br test stats${NC}            ${DIM}statistics${NC}"
+    echo ""
+    echo -e "  ${DIM}Frameworks: Jest · Vitest · Mocha · Pytest · Go · Cargo · PHPUnit${NC}"
+    echo ""
 }
 
 # Main dispatch
@@ -332,8 +216,6 @@ case "${1:-help}" in
     stats) cmd_stats ;;
     help|--help|-h) cmd_help ;;
     *)
-        echo -e "${RED}❌ Unknown command: $1${NC}"
-        cmd_help
-        exit 1
-        ;;
+        echo -e "  ${RED}✗${NC} Unknown: $1"
+        cmd_help; exit 1 ;;
 esac

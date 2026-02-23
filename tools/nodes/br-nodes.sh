@@ -531,16 +531,12 @@ cmd_mac_devices() {
   # Thunderbolt/USB4
   echo ""
   echo "${BOLD}Thunderbolt / USB4:${NC}"
-  local prev_dev=""
-  system_profiler SPThunderboltDataType 2>/dev/null | grep -E "Device Name:|Speed:" | \
-  while IFS= read -r tline; do
-    if echo "$tline" | grep -q "Device Name:"; then
-      prev_dev=$(echo "$tline" | sed 's/.*Device Name: //')
-    elif echo "$tline" | grep -q "Speed:"; then
-      local spd=$(echo "$tline" | sed 's/.*Speed: //')
-      printf "  ${CYAN}⚡${NC} %-28s ${DIM}%s${NC}\n" "${prev_dev:-MacBook Pro}" "$spd"
-    fi
-  done
+  local tb_info
+  tb_info=$(system_profiler SPThunderboltDataType 2>/dev/null)
+  local tb_dev tb_speed
+  tb_dev=$(echo "$tb_info" | grep "Device Name:" | head -1 | cut -d: -f2- | xargs)
+  tb_speed=$(echo "$tb_info" | grep "Speed:" | head -1 | cut -d: -f2- | xargs)
+  [[ -n "$tb_dev" ]] && printf "  ${CYAN}⚡${NC} %-28s ${DIM}%s${NC}\n" "${tb_dev:-MacBook Pro}" "${tb_speed:-40 Gb/s}"
 
   # Bluetooth — write parser to temp file to avoid zsh quoting issues
   echo ""

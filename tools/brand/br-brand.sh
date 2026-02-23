@@ -845,6 +845,7 @@ _cmd_list() {
   echo -e "  ${GREEN}coming-soon${NC}  Live countdown + email capture (no back-end required)"
   echo -e "  ${GREEN}changelog${NC}    Release notes — version badge, date, tagged bullet lists"
   echo -e "  ${GREEN}team${NC}         Team member card grid — avatar, name, role, bio, link"
+  echo -e "  ${GREEN}checkout${NC}     Stripe checkout card — price, features, buy button (Stripe Checkout)"
   echo ""
   echo -e "${YELLOW}Commands:${NC}"
   echo ""
@@ -875,6 +876,7 @@ _cmd_list() {
   echo -e "  coming-soon : --title --tagline --launch-date \"2026-04-01T00:00:00\" --output"
   echo -e "  changelog   : --title --subtitle --entry \"v1.0|2026-01-01|Added X,Fixed Y|feature,fix\" --output"
   echo -e "  team        : --title --subtitle --member \"A|Alice|CEO|Bio here|https://github.com/...\" --output"
+  echo -e "  checkout    : --title \"Pro Plan\" --price \"\$49/mo\" --price-id \"price_xxx\" --worker URL --feature X --cta \"Buy\" --output"
   echo ""
   echo -e "  ${YELLOW}All templates accept:${NC} --config brand.json  (pre-fill from config file)"
   echo ""
@@ -900,6 +902,7 @@ _cmd_preview() {
     coming-soon) echo -e "${CYAN}coming-soon${NC}: Full-gradient page — live countdown, email capture form" ;;
     changelog)   echo -e "${CYAN}changelog${NC}:   Release log — version + date + tagged bullets per entry" ;;
     team)        echo -e "${CYAN}team${NC}:        Card grid — avatar initial, name, role, bio, GitHub link" ;;
+    checkout)    echo -e "${CYAN}checkout${NC}:   Stripe checkout page — price card, features list, buy button" ;;
     *)           echo -e "${RED}Unknown template: $1${NC}"; _cmd_list ;;
   esac
 }
@@ -918,6 +921,7 @@ _cmd_new() {
   local language="bash" code_text=""
   local launch_date=""
   local output="" config_file=""
+  local price="" price_id="" stripe_worker="https://blackroad-stripe.workers.dev"
   local -a features skills sections tiers items stats testimonials members entries
 
   # Pre-scan for --config so we can load defaults before flag parsing
@@ -988,6 +992,9 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
       --launch-date)   launch_date="$2";      shift 2 ;;
       --entry)         entries+=("$2");       shift 2 ;;
       --member)        members+=("$2");       shift 2 ;;
+      --price)         price="$2";            shift 2 ;;
+      --price-id)      price_id="$2";         shift 2 ;;
+      --worker)        stripe_worker="$2";    shift 2 ;;
       --output)        output="$2";           shift 2 ;;
       --config)        shift 2 ;;  # already processed above
       *) shift ;;
@@ -1051,6 +1058,10 @@ print(''.join(f'<a href=\"{i[\"url\"]}\">{i[\"label\"]}</a>' for i in items))
       ;;
     team)
       _tpl_team "$title" "$subtitle" "$output" "${members[@]}"
+      ;;
+    checkout)
+      _tpl_checkout "$title" "$price" "$price_id" "$stripe_worker" \
+        "$(IFS=','; echo "${features[*]}")" "$cta_text" "$output"
       ;;
     *)
       echo -e "${RED}Unknown template: ${tpl}${NC}"

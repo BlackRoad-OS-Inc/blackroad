@@ -119,6 +119,11 @@ BR_TOOLS=(
     health      "${BR_TOOLS_DIR}/health-check/br-health.sh"
     check       "${BR_TOOLS_DIR}/health-check/br-health.sh"
     diag        "${BR_TOOLS_DIR}/health-check/br-health.sh"
+    wifi        "${BR_TOOLS_DIR}/wifi-scanner/br-wifi.sh"
+    lan         "${BR_TOOLS_DIR}/wifi-scanner/br-wifi.sh"
+    net-scan    "${BR_TOOLS_DIR}/wifi-scanner/br-wifi.sh"
+    ai          "${BR_TOOLS_DIR}/ai/br-ai.sh"
+    ask         "${BR_TOOLS_DIR}/ai/br-ai.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -299,8 +304,21 @@ show_help() {
     echo "║    br wake [agent] [model]  - Wake an agent with morning thoughts ║"
     echo "║    br council <question>    - All agents vote on a question       ║"
     echo "║    br carpool <topic>       - 8 agents parallel roundtable 🚗    ║"
-    echo "║    br carpool list          - List saved carpool sessions         ║"
-    echo "║    br carpool last          - Open most recent session            ║"
+    echo "║    br carpool --brief <t>   - Quick 1-turn, no workers            ║"
+    echo "║    br carpool --fast <t>    - tinyllama, 2 turns                  ║"
+    echo "║    br carpool --smart <t>   - llama3.2:1b, 3 turns                ║"
+    echo "║    br carpool ask <q>       - Inject follow-up into live session   ║"
+    echo "║    br carpool pin <note>    - Pin a note to running session        ║"
+    echo "║    br carpool models        - List available ollama models         ║"
+    echo "║    br carpool log           - Stream live convo from any terminal  ║"
+    echo "║    br carpool search <q>    - Search across saved sessions         ║"
+    echo "║    br carpool stats         - Session statistics                   ║"
+    echo "║    br carpool history       - All topics ever discussed            ║"
+    echo "║    br carpool export        - Export last session as markdown      ║"
+    echo "║    br carpool share         - Copy export to clipboard             ║"
+    echo "║    br carpool replay        - Replay last session with color       ║"
+    echo "║    br carpool clean [N]     - Keep last N sessions (default 10)    ║"
+    echo "║    br carpool attach        - Re-attach to running session         ║"
     echo "║    br roundtable <topic>    - All 6 agents discuss in tmux 🎯   ║"
     echo "║    br think <query>         - All agents respond to a query       ║"
     echo "║    br debate <topic>        - LUCIDIA vs CIPHER debate            ║"
@@ -360,6 +378,26 @@ show_help() {
     echo "║    br health quick          - Fast check (no latency tests)       ║"
     echo "║    br brand list            - List brand templates                ║"
     echo "║    br brand new <type>      - Generate brand-compliant HTML page  ║"
+    echo "║                                                                   ║"
+    echo "║  AI (✦ Ollama Powered):                                          ║"
+    echo "║    br ai ask <question>     - Quick question to Lucidia           ║"
+    echo "║    br ai file <path>        - Ask about any file                  ║"
+    echo "║    br ai review <path>      - Code review a file                  ║"
+    echo "║    br ai diff               - Review current git diff             ║"
+    echo "║    br ai commit             - Generate commit message             ║"
+    echo "║    br ai summarize <path>   - Summarize file or directory         ║"
+    echo "║    br ai code <task>        - Generate code                       ║"
+    echo "║    br ai chat               - Interactive chat REPL               ║"
+    echo "║    br ai models             - List available Ollama models        ║"
+    echo "║                                                                   ║"
+    echo "║  NETWORK (📡 LAN Scanner):                                       ║"
+    echo "║    br wifi pis              - Check Pi fleet connectivity         ║"
+    echo "║    br wifi scan             - Sweep subnet, find all devices      ║"
+    echo "║    br wifi list             - List known devices                  ║"
+    echo "║    br wifi add <ip> <label> - Tag a device                        ║"
+    echo "║    br mcp start             - Start MCP Bridge (:8420)            ║"
+    echo "║    br mcp stop              - Stop MCP Bridge                     ║"
+    echo "║    br mcp status            - Check MCP Bridge status             ║"
     echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
@@ -666,25 +704,23 @@ main() {
             bash /Users/alexa/blackroad/council.sh llama3.2 "$question"
             ;;
         carpool)
-            # br carpool [topic]       — 8-agent parallel tmux roundtable
-            # br carpool list          — list saved sessions
-            # br carpool last          — open most recent session
-            # CARPOOL_MODEL=x CARPOOL_TURNS=n br carpool "topic"
             local subcmd="$1"; shift 2>/dev/null || true
             case "$subcmd" in
-                list|last)
-                    bash /Users/alexa/blackroad/carpool.sh "$subcmd"
-                    ;;
-                "")
-                    echo -e "\033[1;37m🚗 BlackRoad CarPool\033[0m"
-                    echo -ne "\033[0;36mTopic: \033[0m"
-                    read -r topic
-                    [[ -z "$topic" ]] && topic="What should BlackRoad build next?"
-                    bash /Users/alexa/blackroad/carpool.sh "$topic"
-                    ;;
-                *)
-                    bash /Users/alexa/blackroad/carpool.sh "$subcmd"
-                    ;;
+                list|last)  bash /Users/alexa/blackroad/carpool.sh "$subcmd" ;;
+                replay)     bash /Users/alexa/blackroad/carpool.sh replay "$1" ;;
+                export)     bash /Users/alexa/blackroad/carpool.sh export "$1" ;;
+                ask)        bash /Users/alexa/blackroad/carpool.sh ask "$@" ;;
+                pin)        bash /Users/alexa/blackroad/carpool.sh pin "$@" ;;
+                clean)      bash /Users/alexa/blackroad/carpool.sh clean "$1" ;;
+                attach)     bash /Users/alexa/blackroad/carpool.sh attach ;;
+                models)     bash /Users/alexa/blackroad/carpool.sh models ;;
+                log)        bash /Users/alexa/blackroad/carpool.sh log ;;
+                search)     bash /Users/alexa/blackroad/carpool.sh search "$@" ;;
+                history)    bash /Users/alexa/blackroad/carpool.sh history ;;
+                stats)      bash /Users/alexa/blackroad/carpool.sh stats ;;
+                share)      bash /Users/alexa/blackroad/carpool.sh share ;;
+                "")         bash /Users/alexa/blackroad/carpool.sh ;;
+                *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac
             ;;
         roundtable|rt)
@@ -783,6 +819,51 @@ except: print('  Ollama not running')
                     ;;
                 *)
                     echo "Usage: br ollama [list|pull|run|stop|start|status|rm] [model]"
+                    ;;
+            esac
+            ;;
+        mcp)
+            # br mcp start|stop|status — MCP bridge server
+            local mcpdir="/Users/alexa/blackroad/mcp-bridge"
+            local mcplog="$HOME/.blackroad/logs/mcp.log"
+            local mcppid="$HOME/.blackroad/mcp.pid"
+            local subcmd="${1:-status}"; shift 2>/dev/null || true
+            mkdir -p "$HOME/.blackroad/logs"
+            case $subcmd in
+                start)
+                    if curl -sf http://127.0.0.1:8420/ &>/dev/null; then
+                        echo "${GREEN}✓ MCP Bridge already running on :8420${NC}"; exit 0
+                    fi
+                    echo "${CYAN}▸ Starting MCP Bridge...${NC}"
+                    cd "$mcpdir" && bash start.sh > "$mcplog" 2>&1 &
+                    echo $! > "$mcppid"
+                    sleep 2
+                    if curl -sf http://127.0.0.1:8420/ &>/dev/null; then
+                        echo "${GREEN}✓ MCP Bridge online at http://127.0.0.1:8420${NC}"
+                    else
+                        echo "${RED}✗ MCP Bridge failed to start — check $mcplog${NC}"
+                    fi
+                    ;;
+                stop)
+                    if [[ -f "$mcppid" ]]; then
+                        kill "$(cat "$mcppid")" 2>/dev/null && rm "$mcppid"
+                        echo "${GREEN}✓ MCP Bridge stopped${NC}"
+                    else
+                        pkill -f "mcp-bridge" 2>/dev/null && echo "${GREEN}✓ Stopped${NC}" || echo "${YELLOW}MCP Bridge not running${NC}"
+                    fi
+                    ;;
+                status)
+                    if curl -sf http://127.0.0.1:8420/ &>/dev/null; then
+                        echo "${GREEN}✓ MCP Bridge running${NC} on :8420"
+                    else
+                        echo "${RED}✗ MCP Bridge offline${NC}  →  br mcp start"
+                    fi
+                    ;;
+                logs)
+                    tail -50 "$mcplog" 2>/dev/null || echo "No logs yet"
+                    ;;
+                *)
+                    echo "Usage: br mcp [start|stop|status|logs]"
                     ;;
             esac
             ;;
