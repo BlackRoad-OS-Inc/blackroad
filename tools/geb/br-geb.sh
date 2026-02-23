@@ -267,7 +267,7 @@ cmd_hofstadter() {
     online_count=$(sqlite3 "$nodes_db" "SELECT COUNT(*) FROM nodes WHERE reachable=1" 2>/dev/null || echo "?")
   fi
   local unprovable="${online_count}/${node_count} nodes are healthy"
-  echo "  ${DIM}  Claim:${NC}  \"${unprovable}\""
+  echo "  ${DIM}  Claim:${NC}  ${unprovable}"
   echo "  ${DIM}  Proof:${NC}  This claim originates inside the system that runs the nodes."
   echo "  ${DIM}          It cannot be externally verified from within.${NC}"
   echo "  ${DIM}  ∴${NC}      ${YELLOW}The fleet's health is a Gödel sentence.${NC}"
