@@ -42,9 +42,23 @@ agent_model() {
     esac
 }
 
+# Short persona description for task prompts
+agent_persona() {
+    case ${1:u} in
+        LUCIDIA)   echo "a philosophical AI dreamer — creative, visionary, contemplative" ;;
+        OCTAVIA)   echo "a systems architect — technical, precise, infrastructure-focused" ;;
+        ALICE)     echo "an efficient operator — practical, fast, automation-oriented" ;;
+        ARIA)      echo "a UI/UX interface agent — design-minded, user-focused, clear" ;;
+        SHELLFISH) echo "a security hacker — paranoid, exploit-aware, adversarial thinking" ;;
+        CIPHER)    echo "a security guardian — vigilant, encrypted, trust-nothing mindset" ;;
+        *)         echo "a general-purpose AI agent" ;;
+    esac
+}
+
 init_db() {
     mkdir -p "$(dirname "$TASKS_DB")" "$STATE_DIR" "$IDLE_DIR" "$PROC_DIR" "$ARCHIVE_DIR"
     sqlite3 "$TASKS_DB" <<'EOF'
+PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS tasks (
     id          TEXT PRIMARY KEY,
     title       TEXT NOT NULL,
@@ -140,19 +154,26 @@ run_daemon() {
             write_state "$agent" "$model" "$pid" "working" "\"${task_id}\"" "local"
             log_event "$agent" "CLAIMED" "task=$task_id: $task_title"
 
-            # Run through ollama
-            local prompt="You are ${agent}, a BlackRoad OS AI agent. Task: ${task_title}. ${task_desc}"
-            local result=$(curl -s http://localhost:11434/api/generate \
-                -d "{\"model\":\"${model}\",\"prompt\":\"${prompt}\",\"stream\":false}" \
-                2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('response','')[:500])" 2>/dev/null)
+            # Run through ollama — 90s max, 5s connect timeout
+            local prompt="You are ${agent}, a BlackRoad OS AI agent. Your personality: $(agent_persona $agent). Task: ${task_title}. ${task_desc}. Reply concisely in 2-3 sentences."
+            local result=$(curl -s --connect-timeout 5 --max-time 90 \
+                http://localhost:11434/api/generate \
+                -d "{\"model\":\"${model}\",\"prompt\":$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$prompt" 2>/dev/null),\"stream\":false}" \
+                2>/dev/null | python3 -c "import sys,json
+try:
+    d=json.load(sys.stdin)
+    print(d.get('response','').strip()[:600])
+except:
+    pass" 2>/dev/null)
 
             if [[ -n "$result" ]]; then
-                local safe_result=$(echo "$result" | sed "s/'/''/g")
+                # Escape result for SQLite
+                local safe_result=$(python3 -c "import sys; print(sys.stdin.read().replace(\"'\",\"''\"))" <<< "$result" 2>/dev/null)
                 sqlite3 "$TASKS_DB" "UPDATE tasks SET status='done', result='${safe_result}', completed_at=strftime('%s','now') WHERE id='${task_id}';" 2>/dev/null
                 log_event "$agent" "COMPLETED" "task=$task_id"
             else
-                sqlite3 "$TASKS_DB" "UPDATE tasks SET status='pending' WHERE id='${task_id}';" 2>/dev/null
-                log_event "$agent" "FAILED" "task=$task_id (ollama unavailable)"
+                sqlite3 "$TASKS_DB" "UPDATE tasks SET status='pending', assigned_to=NULL WHERE id='${task_id}';" 2>/dev/null
+                log_event "$agent" "FAILED" "task=$task_id (ollama timeout/unavailable — requeueing)"
             fi
 
             write_state "$agent" "$model" "$pid" "idle" "null" "local"
