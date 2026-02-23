@@ -145,6 +145,9 @@ BR_TOOLS=(
     timeline    "${BR_TOOLS_DIR}/timeline/br-timeline.sh"
     tl          "${BR_TOOLS_DIR}/timeline/br-timeline.sh"
     pulse       "${BR_TOOLS_DIR}/pulse/br-pulse.sh"
+    org         "${BR_TOOLS_DIR}/org/br-org.sh"
+    notify      "${BR_TOOLS_DIR}/notify/br-notify.sh"
+    cron        "${BR_TOOLS_DIR}/cron/br-cron.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -361,6 +364,11 @@ show_help() {
     echo "║    br carpool forecast      - Predictions: WILL/MIGHT/WILDCARD    ║"
     echo "║    br carpool name <thing>  - Agents suggest names + rationale     ║"
     echo "║    br carpool book          - Export all sessions as markdown book ║"
+    echo "║    br carpool todo          - Extract action items from last session║"
+    echo "║    br carpool vibe          - No agenda, agents free-associate      ║"
+    echo "║    br carpool config        - Persistent defaults: model/turns/crew ║"
+    echo "║    br carpool tts [voice]   - Speak last synthesis aloud (macOS)   ║"
+    echo "║    br carpool ama <AGENT>   - Agent asks YOU 3 Qs, gives advice    ║"
     echo "║    br carpool react <f/url> - Quick reaction: brief+context        ║"
     echo "║    br carpool chain t1 t2   - Sequential topic pipeline            ║"
     echo "║    br carpool memory        - Show/clear persistent memory         ║"
@@ -871,6 +879,11 @@ main() {
                 forecast)   bash /Users/alexa/blackroad/carpool.sh forecast "$@" ;;
                 name)       bash /Users/alexa/blackroad/carpool.sh name "$@" ;;
                 export-book|book) bash /Users/alexa/blackroad/carpool.sh export-book ;;
+                todo)       bash /Users/alexa/blackroad/carpool.sh todo ;;
+                vibe)       bash /Users/alexa/blackroad/carpool.sh vibe "$@" ;;
+                config)     bash /Users/alexa/blackroad/carpool.sh config "$@" ;;
+                tts|say)    bash /Users/alexa/blackroad/carpool.sh tts "$@" ;;
+                ama)        bash /Users/alexa/blackroad/carpool.sh ama "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac

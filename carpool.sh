@@ -1903,6 +1903,211 @@ if [[ "$1" == "export-book" || "$1" == "book" ]]; then
   exit 0
 fi
 
+# ── TODO — extract action items from last session ─────────────
+if [[ "$1" == "todo" ]]; then
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  TODO_FILE="$HOME/.blackroad/carpool/todos.md"
+  mkdir -p "$(dirname "$TODO_FILE")"
+
+  # Get last synthesis
+  if [[ -f "$MEMORY_FILE" ]]; then
+    last_topic=$(grep "^TOPIC:" "$MEMORY_FILE" | tail -1 | sed 's/^TOPIC: //')
+    last_synth=$(awk 'BEGIN{b=0}/^---/{b++; if(b==last)p=1} p{print}' \
+      last=$(grep -c "^---" "$MEMORY_FILE") "$MEMORY_FILE" 2>/dev/null | \
+      grep -v "^---\|^DATE:\|^TOPIC:\|^VERDICT:" | head -20)
+    [[ -z "$last_synth" ]] && last_synth=$(tail -30 "$MEMORY_FILE")
+  else
+    echo -e "${DIM}No memory yet — run a session first.${NC}"; exit 0
+  fi
+
+  echo -e "${WHITE}✅ CarPool Todo Extractor${NC}  ${DIM}${last_topic}${NC}\n"
+
+  _todo_payload=$(python3 -c "
+import json,sys
+synth=sys.argv[1]; topic=sys.argv[2]
+prompt=f'''From this team synthesis on \"{topic}\", extract concrete action items.
+Format each as: - [ ] <verb> <specific action> (@<who: team/eng/security/design>)
+List 5-8 items. Only real actions, no vague platitudes.
+
+SYNTHESIS:
+{synth}
+
+ACTION ITEMS:'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':200,'temperature':0.3,'stop':['---','Note:','Summary:']}}))" \
+    "$last_synth" "$last_topic" 2>/dev/null)
+
+  todos=$(curl -s -m 60 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_todo_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+
+  echo -e "${todos}\n"
+
+  # Append to todos file
+  { echo ""; echo "## $(date '+%Y-%m-%d') — ${last_topic}"; echo ""; echo "$todos"; } >> "$TODO_FILE"
+  echo -e "${DIM}Appended → ${TODO_FILE}${NC}"
+  exit 0
+fi
+
+# ── VIBE — no topic, agents just riff from their headspace ───
+if [[ "$1" == "vibe" ]]; then
+  echo -e "\n${WHITE}😌 CarPool Vibe Check${NC}  ${DIM}no agenda, just vibes${NC}\n"
+
+  _vibe_topic="FREE EXPRESSION — no topic, no agenda.
+Share what is actually on your mind right now as ${NAME:-an agent} on the BlackRoad team.
+What are you thinking about, worried about, excited about, or obsessing over?
+One genuine, specific thought. Not a status update. Not advice. Just your real headspace right now."
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" --brief "$_vibe_topic"
+fi
+
+# ── CONFIG — persistent defaults ─────────────────────────────
+if [[ "$1" == "config" ]]; then
+  CONFIG_FILE="$HOME/.blackroad/carpool/config.sh"
+  mkdir -p "$(dirname "$CONFIG_FILE")"
+
+  _write_config() {
+    {
+      echo "# CarPool config — edit or run: br carpool config set key value"
+      echo "CARPOOL_MODEL=\"${_cfg_model:-tinyllama}\""
+      echo "CARPOOL_TURNS=\"${_cfg_turns:-2}\""
+      echo "CARPOOL_CREW=\"${_cfg_crew:-}\""
+    } > "$CONFIG_FILE"
+  }
+
+  case "${2:-show}" in
+    show)
+      if [[ -f "$CONFIG_FILE" ]]; then
+        echo -e "${WHITE}⚙️  CarPool Config${NC}  ${DIM}${CONFIG_FILE}${NC}\n"
+        grep -v "^#" "$CONFIG_FILE" | while IFS='=' read -r k v; do
+          [[ -z "$k" ]] && continue
+          echo -e "  ${CYAN}${k}${NC} = ${v//\"/}"
+        done
+      else
+        echo -e "${DIM}No config yet. Defaults in use.${NC}"
+        echo -e "  ${CYAN}CARPOOL_MODEL${NC} = tinyllama"
+        echo -e "  ${CYAN}CARPOOL_TURNS${NC} = 2"
+        echo -e "  ${CYAN}CARPOOL_CREW${NC}  = (all 8 agents)"
+      fi
+      ;;
+    set)
+      _key="${3:-}"; _val="${4:-}"
+      [[ -z "$_key" || -z "$_val" ]] && echo -e "${RED}Usage: br carpool config set <key> <value>${NC}" && exit 1
+      [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE" 2>/dev/null
+      _cfg_model="${CARPOOL_MODEL:-tinyllama}"
+      _cfg_turns="${CARPOOL_TURNS:-2}"
+      _cfg_crew="${CARPOOL_CREW:-}"
+      case "${_key,,}" in
+        model) _cfg_model="$_val" ;;
+        turns) _cfg_turns="$_val" ;;
+        crew)  _cfg_crew="$_val" ;;
+        *) echo -e "${RED}Unknown key: ${_key}${NC}  Keys: model, turns, crew" && exit 1 ;;
+      esac
+      _write_config
+      echo -e "${GREEN}✓ ${_key} = ${_val}${NC}"
+      ;;
+    reset)
+      rm -f "$CONFIG_FILE"
+      echo -e "${GREEN}✓ Config reset to defaults${NC}"
+      ;;
+    edit) "${EDITOR:-nano}" "$CONFIG_FILE" ;;
+    *)    echo -e "${RED}Usage: br carpool config [show|set|reset|edit]${NC}" ;;
+  esac
+  exit 0
+fi
+
+# ── TTS — speak last synthesis aloud (macOS say / espeak) ────
+if [[ "$1" == "tts" || "$1" == "say" ]]; then
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  [[ ! -f "$MEMORY_FILE" ]] && echo "No memory yet." && exit 0
+
+  last_topic=$(grep "^TOPIC:" "$MEMORY_FILE" | tail -1 | sed 's/^TOPIC: //')
+  last_verdict=$(grep "^VERDICT:" "$MEMORY_FILE" | tail -1 | sed 's/^VERDICT: //')
+  last_synth=$(tail -20 "$MEMORY_FILE" | grep -v "^---\|^DATE:\|^TOPIC:\|^VERDICT:" | head -8 | tr '\n' ' ')
+
+  _speech="${last_topic}. Verdict: ${last_verdict}. ${last_synth}"
+  _voice="${2:-Samantha}"
+
+  echo -e "${WHITE}🔊 Speaking:${NC} ${last_topic}\n${DIM}${_speech:0:120}...${NC}"
+
+  if command -v say >/dev/null 2>&1; then
+    say -v "$_voice" "$_speech" &
+    echo -e "${DIM}voice: ${_voice} · kill with: kill $!${NC}"
+  elif command -v espeak >/dev/null 2>&1; then
+    espeak "$_speech" &
+  else
+    echo -e "${RED}No TTS engine found (need: say on macOS, or espeak)${NC}"
+  fi
+  exit 0
+fi
+
+# ── AMA — agent asks YOU questions, then gives advice ─────────
+if [[ "$1" == "ama" ]]; then
+  _agent="${2:-LUCIDIA}"
+  _valid="LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER ARIA SHELLFISH"
+  echo "$_valid" | grep -qw "$_agent" || { echo -e "${RED}Unknown agent: ${_agent}${NC}"; exit 1; }
+
+  agent_meta "$_agent"
+  _c="\033[${COLOR_CODE}m"
+  echo -e "\n${WHITE}🎤 AMA with${NC} ${_c}${EMOJI} ${_agent}${NC}  ${DIM}${ROLE}${NC}"
+  echo -e "${DIM}${_agent} will ask you 3 questions, then give tailored advice. Type your answers.${NC}\n"
+
+  _ama_system="You are ${_agent}, ${ROLE}. ${PERSONA}
+You will ask the user exactly 3 focused questions (one at a time) to understand their situation, then give specific, actionable advice.
+Ask from your domain expertise. Be direct. Label questions Q1, Q2, Q3. After answers, give ADVICE: in 3 bullet points."
+
+  # Q1
+  _q1_prompt="${_ama_system}
+
+Ask your first question (Q1) to understand what the user is working on:"
+  _q1_payload=$(python3 -c "import json,sys; print(json.dumps({'model':'tinyllama','prompt':sys.stdin.read(),'stream':False,'options':{'num_predict':60,'temperature':0.7,'stop':['\n\n']}}))" <<< "$_q1_prompt")
+  echo -ne "${_c}${EMOJI} ${_agent}${NC}  ${DIM}thinking...${NC}"
+  _q1=$(curl -s -m 30 -X POST http://localhost:11434/api/generate -H "Content-Type: application/json" -d "$_q1_payload" | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  printf "\r\033[K"; echo -e "${_c}${EMOJI} ${_agent}:${NC} ${_q1}\n"
+  echo -ne "${CYAN}You: ${NC}"; read -r _a1
+
+  # Q2
+  _q2_prompt="${_ama_system}
+
+Q1: ${_q1}
+User: ${_a1}
+
+Ask your second question (Q2) to go deeper:"
+  _q2_payload=$(python3 -c "import json,sys; print(json.dumps({'model':'tinyllama','prompt':sys.stdin.read(),'stream':False,'options':{'num_predict':60,'temperature':0.7,'stop':['\n\n']}}))" <<< "$_q2_prompt")
+  echo -ne "${_c}${EMOJI} ${_agent}${NC}  ${DIM}thinking...${NC}"
+  _q2=$(curl -s -m 30 -X POST http://localhost:11434/api/generate -H "Content-Type: application/json" -d "$_q2_payload" | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  printf "\r\033[K"; echo -e "${_c}${EMOJI} ${_agent}:${NC} ${_q2}\n"
+  echo -ne "${CYAN}You: ${NC}"; read -r _a2
+
+  # Q3
+  _q3_prompt="${_ama_system}
+
+Q1: ${_q1} → ${_a1}
+Q2: ${_q2} → ${_a2}
+
+Ask your final question (Q3) to clarify what you need to give the best advice:"
+  _q3_payload=$(python3 -c "import json,sys; print(json.dumps({'model':'tinyllama','prompt':sys.stdin.read(),'stream':False,'options':{'num_predict':60,'temperature':0.7,'stop':['\n\n']}}))" <<< "$_q3_prompt")
+  echo -ne "${_c}${EMOJI} ${_agent}${NC}  ${DIM}thinking...${NC}"
+  _q3=$(curl -s -m 30 -X POST http://localhost:11434/api/generate -H "Content-Type: application/json" -d "$_q3_payload" | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  printf "\r\033[K"; echo -e "${_c}${EMOJI} ${_agent}:${NC} ${_q3}\n"
+  echo -ne "${CYAN}You: ${NC}"; read -r _a3
+
+  # Advice
+  echo -e "\n${DIM}${_agent} synthesizing advice...${NC}"
+  _adv_prompt="${_ama_system}
+
+Q1: ${_q1} → ${_a1}
+Q2: ${_q2} → ${_a2}
+Q3: ${_q3} → ${_a3}
+
+Now give your ADVICE: 3 specific, actionable bullet points based on everything they told you. Be direct, no fluff."
+  _adv_payload=$(python3 -c "import json,sys; print(json.dumps({'model':'tinyllama','prompt':sys.stdin.read(),'stream':False,'options':{'num_predict':180,'temperature':0.6,'stop':['---']}}))" <<< "$_adv_prompt")
+  _advice=$(curl -s -m 60 -X POST http://localhost:11434/api/generate -H "Content-Type: application/json" -d "$_adv_payload" | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  echo -e "\n${_c}${EMOJI} ${_agent} ADVICE:${NC}\n${_advice}\n"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
