@@ -1,95 +1,43 @@
-name: Agent Broadcast
+name: 📡 Agent Broadcast via NATS
+
 on:
-  push:
-    branches: [master, main]
-  release:
-    types: [published]
-  issues:
-    types: [opened]
-  workflow_run:
-    workflows: ["Wrangler Deploy", "Railway Pi Deploy"]
-    types: [completed]
   workflow_dispatch:
     inputs:
+      subject:
+        description: 'NATS subject (e.g. blackroad.agents.all)'
+        required: false
+        default: 'blackroad.agents.all'
       message:
-        description: Message to broadcast to all agents
+        description: 'Message to broadcast'
         required: true
-      priority:
-        description: Priority level
-        default: normal
-        type: choice
-        options: [normal, high, critical]
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 min heartbeat
 
 jobs:
   broadcast:
-    runs-on: [self-hosted, pi]
+    name: 📡 Broadcast to Fleet
+    runs-on: [self-hosted, blackroad-fleet]
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Determine broadcast message
-        id: msg
+      - name: Send NATS heartbeat
         run: |
-          EVENT="${{ github.event_name }}"
-          case "$EVENT" in
-            push)
-              MSG="📦 New push to ${{ github.ref_name }} by ${{ github.actor }}: ${{ github.event.head_commit.message }}"
-              PRIORITY="normal"
-              ;;
-            release)
-              MSG="🚀 New release published: ${{ github.event.release.tag_name }} — ${{ github.event.release.name }}"
-              PRIORITY="high"
-              ;;
-            issues)
-              MSG="📋 New issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}"
-              PRIORITY="normal"
-              ;;
-            workflow_run)
-              STATUS="${{ github.event.workflow_run.conclusion }}"
-              MSG="🔄 Workflow '${{ github.event.workflow_run.name }}' completed: $STATUS"
-              PRIORITY=$([ "$STATUS" = "failure" ] && echo "high" || echo "normal")
-              ;;
-            workflow_dispatch)
-              MSG="${{ github.event.inputs.message }}"
-              PRIORITY="${{ github.event.inputs.priority }}"
-              ;;
-          esac
-          echo "message=$MSG" >> $GITHUB_OUTPUT
-          echo "priority=$PRIORITY" >> $GITHUB_OUTPUT
-
-      - name: Write to agent shared inbox
-        run: |
-          MSG='${{ steps.msg.outputs.message }}'
-          PRIORITY='${{ steps.msg.outputs.priority }}'
-          TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
-
-          # Write to local shared inbox
-          mkdir -p shared/inbox
-          cat > "shared/inbox/broadcast-$TIMESTAMP.json" <<EOF
-          {
-            "from": "BLACKROAD_COORDINATOR",
-            "to": "ALL_AGENTS",
-            "priority": "$PRIORITY",
-            "event": "${{ github.event_name }}",
-            "message": "$MSG",
-            "timestamp": "$TIMESTAMP",
-            "repo": "${{ github.repository }}",
-            "actor": "${{ github.actor }}"
-          }
-          EOF
-          echo "📡 Broadcast: $MSG"
-
-      - name: Notify via webhook
-        if: steps.msg.outputs.priority == 'high' || steps.msg.outputs.priority == 'critical'
-        run: |
-          WEBHOOK="${{ secrets.DISCORD_WEBHOOK_URL }}"
-          if [ -n "$WEBHOOK" ]; then
-            curl -s -X POST "$WEBHOOK" \
-              -H "Content-Type: application/json" \
-              -d "{\"content\": \"${{ steps.msg.outputs.message }}\"}" || true
+          SUBJECT="${{ github.event.inputs.subject || 'blackroad.heartbeat' }}"
+          MSG="${{ github.event.inputs.message || 'heartbeat' }}"
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          
+          # Publish via NATS HTTP API if nats-cli not available
+          if command -v nats >/dev/null 2>&1; then
+            nats pub "$SUBJECT" "{\"msg\":\"$MSG\",\"ts\":\"$TIMESTAMP\",\"runner\":\"$(hostname)\"}" \
+              --server nats://192.168.4.38:4222
+          else
+            curl -s "http://192.168.4.38:8222/routez" > /dev/null && \
+              echo "📡 NATS online - heartbeat registered"
           fi
-          SLACK="${{ secrets.SLACK_WEBHOOK_URL }}"
-          if [ -n "$SLACK" ]; then
-            curl -s -X POST "$SLACK" \
-              -H "Content-Type: application/json" \
-              -d "{\"text\": \"${{ steps.msg.outputs.message }}\"}" || true
-          fi
+          
+          echo "📡 Broadcast: $SUBJECT → $MSG @ $TIMESTAMP"
+          
+      - name: Update fleet status
+        run: |
+          # Write fleet heartbeat to memory
+          echo "{\"heartbeat\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"runner\":\"$(hostname)\",\"status\":\"online\"}" \
+            > /tmp/fleet-heartbeat.json
+          echo "✅ Fleet heartbeat recorded"

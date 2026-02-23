@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlackRoad Labs — Research at the Edge</title>
+  <meta name="description" content="Data science notebooks, MLOps, visualization, and research infrastructure for the next breakthrough.">
+  <meta property="og:title" content="BlackRoad Labs">
+  <meta property="og:description" content="Data science notebooks, MLOps, visualization, and research infrastructure for the next breakthrough.">
+  <meta property="og:url" content="https://github.com/BlackRoad-Labs">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #00BCD4;
+      --black: #000000;
+      --white: #ffffff;
+      --gray-900: #0a0a0a;
+      --gray-800: #141414;
+      --gray-700: #1e1e1e;
+      --gray-600: #2a2a2a;
+      --gray-400: #666;
+      --gray-200: #aaa;
+      --phi: 1.618;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--black);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ─────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, #00BCD428 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, #00BCD415 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Animated grid */
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(#00BCD408 1px, transparent 1px),
+        linear-gradient(90deg, #00BCD408 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: gridScroll 20s linear infinite;
+    }
+
+    @keyframes gridScroll {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(50px); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 820px;
+    }
+
+    .org-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #00BCD418;
+      border: 1px solid #00BCD440;
+      border-radius: 100px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #00BCD4;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 34px;
+      backdrop-filter: blur(10px);
+    }
+
+    .org-badge .dot {
+      width: 6px; height: 6px;
+      background: #00BCD4;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .hero-icon {
+      font-size: 72px;
+      line-height: 1;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 0 30px #00BCD460);
+    }
+
+    h1 {
+      font-size: clamp(42px, 8vw, 88px);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 0%, #00BCD4 50%, #ffffff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      background-size: 200%;
+      animation: shimmer 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+
+    .tagline {
+      font-size: clamp(18px, 3vw, 28px);
+      font-weight: 300;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 24px;
+      letter-spacing: -0.01em;
+    }
+
+    .description {
+      font-size: 17px;
+      line-height: 1.618;
+      color: rgba(255,255,255,0.5);
+      max-width: 600px;
+      margin: 0 auto 48px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #00BCD4;
+      color: #fff;
+      box-shadow: 0 0 30px #00BCD450;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 40px #00BCD470;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+      transform: translateY(-2px);
+    }
+
+    /* ── TAGS ─────────────────────────────────────────── */
+    .tags-section {
+      padding: 60px 2rem;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .tags-wrap {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 8px 18px;
+      background: #00BCD415;
+      border: 1px solid #00BCD430;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #00BCD4;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── STATS ────────────────────────────────────────── */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .stat {
+      flex: 1;
+      max-width: 200px;
+      padding: 40px 20px;
+      text-align: center;
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .stat:last-child { border-right: none; }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: 800;
+      color: #00BCD4;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── FOOTER ───────────────────────────────────────── */
+    footer {
+      padding: 40px 2rem;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .footer-logo {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 8px;
+    }
+
+    .footer-logo span { color: #00BCD4; }
+
+    .footer-copy {
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+    }
+
+    /* ── SCROLL INDICATOR ─────────────────────────────── */
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.3);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .scroll-arrow {
+      width: 20px;
+      height: 20px;
+      border-right: 2px solid #00BCD460;
+      border-bottom: 2px solid #00BCD460;
+      transform: rotate(45deg);
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: rotate(45deg) translateY(0); }
+      50% { transform: rotate(45deg) translateY(6px); }
+    }
+
+    @media (max-width: 600px) {
+      .stats { flex-direction: column; }
+      .stat { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    }
+  </style>
+</head>
+<body>
+
+  <section class="hero">
+    <div class="grid-bg"></div>
+    <div class="hero-content">
+      <div class="org-badge">
+        <span class="dot"></span>
+        Labs Division
+      </div>
+      <div class="hero-icon">🔬</div>
+      <h1>BlackRoad Labs</h1>
+      <p class="tagline">Research at the Edge</p>
+      <p class="description">Data science notebooks, MLOps, visualization, and research infrastructure for the next breakthrough.</p>
+      <div class="hero-actions">
+        <a href="https://github.com/BlackRoad-Labs" class="btn btn-primary">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          View on GitHub
+        </a>
+        <a href="https://blackroad.io" class="btn btn-secondary">
+          🌐 BlackRoad OS
+        </a>
+      </div>
+    </div>
+    <div class="scroll-hint">
+      <div class="scroll-arrow"></div>
+      scroll
+    </div>
+  </section>
+
+  <section class="tags-section">
+    <div class="tags-wrap">
+      <span class="tag">Data Science</span><span class="tag">MLOps</span><span class="tag">Visualization</span><span class="tag">Research</span>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value">30K</div>
+      <div class="stat-label">AI Agents</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">17</div>
+      <div class="stat-label">Organizations</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">1,800+</div>
+      <div class="stat-label">Repositories</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">$0</div>
+      <div class="stat-label">AI Cost Target</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-logo">
+      <span>BlackRoad OS</span>, Inc.
+    </div>
+    <div class="footer-copy">© 2026 BlackRoad OS, Inc. All rights reserved. Proprietary — not open source.</div>
+  </footer>
+
+</body>
+</html>
