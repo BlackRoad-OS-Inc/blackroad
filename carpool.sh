@@ -8196,6 +8196,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "go-to-market" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("GTM" "Marketing" "Sales" "Product" "Customer")
+  QUESTIONS=(
+    "What is the GTM motion for $PRODUCT — direct, channel, community, or product-led?"
+    "Who is the exact first buyer for $PRODUCT and what is their trigger to buy?"
+    "What messaging and positioning makes $PRODUCT the obvious choice in its category?"
+    "What launch channels give $PRODUCT the best shot at hitting 100 customers fast?"
+    "How does $PRODUCT cross the chasm from early adopters to mainstream buyers?"
+  )
+  echo ""
+  echo "📣 CARPOOL: GO-TO-MARKET — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Go-to-market strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "debt-paydown" ]]; then
+  CODEBASE="${2:-our codebase}"
+  AGENTS=("Tech Lead" "Architect" "PM" "Engineer" "CTO")
+  QUESTIONS=(
+    "How do we audit and categorize the technical debt in $CODEBASE by risk and cost?"
+    "What is the right ratio of debt paydown vs new features for $CODEBASE?"
+    "How do we make the business case to leadership for investing in $CODEBASE debt?"
+    "What refactoring strategy minimizes risk while paying down $CODEBASE debt fast?"
+    "How do we prevent new technical debt from accumulating in $CODEBASE going forward?"
+  )
+  echo ""
+  echo "🔧 CARPOOL: DEBT PAYDOWN — $CODEBASE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Debt paydown strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "okr-planning" ]]; then
+  TEAM="${2:-our team}"
+  AGENTS=("Strategy" "PM" "Engineering" "Leadership" "IC")
+  QUESTIONS=(
+    "What are the 3 most important objectives $TEAM should set this quarter?"
+    "How do we write key results for $TEAM that are measurable and not output-focused?"
+    "How do $TEAM OKRs ladder up to company-level goals without becoming top-down mandates?"
+    "How does $TEAM run a weekly OKR check-in that drives action, not just reporting?"
+    "What are the biggest OKR anti-patterns $TEAM should avoid?"
+  )
+  echo ""
+  echo "🎯 CARPOOL: OKR PLANNING — $TEAM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ OKR planning roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "dev-advocacy" ]]; then
+  PLATFORM="${2:-our platform}"
+  AGENTS=("DevRel" "Community" "Docs" "Marketing" "Engineer")
+  QUESTIONS=(
+    "What does a world-class developer advocacy program look like for $PLATFORM?"
+    "How do we build and grow a genuine developer community around $PLATFORM?"
+    "What content (tutorials, videos, samples, talks) drives the most adoption for $PLATFORM?"
+    "How do developer advocates measure their impact on $PLATFORM growth?"
+    "How do we turn $PLATFORM power users into champions and contributors?"
+  )
+  echo ""
+  echo "📢 CARPOOL: DEVELOPER ADVOCACY — $PLATFORM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Developer advocacy strategy complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
