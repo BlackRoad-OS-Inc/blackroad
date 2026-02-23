@@ -68,7 +68,7 @@ jobs:
       memory_context: ${{ steps.memory.outputs.context }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -201,7 +201,7 @@ jobs:
       build_result: ${{ steps.build.outputs.result }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Environment
         run: |
@@ -301,7 +301,7 @@ jobs:
       severity: ${{ steps.scan.outputs.max_severity }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run Security Scanners
         id: scan
@@ -360,7 +360,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -389,7 +389,7 @@ jobs:
           echo "AI Review: $REVIEW"
 
       - name: Post Review Comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const testResult = '${{ needs.test-and-build.outputs.test_result }}';
@@ -470,7 +470,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Determine Deploy Target
         id: target
@@ -567,7 +567,7 @@ jobs:
           done
 
       - name: Auto-Respond
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const labels = '${{ steps.analyze.outputs.labels }}'.split(',').filter(l => l);
@@ -599,7 +599,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Update Dependencies
         run: |
@@ -642,7 +642,7 @@ jobs:
           done
 
       - name: Health Report
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const healthScore = '${{ needs.analyze.outputs.health_score }}';
