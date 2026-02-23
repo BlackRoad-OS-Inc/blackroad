@@ -1,0 +1,102 @@
+name: 🤗 HuggingFace → Ollama Model Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Model to pull (e.g. qwen2.5:7b)'
+        required: false
+        default: 'qwen2.5:7b'
+  schedule:
+    - cron: '0 3 * * 0'  # Sunday 3am — weekly model refresh
+
+jobs:
+  sync-models:
+    name: Pull models to Pi Ollama
+    runs-on: [self-hosted, blackroad-fleet]
+    steps:
+      - name: Check Ollama
+        run: |
+          if ! curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+            echo "Starting Ollama..."
+            nohup ollama serve > /tmp/ollama.log 2>&1 &
+            sleep 5
+          fi
+          echo "✅ Ollama ready on $(hostname)"
+          curl -s http://localhost:11434/api/tags | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+models=d.get('models',[])
+print(f'Models installed: {len(models)}')
+for m in models[:10]:
+    print(f'  - {m[\"name\"]}')
+"
+
+      - name: Pull priority models
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+        run: |
+          MODEL="${{ github.event.inputs.model }}"
+          
+          PRIORITY_MODELS=(
+            "qwen2.5:7b"
+            "llama3.2:3b"
+            "deepseek-r1:7b"
+            "nomic-embed-text"
+          )
+          
+          if [ -n "$MODEL" ]; then
+            echo "Pulling requested: $MODEL"
+            ollama pull "$MODEL" 2>&1 | tail -5 || echo "⚠️ Failed"
+          else
+            echo "Checking priority models..."
+            INSTALLED=$(curl -s http://localhost:11434/api/tags | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+print(' '.join([m['name'].split(':')[0] for m in d.get('models',[])]))
+")
+            for m in "${PRIORITY_MODELS[@]}"; do
+              BASE="${m%%:*}"
+              if echo "$INSTALLED" | grep -q "$BASE"; then
+                echo "  ✅ $m (installed)"
+              else
+                echo "  📥 Pulling $m..."
+                ollama pull "$m" 2>&1 | tail -3 || echo "  ⚠️ Failed"
+              fi
+            done
+          fi
+          echo "✅ Model sync complete"
+
+      - name: Register models in HuggingFace Hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "⚪ No HF_TOKEN — skipping HF Hub registration"
+            exit 0
+          fi
+          
+          # Install huggingface-hub
+          pip3 install huggingface-hub --quiet 2>/dev/null || true
+          
+          python3 << 'PY'
+import os, json, subprocess, sys
+from pathlib import Path
+
+token = os.environ.get('HF_TOKEN', '')
+if not token:
+    print("No HF_TOKEN, skipping")
+    sys.exit(0)
+
+# Save HF token
+token_path = Path.home() / '.cache' / 'huggingface' / 'token'
+token_path.parent.mkdir(parents=True, exist_ok=True)
+token_path.write_text(token)
+print(f"✅ HF token saved")
+
+# Check installed models
+r = subprocess.run(['curl', '-s', 'http://localhost:11434/api/tags'], capture_output=True, text=True)
+models = [m['name'] for m in json.loads(r.stdout).get('models', [])]
+print(f"Pi Ollama has {len(models)} models: {', '.join(models[:5])}")
+PY
