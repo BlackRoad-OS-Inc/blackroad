@@ -25,7 +25,7 @@ on:
 jobs:
   salesforce:
     name: "☁️ Salesforce Sync"
-    runs-on: [self-hosted, pi, blackroad]
+    runs-on: [self-hosted, blackroad-fleet]
     if: ${{ inputs.platform == 'all' || inputs.platform == 'salesforce' || github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
 
   railway:
     name: "🚂 Railway Fleet Sync"
-    runs-on: [self-hosted, pi, blackroad]
+    runs-on: [self-hosted, blackroad-fleet]
     if: ${{ inputs.platform == 'all' || inputs.platform == 'railway' || github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +91,7 @@ jobs:
 
   pi-model-status:
     name: "🍓 Pi Model Health"
-    runs-on: [self-hosted, pi, blackroad]
+    runs-on: [self-hosted, blackroad-fleet]
     steps:
       - name: Ollama model status
         run: |
