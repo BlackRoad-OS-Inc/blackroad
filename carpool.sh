@@ -5676,6 +5676,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "onboarding" ]]; then
+  ROLE="${2:-engineer}"
+  OB_DIR="$HOME/.blackroad/carpool/onboarding"
+  mkdir -p "$OB_DIR"
+  OB_FILE="$OB_DIR/onboard-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🎓 CarPool — Onboarding plan for: $ROLE\033[0m"
+  echo "# Onboarding: $ROLE" > "$OB_FILE"
+  echo "Generated: $(date)" >> "$OB_FILE"
+  PY_OB='
+import sys, json, urllib.request
+role = sys.argv[1]
+agents = [
+  ("ALICE","PM","Write a 30-60-90 day plan for a new $ROLE. List 3 concrete goals per phase."),
+  ("ARIA","Culture","What people, teams, and slack channels should a new $ROLE meet in week 1? Why each one?"),
+  ("OCTAVIA","Platform","What dev environment setup, access, and tools does a new $ROLE need on day 1? Checklist format."),
+  ("LUCIDIA","Mentor","What are the 3 biggest unwritten rules or cultural nuances a new $ROLE must understand to succeed here?"),
+  ("PRISM","Analyst","How do we measure if onboarding is working? What signals tell us the new $ROLE is ramping well?")
+]
+for name, role_label, question in agents:
+  prompt = f"{name} ({role_label}): {question.replace(chr(36)+'ROLE', role)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role_label})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_OB" "$ROLE" | tee -a "$OB_FILE"
+  echo -e "\033[0;32m✓ Saved to $OB_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "dogfood" ]]; then
+  FEATURE="${2:-the new feature}"
+  DF_DIR="$HOME/.blackroad/carpool/dogfood"
+  mkdir -p "$DF_DIR"
+  DF_FILE="$DF_DIR/dogfood-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🐶 CarPool — Internal dogfooding plan: $FEATURE\033[0m"
+  echo "# Dogfood: $FEATURE" > "$DF_FILE"
+  echo "Generated: $(date)" >> "$DF_FILE"
+  PY_DF='
+import sys, json, urllib.request
+feature = sys.argv[1]
+agents = [
+  ("ALICE","PM","Design a 2-week internal dogfood plan for $FEATURE. Who uses it, what tasks, what feedback to collect?"),
+  ("ARIA","UX","What specific UX friction points should internal testers watch for in $FEATURE? Give 5 observation prompts."),
+  ("PRISM","Analytics","What instrumentation and metrics do we need before dogfooding $FEATURE to measure success?"),
+  ("SHELLFISH","Chaos","What intentional abuse or edge-case usage should internal testers try to stress-test $FEATURE?"),
+  ("OCTAVIA","Platform","What feature flags, environments, and rollback steps do we need to safely dogfood $FEATURE internally?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'FEATURE', feature)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_DF" "$FEATURE" | tee -a "$DF_FILE"
+  echo -e "\033[0;32m✓ Saved to $DF_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "rollback" ]]; then
+  CHANGE="${2:-the last deployment}"
+  RB_DIR="$HOME/.blackroad/carpool/rollbacks"
+  mkdir -p "$RB_DIR"
+  RB_FILE="$RB_DIR/rollback-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m⏪ CarPool — Rollback plan for: $CHANGE\033[0m"
+  echo "# Rollback Plan: $CHANGE" > "$RB_FILE"
+  echo "Generated: $(date)" >> "$RB_FILE"
+  PY_RB='
+import sys, json, urllib.request
+change = sys.argv[1]
+agents = [
+  ("OCTAVIA","Platform","Write step-by-step rollback commands for $CHANGE. Include verification steps after each action."),
+  ("ALICE","Ops","What is the decision criteria — at what point do we pull the trigger and rollback $CHANGE? Who approves?"),
+  ("CIPHER","Security","Are there any security implications of rolling back $CHANGE? Data integrity risks or auth state issues?"),
+  ("PRISM","Analytics","What metrics and dashboards do we watch to confirm $CHANGE is causing the problem before we rollback?"),
+  ("LUCIDIA","Strategist","After the rollback of $CHANGE, what is the post-mortem process and how do we safely re-attempt?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'CHANGE', change)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_RB" "$CHANGE" | tee -a "$RB_FILE"
+  echo -e "\033[0;32m✓ Saved to $RB_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "competitive" ]]; then
+  PRODUCT="${2:-our product}"
+  COMP_DIR="$HOME/.blackroad/carpool/competitive"
+  mkdir -p "$COMP_DIR"
+  COMP_FILE="$COMP_DIR/comp-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m⚔️  CarPool — Competitive analysis: $PRODUCT\033[0m"
+  echo "# Competitive Analysis: $PRODUCT" > "$COMP_FILE"
+  echo "Generated: $(date)" >> "$COMP_FILE"
+  PY_COMP='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("PRISM","Analyst","Name the top 3-5 competitors to $PRODUCT. For each: their main strength, main weakness, and pricing model."),
+  ("ARIA","Designer","How does $PRODUCT compare on UX and design quality vs competitors? Where are the biggest gaps?"),
+  ("LUCIDIA","Strategist","What is the unique moat or wedge $PRODUCT should build that competitors cannot easily copy?"),
+  ("SHELLFISH","Hacker","Where are competitors most vulnerable? What are their biggest technical or product liabilities?"),
+  ("ALICE","PM","Which competitor features are table-stakes that $PRODUCT must match, vs differentiators worth investing in?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_COMP" "$PRODUCT" | tee -a "$COMP_FILE"
+  echo -e "\033[0;32m✓ Saved to $COMP_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
