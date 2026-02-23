@@ -5394,6 +5394,144 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── ARCHITECTURE-REVIEW — deep architecture review with trade-offs ────
+if [[ "$1" == "architecture-review" || "$1" == "arcrev" ]]; then
+  shift
+  SYSTEM="$*"
+  [[ -z "$SYSTEM" ]] && echo "Usage: br carpool architecture-review <system or design>" && exit 1
+  echo ""
+  echo -e "\033[1;34m🏛️  ARCHITECTURE REVIEW: $SYSTEM\033[0m"
+  echo ""
+  AR_FILE="$HOME/.blackroad/carpool/arch-reviews/$(echo "$SYSTEM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/arch-reviews"
+  printf "# Architecture Review: %s\nDate: %s\n\n" "$SYSTEM" "$(date '+%Y-%m-%d')" > "$AR_FILE"
+  for entry in "OCTAVIA|STRENGTHS|What this architecture gets right. Patterns that will age well. Decisions future engineers will thank you for." "SHELLFISH|WEAKNESSES|The hidden bombs. Decisions that feel fine now but cause pain at 10x. Be specific and unflinching." "LUCIDIA|FUNDAMENTAL TRADE-OFFS|The 3 core tensions in this design (e.g. consistency vs availability). What was chosen and at what cost." "CIPHER|SECURITY POSTURE|Where the security model is strong. Where it has gaps. The most likely compromise path." "PRISM|RECOMMENDATION|The single most important change. The one thing to stop doing. The decision to revisit in 6 months."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} reviewing the architecture of: \"${SYSTEM}\"
+Section: ${section}
+${lens}
+Senior engineer level. Real patterns, real failure modes, real trade-off names.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$AR_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $AR_FILE\033[0m"
+  exit 0
+fi
+
+# ── PERSONA-PITCH — craft a message for a specific audience ──────────
+if [[ "$1" == "persona-pitch" || "$1" == "pitch-to" ]]; then
+  shift
+  AUDIENCE="$*"
+  [[ -z "$AUDIENCE" ]] && echo "Usage: br carpool persona-pitch <audience, e.g. 'skeptical CTO'>" && exit 1
+  echo ""
+  echo -e "\033[1;35m🎭 PERSONA PITCH: $AUDIENCE\033[0m"
+  echo ""
+  for ag in ARIA LUCIDIA ALICE OCTAVIA CIPHER; do
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag}${NC}"
+    python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Write a 3-sentence pitch for BlackRoad OS for: \"${AUDIENCE}\"
+Speak their language. Address their number one fear or desire first.
+Make them feel understood, not sold to. End with one specific outcome.
+3 sentences max. Every word earns its place.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  IFS='|' read -r _ col _ emoji <<< "$(agent_meta "PRISM")"
+  echo -e "${col}${emoji} PRISM — STRONGEST PITCH & WHY${NC}"
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''5 agents pitched BlackRoad OS to: \"${AUDIENCE}\"
+Which approach lands best with this audience and why? Name the agent, name the element that makes it work. 2-3 sentences.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[PRISM offline]"
+  echo ""
+  exit 0
+fi
+
+# ── CHANGELOG-DRAFT — draft user-facing release notes from git log ────
+if [[ "$1" == "changelog-draft" || "$1" == "relnotes" ]]; then
+  shift
+  VERSION="$*"
+  VERSION="${VERSION:-next}"
+  echo ""
+  echo -e "\033[1;32m📝 CHANGELOG DRAFT: v$VERSION\033[0m"
+  echo ""
+  RECENT=$(git --no-pager log --oneline -20 2>/dev/null || echo "no git log available")
+  CL_FILE="$HOME/.blackroad/carpool/changelogs/v${VERSION}-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/changelogs"
+  printf "# Changelog: v%s\nDate: %s\n\n" "$VERSION" "$(date '+%Y-%m-%d')" > "$CL_FILE"
+  for entry in "ARIA|USER-FACING HIGHLIGHTS|What changed that users will actually care about. Plain language, no hashes. Features first." "ALICE|WHAT IS FIXED|Bug fixes and improvements. Group by area. One line each." "CIPHER|SECURITY & BREAKING CHANGES|Security patches and breaking API changes. What users must do to upgrade." "LUCIDIA|RELEASE NARRATIVE|2-3 sentences framing this release. The theme. What it moves the product toward."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json, sys
+recent = sys.argv[1]
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} writing a changelog for version: \"${VERSION}\"
+Recent commits:
+{recent[:800]}
+Section: ${section}
+${lens}
+Write actual changelog copy. Human, scannable, honest.
+Format: - <entry>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" "$RECENT" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$CL_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $CL_FILE\033[0m"
+  exit 0
+fi
+
+# ── FEATURE-FLAG — design a feature flag rollout plan ─────────────────
+if [[ "$1" == "feature-flag" || "$1" == "flag" || "$1" == "rollout" ]]; then
+  shift
+  FEATURE="$*"
+  [[ -z "$FEATURE" ]] && echo "Usage: br carpool feature-flag <feature name>" && exit 1
+  echo ""
+  echo -e "\033[1;36m🚩 FEATURE FLAG ROLLOUT: $FEATURE\033[0m"
+  echo ""
+  FF_FILE="$HOME/.blackroad/carpool/feature-flags/$(echo "$FEATURE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/feature-flags"
+  printf "# Feature Flag: %s\nDate: %s\n\n" "$FEATURE" "$(date '+%Y-%m-%d')" > "$FF_FILE"
+  for entry in "ALICE|FLAG DEFINITION|Flag name (snake_case), type (boolean/variant/kill-switch), default value, owner, expiry date." "PRISM|ROLLOUT STAGES|Internal → 1% → 10% → 50% → 100% GA. Metric to check before advancing. Minimum soak time per stage." "CIPHER|KILL SWITCH PLAN|Exact steps to turn it off in production right now. Who can flip it. How long rollback takes." "OCTAVIA|INSTRUMENTATION|Events to fire when flag is checked, each variant is served, and when it converts." "SHELLFISH|CONSISTENCY EDGE CASES|What breaks if flag is on for some users and off for others simultaneously? Cache, state, DB conflicts."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing a feature flag for: \"${FEATURE}\"
+Section: ${section}
+${lens}
+Real naming conventions, real tools (LaunchDarkly/Unleash/Flipt), real rollout percentages.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$FF_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $FF_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
