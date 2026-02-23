@@ -2419,6 +2419,176 @@ print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
   exit 0
 fi
 
+# ── PING — health check: Ollama up? latency? models? ─────────
+if [[ "$1" == "ping" || "$1" == "status" && "$0" == *carpool* ]]; then
+  echo -e "\n${WHITE}📡 CarPool Ping${NC}\n"
+  _start=$(date +%s%N 2>/dev/null || python3 -c "import time; print(int(time.time()*1000))")
+  _tags=$(curl -s -m 5 http://localhost:11434/api/tags 2>/dev/null)
+  _end=$(date +%s%N 2>/dev/null || python3 -c "import time; print(int(time.time()*1000))")
+  if [[ -z "$_tags" ]]; then
+    echo -e "  ${RED}✗ Ollama${NC}  not reachable at localhost:11434"
+    echo -e "  ${DIM}Tip: check SSH tunnel → ssh -L 11434:localhost:11434 <host>${NC}"
+  else
+    _ms=$(( (_end - _start) / 1000000 ))
+    [[ $_ms -le 0 ]] && _ms="<5"
+    echo -e "  ${GREEN}✓ Ollama${NC}  localhost:11434  ${DIM}${_ms}ms${NC}"
+    echo -e "\n  ${CYAN}Models available:${NC}"
+    echo "$_tags" | python3 -c "
+import sys,json
+try:
+  d=json.load(sys.stdin)
+  models=d.get('models',[])
+  for m in models:
+    name=m.get('name','?')
+    size=m.get('size',0)
+    gb=round(size/1e9,1) if size else '?'
+    print(f'    • {name}  ({gb}GB)')
+  if not models:
+    print('    (none pulled yet)')
+except: print('    (could not parse)')
+" 2>/dev/null
+  fi
+  echo -e "\n  ${CYAN}Save dir:${NC}  ${SAVE_DIR}"
+  echo -e "  ${CYAN}Sessions:${NC}  $(ls "$SAVE_DIR" 2>/dev/null | wc -l | tr -d ' ') saved"
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  _mlines=$(wc -l < "$MEMORY_FILE" 2>/dev/null || echo 0)
+  echo -e "  ${CYAN}Memory:${NC}    ${_mlines} lines"
+  THEME_FILE="$HOME/.blackroad/carpool/theme.txt"
+  [[ -f "$THEME_FILE" ]] && echo -e "  ${CYAN}Theme:${NC}     $(head -1 "$THEME_FILE")"
+  echo ""
+  exit 0
+fi
+
+# ── PROMPT — agents write AI prompts for a task (meta!) ──────
+if [[ "$1" == "prompt" ]]; then
+  _task="${*:2}"
+  [[ -z "$_task" ]] && echo -e "${RED}Usage: br carpool prompt <task description>${NC}" && exit 1
+  echo -e "\n${WHITE}✍️  Prompt Forge${NC}  ${DIM}${_task}${NC}\n"
+  PR_AGENTS=(LUCIDIA OCTAVIA CIPHER ARIA)
+  PR_STYLE=("philosophical / first-principles" "technical / step-by-step" "adversarial / red-team" "user-centric / UX")
+  for i in 0 1 2 3; do
+    _pa="${PR_AGENTS[$i]}"
+    _ps="${PR_STYLE[$i]}"
+    agent_meta "$_pa"
+    _pc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,style,task=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Write an effective AI prompt for this task.
+Style: {style}
+Task: \"{task}\"
+Output ONLY the prompt itself — no explanation, no wrapper, no quotes.
+The prompt should be immediately usable in an AI chat window.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':150,'temperature':0.75,'stop':['---','Note:']}}))" \
+    "$_pa" "$ROLE" "$_ps" "$_task" 2>/dev/null)
+    echo -ne "${_pc}${EMOJI} ${_pa}${NC}  ${DIM}${_ps}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_pc}${EMOJI} ${_pa}${NC}  ${DIM}${_ps}${NC}"
+    echo -e "${_resp}\n"
+  done
+  exit 0
+fi
+
+# ── INTERVIEW — mock interview, agents take turns asking you ──
+if [[ "$1" == "interview" ]]; then
+  _role="${*:2:-}"
+  [[ -z "$_role" ]] && _role="software engineer"
+  echo -e "\n${WHITE}🎙 Mock Interview${NC}  ${DIM}${_role}${NC}"
+  echo -e "${DIM}Agents will ask you 5 questions. Type your answer after each. 'skip' to pass.${NC}\n"
+  INT_AGENTS=(LUCIDIA OCTAVIA CIPHER PRISM SHELLFISH)
+  INT_TYPE=("system design" "execution & delivery" "security thinking" "analytical depth" "edge cases & failure modes")
+  for i in 0 1 2 3 4; do
+    _ia="${INT_AGENTS[$i]}"
+    _it="${INT_TYPE[$i]}"
+    agent_meta "$_ia"
+    _ic="\033[${COLOR_CODE}m"
+    _qpayload=$(python3 -c "
+import json,sys
+agent,role_type,job=sys.argv[1],sys.argv[2],sys.argv[3]
+prompt=f'You are a senior interviewer. Ask ONE tough {role_type} interview question for a {job} candidate. Question only, no intro, end with ?'
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':60,'temperature':0.8,'stop':['\n\n']}}))" "$_ia" "$_it" "$_role" 2>/dev/null)
+    echo -ne "${_ic}${EMOJI} ${_ia}${NC}  ${DIM}${_it}...${NC}"
+    _q=$(curl -s -m 30 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_qpayload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_ic}${EMOJI} ${_ia} [${_it}]:${NC} ${_q}\n"
+    echo -ne "${CYAN}You: ${NC}"; read -r _ans
+    [[ "$_ans" == "skip" || "$_ans" == "q" ]] && { echo ""; continue; }
+    # Brief feedback
+    _fbpayload=$(python3 -c "
+import json,sys
+q,a=sys.argv[1],sys.argv[2]
+prompt=f'Question: {q}\nAnswer: {a}\nGive ONE sentence of feedback (strength + one improvement). Be direct.'
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':60,'temperature':0.5,'stop':['\n\n']}}))" "$_q" "$_ans" 2>/dev/null)
+    _fb=$(curl -s -m 30 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_fbpayload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    echo -e "${DIM}→ ${_fb}${NC}\n"
+  done
+  echo -e "${WHITE}Interview complete.${NC}"
+  exit 0
+fi
+
+# ── SPRINT — break a goal into a sprint backlog ──────────────
+if [[ "$1" == "sprint" ]]; then
+  _goal="${*:2}"
+  [[ -z "$_goal" ]] && echo -e "${RED}Usage: br carpool sprint <goal>${NC}" && exit 1
+  SPRINT_FILE="$HOME/.blackroad/carpool/sprints.md"
+  echo -e "\n${WHITE}🏃 Sprint Planner${NC}  ${DIM}${_goal}${NC}\n"
+  _payload=$(python3 -c "
+import json,sys
+goal=sys.argv[1]
+prompt=f'''You are a senior engineering lead. Break this goal into a 2-week sprint backlog.
+
+Goal: \"{goal}\"
+
+Format:
+EPIC: <one line epic name>
+
+STORIES:
+- [ ] <user story> (S/M/L)
+- [ ] <user story> (S/M/L)
+... (5-7 stories total)
+
+DEFINITION OF DONE:
+- <criterion>
+- <criterion>
+- <criterion>
+
+Be specific. S=half day, M=1-2 days, L=3+ days.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':250,'temperature':0.4,'stop':['---','Note:']}}))" \
+  "$_goal" 2>/dev/null)
+  _backlog=$(curl -s -m 60 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  echo "$_backlog"
+  echo ""
+  # Risk pass — CIPHER weighs in
+  agent_meta "CIPHER"
+  _riskpayload=$(python3 -c "
+import json,sys
+goal,backlog=sys.argv[1],sys.argv[2]
+prompt=f'You are CIPHER, security agent. In 2 bullets: what are the top 2 risks in this sprint backlog?\nGoal: {goal}\nBacklog: {backlog}'
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':80,'temperature':0.5,'stop':['---']}}))" "$_goal" "$_backlog" 2>/dev/null)
+  _risk=$(curl -s -m 30 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_riskpayload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  echo -e "🔒 ${DIM}CIPHER risk flags:${NC}\n${_risk}\n"
+  # Save
+  { echo ""; echo "## $(date '+%Y-%m-%d') — ${_goal}"; echo ""; echo "$_backlog"; echo ""; } >> "$SPRINT_FILE"
+  echo -e "${DIM}Saved → ${SPRINT_FILE}${NC}"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
