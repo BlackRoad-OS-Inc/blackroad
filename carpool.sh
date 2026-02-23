@@ -7636,6 +7636,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "retention" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("Growth" "Product" "Data" "Support" "Marketing")
+  QUESTIONS=(
+    "What are the top 3 reasons users leave $PRODUCT?"
+    "Which retention levers (notifications, emails, in-app nudges) work best for $PRODUCT?"
+    "What does a healthy retention curve look like for $PRODUCT and how do we achieve it?"
+    "Design a win-back campaign for churned $PRODUCT users."
+    "What product changes would most improve 30/60/90-day retention for $PRODUCT?"
+  )
+  echo ""
+  echo "🔁 CARPOOL: USER RETENTION — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = '''You are the $agent expert. Answer concisely (3-5 sentences): ''' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Retention strategy roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "observability-stack" ]]; then
+  SERVICE="${2:-our platform}"
+  AGENTS=("Infra" "SRE" "Backend" "Security" "DevEx")
+  QUESTIONS=(
+    "What metrics matter most for observing $SERVICE in production?"
+    "Design a logging strategy for $SERVICE: structured logs, levels, and retention."
+    "How should we implement distributed tracing for $SERVICE?"
+    "What alerting rules and on-call runbooks does $SERVICE need?"
+    "Which observability tools (Prometheus, Grafana, Datadog, OpenTelemetry) fit $SERVICE best and why?"
+  )
+  echo ""
+  echo "🔭 CARPOOL: OBSERVABILITY STACK — $SERVICE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = '''You are the $agent expert. Answer concisely (3-5 sentences): ''' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Observability stack design complete."
+  exit 0
+fi
+
+if [[ "$1" == "founder-mode" ]]; then
+  COMPANY="${2:-our startup}"
+  AGENTS=("CEO" "Operator" "Advisor" "Investor" "Builder")
+  QUESTIONS=(
+    "When should the founder of $COMPANY stay in founder mode vs. delegate to managers?"
+    "What are the biggest traps founders fall into when they stop being hands-on at $COMPANY?"
+    "How does a founder maintain product intuition as $COMPANY scales past 50 people?"
+    "What weekly rituals keep a founder close to the work without micromanaging at $COMPANY?"
+    "What is the right balance between vision and execution for the founder of $COMPANY?"
+  )
+  echo ""
+  echo "🧭 CARPOOL: FOUNDER MODE — $COMPANY"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = '''You are the $agent expert. Answer concisely (3-5 sentences): ''' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Founder mode strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "data-pipeline" ]]; then
+  PIPELINE="${2:-our data pipeline}"
+  AGENTS=("Data Eng" "Analytics" "Backend" "ML" "Infra")
+  QUESTIONS=(
+    "What sources feed $PIPELINE and how should ingestion be structured?"
+    "ETL vs ELT — which approach fits $PIPELINE and why?"
+    "How should $PIPELINE handle schema changes and late-arriving data?"
+    "What monitoring and data quality checks are essential for $PIPELINE?"
+    "Which tools (Airflow, dbt, Spark, Kafka, Flink) are right for $PIPELINE?"
+  )
+  echo ""
+  echo "🔄 CARPOOL: DATA PIPELINE — $PIPELINE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = '''You are the $agent expert. Answer concisely (3-5 sentences): ''' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Data pipeline design complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
