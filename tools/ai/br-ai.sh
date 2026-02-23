@@ -9,13 +9,13 @@ YELLOW=$'\033[1;33m'; BOLD=$'\033[1m'; DIM=$'\033[2m'; NC=$'\033[0m'
 OLLAMA_URL="${OLLAMA_URL:-http://localhost:11434}"
 DEFAULT_MODEL="${BR_AI_MODEL:-}"
 
-# Pick best available model
+# Pick best available model (prefer fast/small)
 pick_model() {
   if [[ -n "$DEFAULT_MODEL" ]]; then echo "$DEFAULT_MODEL"; return; fi
   local models
-  models=$(curl -sf "${OLLAMA_URL}/api/tags" | python3 -c \
+  models=$(curl -sf --max-time 3 "${OLLAMA_URL}/api/tags" | python3 -c \
     "import json,sys; ms=[m['name'] for m in json.load(sys.stdin).get('models',[])]; print('\n'.join(ms))" 2>/dev/null)
-  for preferred in "lucidia:latest" "llama3.2" "qwen2.5" "tinyllama"; do
+  for preferred in "tinyllama:latest" "llama3.2:1b" "qwen2.5:1.5b" "qwen2.5" "lucidia:latest" "llama3.2"; do
     echo "$models" | grep -q "^${preferred}" && { echo "$preferred"; return; }
   done
   echo "$models" | head -1
@@ -25,24 +25,20 @@ pick_model() {
 ollama_ask() {
   local model="$1" prompt="$2" system="${3:-}"
   local payload
-  if [[ -n "$system" ]]; then
-    payload=$(python3 -c "import json; print(json.dumps({'model':'$model','prompt':$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$prompt"),'system':$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$system"),'stream':True}))")
-  else
-    payload=$(python3 -c "import json,sys; print(json.dumps({'model':'$model','prompt':sys.argv[1],'stream':True}))" "$prompt")
-  fi
+  payload=$(python3 -c "
+import json, sys
+model = sys.argv[1]
+prompt = sys.argv[2]
+system = sys.argv[3]
+d = {'model': model, 'prompt': prompt, 'stream': False, 'options': {'num_predict': 512}}
+if system: d['system'] = system
+print(json.dumps(d))
+" "$model" "$prompt" "$system")
 
-  curl -sf -X POST "${OLLAMA_URL}/api/generate" \
+  curl -sf --max-time 120 -X POST "${OLLAMA_URL}/api/generate" \
     -H "Content-Type: application/json" \
     -d "$payload" \
-  | python3 -c "
-import json,sys
-for line in sys.stdin:
-    try:
-        d = json.loads(line)
-        if d.get('response'): print(d['response'], end='', flush=True)
-    except: pass
-print()
-"
+  | python3 -c "import json,sys; print(json.load(sys.stdin).get('response',''))"
 }
 
 header() {
