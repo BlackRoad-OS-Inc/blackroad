@@ -294,7 +294,7 @@ while true; do
     # Wait for key (1.5s timeout for metric refresh)
     if read -t 1.5 -n 1 key 2>/dev/null; then
         case "$key" in
-            c) tput cnorm 2>/dev/null; "${SCRIPT_DIR}/chat.sh"; tput civis 2>/dev/null ;;
+            c) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/../tools/agent-router/br-agent.sh" chat; tput civis 2>/dev/null ;;
             s) tput cnorm 2>/dev/null; "${SCRIPT_DIR}/status.sh"; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             h) tput cnorm 2>/dev/null; zsh "${SCRIPT_DIR}/../tools/health-check/br-health.sh"; read -n 1 -p "  Press any key..."; tput civis 2>/dev/null ;;
             m) tput cnorm 2>/dev/null; "${SCRIPT_DIR}/monitor.sh"; tput civis 2>/dev/null ;;
