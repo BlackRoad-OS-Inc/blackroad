@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Activity,
   Globe,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWorkspaceStore } from '@/stores/workspace-store';
@@ -47,6 +48,11 @@ export default function Sidebar() {
       name: 'Worlds',
       href: '/worlds',
       icon: Globe,
+    },
+    {
+      name: 'Verify',
+      href: '/verify',
+      icon: ShieldCheck,
     },
     {
       name: 'Governance',

@@ -380,20 +380,101 @@ async function start() {
       }
 
       // ---------------------------------------------------------------
-      // Verify endpoint - proxy to verify.blackroad.io
+      // Verify endpoint - structured claim verification via agent system
       // ---------------------------------------------------------------
       if (req.method === 'POST' && req.url === '/v1/verify') {
+        const verifyStart = Date.now()
         try {
           const verBody = await readBody(req, 65536)
-          const vr = await fetch('https://verify.blackroad.io/verify/claim', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: verBody
+          let verPayload
+          try { verPayload = JSON.parse(verBody) } catch {
+            return send(400, { status: 'error', error: 'Invalid JSON' })
+          }
+
+          const { claim, sources = [], confidence_threshold = 0.7 } = verPayload
+          if (!claim || typeof claim !== 'string' || claim.trim().length === 0) {
+            return send(400, { status: 'error', error: 'claim is required' })
+          }
+
+          // Route security/credential claims to CIPHER (audit), all others to PRISM (analyze)
+          const isSecurityClaim = /password|secret|key|token|vulnerability|exploit|breach|hack/i.test(claim)
+          const agentName = isSecurityClaim ? 'cipher' : 'prism'
+          const intent = isSecurityClaim ? 'audit' : 'analyze'
+
+          const policy = await loadPolicy(config.policyPath)
+          const agentPolicy = policy.agents[agentName]
+          const providerName = pickProvider(null, agentPolicy, intent)
+          if (!providerName) {
+            return send(503, { status: 'error', error: 'No provider available for verification' })
+          }
+
+          const sourcesLine = sources.length > 0 ? `\nSources to cross-check: ${sources.join(', ')}` : ''
+          const verifyPrompt = `You are an information verification system. Analyze the following claim and respond ONLY with a single valid JSON object — no markdown fences, no surrounding text.
+
+Claim: "${claim.replace(/"/g, '\\"')}"${sourcesLine}
+Confidence threshold: ${confidence_threshold}
+
+Check for: numeric facts or statistics that may be hallucinated, dates and time references, proper nouns (people, places, organizations), logical consistency, and internal contradictions.
+
+Respond with ONLY this JSON shape:
+{"verdict":"true"|"false"|"unverified"|"conflicting","confidence":<0.0-1.0>,"reasoning":"<concise explanation>","flags":["<issue1>"]}`
+
+          const prompts = await loadJson(config.promptPath)
+          const systemPrompt = buildSystemPrompt(prompts, agentName, intent, {})
+          const verifyRequestId = `verify-${randomUUID()}`
+
+          const result = await invokeWithFallback(
+            providerName,
+            agentPolicy.fallback_chain || [],
+            {
+              input: verifyPrompt,
+              system: systemPrompt,
+              context: { task: 'verification' },
+              requestId: verifyRequestId,
+              agent: agentName,
+              intent
+            }
+          )
+
+          // Parse structured JSON from agent output
+          let verdict = 'unverified', confidence = 0.5, reasoning = result.output, flags = []
+          try {
+            const jsonMatch = result.output.match(/\{[\s\S]*\}/)
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0])
+              verdict = ['true', 'false', 'unverified', 'conflicting'].includes(parsed.verdict)
+                ? parsed.verdict : 'unverified'
+              confidence = typeof parsed.confidence === 'number'
+                ? Math.min(1, Math.max(0, parsed.confidence)) : 0.5
+              reasoning = typeof parsed.reasoning === 'string' ? parsed.reasoning : result.output
+              flags = Array.isArray(parsed.flags) ? parsed.flags : []
+            }
+          } catch { /* keep defaults */ }
+
+          // Log to PS-SHA∞ memory journal (non-blocking)
+          memory.record({
+            type: 'verify',
+            agent: agentName,
+            provider: result.provider,
+            intent,
+            verdict,
+            confidence,
+            sources_checked: sources.length,
+            duration_ms: Date.now() - verifyStart
+          }).catch(() => {})
+
+          return send(200, {
+            status: 'ok',
+            verdict,
+            confidence,
+            reasoning,
+            agent_used: agentName,
+            sources_checked: sources.length,
+            flags,
+            timestamp: new Date().toISOString()
           })
-          const vd = await vr.json()
-          return send(200, { status: 'ok', ...vd })
         } catch (e) {
-          return send(502, { status: 'error', error: 'verify service unavailable' })
+          return send(502, { status: 'error', error: e.message || 'verify failed' })
         }
       }
 
