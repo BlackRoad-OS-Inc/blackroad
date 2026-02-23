@@ -8756,6 +8756,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "accessibility" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("A11y" "Design" "Engineering" "Legal" "User")
+  QUESTIONS=(
+    "What WCAG level should $PRODUCT target and what does that require in practice?"
+    "What are the most common accessibility failures in $PRODUCT and how do we fix them?"
+    "How do we build accessibility into the $PRODUCT development workflow from day one?"
+    "What assistive technology testing should $PRODUCT do before each release?"
+    "What are the legal and business risks of ignoring accessibility for $PRODUCT?"
+  )
+  echo ""
+  echo "♿ CARPOOL: ACCESSIBILITY — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Accessibility strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "multi-cloud" ]]; then
+  SYSTEM="${2:-our infrastructure}"
+  AGENTS=("Infra" "Architect" "Security" "FinOps" "Engineering")
+  QUESTIONS=(
+    "Does $SYSTEM actually need multi-cloud or is it complexity for its own sake?"
+    "How do we design $SYSTEM to be portable across AWS, GCP, and Azure without abstraction hell?"
+    "What data residency and compliance requirements drive multi-cloud for $SYSTEM?"
+    "How do we manage identity, networking, and secrets across clouds in $SYSTEM?"
+    "What does the operational overhead of multi-cloud look like for $SYSTEM at our team size?"
+  )
+  echo ""
+  echo "☁️  CARPOOL: MULTI-CLOUD — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Multi-cloud strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "revenue-model" ]]; then
+  BUSINESS="${2:-our business}"
+  AGENTS=("Finance" "Product" "Sales" "Founder" "Investor")
+  QUESTIONS=(
+    "What revenue models are available to $BUSINESS and which fit the unit economics best?"
+    "How do we design $BUSINESS pricing to maximize both conversion and expansion revenue?"
+    "What does a healthy revenue mix look like for $BUSINESS — one-time, recurring, usage?"
+    "How do we model and improve net revenue retention for $BUSINESS?"
+    "What are the key revenue levers $BUSINESS should pull in the next 12 months?"
+  )
+  echo ""
+  echo "📈 CARPOOL: REVENUE MODEL — $BUSINESS"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Revenue model roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "team-topology" ]]; then
+  ORG="${2:-our engineering org}"
+  AGENTS=("Engineering" "CTO" "Architect" "PM" "HR")
+  QUESTIONS=(
+    "What team topology (stream-aligned, platform, enabling, complicated-subsystem) fits $ORG now?"
+    "How should $ORG minimize cognitive load on each team through clear ownership boundaries?"
+    "What interaction modes (collaboration, X-as-a-service, facilitating) should $ORG use between teams?"
+    "How do we reorganize $ORG from a monolith structure to fast flow without a big reorg?"
+    "How does $ORG know when it is time to split a team or spin up a new platform team?"
+  )
+  echo ""
+  echo "🏢 CARPOOL: TEAM TOPOLOGY — $ORG"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Team topology design complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
