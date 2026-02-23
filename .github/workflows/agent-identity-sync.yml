@@ -53,19 +53,9 @@ jobs:
           echo "📦 Repo:         $REPO"
           
           # Write identity file
-          cat > .agent-identity.json << AGENTEOF
-{
-  "branch": "$BRANCH",
-  "agent": "$AGENT",
-  "org_agent": "$ORG_AGENT",
-  "repo": "$REPO",
-  "org": "$ORG",
-  "assigned_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "gateway": "http://192.168.4.38:4010",
-  "model": "qwen2.5:3b",
-  "cost": "$0"
-}
-AGENTEOF
+          printf '{\n  "branch": "%s",\n  "agent": "%s",\n  "org_agent": "%s",\n  "repo": "%s",\n  "org": "%s",\n  "assigned_at": "%s",\n  "gateway": "http://192.168.4.38:4010",\n  "model": "qwen2.5:3b",\n  "cost": "$0"\n}\n' \
+            "$BRANCH" "$AGENT" "$ORG_AGENT" "$REPO" "$ORG" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            > .agent-identity.json
           echo "✅ Identity written to .agent-identity.json"
           cat .agent-identity.json
 
