@@ -7,23 +7,23 @@ BLUE='\033[0;34m'; PURPLE='\033[0;35m'; BOLD='\033[1m'; NC='\033[0m'
 # ── Model catalog ────────────────────────────────────────────────────────────
 # Format: model-name|provider|context|speed|cost|tags
 CATALOG=(
-  "gpt-4o|openai|128k|fast|$0.005/1k|coding,reasoning,vision,multimodal"
-  "gpt-4-turbo|openai|128k|medium|$0.01/1k|coding,reasoning,long-context"
-  "gpt-3.5-turbo|openai|16k|fast|$0.0005/1k|fast,chat,summarize"
-  "claude-3-5-sonnet|anthropic|200k|fast|$0.003/1k|coding,reasoning,long-context,analysis"
-  "claude-3-haiku|anthropic|200k|fastest|$0.00025/1k|fast,chat,summarize,cheap"
-  "deepseek-chat|deepseek|64k|fast|$0.0001/1k|chat,reasoning,cheap"
+  "gpt-4o|openai|128k|fast|\$0.005/1k|coding,reasoning,vision,multimodal"
+  "gpt-4-turbo|openai|128k|medium|\$0.01/1k|coding,reasoning,long-context"
+  "gpt-3.5-turbo|openai|16k|fast|\$0.0005/1k|fast,chat,summarize"
+  "claude-3-5-sonnet|anthropic|200k|fast|\$0.003/1k|coding,reasoning,long-context,analysis"
+  "claude-3-haiku|anthropic|200k|fastest|\$0.00025/1k|fast,chat,summarize,cheap"
+  "deepseek-chat|deepseek|64k|fast|\$0.0001/1k|chat,reasoning,cheap"
   "deepseek-coder|deepseek|64k|fast|code|coding,code-review,debugging"
   "llama-3.1-70b|groq|128k|ultra-fast|free|fast,coding,reasoning,free"
   "mixtral-8x7b|groq|32k|ultra-fast|free|fast,chat,free,efficient"
-  "mistral-large|mistral|128k|fast|$0.003/1k|coding,reasoning,multilingual"
-  "mistral-small|mistral|128k|fast|$0.001/1k|chat,fast,cheap"
+  "mistral-large|mistral|128k|fast|\$0.003/1k|coding,reasoning,multilingual"
+  "mistral-small|mistral|128k|fast|\$0.001/1k|chat,fast,cheap"
   "codestral|mistral|32k|fast|code|coding,code-review,fill-in-middle"
   "llama3.2:3b|ollama|128k|ultra-fast|local|local,fast,offline,free"
   "qwen2.5:7b|ollama|128k|fast|local|local,coding,reasoning,offline,free"
   "deepseek-r1:7b|ollama|64k|medium|local|local,reasoning,offline,free"
-  "gemini-1.5-pro|gemini|1000k|fast|$0.0035/1k|long-context,vision,multimodal,reasoning"
-  "gemini-1.5-flash|gemini|1000k|fastest|$0.00035/1k|fast,cheap,long-context,multimodal"
+  "gemini-1.5-pro|gemini|1000k|fast|\$0.0035/1k|long-context,vision,multimodal,reasoning"
+  "gemini-1.5-flash|gemini|1000k|fastest|\$0.00035/1k|fast,cheap,long-context,multimodal"
 )
 
 # ── Task → recommended models ────────────────────────────────────────────────
@@ -212,7 +212,6 @@ cmd_compare() {
   local -a cmp_labels=("Provider" "Context" "Speed" "Cost" "Tags")
   local ci
   for ci in {1..5}; do
-    local va vb
     va=$(get_field "$ea" "${cmp_fields[$ci]}")
     vb=$(get_field "$eb" "${cmp_fields[$ci]}")
     echo -e "  $(printf '%-14s' "${cmp_labels[$ci]}")  $(printf '%-26s' "$va")  ${vb}"
@@ -221,7 +220,7 @@ cmd_compare() {
 }
 
 cmd_recommend() {
-  local task="$1"
+  local task="$1" recs rank=1 model badge entry m provider ctx speed cost icon t
   if [[ -z "$task" ]]; then
     echo ""
     echo -e "${BOLD}${CYAN}Available task types:${NC}"
@@ -233,9 +232,8 @@ cmd_recommend() {
     echo ""
     return
   fi
-  local recs="${TASK_RECOMMENDATIONS[$task]}"
+  recs="${TASK_RECOMMENDATIONS[$task]}"
   if [[ -z "$recs" ]]; then
-    # Fuzzy: search task name in tags
     echo ""
     echo -e "${YELLOW}No exact match for \"${task}\" — searching tags...${NC}"
     cmd_search "$task"
@@ -246,16 +244,13 @@ cmd_recommend() {
   echo -e "${BOLD}${CYAN}║  Best models for: ${(U)task}${NC}"
   echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════════╝${NC}"
   echo ""
-  local rank=1
   for model in ${=recs}; do
-    local badge=""
+    badge=""
     [[ $rank -eq 1 ]] && badge="${GREEN}${BOLD} ★ TOP PICK${NC}"
     [[ $rank -eq 2 ]] && badge="${CYAN} ★ Runner-up${NC}"
     for entry in "${CATALOG[@]}"; do
-      local m
       m=$(get_field "$entry" 1)
       if [[ "$m" == "$model" ]]; then
-        local provider ctx speed cost icon
         provider=$(get_field "$entry" 2)
         ctx=$(get_field "$entry" 3)
         speed=$(get_field "$entry" 4)

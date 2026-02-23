@@ -20,6 +20,7 @@ show_help() {
   echo "  ${GREEN}stats${NC}         Full stats from worlds.blackroad.io"
   echo "  ${GREEN}push${NC}          Manually push worlds to GitHub"
   echo "  ${GREEN}types${NC}         Show world type distribution"
+  echo "  ${GREEN}watch${NC}         Live terminal feed of new worlds (Ctrl-C to stop)"
 }
 
 cmd_count() {
@@ -97,5 +98,6 @@ case "${1:-count}" in
   stats)   cmd_stats ;;
   push)    cmd_push ;;
   types)   cmd_types ;;
+  watch)   exec "$(dirname "$0")/br-worlds-watch.sh" "${@:2}" ;;
   *)       show_help ;;
 esac
