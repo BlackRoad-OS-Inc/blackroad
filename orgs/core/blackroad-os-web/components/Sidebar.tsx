@@ -13,6 +13,8 @@ import {
   Activity,
   Globe,
   ShieldCheck,
+  Sparkles,
+  Cpu,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWorkspaceStore } from '@/stores/workspace-store';
@@ -24,46 +26,15 @@ export default function Sidebar() {
   const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
 
   const navigation = [
-    {
-      name: 'Dashboard',
-      href: '/workspace',
-      icon: LayoutDashboard,
-    },
-    {
-      name: 'Conversations',
-      href: '/conversations',
-      icon: MessageSquare,
-    },
-    {
-      name: 'Agents',
-      href: '/agents',
-      icon: Bot,
-    },
-    {
-      name: 'Monitoring',
-      href: '/monitoring',
-      icon: Activity,
-    },
-    {
-      name: 'Worlds',
-      href: '/worlds',
-      icon: Globe,
-    },
-    {
-      name: 'Verify',
-      href: '/verify',
-      icon: ShieldCheck,
-    },
-    {
-      name: 'Governance',
-      href: '/governance',
-      icon: Shield,
-    },
-    {
-      name: 'Settings',
-      href: '/settings',
-      icon: Settings,
-    },
+    { name: 'Dashboard',      href: '/workspace',     icon: LayoutDashboard },
+    { name: 'Conversations',  href: '/conversations',  icon: MessageSquare },
+    { name: 'Agents',         href: '/agents',         icon: Bot },
+    { name: 'Monitoring',     href: '/monitoring',     icon: Activity },
+    { name: 'Worlds',         href: '/worlds',         icon: Globe },
+    { name: 'Verify',         href: '/verify',         icon: ShieldCheck },
+    { name: 'Governance',     href: '/governance',     icon: Shield },
+    { name: 'Onboarding',     href: '/onboarding',     icon: Sparkles },
+    { name: 'Settings',       href: '/settings',       icon: Settings },
   ];
 
   return (
@@ -124,8 +95,16 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User footer */}
-      <div className="border-t border-white/10 p-4">
+      {/* Agent fleet stats footer */}
+      <div className="px-4 py-3 border-t border-white/10">
+        <div className="flex items-center gap-2 px-2 py-2 rounded-lg bg-white/5 mb-2">
+          <Cpu className="h-4 w-4 text-[#2979FF] flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-white">30,000 agents</p>
+            <p className="text-[10px] text-gray-500 truncate">aria64 · blackroad-pi · alice</p>
+          </div>
+          <div className="ml-auto w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+        </div>
         <button
           onClick={logout}
           className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all"
