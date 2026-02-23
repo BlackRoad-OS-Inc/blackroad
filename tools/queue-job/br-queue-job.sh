@@ -86,16 +86,16 @@ cmd_push() {
 }
 
 cmd_list() {
-  local queue="${1:-}" status="${2:-}"
+  local queue="${1:-}" jstatus="${2:-}"
   echo -e "\n${BOLD}${CYAN}📋 Job Queue${NC}\n"
-  python3 - "$QUEUE_DB" "${queue:-}" "${status:-}" <<'PY'
+  python3 - "$QUEUE_DB" "${queue:-}" "${jstatus:-}" <<'PY'
 import sqlite3, sys, time
-db, queue, status = sys.argv[1], sys.argv[2], sys.argv[3]
+db, queue, jstatus = sys.argv[1], sys.argv[2], sys.argv[3]
 conn = sqlite3.connect(db)
 q = "SELECT id, queue, command, status, priority, attempts, created_at, done_at FROM jobs"
 conds = []
-if queue:  conds.append(f"queue='{queue}'")
-if status: conds.append(f"status='{status}'")
+if queue:   conds.append(f"queue='{queue}'")
+if jstatus: conds.append(f"status='{jstatus}'")
 if conds: q += " WHERE " + " AND ".join(conds)
 q += " ORDER BY status, priority DESC, scheduled_at LIMIT 50"
 rows = conn.execute(q).fetchall()

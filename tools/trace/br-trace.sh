@@ -170,13 +170,13 @@ cmd_bench() {
   echo -e "${CYAN}▶ Running:${NC} $cmd"
   eval "$cmd"
   local exit_code=$?
-  local status="ok"; [[ $exit_code -ne 0 ]] && status="error:$exit_code"
+  local job_status="ok"; [[ $exit_code -ne 0 ]] && job_status="error:$exit_code"
 
   local end_ms duration
   end_ms=$(python3 -c "import time; print(int(time.time()*1000))")
   duration=$((end_ms - start_ms))
 
-  cmd_end "$combined" "$status" 2>/dev/null
+  cmd_end "$combined" "$job_status" 2>/dev/null
   echo -e "\n${BLUE}⏱${NC}  ${BOLD}${duration}ms${NC}  exit=$exit_code"
   echo -e "   trace: ${PURPLE}$trace_id${NC}"
 }
