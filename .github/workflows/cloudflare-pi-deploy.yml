@@ -35,13 +35,14 @@ jobs:
           
           # Find all wrangler.toml files and deploy
           DEPLOYED=0
-          for toml in $(find . -name "wrangler.toml" -not -path "*/node_modules/*" 2>/dev/null | head -10); do
+          ROOT="$GITHUB_WORKSPACE"
+          for toml in $(find "$ROOT" -name "wrangler.toml" -not -path "*/node_modules/*" -not -path "*/.git/*" 2>/dev/null | head -20); do
             DIR=$(dirname "$toml")
             NAME=$(grep "^name" "$toml" | head -1 | cut -d'"' -f2)
             echo "  Deploying: $NAME from $DIR"
             cd "$DIR"
             wrangler deploy --config wrangler.toml 2>&1 | tail -2 || echo "  ⚠️ $NAME deploy skipped"
-            cd /home/blackroad/blackroad
+            cd "$ROOT"
             DEPLOYED=$((DEPLOYED+1))
           done
           echo "✅ Deployed $DEPLOYED workers"

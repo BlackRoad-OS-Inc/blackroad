@@ -1,0 +1,36 @@
+name = "blackroad-smart-router"
+main = "src/workers/smart-router.ts"
+compatibility_date = "2024-12-01"
+account_id = "848cf0b18d51e0170e0d1537aec3505a"
+
+[triggers]
+crons = ["*/5 * * * *"]  # Health check every 5 minutes
+
+[vars]
+# Tier 1 — Pi fleet via Cloudflare Tunnel (primary)
+PI_TUNNEL_URL    = "https://api.blackroad.io"
+# Tier 2 — DigitalOcean hot standby
+DO_ORIGIN        = "http://159.65.43.12"
+# Tier 3 — Cloudflare Pages static fallback
+CF_PAGES_URL     = "https://blackroad-os.pages.dev"
+# Tier 4 — GitHub Pages cold standby
+GH_PAGES_URL     = "https://blackroad-os.github.io"
+# Tier 5 — Railway last resort
+RAILWAY_URL      = "https://blackroad.up.railway.app"
+
+# Routes — all blackroad.io and blackroad.ai subdomains
+[[routes]]
+pattern = "blackroad.io/*"
+zone_name = "blackroad.io"
+
+[[routes]]
+pattern = "*.blackroad.io/*"
+zone_name = "blackroad.io"
+
+[[routes]]
+pattern = "blackroad.ai/*"
+zone_name = "blackroad.ai"
+
+[[routes]]
+pattern = "*.blackroad.ai/*"
+zone_name = "blackroad.ai"
