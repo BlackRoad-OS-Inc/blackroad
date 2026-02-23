@@ -233,7 +233,7 @@ cmd_scan() {
   for i in {1..254}; do
     local ip="${SCAN_SUBNET}.${i}"
     if [[ -z "${KNOWN_HOSTS[$ip]}" ]]; then
-      ping -c1 -W1 "$ip" &>/dev/null && alive+=("$ip") &
+      ping -c1 -W1 "$ip" &>/dev/null && alive+=("$ip")
     fi
   done
   wait
