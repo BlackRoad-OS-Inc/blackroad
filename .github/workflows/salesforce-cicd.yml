@@ -57,7 +57,7 @@ jobs:
       run:
         working-directory: blackroad-sf
     env:
-      SFDX_AUTH_URL: ${{ secrets.SF_AUTH_URL_SANDBOX }}
+      SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -68,7 +68,7 @@ jobs:
 
       - name: Authenticate
         run: |
-          echo "${{ secrets.SF_AUTH_URL_SANDBOX }}" > /tmp/sf-auth.txt
+          echo "${{ secrets.SFDX_AUTH_URL }}" > /tmp/sf-auth.txt
           sf org login sfdx-url --sfdx-url-file /tmp/sf-auth.txt --alias ci-sandbox --set-default
           rm /tmp/sf-auth.txt
 
@@ -100,7 +100,7 @@ jobs:
       - name: Authenticate & Deploy
         run: |
           cd blackroad-sf
-          echo "${{ secrets.SF_AUTH_URL_SANDBOX }}" > /tmp/sf-auth.txt
+          echo "${{ secrets.SFDX_AUTH_URL }}" > /tmp/sf-auth.txt
           sf org login sfdx-url --sfdx-url-file /tmp/sf-auth.txt --alias sandbox --set-default
           rm /tmp/sf-auth.txt
           sf project deploy start \
@@ -122,7 +122,7 @@ jobs:
       - name: Authenticate & Deploy
         run: |
           cd blackroad-sf
-          echo "${{ secrets.SF_AUTH_URL_PRODUCTION }}" > /tmp/sf-auth.txt
+          echo "${{ secrets.SFDX_AUTH_URL }}" > /tmp/sf-auth.txt
           sf org login sfdx-url --sfdx-url-file /tmp/sf-auth.txt --alias production --set-default
           rm /tmp/sf-auth.txt
           sf project deploy start \
