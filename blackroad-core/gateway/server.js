@@ -339,6 +339,19 @@ async function start() {
       }
 
       // ---------------------------------------------------------------
+      // Worlds stats proxy endpoint
+      // ---------------------------------------------------------------
+      if (req.method === 'GET' && req.url === '/v1/worlds') {
+        try {
+          const res = await fetch('https://worlds.blackroad.io/stats')
+          const data = await res.json()
+          return send(200, { status: 'ok', worlds: data })
+        } catch (e) {
+          return send(502, { status: 'error', error: 'worlds feed unavailable' })
+        }
+      }
+
+      // ---------------------------------------------------------------
       // Main agent endpoint
       // ---------------------------------------------------------------
       if (req.method !== 'POST' || req.url !== '/v1/agent') {
@@ -502,6 +515,7 @@ async function start() {
     console.log(`BlackRoad Gateway v2 listening on ${config.bind}:${config.port}`)
     console.log(`  Endpoints:`)
     console.log(`    POST /v1/agent   - Agent invocation`)
+    console.log(`    GET  /v1/worlds  - World artifact stats`)
     console.log(`    GET  /v1/agents  - Agent roster`)
     console.log(`    GET  /healthz    - Health check`)
     console.log(`    GET  /metrics    - Gateway metrics`)
