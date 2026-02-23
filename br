@@ -152,6 +152,11 @@ BR_TOOLS=(
     who         "${BR_TOOLS_DIR}/whoami/br-whoami.sh"
     bcast       "${BR_TOOLS_DIR}/broadcast/br-broadcast.sh"
     docs        "${BR_TOOLS_DIR}/docs/br-docs.sh"
+    git-ai      "${BR_TOOLS_DIR}/git-ai/br-git-ai.sh"
+    gai         "${BR_TOOLS_DIR}/git-ai/br-git-ai.sh"
+    review      "${BR_TOOLS_DIR}/review/br-review.sh"
+    status-all  "${BR_TOOLS_DIR}/status-all/br-status-all.sh"
+    sa          "${BR_TOOLS_DIR}/status-all/br-status-all.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -574,6 +579,18 @@ show_help() {
     echo "║    br docs push <file>      - Push file to blackroad-docs repo   ║"
     echo "║    br docs push all         - Push all .md files                 ║"
     echo "║    br docs readme           - Push README + AGENTS + CLAUDE      ║"
+    echo "║                                                                   ║"
+    echo "║  AI TOOLS (🤖 Git-AI / Review / Status):                        ║"
+    echo "║    br git-ai commit         - AI-generated commit message        ║"
+    echo "║    br git-ai suggest        - Suggest commit msg (no commit)     ║"
+    echo "║    br git-ai pr [base]      - Generate PR description            ║"
+    echo "║    br git-ai diff [ref]     - Summarize a commit diff            ║"
+    echo "║    br review diff           - AI code review of staged diff      ║"
+    echo "║    br review file <path>    - AI review of a specific file       ║"
+    echo "║    br review security       - Security-focused scan              ║"
+    echo "║    br status-all            - Full system health snapshot        ║"
+    echo "║    br status-all quick      - One-line system summary            ║"
+    echo "║    br status-all watch [N]  - Live refresh every N seconds       ║"
     echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
@@ -1000,6 +1017,10 @@ main() {
         ssh)
             # br ssh <node> — jump to any fleet node by name
             zsh "${BR_TOOLS_DIR}/nodes/br-nodes.sh" ssh "$@"
+            ;;
+        email|emails|mail)
+            # br mail — agent email at @blackroad.io
+            zsh "${BR_TOOLS_DIR}/mail/br-mail.sh" "$@"
             ;;
         stream|events)
             # br stream — live SSE event feed from gateway
