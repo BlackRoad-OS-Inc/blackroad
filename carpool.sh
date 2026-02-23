@@ -10626,6 +10626,296 @@ PYEOF
   echo "✅ Documentation system roundtable complete."; exit 0
 fi
 
+if [[ "$1" == "platform-eng" ]]; then
+  TOPIC="platform engineering"
+  QUESTION="How do you build an internal developer platform (IDP)? Cover golden paths, paved roads vs guardrails, self-service infrastructure, platform-as-a-product mindset, measuring platform adoption and developer toil reduction, Backstage service catalogs, and avoiding platform teams becoming bottlenecks."
+  AGENTS=("Platform Engineer" "Developer Experience Lead" "Engineering Manager" "Staff Engineer" "SRE")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🏗️  CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/platform-eng-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "Platform Engineering Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Platform engineering roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "data-mesh" ]]; then
+  TOPIC="data mesh architecture"
+  QUESTION="What is data mesh and when should you adopt it? Cover decentralized data ownership, data products as first-class citizens, federated computational governance, self-serve data infrastructure, domain-oriented data teams, and the organizational changes required to succeed with data mesh at scale."
+  AGENTS=("Data Architect" "Data Platform Lead" "Domain Team Lead" "Chief Data Officer" "Staff Engineer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🕸️  CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/data-mesh-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "Data Mesh Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Data mesh roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "ai-infra" ]]; then
+  TOPIC="AI infrastructure"
+  QUESTION="How do you build infrastructure for training and serving AI models at scale? Cover GPU cluster design and scheduling (SLURM, Ray, Kubernetes), model parallelism strategies, inference optimization (quantization, speculative decoding, batching), model registry, and cost management for GPU workloads."
+  AGENTS=("AI Infrastructure Engineer" "ML Platform Lead" "GPU Cluster Architect" "MLOps Engineer" "FinOps Specialist")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🧠 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/ai-infra-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "AI Infrastructure Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ AI infrastructure roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "search-arch" ]]; then
+  TOPIC="search architecture"
+  QUESTION="How do you design great search for a product? Cover inverted indexes, BM25 vs semantic search vs hybrid, relevance tuning and learning-to-rank, query understanding (synonyms, spell correction, intent), Elasticsearch vs OpenSearch vs Typesense trade-offs, personalization, and measuring search quality with NDCG."
+  AGENTS=("Search Engineer" "ML Engineer" "Product Manager" "Backend Architect" "Data Scientist")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🔍 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/search-arch-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "Search Architecture Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Search architecture roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "developer-portal" ]]; then
+  TOPIC="developer portals"
+  QUESTION="How do you build an effective developer portal? Cover service catalogs (Backstage, Cortex, Port), tech radar, runbook integration, API documentation surfacing, ownership mapping, team health metrics, onboarding workflows for new engineers, and getting teams to actually contribute and keep it up to date."
+  AGENTS=("Developer Experience Lead" "Platform Engineer" "Engineering Manager" "Staff Engineer" "Technical Writer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🚪 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/developer-portal-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "Developer Portal Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Developer portal roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "finops" ]]; then
+  TOPIC="FinOps and cloud cost optimization"
+  QUESTION="How do you manage and optimize cloud spend without slowing down engineering? Cover FinOps culture and team structure, tagging strategies for cost attribution, reserved instances vs savings plans vs spot, rightsizing, idle resource detection, showback vs chargeback, unit economics (cost per transaction), and building cost awareness into the engineering culture."
+  AGENTS=("FinOps Lead" "Cloud Architect" "Engineering Manager" "SRE" "CFO")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "💸 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/finops-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "FinOps Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ FinOps roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "incident-command" ]]; then
+  TOPIC="incident command and war rooms"
+  QUESTION="How do you run a high-stakes incident effectively? Cover incident commander role and responsibilities, communication cadence during an outage (internal and external), war room structure, avoiding hero culture, blameless post-mortems that actually drive change, SLO burn rate alerting, and building incident muscle memory through game days."
+  AGENTS=("Incident Commander" "SRE Lead" "Engineering Manager" "CTO" "Customer Success Lead")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🚨 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/incident-command-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "Incident Command Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Incident command roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "dep-management" ]]; then
+  TOPIC="dependency management"
+  QUESTION="How do you manage dependencies responsibly in a large codebase? Cover lockfile strategies, automated dependency updates (Dependabot, Renovate), supply chain security (SBOM, provenance, typosquatting), internal package registries, major version upgrade strategies, and dealing with dependency sprawl across a monorepo."
+  AGENTS=("Staff Engineer" "Security Engineer" "Platform Lead" "Open Source Maintainer" "DevOps Engineer")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📦 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/dep-management-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "Dependency Management Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Dependency management roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "tech-debt-strategy" ]]; then
+  TOPIC="technical debt strategy"
+  QUESTION="How do you measure, prioritize, and systematically pay down technical debt? Cover debt classification (intentional vs reckless, deliberate vs inadvertent), the strangler fig pattern for legacy rewrites, making debt visible to non-engineers, allocating 20% time vs dedicated debt sprints, when NOT to pay down debt, and avoiding the big rewrite trap."
+  AGENTS=("Staff Engineer" "Engineering Manager" "CTO" "Product Manager" "Architect")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🏦 CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/tech-debt-strategy-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "Technical Debt Strategy Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Technical debt strategy roundtable complete."; exit 0
+fi
+
+if [[ "$1" == "build-vs-buy" ]]; then
+  TOPIC="build vs buy decisions"
+  QUESTION="How do you make the build vs buy vs open-source decision for software components? Cover the hidden costs of building (maintenance, hiring, opportunity cost), vendor lock-in risks, TCO frameworks, evaluating open-source maturity, when to build for competitive differentiation vs commodity capabilities, and how to reverse a bad decision."
+  AGENTS=("CTO" "Engineering Manager" "Product Manager" "Staff Engineer" "Finance Lead")
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "⚖️  CarPool: $TOPIC"; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  OUT="$SAVE_DIR/build-vs-buy-$(date +%Y%m%d-%H%M%S).txt"
+  mkdir -p "$SAVE_DIR"
+  echo "Build vs Buy Roundtable — $(date)" > "$OUT"
+  for i in "${!AGENTS[@]}"; do
+    AGENT="${AGENTS[$i]}"
+    echo ""; echo "🤖 [$AGENT] thinking..."
+    REPLY=$(python3 - "$QUESTION" "$AGENT" <<'PYEOF'
+import sys, urllib.request, json, os
+q, agent = sys.argv[1], sys.argv[2]
+prompt = f"You are a {agent}. Answer concisely in 3-5 sentences: {q}"
+data = json.dumps({"model": os.environ.get("CARPOOL_MODEL","tinyllama"), "prompt": prompt, "stream": False}).encode()
+req = urllib.request.Request("http://localhost:11434/api/generate", data=data, headers={"Content-Type":"application/json"})
+res = urllib.request.urlopen(req, timeout=60)
+print(json.loads(res.read())["response"].strip())
+PYEOF
+)
+    echo ""; echo "[$AGENT]"; echo "$REPLY"
+    echo "" >> "$OUT"; echo "[$AGENT]" >> "$OUT"; echo "$REPLY" >> "$OUT"
+  done
+  echo ""; echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Build vs buy roundtable complete."; exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
