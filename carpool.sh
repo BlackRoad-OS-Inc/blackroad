@@ -3465,6 +3465,136 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── NAMING — brainstorm names for a product / feature / variable ──────
+if [[ "$1" == "naming" || "$1" == "names" ]]; then
+  shift
+  THING="$*"
+  [[ -z "$THING" ]] && echo "Usage: br carpool naming <thing to name>" && exit 1
+  echo ""
+  echo -e "\033[1;35m🏷️  NAMING SESSION: $THING\033[0m"
+  echo ""
+  for entry in "ARIA|BRAND NAMES|Memorable, catchy, marketable. Think product launch." "LUCIDIA|CONCEPTUAL|Names that capture the essence or philosophy." "OCTAVIA|TECHNICAL|Clear, precise names engineers would love. No fluff." "PRISM|DATA-DRIVEN|Names that test well: short, unique, googleable, .io available." "SHELLFISH|SUBVERSIVE|Unexpected names. Play on words, references, inside jokes."; do
+    IFS='|' read -r ag style lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${style}${NC}"
+    python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Brainstorm names for: \"${THING}\"
+Style: ${style} — ${lens}
+Give exactly 6 names.
+Format:
+1. <name> — <one-line rationale>
+2. ...
+No preamble.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  exit 0
+fi
+
+# ── SCOPE — agents define MVP vs full scope, what to cut ──────────────
+if [[ "$1" == "scope" ]]; then
+  shift
+  FEATURE="$*"
+  [[ -z "$FEATURE" ]] && echo "Usage: br carpool scope <feature or project>" && exit 1
+  echo ""
+  echo -e "\033[1;36m📐 SCOPE DEFINITION: $FEATURE\033[0m"
+  echo ""
+  SCOPE_FILE="$HOME/.blackroad/carpool/scopes/scope-$(date +%Y%m%d-%H%M).md"
+  mkdir -p "$HOME/.blackroad/carpool/scopes"
+  printf "# Scope: %s\nDate: %s\n\n" "$FEATURE" "$(date '+%Y-%m-%d')" > "$SCOPE_FILE"
+  for entry in "ALICE|MVP (ship this week)|The absolute minimum to deliver value. If you can cut it, cut it." "OCTAVIA|V1 (ship this month)|What makes this genuinely good. Core features, not polish." "ARIA|V2 (next quarter)|Nice-to-haves, delight features, UX polish, power user tools." "PRISM|METRICS TO TRACK|How will we know if this worked? 3-5 measurable success criteria." "CIPHER|WHAT TO SKIP FOREVER|Features that add complexity without enough value. Kill list."; do
+    IFS='|' read -r ag phase lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${phase}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} scoping: \"${FEATURE}\"
+Phase: ${phase}
+${lens}
+Give 4-6 specific items. Format: - <item>
+Be ruthlessly practical.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$phase" "$resp" >> "$SCOPE_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $SCOPE_FILE\033[0m"
+  exit 0
+fi
+
+# ── PERSONA — build a user persona with needs, pains, behaviors ───────
+if [[ "$1" == "persona" ]]; then
+  shift
+  USER_TYPE="$*"
+  USER_TYPE="${USER_TYPE:-developer}"
+  echo ""
+  echo -e "\033[1;32m👤 USER PERSONA: $USER_TYPE\033[0m"
+  echo ""
+  PERSONA_FILE="$HOME/.blackroad/carpool/personas/$(echo "$USER_TYPE" | tr ' ' '-').md"
+  mkdir -p "$HOME/.blackroad/carpool/personas"
+  printf "# Persona: %s\n\n" "$USER_TYPE" > "$PERSONA_FILE"
+  for entry in "ARIA|PROFILE|Name, job, age, tech comfort, daily tools. Make them feel real." "LUCIDIA|MOTIVATIONS|What drives them? Goals, aspirations, why they care about this problem." "PRISM|PAIN POINTS|Top 3 frustrations ranked by intensity. Quote format — their words." "ALICE|BEHAVIORS|How they actually work day-to-day. Workflows, shortcuts, workarounds." "OCTAVIA|TECHNICAL CONTEXT|Stack they use, infra they manage, tools they live in." "SHELLFISH|HIDDEN NEEDS|What they want but would never say in a user interview."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} building a user persona for: \"${USER_TYPE}\"
+Section: ${section}
+${lens}
+Be specific and vivid. 3-5 lines.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$PERSONA_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $PERSONA_FILE\033[0m"
+  exit 0
+fi
+
+# ── CHANGELOG — auto-generate a changelog from git log ────────────────
+if [[ "$1" == "changelog" ]]; then
+  shift
+  RANGE="${1:-HEAD~20..HEAD}"
+  echo ""
+  echo -e "\033[1;33m📋 CHANGELOG GENERATOR\033[0m"
+  echo -e "\033[0;36mRange: $RANGE\033[0m"
+  echo ""
+  GIT_LOG=$(git --no-pager log "$RANGE" --oneline --no-merges 2>/dev/null | head -40)
+  [[ -z "$GIT_LOG" ]] && GIT_LOG=$(git --no-pager log --oneline --no-merges -20 2>/dev/null)
+  [[ -z "$GIT_LOG" ]] && echo "No git history found." && exit 1
+  CHANGELOG_FILE="$HOME/.blackroad/carpool/changelogs/CHANGELOG-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/changelogs"
+  for entry in "ALICE|USER-FACING CHANGES|What changed for users? New features, removed friction, fixed bugs." "OCTAVIA|TECHNICAL CHANGES|Infrastructure, performance, architecture changes engineers care about." "CIPHER|SECURITY CHANGES|Any security fixes, auth changes, dependency updates worth highlighting." "ARIA|RELEASE NOTES (DRAFT)|A friendly, human-readable release summary. Emoji OK. Max 10 lines."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json, sys
+log = sys.argv[1]
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Analyze this git log and write the ${section} section of a changelog.
+${lens}
+Git log:
+{log}
+Format as clean markdown bullet points. Group by theme if possible.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" "$GIT_LOG" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$CHANGELOG_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $CHANGELOG_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
