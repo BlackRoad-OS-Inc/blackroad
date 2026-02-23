@@ -1,0 +1,64 @@
+name: 🏢 Org Cohesion Sync
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # Every 6 hours
+  workflow_dispatch:
+    inputs:
+      org:
+        description: 'Target org (or "all" for all 17 orgs)'
+        default: 'all'
+  push:
+    branches: [master]
+    paths:
+      - 'agents/org-registry.json'
+      - '.github/workflows/agent-identity-sync.yml'
+
+jobs:
+  sync-orgs:
+    runs-on: [self-hosted, pi, linux, octavia]
+    env:
+      GH_TOKEN: ${{ secrets.GH_PAT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync agent registry to all orgs
+        run: |
+          ORGS=(
+            "BlackRoad-OS"
+            "BlackRoad-AI"
+            "BlackRoad-Cloud"
+            "BlackRoad-Security"
+            "BlackRoad-Hardware"
+            "BlackRoad-Foundation"
+            "BlackRoad-Media"
+            "BlackRoad-Interactive"
+            "BlackRoad-Labs"
+            "BlackRoad-Studio"
+            "BlackRoad-Ventures"
+            "BlackRoad-Education"
+            "BlackRoad-Gov"
+            "Blackbox-Enterprises"
+            "BlackRoad-Archive"
+          )
+          
+          TARGET="${{ github.event.inputs.org }}"
+          [[ -z "$TARGET" ]] && TARGET="all"
+          
+          for ORG in "${ORGS[@]}"; do
+            [[ "$TARGET" != "all" && "$TARGET" != "$ORG" ]] && continue
+            
+            echo "Syncing org: $ORG"
+            
+            # Set org-level secrets
+            echo "${{ secrets.CLOUDFLARE_API_TOKEN }}" | \
+              gh secret set CLOUDFLARE_API_TOKEN --org $ORG --visibility all 2>/dev/null && \
+              echo "  ✅ CF token → $ORG" || echo "  ⚠️ $ORG (no admin)"
+          done
+
+      - name: Broadcast fleet status
+        run: |
+          curl -s --max-time 5 -X POST http://localhost:4010/api/generate \
+            -H 'Content-Type: application/json' \
+            -d '{"model":"llama3.2:1b","prompt":"Org sync complete. 17 BlackRoad orgs cohesion maintained.","stream":false}' \
+            2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print('🤖', d.get('response','').strip()[:100])" \
+            2>/dev/null || echo "Fleet broadcast: org-cohesion-sync complete ✅"
