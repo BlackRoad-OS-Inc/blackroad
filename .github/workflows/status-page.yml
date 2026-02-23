@@ -1,0 +1,113 @@
+name: Status Page Generator
+on:
+  schedule:
+    - cron: '*/20 * * * *'   # every 20 minutes
+  workflow_dispatch:
+
+jobs:
+  generate-status:
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather system status
+        id: status
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          DOMAINS=(blackroad.io blackroad.network blackroad.systems blackroad.me lucidia.earth)
+          PIES=(cecilia:192.168.4.89 octavia:192.168.4.38 aria:192.168.4.82 alice:192.168.4.49 anastasia:174.138.44.45)
+
+          # Check domains
+          DOMAIN_STATUS=""
+          for d in "${DOMAINS[@]}"; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 6 "https://$d" 2>/dev/null || echo "000")
+            STATUS=$([ "$CODE" = "200" ] || [ "$CODE" = "301" ] || [ "$CODE" = "302" ] && echo "operational" || echo "degraded")
+            DOMAIN_STATUS+="    {\"name\":\"$d\",\"status\":\"$STATUS\",\"code\":$CODE},"
+          done
+
+          # Check Pi fleet
+          PI_STATUS=""
+          for p in "${PIES[@]}"; do
+            NAME="${p%%:*}"; IP="${p##*:}"
+            if ping -c1 -W2 "$IP" &>/dev/null; then
+              PI_STATUS+="    {\"name\":\"$NAME\",\"ip\":\"$IP\",\"status\":\"online\"},"
+            else
+              PI_STATUS+="    {\"name\":\"$NAME\",\"ip\":\"$IP\",\"status\":\"offline\"},"
+            fi
+          done
+
+          # Write JSON status file
+          mkdir -p status
+          cat > status/status.json << EOF
+          {
+            "updated": "$TIMESTAMP",
+            "overall": "operational",
+            "domains": [
+          ${DOMAIN_STATUS%,}
+            ],
+            "fleet": [
+          ${PI_STATUS%,}
+            ],
+            "services": {
+              "github_actions": "operational",
+              "cloudflare_tunnel": "$(pgrep cloudflared &>/dev/null && echo operational || echo degraded)",
+              "nginx": "$(pgrep nginx &>/dev/null && echo operational || echo degraded)"
+            }
+          }
+          EOF
+
+          echo "✅ Status page generated at $TIMESTAMP"
+
+      - name: Generate HTML status page
+        run: |
+          python3 - << 'EOF'
+          import json, datetime
+
+          with open('status/status.json') as f:
+              s = json.load(f)
+
+          all_ok = all(d['status'] == 'operational' for d in s['domains'])
+          fleet_up = sum(1 for p in s['fleet'] if p['status'] == 'online')
+          overall = '🟢 All Systems Operational' if all_ok and fleet_up >= 4 else '🟡 Partial Degradation'
+
+          html = f"""<!DOCTYPE html>
+          <html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="60">
+          <title>BlackRoad OS Status</title>
+          <style>
+            body{{font-family:-apple-system,sans-serif;background:#000;color:#fff;margin:0;padding:2rem;}}
+            h1{{background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);
+               -webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:2rem;}}
+            .status{{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.85rem;}}
+            .operational{{background:#0d3b0d;color:#4caf50;}}
+            .degraded{{background:#3b1a0d;color:#ff9800;}}
+            .offline{{background:#3b0d0d;color:#f44336;}}
+            .grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin:1rem 0;}}
+            .card{{background:#111;border:1px solid #222;border-radius:8px;padding:1rem;}}
+            .updated{{color:#666;font-size:.8rem;}}
+          </style></head>
+          <body>
+            <h1>⚡ BlackRoad OS Status</h1>
+            <p class="status {'operational' if all_ok else 'degraded'}">{overall}</p>
+            <p class="updated">Updated: {s['updated']}</p>
+            <h2>🌐 Domains</h2><div class="grid">
+          """
+          for d in s['domains']:
+              html += f'<div class="card"><b>{d["name"]}</b><br><span class="status {d["status"]}">{d["status"]}</span></div>'
+          html += '</div><h2>🖥️ Pi Fleet</h2><div class="grid">'
+          for p in s['fleet']:
+              html += f'<div class="card"><b>{p["name"]}</b><br><small>{p["ip"]}</small><br><span class="status {p["status"]}">{p["status"]}</span></div>'
+          html += '</div></body></html>'
+
+          with open('status/index.html', 'w') as f:
+              f.write(html)
+          print(f"✅ HTML status page: {fleet_up}/5 Pi nodes online, domains {'all OK' if all_ok else 'some degraded'}")
+          EOF
+
+      - name: Commit status update
+        run: |
+          git config user.name "blackroad-bot"
+          git config user.email "blackroad.systems@gmail.com"
+          git add status/
+          git diff --staged --quiet && echo "No status changes" || \
+            git commit -m "chore: status page update $(date +%H:%M) [skip ci] [skip release] [skip-bump]" && \
+            git push origin master

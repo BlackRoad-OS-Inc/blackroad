@@ -1,0 +1,76 @@
+name: Cross Repo Sync
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - '.github/workflows/continuous-engine.yml'
+      - 'agents/identities/**'
+      - 'scripts/org-cohesion-full.sh'
+      - 'AGENTS.md'
+      - 'CECE.md'
+  schedule:
+    - cron: '0 0 * * 0'   # weekly Sunday midnight
+  workflow_dispatch:
+    inputs:
+      target_repos:
+        description: Comma-separated repos (owner/repo) or "all-orgs"
+        default: all-orgs
+
+jobs:
+  sync-to-orgs:
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync continuous-engine to all org .github repos
+        run: bash scripts/org-cohesion-full.sh sync-workflows
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync agent labels to all orgs
+        run: bash scripts/org-cohesion-full.sh sync-labels
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sync-to-forks:
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync CECE profile to org repos
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const ceceContent = fs.readFileSync('cece-profile.json', 'utf8');
+            const encoded = Buffer.from(ceceContent).toString('base64');
+
+            const TARGET_REPOS = [
+              'BlackRoad-OS/blackroad-os',
+              'BlackRoad-AI/blackroad-ai-api-gateway',
+              'Blackbox-Enterprises/blackbox-n8n'
+            ];
+
+            for (const repo of TARGET_REPOS) {
+              const [owner, repoName] = repo.split('/');
+              try {
+                const existing = await github.rest.repos.getContent({
+                  owner, repo: repoName, path: 'cece-profile.json'
+                }).catch(() => null);
+
+                const params = {
+                  owner, repo: repoName, path: 'cece-profile.json',
+                  message: 'chore: sync CECE profile [skip ci]',
+                  content: encoded
+                };
+                if (existing) params.sha = existing.data.sha;
+
+                await github.rest.repos.createOrUpdateFileContents(params);
+                console.log(`✅ Synced CECE profile to ${repo}`);
+              } catch (e) {
+                console.log(`⚠️ ${repo}: ${e.message}`);
+              }
+            }

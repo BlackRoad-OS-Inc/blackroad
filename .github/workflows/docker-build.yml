@@ -1,0 +1,83 @@
+name: Docker Build and Push
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
+      - 'blackroad-web/**'
+      - 'blackroad-api/**'
+      - 'blackroad-core/**'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Service to build (or "all")
+        default: all
+
+env:
+  REGISTRY: ghcr.io
+  ORG: blackroad-os-inc
+
+jobs:
+  build:
+    runs-on: [self-hosted, pi]
+    strategy:
+      matrix:
+        include:
+          - name: blackroad-web
+            context: blackroad-web
+            dockerfile: blackroad-web/Dockerfile
+          - name: blackroad-api
+            context: blackroad-api
+            dockerfile: blackroad-api/Dockerfile
+          - name: blackroad-core
+            context: blackroad-core
+            dockerfile: blackroad-core/Dockerfile
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Dockerfile exists
+        id: check
+        run: |
+          if [ -f "${{ matrix.dockerfile }}" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No Dockerfile at ${{ matrix.dockerfile }} — skipping"
+          fi
+
+      - name: Log in to GHCR
+        if: steps.check.outputs.exists == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.name }}
+        if: steps.check.outputs.exists == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.ORG }}/${{ matrix.name }}:latest
+            ${{ env.REGISTRY }}/${{ env.ORG }}/${{ matrix.name }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Deploy to Pi fleet
+        if: steps.check.outputs.exists == 'true'
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.ORG }}/${{ matrix.name }}:latest"
+          for pi in cecilia aria alice; do
+            ssh -o ConnectTimeout=5 -o BatchMode=yes "$pi" \
+              "docker pull $IMAGE && docker-compose up -d ${{ matrix.name }} 2>/dev/null || \
+               docker run -d --name ${{ matrix.name }} --restart unless-stopped $IMAGE" \
+              2>/dev/null && echo "✅ Deployed to $pi" || echo "⚠️ $pi unreachable"
+          done

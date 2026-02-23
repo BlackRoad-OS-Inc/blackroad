@@ -1,0 +1,101 @@
+name: Docs Deploy to GitHub Pages
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'docs/**'
+      - '*.md'
+      - 'blackroad-docs/**'
+      - 'blackroad-web/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build static site
+        run: |
+          mkdir -p _site
+
+          # Generate index from markdown files
+          cat > _site/index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>BlackRoad OS Documentation</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+                     background: #000; color: #fff; margin: 0; padding: 2rem; }
+              h1 { background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF);
+                   -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+              a { color: #FF1D6C; text-decoration: none; }
+              a:hover { text-decoration: underline; }
+              .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+              .card { background: #111; border: 1px solid #222; border-radius: 8px; padding: 1.5rem; }
+              .card h3 { margin: 0 0 0.5rem; color: #F5A623; }
+              .badge { display: inline-block; background: #FF1D6C22; color: #FF1D6C;
+                       padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; }
+            </style>
+          </head>
+          <body>
+            <h1>⚡ BlackRoad OS</h1>
+            <p>Your AI. Your Hardware. Your Rules.</p>
+            <div class="grid" id="docs"></div>
+            <script>
+              const docs = [
+          HTMLEOF
+
+          # Add doc cards from markdown files
+          for f in README.md ARCHITECTURE.md AGENTS.md CECE.md API.md DEPLOYMENT.md SECURITY.md ROADMAP.md; do
+            if [ -f "$f" ]; then
+              TITLE=$(head -1 "$f" | tr -d '#' | xargs)
+              echo "      {title:'$TITLE', file:'$f'}," >> _site/index.html
+            fi
+          done
+
+          cat >> _site/index.html << 'HTMLEOF2'
+              ];
+              const grid = document.getElementById('docs');
+              docs.forEach(d => {
+                grid.innerHTML += `<div class="card"><h3>${d.title}</h3>
+                  <a href="${d.file}">📄 View Doc →</a></div>`;
+              });
+            </script>
+          </body>
+          </html>
+          HTMLEOF2
+
+          # Copy markdown files
+          cp *.md _site/ 2>/dev/null || true
+          cp -r docs _site/docs 2>/dev/null || true
+
+          echo "✅ Built _site with $(ls _site | wc -l) files"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

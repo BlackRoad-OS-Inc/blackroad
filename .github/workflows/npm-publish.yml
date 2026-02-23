@@ -1,0 +1,79 @@
+name: NPM Publish
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package directory to publish
+        default: blackroad-sdk
+      tag:
+        description: NPM tag
+        default: latest
+
+jobs:
+  publish:
+    runs-on: [self-hosted, pi]
+    strategy:
+      matrix:
+        package:
+          - blackroad-sdk
+          - blackroad-cli-rs
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Check package exists
+        id: check
+        run: |
+          if [ -f "${{ matrix.package }}/package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            PKG_NAME=$(node -p "require('./${{ matrix.package }}/package.json').name")
+            PKG_VER=$(node -p "require('./${{ matrix.package }}/package.json').version")
+            echo "name=$PKG_NAME" >> $GITHUB_OUTPUT
+            echo "version=$PKG_VER" >> $GITHUB_OUTPUT
+            echo "📦 Found: $PKG_NAME@$PKG_VER"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No package.json in ${{ matrix.package }}"
+          fi
+
+      - name: Install and build
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.package }}
+        run: |
+          npm ci --prefer-offline 2>/dev/null || npm install
+          npm run build 2>/dev/null || echo "No build script"
+
+      - name: Publish to npm
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.package }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "⚠️ NPM_TOKEN not set — skipping publish"
+            exit 0
+          fi
+          npm publish --access public --tag "${{ github.event.inputs.tag || 'latest' }}" && \
+            echo "✅ Published ${{ steps.check.outputs.name }}@${{ steps.check.outputs.version }}" || \
+            echo "⚠️ Publish failed (version may already exist)"
+
+      - name: Publish to GitHub Packages
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.package }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Switch to GitHub Packages registry
+          echo "@blackroad-os-inc:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN" >> .npmrc
+          npm publish 2>/dev/null && \
+            echo "✅ Published to GitHub Packages" || \
+            echo "⚠️ GitHub Packages publish failed"

@@ -1,0 +1,75 @@
+name: SSH Tunnel Watchdog
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # every 10 minutes
+  workflow_dispatch:
+
+jobs:
+  watchdog:
+    runs-on: [self-hosted, pi]
+    timeout-minutes: 8
+    steps:
+      - name: Check cloudflared tunnel
+        run: |
+          echo "=== Cloudflared Tunnel Status ==="
+          TUNNEL_ID="52915859-da18-4aa6-add5-7bd9fcac2e0b"
+
+          # Check local process
+          if pgrep -x cloudflared > /dev/null; then
+            PID=$(pgrep -x cloudflared)
+            echo "✅ cloudflared running (PID $PID)"
+          else
+            echo "❌ cloudflared NOT running — attempting restart..."
+            if systemctl is-enabled cloudflared &>/dev/null; then
+              sudo systemctl start cloudflared 2>/dev/null && echo "✅ Restarted via systemctl" || echo "⚠️ systemctl failed"
+            else
+              nohup cloudflared tunnel run --token "$CLOUDFLARE_TUNNEL_TOKEN" &>/tmp/cf.log &
+              sleep 3
+              pgrep cloudflared && echo "✅ Restarted manually" || echo "❌ Failed to restart"
+            fi
+          fi
+        env:
+          CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+
+      - name: Check nginx
+        run: |
+          echo "=== nginx Status ==="
+          if pgrep nginx > /dev/null; then
+            echo "✅ nginx running"
+            nginx -t 2>&1 | tail -2
+          else
+            echo "❌ nginx NOT running — restarting..."
+            sudo systemctl start nginx 2>/dev/null && echo "✅ nginx restarted" || \
+              nginx 2>/dev/null && echo "✅ nginx started" || echo "❌ nginx restart failed"
+          fi
+
+      - name: Check Pi SSH connectivity
+        run: |
+          echo "=== SSH Connectivity ==="
+          declare -A PIES=(
+            [cecilia]=192.168.4.89
+            [octavia]=192.168.4.38
+            [aria]=192.168.4.82
+            [alice]=192.168.4.49
+          )
+          for name in "${!PIES[@]}"; do
+            IP="${PIES[$name]}"
+            if ssh -o ConnectTimeout=5 -o BatchMode=yes "$name" "echo ok" 2>/dev/null | grep -q ok; then
+              echo "✅ $name ($IP) SSH OK"
+            else
+              echo "⚠️ $name ($IP) SSH unreachable"
+            fi
+          done
+
+      - name: Verify tunnel endpoints
+        run: |
+          echo "=== Domain Reachability ==="
+          ENDPOINTS=(
+            "https://blackroad.io"
+            "https://api.blackroad.io"
+            "https://agents.blackroad.io"
+          )
+          for url in "${ENDPOINTS[@]}"; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 "$url" 2>/dev/null || echo "000")
+            echo "$([ "$CODE" != "000" ] && [ "$CODE" != "502" ] && echo ✅ || echo ❌) $url → $CODE"
+          done
