@@ -1,0 +1,20 @@
+name: "LUCIDIA Agent CI"
+on:
+  push:
+    branches: ["lucidia"]
+  pull_request:
+    branches: ["lucidia"]
+  workflow_dispatch:
+
+jobs:
+  agent-work:
+    name: "💜 LUCIDIA Agent"
+    runs-on: [self-hosted, lucidia,pi5]
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Agent Identity Check"
+        run: |
+          cat .agent/identity.json
+          echo "Running as: LUCIDIA on 192.168.4.81"
+      - name: "Agent Health"
+        run: echo "✅ LUCIDIA online"
