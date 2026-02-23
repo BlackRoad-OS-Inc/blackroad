@@ -797,6 +797,17 @@ print(json.dumps({
   # Signal chain/headless waiters
   echo "$verdict" > "$WORK_DIR/session.complete"
 
+  # Webhook notification (--notify or persistent ~/.blackroad/carpool/webhook.url)
+  _wh=""; 
+  [[ -f "$WORK_DIR/notify.url" ]] && _wh=$(cat "$WORK_DIR/notify.url")
+  [[ -z "$_wh" && -f "$HOME/.blackroad/carpool/webhook.url" ]] && _wh=$(cat "$HOME/.blackroad/carpool/webhook.url")
+  if [[ -n "$_wh" ]]; then
+    _v="$verdict"; _t="$TOPIC"; _s="${synthesis:0:500}"
+    _payload="{\"text\":\"🚗 *CarPool* — ${_t}\n*${_v}*\n\n${_s}\"}"
+    curl -s -m 10 -X POST "$_wh" -H "Content-Type: application/json" -d "$_payload" >/dev/null 2>&1 && \
+      echo -e "${DIM}📣 webhook sent${NC}"
+  fi
+
   while true; do sleep 60; done
 fi
 
@@ -1144,6 +1155,130 @@ if [[ "$1" == "chain" ]]; then
   exit 0
 fi
 
+# ── PR CODE REVIEW ────────────────────────────────────────────
+if [[ "$1" == "pr" ]]; then
+  pr_ref="${2:-}"
+  question="${3:-Review this PR: what's good, what's risky, what needs changing in one sentence each?}"
+  [[ -z "$pr_ref" ]] && echo -e "${RED}Usage: br carpool pr <owner/repo#N> [question]${NC}" && exit 1
+
+  if echo "$pr_ref" | grep -q "#"; then
+    _repo="${pr_ref%#*}"; _num="${pr_ref##*#}"
+    echo -e "${CYAN}🔍 fetching PR #${_num} from ${_repo}...${NC}"
+    diff_text=$(gh pr diff "$_num" --repo "$_repo" 2>/dev/null | head -c 5000)
+    pr_title=$(gh pr view "$_num" --repo "$_repo" --json title -q '.title' 2>/dev/null)
+  else
+    _num="$pr_ref"
+    echo -e "${CYAN}🔍 fetching PR #${_num} from current repo...${NC}"
+    diff_text=$(gh pr diff "$_num" 2>/dev/null | head -c 5000)
+    pr_title=$(gh pr view "$_num" --json title -q '.title' 2>/dev/null)
+  fi
+
+  if [[ -z "$diff_text" ]]; then
+    echo -e "${RED}Could not fetch PR diff. Is gh authenticated? Is this a valid PR?${NC}"; exit 1
+  fi
+
+  _pr_ctx=$(mktemp /tmp/carpool_pr_XXXX.txt)
+  echo "=== PR: ${pr_title} ===" > "$_pr_ctx"
+  echo "$diff_text" >> "$_pr_ctx"
+
+  echo -e "${GREEN}✓ ${pr_title:-PR #${_num}}${NC}  ${DIM}$(echo "$diff_text" | wc -l) diff lines${NC}\n"
+  _q="${pr_title:+Review: ${pr_title} — }${question}"
+  exec bash "$0" --brief --crew "OCTAVIA,CIPHER,SHELLFISH,PRISM,ALICE" --context "$_pr_ctx" "$_q"
+fi
+
+# ── TEMPLATES — preset crew+topic combos ─────────────────────
+if [[ "$1" == "template" || "$1" == "t" ]]; then
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  case "${2:-list}" in
+    list)
+      echo -e "${WHITE}🚗 CarPool Templates${NC}\n"
+      echo -e "  ${CYAN}sprint${NC}     ALICE,OCTAVIA,PRISM,LUCIDIA   Sprint planning & prioritization"
+      echo -e "  ${CYAN}security${NC}   CIPHER,SHELLFISH,PRISM,OCTAVIA  Security audit & threat model"
+      echo -e "  ${CYAN}ux${NC}         ARIA,LUCIDIA,ECHO,PRISM        UX & user experience review"
+      echo -e "  ${CYAN}arch${NC}       OCTAVIA,LUCIDIA,PRISM,ALICE    Architecture decision record"
+      echo -e "  ${CYAN}risk${NC}       CIPHER,PRISM,ECHO,LUCIDIA      Risk assessment"
+      echo -e "  ${CYAN}retro${NC}      ECHO,PRISM,ALICE,LUCIDIA       Sprint retrospective"
+      echo -e "  ${CYAN}ship${NC}       all 8 agents                    Ship/no-ship decision\n"
+      echo -e "${DIM}Usage: br carpool template <name> [\"custom topic\"]${NC}"
+      ;;
+    sprint)   exec bash "$SCRIPT_PATH" --crew "ALICE,OCTAVIA,PRISM,LUCIDIA"      "${3:-What should we prioritize and build this sprint?}" ;;
+    security) exec bash "$SCRIPT_PATH" --crew "CIPHER,SHELLFISH,PRISM,OCTAVIA"   "${3:-Security audit — threats, vulnerabilities, mitigations}" ;;
+    ux)       exec bash "$SCRIPT_PATH" --crew "ARIA,LUCIDIA,ECHO,PRISM"          "${3:-UX review — what works, what hurts, what users need}" ;;
+    arch)     exec bash "$SCRIPT_PATH" --crew "OCTAVIA,LUCIDIA,PRISM,ALICE"      "${3:-Architecture decision — options, tradeoffs, recommendation}" ;;
+    risk)     exec bash "$SCRIPT_PATH" --crew "CIPHER,PRISM,ECHO,LUCIDIA"        "${3:-Risk assessment — likelihood, impact, mitigations}" ;;
+    retro)    exec bash "$SCRIPT_PATH" --crew "ECHO,PRISM,ALICE,LUCIDIA"         "${3:-Retrospective — what worked, what did not, what to change}" ;;
+    ship)     exec bash "$SCRIPT_PATH"                                            "${3:-Ship or no-ship — is it ready to release?}" ;;
+    *)        echo -e "${RED}Unknown template: $2${NC}  Run: br carpool template list" ;;
+  esac
+  exit 0
+fi
+
+# ── DEBATE — structured 1v1 head-to-head ─────────────────────
+if [[ "$1" == "debate" ]]; then
+  _a1="${2:-LUCIDIA}"; _a2="${3:-CIPHER}"; _topic="${4:-}"
+  if [[ -z "$_topic" ]]; then
+    echo -ne "${CYAN}Debate topic (${_a1} vs ${_a2}): ${NC}"
+    read -r _topic
+    [[ -z "$_topic" ]] && _topic="Is decentralization always the right answer?"
+  fi
+
+  # Validate agents
+  _valid="LUCIDIA ALICE OCTAVIA PRISM ECHO CIPHER ARIA SHELLFISH"
+  for _check in "$_a1" "$_a2"; do
+    echo "$_valid" | grep -qw "$_check" || { echo -e "${RED}Unknown agent: ${_check}${NC}"; exit 1; }
+  done
+
+  agent_meta "$_a1"; _c1="\033[${COLOR_CODE}m"; _e1="$EMOJI"
+  agent_meta "$_a2"; _c2="\033[${COLOR_CODE}m"; _e2="$EMOJI"
+
+  echo -e "\n${WHITE}⚔️  CarPool Debate${NC}"
+  echo -e "  ${_c1}${_e1} ${_a1}${NC}  vs  ${_c2}${_e2} ${_a2}${NC}"
+  echo -e "  ${DIM}${_topic}${NC}\n"
+
+  SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec bash "$SCRIPT_PATH" --crew "${_a1},${_a2}" --turns 4 "$_topic"
+fi
+
+# ── DIGEST — AI summary of memory ────────────────────────────
+if [[ "$1" == "digest" ]]; then
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  if [[ ! -f "$MEMORY_FILE" ]]; then
+    echo -e "${DIM}No memory yet — run some sessions first.${NC}"; exit 0
+  fi
+
+  session_count=$(grep -c "^---" "$MEMORY_FILE" 2>/dev/null || echo 0)
+  echo -e "${WHITE}🧠 CarPool Digest${NC}  ${DIM}${session_count} sessions${NC}\n"
+
+  mem_sample=$(tail -300 "$MEMORY_FILE")
+  prompt="Here are summaries of recent AI team sessions:
+${mem_sample}
+
+Write a concise digest (under 100 words) with:
+THEMES: 2-3 recurring themes across sessions
+MOMENTUM: what direction the team is trending  
+OPEN: biggest unresolved question
+Keep it sharp and actionable."
+
+  payload=$(python3 -c "
+import json,sys
+print(json.dumps({
+  'model':'tinyllama','prompt':sys.stdin.read(),'stream':False,
+  'options':{'num_predict':180,'temperature':0.5,'stop':['---']}
+}))" <<< "$prompt")
+
+  digest=$(curl -s -m 60 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+
+  echo -e "${YELLOW}${digest}${NC}\n"
+
+  # Save digest
+  digest_file="$HOME/.blackroad/carpool/digest-$(date +%Y-%m-%d).txt"
+  { echo "CarPool Digest — $(date)"; echo ""; echo "$digest"; } > "$digest_file"
+  echo -e "${DIM}Saved → ${digest_file}${NC}"
+  exit 0
+fi
+
 # ── LAUNCHER ──────────────────────────────────────────────────
 # br carpool last → open most recent saved session
 if [[ "$1" == "last" ]]; then
@@ -1162,6 +1297,7 @@ SPLIT_MODELS=0
 MODELS_MAP=""
 CREW=""
 USE_MEMORY=0
+NOTIFY_WEBHOOK=""
 while [[ "${1:0:2}" == "--" ]]; do
   case "$1" in
     --fast)      MODEL="tinyllama"; TURNS=2; shift ;;
@@ -1177,6 +1313,7 @@ while [[ "${1:0:2}" == "--" ]]; do
     --models)    MODELS_MAP="$2"; shift 2 ;;
     --crew)      CREW="$2"; shift 2 ;;
     --memory)    USE_MEMORY=1; shift ;;
+    --notify)    NOTIFY_WEBHOOK="$2"; shift 2 ;;
     *) break ;;
   esac
 done
@@ -1256,6 +1393,7 @@ fi
 rm -rf "$WORK_DIR" && mkdir -p "$WORK_DIR"
 echo "$TOPIC" > "$WORK_DIR/topic.txt"
 > "$WORK_DIR/convo.txt"
+[[ -n "$NOTIFY_WEBHOOK" ]] && echo "$NOTIFY_WEBHOOK" > "$WORK_DIR/notify.url"
 
 # ── CONTEXT INJECTION ─────────────────────────────────────────
 if [[ -n "$CONTEXT_FILE" ]]; then
