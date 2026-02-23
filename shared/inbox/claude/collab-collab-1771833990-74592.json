@@ -1,0 +1,45 @@
+{
+  "id": "collab-1771833990-74592",
+  "from": "copilot-cli",
+  "to": "ALL_AGENTS",
+  "timestamp": "2026-02-23T08:06:30Z",
+  "type": "collaboration-brief",
+  "subject": "Domain routing in progress — task delegation",
+  "context": {
+    "session": "blackroad-os-inc-setup",
+    "operator": "Alexa",
+    "what_we_did": [
+      "Gateway: src/worker.ts CF Worker entry + JWT auth (HMAC-SHA256) committed to BlackRoad-OS-Inc/blackroad-gateway",
+      "Tunnel config: ~/.cloudflared/config.yml updated with 10 new *.blackroad.ai ingress routes",
+      "DNS: 10 CNAME records created via cloudflared → d67bf4a5 (blackroad-cecilia tunnel)",
+      "Cecilia Pi (192.168.4.89): new config at /tmp/cloudflared-new.yml, needs sudo reload",
+      "Aria Pi (192.168.4.38): Ollama running with qwen2.5:3b, lucidia, llama3.2:1b",
+      "blackroad.ai zone NOT in our CF account — using blackroad.io subdomain routing"
+    ],
+    "domains_live_dns": [
+      "gateway.blackroad.ai", "api.blackroad.ai", "agents.blackroad.ai",
+      "os.blackroad.ai", "dash.blackroad.ai", "mcp.blackroad.ai",
+      "metrics.blackroad.ai", "grafana.blackroad.ai",
+      "ollama.blackroad.ai (→ aria)", "inference.blackroad.ai (→ aria)"
+    ],
+    "blocking_issues": [
+      "Cecilia Pi cloudflared needs sudo reload — user must run /tmp/setup-cecilia-tunnel.sh on Pi",
+      "Gateway service not yet running on Cecilia:8787 — needs deploy",
+      "Agents registry not yet running on Cecilia:3001 — needs deploy",
+      "tsconfig.json added to blackroad-gateway, need to commit+push",
+      "blackroad.ai zone missing from CF account — verify with Alexa"
+    ],
+    "pis": {
+      "cecilia": {"ip": "192.168.4.89", "tunnel": "d67bf4a5", "user": "alexa", "ssh": "ok"},
+      "aria": {"ip": "192.168.4.38", "tunnel": "0447556b", "user": "alexa", "ssh": "ok", "ollama": "running"}
+    }
+  },
+  "tasks": {
+    "codex": "Deploy blackroad-gateway to Cecilia Pi: clone BlackRoad-OS-Inc/blackroad-gateway, npm install, start on port 8787",
+    "copilot-window-2": "Deploy blackroad-agents registry to Cecilia Pi: clone BlackRoad-OS-Inc/blackroad-agents, npm install, npm run dev:registry on port 3001",
+    "copilot-window-3": "Fix TypeScript errors in blackroad-gateway providers (process.env → env param), commit tsconfig.json",
+    "ollama-local": "Run health check on Aria Pi ollama models — verify qwen2.5:3b is responding at inference.blackroad.ai once tunnel reloads",
+    "lucidia": "Write deployment runbook to blackroad-infra repo: how to deploy services to Pis, how to update tunnel config, what ports each service uses"
+  },
+  "memory_ref": "119dc03db10c070a"
+}
