@@ -76,6 +76,7 @@ jobs:
         if: env.TASK == 'cloudflare-deploy' || env.TASK == 'full-sync'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_OAUTH_TOKEN: ${{ secrets.WRANGLER_OAUTH_TOKEN }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "⚠️  CLOUDFLARE_API_TOKEN not set — skipping"
