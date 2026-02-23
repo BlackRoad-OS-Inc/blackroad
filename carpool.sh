@@ -9596,6 +9596,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "infra-as-code" ]]; then
+  INFRA="${2:-our infrastructure}"
+  AGENTS=("DevOps" "Architect" "Security" "SRE" "Engineering")
+  QUESTIONS=(
+    "What IaC tool (Terraform, Pulumi, CDK, Bicep) fits $INFRA best and why?"
+    "How do we structure $INFRA modules and state for a team of 10+ engineers safely?"
+    "What does a good GitOps workflow for $INFRA look like — PR reviews, plan previews, apply gates?"
+    "How do we handle secrets and sensitive values in $INFRA without committing them?"
+    "How do we test and validate $INFRA changes before they hit production?"
+  )
+  echo ""
+  echo "🏗️  CARPOOL: INFRA AS CODE — $INFRA"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Infrastructure as code strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "narrative" ]]; then
+  COMPANY="${2:-our company}"
+  AGENTS=("Storyteller" "Marketing" "Founder" "Investor" "Customer")
+  QUESTIONS=(
+    "What is the one-sentence origin story of $COMPANY that makes people lean in?"
+    "What villain (problem, broken system) is $COMPANY fighting and why does it matter now?"
+    "How does $COMPANY articulate its vision in a way that feels inevitable, not aspirational?"
+    "What proof points make the $COMPANY narrative credible to skeptics?"
+    "How does $COMPANY adapt its narrative for investors, customers, and recruits?"
+  )
+  echo ""
+  echo "📖 CARPOOL: COMPANY NARRATIVE — $COMPANY"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Company narrative roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "load-testing" ]]; then
+  SYSTEM="${2:-our system}"
+  AGENTS=("SRE" "Backend" "Infra" "QA" "Data")
+  QUESTIONS=(
+    "What load scenarios (baseline, stress, spike, soak) does $SYSTEM need to test?"
+    "What tools (k6, Locust, JMeter, Gatling) fit $SYSTEM load testing best and why?"
+    "How do we write realistic load test scripts that mirror $SYSTEM production traffic?"
+    "What thresholds and SLOs should $SYSTEM fail a load test at?"
+    "How do we run $SYSTEM load tests in CI without impacting production environments?"
+  )
+  echo ""
+  echo "🔨 CARPOOL: LOAD TESTING — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Load testing strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "staff-eng" ]]; then
+  ORG="${2:-our engineering org}"
+  AGENTS=("Staff Eng" "CTO" "EM" "Architect" "IC")
+  QUESTIONS=(
+    "What does the staff engineer role actually do in $ORG — and what makes it distinct from senior?"
+    "How does a staff engineer at $ORG pick the right problems to work on?"
+    "What does technical leadership without authority look like for a staff engineer at $ORG?"
+    "How does a staff engineer at $ORG build influence across teams without being annoying?"
+    "What does the path from senior to staff engineer look like at $ORG and what trips people up?"
+  )
+  echo ""
+  echo "⭐ CARPOOL: STAFF ENGINEER — $ORG"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Staff engineer roundtable complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
