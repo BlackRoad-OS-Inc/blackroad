@@ -308,6 +308,10 @@ BR_TOOLS=(
     fleet-health "${BR_TOOLS_DIR}/pi-monitor/br-pi-monitor.sh"
     # Wave 18a — health cron
     health-cron  "${BR_TOOLS_DIR}/health-cron/br-health-cron.sh"
+    # Org sync — cross-org Git manager
+    org-sync    "${BR_TOOLS_DIR}/org-sync/br-org-sync.sh"
+    orgsync     "${BR_TOOLS_DIR}/org-sync/br-org-sync.sh"
+    org         "${BR_TOOLS_DIR}/org-sync/br-org-sync.sh"
     # Edu — RoadWork homework helper
     edu         "${BR_TOOLS_DIR}/edu/br-edu.sh"
     homework    "${BR_TOOLS_DIR}/edu/br-edu.sh"
@@ -2299,6 +2303,104 @@ main() {
                 penetration-testing|owasp|api-pentest) bash /Users/alexa/blackroad/carpool.sh penetration-testing "$@" ;;
                 runtime-security|falco|rasp) bash /Users/alexa/blackroad/carpool.sh runtime-security "$@" ;;
                 digital-forensics|memory-dump|log-analysis) bash /Users/alexa/blackroad/carpool.sh digital-forensics "$@" ;;
+                sql-analytics|sql-window|window-functions) bash /Users/alexa/blackroad/carpool.sh sql-analytics "$@" ;;
+                polars-pandas|polars|pandas-polars) bash /Users/alexa/blackroad/carpool.sh polars-pandas "$@" ;;
+                jupyter-production|jupyter-prod|papermill) bash /Users/alexa/blackroad/carpool.sh jupyter-production "$@" ;;
+                dbt-patterns|dbt|dbt-macros) bash /Users/alexa/blackroad/carpool.sh dbt-patterns "$@" ;;
+                snowflake-eng|snowflake|snowpark) bash /Users/alexa/blackroad/carpool.sh snowflake-eng "$@" ;;
+                bigquery-eng|bigquery|bqml) bash /Users/alexa/blackroad/carpool.sh bigquery-eng "$@" ;;
+                redshift-eng|redshift|redshift-spectrum) bash /Users/alexa/blackroad/carpool.sh redshift-eng "$@" ;;
+                databricks-eng|databricks|delta-live-tables) bash /Users/alexa/blackroad/carpool.sh databricks-eng "$@" ;;
+                airflow-patterns|airflow|taskflow-api) bash /Users/alexa/blackroad/carpool.sh airflow-patterns "$@" ;;
+                prefect-patterns|prefect3|prefect-flows) bash /Users/alexa/blackroad/carpool.sh prefect-patterns "$@" ;;
+                great-expectations|gx|data-quality-gx) bash /Users/alexa/blackroad/carpool.sh great-expectations "$@" ;;
+                data-catalog|datacatalog|datahub) bash /Users/alexa/blackroad/carpool.sh data-catalog "$@" ;;
+                semantic-layer|semantic|headless-bi) bash /Users/alexa/blackroad/carpool.sh semantic-layer "$@" ;;
+                ml-pipelines|ml-pipeline|kubeflow-pipelines) bash /Users/alexa/blackroad/carpool.sh ml-pipelines "$@" ;;
+                model-registry|mlflow-registry|model-reg) bash /Users/alexa/blackroad/carpool.sh model-registry "$@" ;;
+                training-infrastructure|training-infra|ddp) bash /Users/alexa/blackroad/carpool.sh training-infrastructure "$@" ;;
+                experiment-tracking|exp-tracking|mlflow-exp) bash /Users/alexa/blackroad/carpool.sh experiment-tracking "$@" ;;
+                model-serving|bentoml|ray-serve) bash /Users/alexa/blackroad/carpool.sh model-serving "$@" ;;
+                causal-inference|causal|did-analysis) bash /Users/alexa/blackroad/carpool.sh causal-inference "$@" ;;
+                ab-testing-eng|ab-testing|cuped) bash /Users/alexa/blackroad/carpool.sh ab-testing-eng "$@" ;;
+                bayesian-ml|pymc|stan-ml) bash /Users/alexa/blackroad/carpool.sh bayesian-ml "$@" ;;
+                time-series-ml|tsml|prophet-ml) bash /Users/alexa/blackroad/carpool.sh time-series-ml "$@" ;;
+                graph-ml|gnn|pytorch-geometric) bash /Users/alexa/blackroad/carpool.sh graph-ml "$@" ;;
+                tabular-ml|xgboost-adv|lgbm) bash /Users/alexa/blackroad/carpool.sh tabular-ml "$@" ;;
+                reinforcement-learning|rl|ppo) bash /Users/alexa/blackroad/carpool.sh reinforcement-learning "$@" ;;
+                self-supervised-learning|ssl|contrastive) bash /Users/alexa/blackroad/carpool.sh self-supervised-learning "$@" ;;
+                diffusion-models|ddpm|stable-diffusion-eng) bash /Users/alexa/blackroad/carpool.sh diffusion-models "$@" ;;
+                vision-transformers|vit|clip) bash /Users/alexa/blackroad/carpool.sh vision-transformers "$@" ;;
+                audio-ml|whisper-finetune|musicgen) bash /Users/alexa/blackroad/carpool.sh audio-ml "$@" ;;
+                federated-learning|fedavg|pysyft) bash /Users/alexa/blackroad/carpool.sh federated-learning "$@" ;;
+                neural-architecture-search|nas|darts) bash /Users/alexa/blackroad/carpool.sh neural-architecture-search "$@" ;;
+                model-compression|pruning|distillation) bash /Users/alexa/blackroad/carpool.sh model-compression "$@" ;;
+                mlops-advanced|mlops-adv|model-monitoring) bash /Users/alexa/blackroad/carpool.sh mlops-advanced "$@" ;;
+                platform-eng-adv|platform-adv|golden-paths) bash /Users/alexa/blackroad/carpool.sh platform-eng-adv "$@" ;;
+                dev-portals|backstage|idp-portal) bash /Users/alexa/blackroad/carpool.sh dev-portals "$@" ;;
+                api-versioning|api-version|api-sunset) bash /Users/alexa/blackroad/carpool.sh api-versioning "$@" ;;
+                sdk-design-adv|sdk-adv|sdk-dx) bash /Users/alexa/blackroad/carpool.sh sdk-design-adv "$@" ;;
+                developer-tools-eng|devtools-eng|lsp-eng) bash /Users/alexa/blackroad/carpool.sh developer-tools-eng "$@" ;;
+                build-systems-adv|bazel|buck2) bash /Users/alexa/blackroad/carpool.sh build-systems-adv "$@" ;;
+                dependency-management|deps-mgmt|sbom) bash /Users/alexa/blackroad/carpool.sh dependency-management "$@" ;;
+                monorepo-tooling|nx|turborepo) bash /Users/alexa/blackroad/carpool.sh monorepo-tooling "$@" ;;
+                release-engineering|release-eng|goreleaser) bash /Users/alexa/blackroad/carpool.sh release-engineering "$@" ;;
+                feature-flags-adv|feature-flags2|openfeature) bash /Users/alexa/blackroad/carpool.sh feature-flags-adv "$@" ;;
+                progressive-delivery|argo-rollouts|flagger) bash /Users/alexa/blackroad/carpool.sh progressive-delivery "$@" ;;
+                chaos-advanced|chaos-mesh|gremlin) bash /Users/alexa/blackroad/carpool.sh chaos-advanced "$@" ;;
+                slo-engineering|slo-eng|error-budgets) bash /Users/alexa/blackroad/carpool.sh slo-engineering "$@" ;;
+                cost-optimization|cloud-cost|rightsizing) bash /Users/alexa/blackroad/carpool.sh cost-optimization "$@" ;;
+                carbon-aware-computing|green-software|carbon-intensity) bash /Users/alexa/blackroad/carpool.sh carbon-aware-computing "$@" ;;
+                wasm-edge|wasmtime|wasmcloud) bash /Users/alexa/blackroad/carpool.sh wasm-edge "$@" ;;
+                unikernel-eng|unikernels|mirageos) bash /Users/alexa/blackroad/carpool.sh unikernel-eng "$@" ;;
+                confidential-computing|sgx|amd-sev) bash /Users/alexa/blackroad/carpool.sh confidential-computing "$@" ;;
+                hardware-security|tpm|secure-boot) bash /Users/alexa/blackroad/carpool.sh hardware-security "$@" ;;
+                post-quantum-crypto|pqc|kyber) bash /Users/alexa/blackroad/carpool.sh post-quantum-crypto "$@" ;;
+                homomorphic-encryption|fhe|microsoft-seal) bash /Users/alexa/blackroad/carpool.sh homomorphic-encryption "$@" ;;
+                zkp-engineering|zkp|zk-snarks) bash /Users/alexa/blackroad/carpool.sh zkp-engineering "$@" ;;
+                secure-coding-rust|rust-security|cargo-fuzz) bash /Users/alexa/blackroad/carpool.sh secure-coding-rust "$@" ;;
+                api-security-adv|api-security2|bola) bash /Users/alexa/blackroad/carpool.sh api-security-adv "$@" ;;
+                incident-security|security-ir|sec-response) bash /Users/alexa/blackroad/carpool.sh incident-security "$@" ;;
+                rust-webdev|axum|tokio-web) bash /Users/alexa/blackroad/carpool.sh rust-webdev "$@" ;;
+                go-concurrency|go-goroutines|errgroup) bash /Users/alexa/blackroad/carpool.sh go-concurrency "$@" ;;
+                typescript-advanced|ts-advanced|ts-types) bash /Users/alexa/blackroad/carpool.sh typescript-advanced "$@" ;;
+                python-internals|cpython|pypy) bash /Users/alexa/blackroad/carpool.sh python-internals "$@" ;;
+                java-modern|java-loom|virtual-threads) bash /Users/alexa/blackroad/carpool.sh java-modern "$@" ;;
+                ruby-performance|yjit|ruby-fiber) bash /Users/alexa/blackroad/carpool.sh ruby-performance "$@" ;;
+                csharp-modern|csharp12|cs-records) bash /Users/alexa/blackroad/carpool.sh csharp-modern "$@" ;;
+                cpp-modern|cpp20|cpp-modules) bash /Users/alexa/blackroad/carpool.sh cpp-modern "$@" ;;
+                swift-server|vapor|swift-nio) bash /Users/alexa/blackroad/carpool.sh swift-server "$@" ;;
+                erlang-otp|gen-server|otp-patterns) bash /Users/alexa/blackroad/carpool.sh erlang-otp "$@" ;;
+                ocaml-eng|ocaml|dune-build) bash /Users/alexa/blackroad/carpool.sh ocaml-eng "$@" ;;
+                lisp-metaprog|racket|common-lisp) bash /Users/alexa/blackroad/carpool.sh lisp-metaprog "$@" ;;
+                prolog-logic|prolog|clp) bash /Users/alexa/blackroad/carpool.sh prolog-logic "$@" ;;
+                coq-theorem|coq|certified-prog) bash /Users/alexa/blackroad/carpool.sh coq-theorem "$@" ;;
+                idris-dependent|idris2|qtt) bash /Users/alexa/blackroad/carpool.sh idris-dependent "$@" ;;
+                agda-types|agda|cubical-tt) bash /Users/alexa/blackroad/carpool.sh agda-types "$@" ;;
+                lean4-math|lean4|mathlib4) bash /Users/alexa/blackroad/carpool.sh lean4-math "$@" ;;
+                tla-plus|tlaplus|pluscal) bash /Users/alexa/blackroad/carpool.sh tla-plus "$@" ;;
+                alloy-modeling|alloy|formal-design) bash /Users/alexa/blackroad/carpool.sh alloy-modeling "$@" ;;
+                numerical-methods|numeric|runge-kutta) bash /Users/alexa/blackroad/carpool.sh numerical-methods "$@" ;;
+                computational-geometry|convex-hull|voronoi) bash /Users/alexa/blackroad/carpool.sh computational-geometry "$@" ;;
+                game-theory|nash|mechanism-design) bash /Users/alexa/blackroad/carpool.sh game-theory "$@" ;;
+                information-theory|shannon|entropy) bash /Users/alexa/blackroad/carpool.sh information-theory "$@" ;;
+                topology-data|tda|persistent-homology) bash /Users/alexa/blackroad/carpool.sh topology-data "$@" ;;
+                combinatorics-eng|combinatorics|gen-functions) bash /Users/alexa/blackroad/carpool.sh combinatorics-eng "$@" ;;
+                linear-algebra-ml|linalg-ml|svd) bash /Users/alexa/blackroad/carpool.sh linear-algebra-ml "$@" ;;
+                optimization-theory|convex-opt|lagrangian) bash /Users/alexa/blackroad/carpool.sh optimization-theory "$@" ;;
+                stochastic-processes|markov|brownian) bash /Users/alexa/blackroad/carpool.sh stochastic-processes "$@" ;;
+                quantum-computing|qiskit|qaoa) bash /Users/alexa/blackroad/carpool.sh quantum-computing "$@" ;;
+                neuromorphic|loihi|spiking-nn) bash /Users/alexa/blackroad/carpool.sh neuromorphic "$@" ;;
+                dna-computing|dna-storage|synthetic-biology) bash /Users/alexa/blackroad/carpool.sh dna-computing "$@" ;;
+                optical-computing|photonic|optical-nn) bash /Users/alexa/blackroad/carpool.sh optical-computing "$@" ;;
+                simd-programming|avx512|simd) bash /Users/alexa/blackroad/carpool.sh simd-programming "$@" ;;
+                gpgpu-programming|cuda|hip) bash /Users/alexa/blackroad/carpool.sh gpgpu-programming "$@" ;;
+                fpga-ml|hls|pynq) bash /Users/alexa/blackroad/carpool.sh fpga-ml "$@" ;;
+                tpu-eng|google-tpu|xla) bash /Users/alexa/blackroad/carpool.sh tpu-eng "$@" ;;
+                asic-design|rtl|systemverilog) bash /Users/alexa/blackroad/carpool.sh asic-design "$@" ;;
+                memory-technology|hbm|cxl) bash /Users/alexa/blackroad/carpool.sh memory-technology "$@" ;;
+                storage-systems|nvme|ceph-internals) bash /Users/alexa/blackroad/carpool.sh storage-systems "$@" ;;
+                network-programming|dpdk|xdp) bash /Users/alexa/blackroad/carpool.sh network-programming "$@" ;;
                 game-engine-arch|ecs|scene-graph) bash /Users/alexa/blackroad/carpool.sh game-engine-arch "$@" ;;
                 vulkan-metal|render-passes|descriptor-sets) bash /Users/alexa/blackroad/carpool.sh vulkan-metal "$@" ;;
                 shader-programming|hlsl|glsl) bash /Users/alexa/blackroad/carpool.sh shader-programming "$@" ;;
