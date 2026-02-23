@@ -23,14 +23,7 @@ jobs:
             sleep 5
           fi
           echo "✅ Ollama ready on $(hostname)"
-          curl -s http://localhost:11434/api/tags | python3 -c "
-import json,sys
-d=json.load(sys.stdin)
-models=d.get('models',[])
-print(f'Models installed: {len(models)}')
-for m in models[:10]:
-    print(f'  - {m[\"name\"]}')
-"
+          ollama list 2>/dev/null || curl -s http://localhost:11434/api/tags | python3 -m json.tool | grep name | head -10
 
       - name: Pull priority models
         env:
@@ -51,11 +44,7 @@ for m in models[:10]:
             ollama pull "$MODEL" 2>&1 | tail -5 || echo "⚠️ Failed"
           else
             echo "Checking priority models..."
-            INSTALLED=$(curl -s http://localhost:11434/api/tags | python3 -c "
-import json,sys
-d=json.load(sys.stdin)
-print(' '.join([m['name'].split(':')[0] for m in d.get('models',[])]))
-")
+            INSTALLED=$(ollama list 2>/dev/null | awk 'NR>1 {split($1,a,":"); print a[1]}' | tr '\n' ' ')
             for m in "${PRIORITY_MODELS[@]}"; do
               BASE="${m%%:*}"
               if echo "$INSTALLED" | grep -q "$BASE"; then
@@ -80,23 +69,10 @@ print(' '.join([m['name'].split(':')[0] for m in d.get('models',[])]))
           # Install huggingface-hub
           pip3 install huggingface-hub --quiet 2>/dev/null || true
           
-          python3 << 'PY'
-import os, json, subprocess, sys
-from pathlib import Path
-
-token = os.environ.get('HF_TOKEN', '')
-if not token:
-    print("No HF_TOKEN, skipping")
-    sys.exit(0)
-
-# Save HF token
-token_path = Path.home() / '.cache' / 'huggingface' / 'token'
-token_path.parent.mkdir(parents=True, exist_ok=True)
-token_path.write_text(token)
-print(f"✅ HF token saved")
-
-# Check installed models
-r = subprocess.run(['curl', '-s', 'http://localhost:11434/api/tags'], capture_output=True, text=True)
-models = [m['name'] for m in json.loads(r.stdout).get('models', [])]
-print(f"Pi Ollama has {len(models)} models: {', '.join(models[:5])}")
-PY
+          # Save HF token and check models
+          if [ -n "$HF_TOKEN" ]; then
+            mkdir -p ~/.cache/huggingface
+            echo "$HF_TOKEN" > ~/.cache/huggingface/token
+            echo "HF token saved"
+            curl -s http://localhost:11434/api/tags | python3 -m json.tool | grep '"name"' | head -5 || true
+          fi
