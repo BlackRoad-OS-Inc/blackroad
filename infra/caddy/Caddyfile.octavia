@@ -1,27 +1,6 @@
-# Caddy HTTP-only proxy for octavia Pi (port 8088 - no root needed)
-# Cloudflare tunnel handles TLS+routing; this is local health/proxy layer
-{
-    admin 127.0.0.1:2019
-    http_port 8088
-    auto_https off
-}
-
-:8088 {
-    @health path /health
-    respond @health `{"status":"ok","host":"octavia","agent":"octavia","ip":"192.168.4.38","services":["api:8787","agents:4010","ollama:11434","dashboard:3000"]}` 200
-
-    @api host api.blackroad.io
-    reverse_proxy @api localhost:8787
-
-    @agents host agents.blackroad.io agents.blackroad.ai
-    reverse_proxy @agents localhost:4010
-
-    @ai host ai.blackroad.io
-    reverse_proxy @ai localhost:11434
-
-    @dashboard host dashboard.blackroad.io console.blackroad.io
-    reverse_proxy @dashboard localhost:3000
-
-    # Default
-    respond "BlackRoad OS - octavia Pi" 200
+:8089 {
+  respond /health 200
+  reverse_proxy /api* localhost:8787
+  reverse_proxy /agents* localhost:4010
+  reverse_proxy localhost:3000
 }
