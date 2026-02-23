@@ -159,10 +159,52 @@ cmd_help() {
   echo ""
 }
 
+cmd_live() {
+  echo -e "\n${BOLD}${CYAN}── BlackRoad Live Dashboard ──${NC}\n"
+  
+  # Workers
+  echo -e "${BOLD}Workers:${NC}"
+  for url in "https://worlds.blackroad.io/stats" "https://dashboard-api.blackroad.io" "https://agents-status.blackroad.io"; do
+    label=$(echo "$url" | sed 's|https://||;s|\.blackroad\.io.*||')
+    result=$(curl -sf --max-time 4 "$url" 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('status',d.get('total','ok')))" 2>/dev/null || echo "unreachable")
+    if [[ "$result" != "unreachable" ]]; then
+      _ok "$label → $result"
+    else
+      _err "$label → offline"
+    fi
+  done
+
+  # Pi Fleet
+  echo -e "\n${BOLD}Pi Fleet:${NC}"
+  for spec in "aria64:alexa:192.168.4.38" "alice:blackroad:192.168.4.49"; do
+    node=$(echo $spec | cut -d: -f1)
+    user=$(echo $spec | cut -d: -f2)
+    ip=$(echo $spec | cut -d: -f3)
+    info=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=4 "$user@$ip" \
+      "echo -n 'cpu='; top -bn1 | grep 'Cpu' | awk '{print 100-\$8}'; echo -n 'worlds='; ls ~/.blackroad/worlds/ 2>/dev/null | wc -l" 2>/dev/null | tr '\n' ' ')
+    if [[ -n "$info" ]]; then
+      _ok "$node ($ip): $info"
+    else
+      _err "$node ($ip): offline"
+    fi
+  done
+
+  # Worlds stats
+  echo -e "\n${BOLD}Worlds:${NC}"
+  curl -sf --max-time 5 "https://worlds.blackroad.io/stats" 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+print(f'  Total: {d[\"total\"]} | by_node: {d[\"by_node\"]} | by_type: {d[\"by_type\"]}')
+" 2>/dev/null || _err "worlds feed unreachable"
+
+  echo ""
+}
+
 case "${1:-all}" in
+  live|--live|dashboard)  cmd_live ;;
   all|full|"") cmd_all ;;
   quick|line)  cmd_quick ;;
   watch)       shift; cmd_watch "$@" ;;
   help|-h)     cmd_help ;;
-  *) echo "Unknown: $1. Try: all quick watch"; exit 1 ;;
+  *) echo "Unknown: $1. Try: all quick watch live"; exit 1 ;;
 esac
