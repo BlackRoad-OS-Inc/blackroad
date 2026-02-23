@@ -5,6 +5,7 @@ const { randomUUID } = require('crypto')
 const fs = require('fs/promises')
 const path = require('path')
 const { getProvider, listProviders } = require('./providers')
+const memory = require('./memory')
 
 const DEFAULT_CONFIG = {
   bind: '127.0.0.1',
@@ -352,6 +353,22 @@ async function start() {
       }
 
 
+
+      // ---------------------------------------------------------------
+      // Memory stats + recent entries
+      // ---------------------------------------------------------------
+      if (req.method === 'GET' && req.url.startsWith('/v1/memory')) {
+        if (!config.allowRemote && !isLoopback(req)) {
+          return send(403, { status: 'error', error: 'Remote access denied' })
+        }
+        const url = new URL(req.url, 'http://localhost')
+        if (url.pathname === '/v1/memory/recent') {
+          const limit = parseInt(url.searchParams.get('limit') || '10')
+          return send(200, { status: 'ok', entries: await memory.recent(limit) })
+        }
+        return send(200, { status: 'ok', memory: await memory.stats() })
+      }
+
       // ---------------------------------------------------------------
       // Providers list endpoint
       // ---------------------------------------------------------------
@@ -511,6 +528,18 @@ async function start() {
     } finally {
       // Record metrics
       metrics.record(agentName, providerName, status)
+
+      // Record to PS-SHA∞ memory journal (non-blocking)
+      if (agentName) {
+        memory.record({
+          type: 'agent_call',
+          agent: agentName,
+          provider: providerName,
+          intent: intent || null,
+          status,
+          duration_ms: Date.now() - startMs
+        }).catch(() => {})
+      }
 
       const requestLog = requestPayload
         ? {
