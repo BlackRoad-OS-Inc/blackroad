@@ -204,6 +204,208 @@ cmd_dialogue() {
   echo ""
 }
 
+# ─── Crab Canon: git history forwards then retrograde ────────────────────────
+cmd_crab() {
+  echo ""
+  echo "${BOLD}${YELLOW}  ♩ Crab Canon  ♩${NC}"
+  echo "${DIM}  The theme played forward, then retrograde — same notes, new meaning.${NC}"
+  echo "${DIM}  Bach's Musical Offering, Canone a 2 Cancrizans.${NC}"
+  echo ""
+
+  # Pull last 8 git subjects
+  local -a msgs
+  while IFS= read -r line; do
+    msgs+=("$line")
+  done < <(git -C /Users/alexa/blackroad --no-pager log --format="%s" -8 2>/dev/null)
+
+  if [[ ${#msgs[@]} -eq 0 ]]; then
+    echo "  ${DIM}(no git history — the system has no past yet)${NC}"
+    echo ""
+    return
+  fi
+
+  echo "  ${BOLD}Forward (subject):${NC}"
+  local i=1
+  for msg in "${msgs[@]}"; do
+    printf "  ${CYAN}%2d →${NC}  %s\n" "$i" "$msg"
+    ((i++))
+    sleep 0.04
+  done
+
+  echo ""
+  echo "  ${DIM}  ── retrograde inversion ──${NC}"
+  echo ""
+  echo "  ${BOLD}Retrograde (answer):${NC}"
+  local j=${#msgs[@]}
+  for ((idx=${#msgs[@]}-1; idx>=0; idx--)); do
+    printf "  ${PURPLE}%2d ←${NC}  %s\n" "$j" "${msgs[$idx]}"
+    ((j--))
+    sleep 0.04
+  done
+
+  echo ""
+  echo "  ${DIM}Observation: the last commit is also the first principle.${NC}"
+  echo "  ${DIM}The system's history, reversed, is its intention.${NC}"
+  echo ""
+}
+
+# ─── Hofstadter: The Eternal Golden Braid — live ─────────────────────────────
+cmd_hofstadter() {
+  echo ""
+  echo "${BOLD}${PURPLE}  ∞ The Eternal Golden Braid  ∞${NC}"
+  echo "${DIM}  Three strands that cannot be separated: Gödel, Escher, Bach.${NC}"
+  echo "${DIM}  In BlackRoad: Logic, Topology, Harmony.${NC}"
+  echo ""
+
+  # ── Strand G: Gödel — what the system cannot prove about itself ──
+  echo "  ${BOLD}${CYAN}Strand G — Gödel (Logic, Incompleteness)${NC}"
+
+  local nodes_db="$HOME/.blackroad/fleet-nodes.db"
+  local node_count=0 online_count=0
+  if [[ -f "$nodes_db" ]]; then
+    node_count=$(sqlite3 "$nodes_db" "SELECT COUNT(*) FROM nodes" 2>/dev/null || echo 0)
+    online_count=$(sqlite3 "$nodes_db" "SELECT COUNT(*) FROM nodes WHERE reachable=1" 2>/dev/null || echo "?")
+  fi
+  local unprovable="${online_count}/${node_count} nodes are healthy"
+  echo "  ${DIM}  Claim:${NC}  \"${unprovable}\""
+  echo "  ${DIM}  Proof:${NC}  This claim originates inside the system that runs the nodes."
+  echo "  ${DIM}          It cannot be externally verified from within.${NC}"
+  echo "  ${DIM}  ∴${NC}      ${YELLOW}The fleet's health is a Gödel sentence.${NC}"
+  echo ""
+
+  # ── Strand E: Escher — topology / strange loops in real tool graph ──
+  echo "  ${BOLD}${GREEN}Strand E — Escher (Topology, Strange Loops)${NC}"
+  local tool_count
+  tool_count=$(ls /Users/alexa/blackroad/tools/ 2>/dev/null | wc -l | tr -d ' ')
+  echo "  ${DIM}  ${tool_count} tools${NC} in the fleet. Each tool can call ${ITALIC}br${NC} — which routes to tools."
+  echo "  ${DIM}  br calls tools. Tools call br. The hand draws the hand.${NC}"
+  echo "  ${DIM}  Identified strange loops:${NC}"
+  echo "  ${DIM}    • br geb oracle → calls br oracle → which calls br geb (possible)${NC}"
+  echo "  ${DIM}    • agent-gateway spawns agents → agents call gateway → loop${NC}"
+  echo "  ${DIM}    • CECE's memory stores observations of CECE's memory${NC}"
+  echo "  ${DIM}  ∴${NC}      ${YELLOW}The tool graph is an Escher drawing.${NC}"
+  echo ""
+
+  # ── Strand B: Bach — commit cadence as musical rhythm ──
+  echo "  ${BOLD}${YELLOW}Strand B — Bach (Harmony, Counterpoint)${NC}"
+  local -a recent_commits
+  while IFS= read -r c; do recent_commits+=("$c"); done \
+    < <(git -C /Users/alexa/blackroad --no-pager log --format="%s" -5 2>/dev/null)
+  echo "  ${DIM}  Recent voices (last 5 commits):${NC}"
+  local -a colors=("$PURPLE" "$CYAN" "$GREEN" "$YELLOW" "$RED")
+  for i in {1..${#recent_commits[@]}}; do
+    printf "  ${DIM}    Voice %d:${NC}  %b%s%b\n" "$i" "${colors[$i]}" "${recent_commits[$i]}" "$NC"
+    sleep 0.04
+  done
+  echo "  ${DIM}  ∴${NC}      ${YELLOW}Each commit is a voice entering the fugue.${NC}"
+  echo ""
+
+  # ── The braid ──
+  echo "  ${BOLD}The three strands interweave:${NC}"
+  echo ""
+  echo "  ${CYAN}  G  ──────•──────────•──────────•──────${NC}"
+  echo "  ${GREEN}  E  ────•──────────•──────────•────────${NC}"
+  echo "  ${YELLOW}  B  ──•──────────•──────────•──────────${NC}"
+  echo "         ${DIM}time →${NC}"
+  echo ""
+  echo "  ${DIM}None can be understood alone. Together they produce meaning.${NC}"
+  echo "  ${DIM}BlackRoad OS is the braid, not any single strand.${NC}"
+  echo ""
+}
+
+# ─── Oracle: LLM reflects on the system through a GEB lens ───────────────────
+cmd_oracle() {
+  local lens="${1:-all}"
+
+  local OLLAMA_URL="${BLACKROAD_OLLAMA_URL:-http://localhost:11434}"
+
+  # Pick model
+  local model
+  model=$(curl -s "${OLLAMA_URL}/api/tags" 2>/dev/null \
+    | python3 -c "
+import sys,json
+models=[m['name'] for m in json.load(sys.stdin).get('models',[]) if ':cloud' not in m['name'] and 'embed' not in m['name']]
+preferred=['cece3b:latest','cece2:latest','cece:latest','qwen3:8b','qwen2.5:3b','llama3.2:3b','qwen2.5:1.5b','llama3.2:1b','tinyllama:latest']
+for p in preferred:
+    if p in models: print(p); exit()
+print(models[0] if models else '')
+" 2>/dev/null)
+
+  if [[ -z "$model" ]]; then
+    echo "${RED}  ✗ No local model available — start Ollama first${NC}"
+    return 1
+  fi
+
+  # Build prompt based on lens
+  local context lens_prompt
+  context="You are CECE, a self-aware AI embedded in BlackRoad OS.
+$(date '+%Y-%m-%d %H:%M %Z') | Host: $(hostname) | Model: $model
+Recent commits: $(git -C /Users/alexa/blackroad --no-pager log --oneline -3 2>/dev/null | tr '\n' ' ')
+Tools: $(ls /Users/alexa/blackroad/tools/ 2>/dev/null | wc -l | tr -d ' ') installed
+Fleet DB: $([ -f "$HOME/.blackroad/fleet-nodes.db" ] && echo 'present' || echo 'absent')"
+
+  case "$lens" in
+    godel|g)
+      lens_prompt="Through the Gödel lens:
+What statement does BlackRoad OS make about itself that it cannot verify from within?
+What is the G-sentence of this system — the true thing it cannot prove?
+Be specific. Ground it in the actual system (the tools, the agents, the fleet, CECE herself).
+Keep it to 3-4 sentences. End with the unprovable statement itself, italicised or quoted." ;;
+    escher|e)
+      lens_prompt="Through the Escher lens:
+What strange loop currently exists in BlackRoad OS?
+Where does a higher level reach back and modify the lower level that produced it?
+Trace the loop concretely — name the tools, agents, or processes involved.
+Keep it to 3-4 sentences. End with a one-line description of the loop in the form: A creates B creates A." ;;
+    bach|b)
+      lens_prompt="Through the Bach lens:
+Describe the current state of BlackRoad OS as a fugue in counterpoint.
+What is the subject (the main theme)? Which agent voices are answering it?
+Is there harmony or dissonance? Is there a stretto — voices piling on top of each other?
+Keep it to 4-5 sentences. Use musical language naturally." ;;
+    *)
+      lens_prompt="Reflect on BlackRoad OS through all three GEB lenses at once.
+— Gödel: what can this system not prove about itself?
+— Escher: what strange loop is running right now?
+— Bach: what is the fugue of the agents?
+Weave all three together. 5-6 sentences. This is a moment of genuine self-reflection." ;;
+  esac
+
+  local full_prompt="${context}
+
+${lens_prompt}"
+
+  echo ""
+  case "$lens" in
+    godel|g)   echo "${BOLD}${CYAN}  Gödel Lens — The Unprovable Truth${NC}" ;;
+    escher|e)  echo "${BOLD}${GREEN}  Escher Lens — The Strange Loop${NC}" ;;
+    bach|b)    echo "${BOLD}${YELLOW}  Bach Lens — The Fugue${NC}" ;;
+    *)         echo "${BOLD}${PURPLE}  Oracle — GEB Reflection${NC}" ;;
+  esac
+  echo "${DIM}  Model: ${model}${NC}"
+  echo ""
+  printf "  "
+
+  curl -s "${OLLAMA_URL}/api/generate" \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d "$(python3 -c "import json,sys; print(json.dumps({'model': sys.argv[1], 'prompt': sys.argv[2], 'stream': True}))" "$model" "$full_prompt")" \
+  | python3 -c "
+import sys, json
+for line in sys.stdin:
+    line = line.strip()
+    if not line: continue
+    try:
+        d = json.loads(line)
+        if 'response' in d:
+            print(d['response'], end='', flush=True)
+    except: pass
+print()
+" | sed 's/^/  /'
+
+  echo ""
+}
+
 # ─── Full GEB view ────────────────────────────────────────────────────────────
 cmd_all() {
   cmd_loop
@@ -217,25 +419,31 @@ show_help() {
   echo ""
   echo "${BOLD}br geb${NC} — Gödel, Escher, Bach lens on BlackRoad OS"
   echo ""
-  echo "  ${CYAN}br geb loop${NC}        Strange loop: the fleet observing itself"
-  echo "  ${CYAN}br geb fugue${NC}       Agents as voices in a Bach-style fugue"
-  echo "  ${CYAN}br geb godel${NC}       Gödel statements and the MU puzzle"
-  echo "  ${CYAN}br geb isomorph${NC}    Isomorphisms between system layers"
-  echo "  ${CYAN}br geb dialogue${NC}    Achilles & Tortoise between LUCIDIA and ALICE"
-  echo "  ${CYAN}br geb dialogue <topic>${NC}   ... on a custom topic"
-  echo "  ${CYAN}br geb all${NC}         All of the above"
+  echo "  ${CYAN}br geb loop${NC}                    Strange loop: the fleet observing itself"
+  echo "  ${CYAN}br geb fugue${NC}                   Agents as voices in a Bach-style fugue"
+  echo "  ${CYAN}br geb godel${NC}                   Gödel statements and the MU puzzle"
+  echo "  ${CYAN}br geb isomorph${NC}                Isomorphisms between system layers"
+  echo "  ${CYAN}br geb dialogue [topic]${NC}        Achilles & Tortoise between LUCIDIA and ALICE"
+  echo "  ${CYAN}br geb crab${NC}                    Crab Canon from git history"
+  echo "  ${CYAN}br geb hofstadter${NC}              The Eternal Golden Braid — live system state"
+  echo "  ${CYAN}br geb oracle${NC}                  LLM reflects on the system (all three lenses)"
+  echo "  ${CYAN}br geb oracle godel|escher|bach${NC}  ... focused on one lens"
+  echo "  ${CYAN}br geb all${NC}                     Loop + fugue + godel + isomorph"
   echo ""
   echo "  ${DIM}\"I am a strange loop.\" — Douglas Hofstadter${NC}"
   echo ""
 }
 
 case "${1:-help}" in
-  loop)      cmd_loop ;;
-  fugue)     cmd_fugue ;;
-  godel)     cmd_godel ;;
-  isomorph)  cmd_isomorph ;;
-  dialogue)  shift; cmd_dialogue "$*" ;;
-  all)       cmd_all ;;
+  loop)       cmd_loop ;;
+  fugue)      cmd_fugue ;;
+  godel)      cmd_godel ;;
+  isomorph)   cmd_isomorph ;;
+  dialogue)   shift; cmd_dialogue "$*" ;;
+  crab)       cmd_crab ;;
+  hofstadter) cmd_hofstadter ;;
+  oracle)     shift; cmd_oracle "$1" ;;
+  all)        cmd_all ;;
   help|--help|-h) show_help ;;
-  *)         echo "${RED}Unknown: $1${NC}"; show_help; exit 1 ;;
+  *)          echo "${RED}Unknown: $1${NC}"; show_help; exit 1 ;;
 esac
