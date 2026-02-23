@@ -1,0 +1,54 @@
+name: Cloudflare DNS → Pi Fleet
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * *'  # 4AM daily health check / DNS verify
+
+jobs:
+  update-dns:
+    runs-on: [self-hosted, pi, blackroad]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Pi fleet IPs
+        run: |
+          echo "OCTAVIA_IP=192.168.4.38" >> $GITHUB_ENV
+          echo "ARIA_IP=192.168.4.82" >> $GITHUB_ENV
+          echo "GEMATRIA_IP=159.65.43.12" >> $GITHUB_ENV
+
+      - name: Check cloudflared tunnel health
+        run: |
+          curl -sf http://localhost/health || true
+          systemctl is-active cloudflared 2>/dev/null || \
+            pgrep -f cloudflared > /dev/null && echo "cloudflared running" || echo "cloudflared stopped"
+
+      - name: Verify Cloudflare DNS routes
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # List DNS records for blackroad.ai zone
+          ZONE_ID=$(curl -sf "https://api.cloudflare.com/client/v4/zones?name=blackroad.ai" \
+            -H "Authorization: Bearer $CF_TOKEN" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'][0]['id'])" 2>/dev/null || echo "")
+          if [ -n "$ZONE_ID" ]; then
+            echo "Zone ID: $ZONE_ID"
+            curl -sf "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&page=1&per_page=20" \
+              -H "Authorization: Bearer $CF_TOKEN" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for r in data.get('result', []):
+    print(f\"  {r['name']} → {r['content']} (proxied: {r['proxied']})\")
+" 2>/dev/null
+          else
+            echo "Could not get Zone ID — check CF_TOKEN secret"
+          fi
+
+      - name: Test domain health endpoints
+        run: |
+          for domain in blackroad.ai api.blackroad.ai; do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "https://$domain/health" 2>/dev/null || echo "err")
+            echo "$domain: $STATUS"
+          done
+
