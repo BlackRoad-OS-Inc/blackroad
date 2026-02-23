@@ -1,0 +1,118 @@
+name: HuggingFace Sync
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'push / pull / list'
+        type: choice
+        options: [push, pull, list]
+        default: push
+      model:
+        description: 'Model name (leave blank for all)'
+        default: ''
+  schedule:
+    - cron: '0 3 * * 0'  # Weekly Sunday 3am — sync models
+
+jobs:
+  hf-sync:
+    name: HuggingFace via Pi (LUCIDIA/OCTAVIA)
+    runs-on: [self-hosted, pi, octavia]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate HuggingFace
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "⚠️  HF_TOKEN not set — set in repo Settings → Secrets"
+            echo "Get token at: https://huggingface.co/settings/tokens"
+            exit 0
+          fi
+          # Save token for huggingface_hub
+          mkdir -p ~/.cache/huggingface
+          echo "$HF_TOKEN" > ~/.cache/huggingface/token
+          python3 -c "
+          from huggingface_hub import HfApi
+          import os
+          api = HfApi(token=os.environ.get('HF_TOKEN'))
+          user = api.whoami()
+          print(f'✅ Authenticated as: {user[\"name\"]}')
+          " || echo "Auth failed"
+
+      - name: List Models
+        if: github.event.inputs.action == 'list' || github.event.inputs.action == ''
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python3 -c "
+          from huggingface_hub import HfApi
+          import os
+          api = HfApi(token=os.environ.get('HF_TOKEN',''))
+          repos = list(api.list_models(author='blackboxprogramming'))
+          print(f'📦 Models: {len(repos)}')
+          for r in repos[:10]:
+              print(f'  - {r.modelId}')
+          " || echo "⚠️  list failed"
+
+      - name: Push Local Models to HF
+        if: github.event.inputs.action == 'push'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          [ -z "$HF_TOKEN" ] && exit 0
+          python3 << 'PYEOF'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ.get('HF_TOKEN'))
+          user = api.whoami()['name']
+          print(f'Pushing to {user} on HuggingFace...')
+          
+          # Push Ollama models info as a dataset
+          import subprocess, json
+          models_raw = subprocess.run(['ollama', 'list'], capture_output=True, text=True).stdout
+          models_list = [line.split()[0] for line in models_raw.strip().split('\n')[1:] if line]
+          
+          # Create model card
+          card = f"""---
+          language: en
+          tags: [blackroad, ollama, pi-fleet]
+          ---
+          # BlackRoad Pi Model Fleet
+          
+          Models running on BlackRoad Pi fleet (octavia - 192.168.4.38):
+          
+          """ + '\n'.join(f'- `{m}`' for m in models_list)
+          
+          # Try to upload
+          try:
+              api.create_repo(repo_id=f'{user}/blackroad-pi-models', repo_type='model', exist_ok=True)
+              api.upload_file(
+                  path_or_fileobj=card.encode(),
+                  path_in_repo='README.md',
+                  repo_id=f'{user}/blackroad-pi-models'
+              )
+              print(f'✅ Pushed model registry to {user}/blackroad-pi-models')
+          except Exception as e:
+              print(f'⚠️  Push failed: {e}')
+          PYEOF
+
+      - name: Sync Cloudflare Worker to HF Space
+        if: github.event.inputs.action == 'push'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          [ -z "$HF_TOKEN" ] && exit 0
+          echo "Syncing BlackRoad demo to HF Spaces..."
+          python3 -c "
+          from huggingface_hub import HfApi
+          import os
+          api = HfApi(token=os.environ.get('HF_TOKEN',''))
+          user = api.whoami()['name']
+          try:
+              api.create_repo(repo_id=f'{user}/blackroad-demo', repo_type='space', space_sdk='static', exist_ok=True)
+              print(f'✅ Space: {user}/blackroad-demo')
+          except Exception as e:
+              print(f'⚠️  {e}')
+          " || true

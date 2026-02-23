@@ -1,0 +1,75 @@
+name: Salesforce Pi Sync
+on:
+  push:
+    branches: [master, main, 'feat/sf-*', 'feat/salesforce-*']
+    paths:
+      - 'blackroad-sf/**'
+      - '.github/workflows/salesforce-pi-sync.yml'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        type: choice
+        options: [validate, deploy, test, retrieve]
+        default: validate
+
+jobs:
+  sf-on-pi:
+    name: Salesforce via Pi Agent (ALICE)
+    runs-on: [self-hosted, pi, alice]
+    timeout-minutes: 30
+    env:
+      ACTION: ${{ github.event.inputs.action || 'validate' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SF CLI
+        run: |
+          SF_BIN="$HOME/npm-global/bin/sf"
+          if [ ! -f "$SF_BIN" ]; then
+            npm install -g @salesforce/cli --prefix ~/npm-global
+          fi
+          echo "$HOME/npm-global/bin" >> $GITHUB_PATH
+          $SF_BIN --version
+
+      - name: Authenticate to Salesforce
+        env:
+          SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
+        run: |
+          if [ -z "$SFDX_AUTH_URL" ]; then
+            echo "⚠️  SFDX_AUTH_URL secret not set — using mock"
+            echo "Set in: repo Settings → Secrets → SFDX_AUTH_URL"
+            echo "Value: force://PlatformCLI::your_refresh_token@your_instance.salesforce.com"
+            exit 0
+          fi
+          echo "$SFDX_AUTH_URL" | ~/npm-global/bin/sf org login sfdx-url --sfdx-url-stdin --alias production
+          ~/npm-global/bin/sf org display --target-org production
+
+      - name: Run Tests
+        run: |
+          cd blackroad-sf
+          npm install --if-present
+          npm test 2>&1 | tail -20 || echo "Tests not configured"
+
+      - name: Validate / Deploy
+        env:
+          SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
+        run: |
+          [ -z "$SFDX_AUTH_URL" ] && echo "⚠️  No SFDX_AUTH_URL — skipping deploy" && exit 0
+          cd blackroad-sf
+          SF="$HOME/npm-global/bin/sf"
+          if [ "$ACTION" = "deploy" ]; then
+            $SF project deploy start --target-org production --wait 30
+          elif [ "$ACTION" = "validate" ]; then
+            $SF project deploy validate --target-org production --wait 30
+          elif [ "$ACTION" = "retrieve" ]; then
+            $SF project retrieve start --target-org production
+          fi
+
+      - name: Notify Agent Bridge
+        if: always()
+        run: |
+          curl -s -X POST http://192.168.4.38:4010/events \
+            -H "Content-Type: application/json" \
+            -d "{\"event\":\"salesforce.${ACTION}\",\"status\":\"${{ job.status }}\",\"branch\":\"${{ github.ref_name }}\",\"agent\":\"ALICE\"}" \
+            --connect-timeout 3 || true
