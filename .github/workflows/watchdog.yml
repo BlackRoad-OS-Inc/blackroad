@@ -1,33 +1,39 @@
-# Watchdog: Ensures continuous orchestrator never dies
 name: "👁️ Watchdog"
-
 on:
   schedule:
-    - cron: '0 6 * * *'   # 6 AM daily — checks if midnight run happened
+    - cron: '*/30 * * * *'   # Every 30 minutes
   workflow_dispatch:
 
 jobs:
   check-and-restart:
-    runs-on: [self-hosted, blackroad-fleet]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
     steps:
-      - name: Check last orchestrator run
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check & restart Pi agent tasks
         run: |
-          LAST=$(gh run list --workflow continuous-24h-orchestrator.yml \
-            --repo ${{ github.repository }} \
-            --limit 1 \
-            --json createdAt,conclusion \
-            --jq '.[0] | "\(.conclusion) at \(.createdAt)"' 2>/dev/null || echo "unknown")
-          echo "Last orchestrator run: $LAST"
+          REPO="${{ github.repository }}"
           
-          # If last run was >25 hours ago or failed, trigger a new one
-          if echo "$LAST" | grep -qiE "failure|cancelled|unknown"; then
-            echo "⚠️ Last run had issues — re-triggering..."
+          # Check if pi-agent-tasks is running
+          RUNNING=$(gh run list --workflow=pi-agent-tasks.yml --repo "$REPO" \
+            --json status --jq '[.[] | select(.status == "in_progress")] | length' 2>/dev/null || echo "0")
+          
+          echo "Pi agent tasks in progress: $RUNNING"
+          
+          if [ "$RUNNING" -eq "0" ]; then
+            echo "⚠️ No active pi-agent-tasks — re-triggering..."
             sleep 3
-            gh workflow run continuous-24h-orchestrator.yml \
-              --repo ${{ github.repository }} -f force_cycle=true
-            echo "✅ Orchestrator re-triggered"
-          else
-            echo "✅ Orchestrator healthy"
+            gh workflow run pi-agent-tasks.yml --repo "$REPO" -f task=health-check 2>/dev/null
+            echo "✅ pi-agent-tasks triggered"
           fi
+          
+          # Report fleet status
+          echo "=== Fleet Status ==="
+          gh api /repos/$REPO/actions/runners --jq '.runners[] | "\(.name): \(.status)"' 2>/dev/null | head -6
+
+      - name: Self-re-trigger after 3s gap
+        if: always()
+        run: |
+          # This run completes (billable: ~20s on GitHub-hosted)
+          # Watchdog runs every 30min via schedule - no infinite loop needed
+          echo "Watchdog cycle complete at $(date -u)"
