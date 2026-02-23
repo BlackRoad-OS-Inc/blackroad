@@ -162,6 +162,11 @@ BR_TOOLS=(
     port        "${BR_TOOLS_DIR}/port/br-port.sh"
     task        "${BR_TOOLS_DIR}/task-manager/br-task-manager.sh"
     tasks       "${BR_TOOLS_DIR}/task-manager/br-task-manager.sh"
+    log-tail    "${BR_TOOLS_DIR}/log-tail/br-log-tail.sh"
+    logt        "${BR_TOOLS_DIR}/log-tail/br-log-tail.sh"
+    ssh         "${BR_TOOLS_DIR}/ssh/br-ssh.sh"
+    template    "${BR_TOOLS_DIR}/template/br-template.sh"
+    tmpl        "${BR_TOOLS_DIR}/template/br-template.sh"
 )
 
 # Stream shortcut — delegates to gateway stream sub-command
@@ -618,6 +623,19 @@ show_help() {
     echo "║    br task complete <id>    - Mark task complete                 ║"
     echo "║    br task assign <inst> <t>- Assign task to instance inbox      ║"
     echo "║                                                                   ║"
+    echo "║  LOGS / SSH / SCAFFOLD:                                          ║"
+    echo "║    br log-tail [file] [N]   - Tail log file with color           ║"
+    echo "║    br log-tail watch [f]    - Live follow (tail -f)              ║"
+    echo "║    br log-tail errors       - Error summary across logs          ║"
+    echo "║    br log-tail journal [N]  - Tail memory journal                ║"
+    echo "║    br ssh list              - List all fleet SSH hosts           ║"
+    echo "║    br ssh <name>            - Connect to host by name            ║"
+    echo "║    br ssh run <host> <cmd>  - Run command on remote host         ║"
+    echo "║    br ssh run-all <cmd>     - Run on all fleet hosts             ║"
+    echo "║    br ssh ping              - Ping all fleet hosts               ║"
+    echo "║    br template new <t> <n>  - Scaffold tool/agent/workflow       ║"
+    echo "║    br template types        - List template types                ║"
+    echo "║                                                                   ║"
     echo "║  VERCEL (▲ Deployments):                                         ║"
     echo "║    br vercel deploy         - Deploy to preview                   ║"
     echo "║    br vercel prod           - Deploy to production                ║"
@@ -991,6 +1009,10 @@ main() {
                 postmortem|post) bash /Users/alexa/blackroad/carpool.sh postmortem "$@" ;;
                 stack)      bash /Users/alexa/blackroad/carpool.sh stack "$@" ;;
                 manifesto)  bash /Users/alexa/blackroad/carpool.sh manifesto ;;
+                hypothesis) bash /Users/alexa/blackroad/carpool.sh hypothesis "$@" ;;
+                learning|learn) bash /Users/alexa/blackroad/carpool.sh learning "$@" ;;
+                standup-bot|standup-post) bash /Users/alexa/blackroad/carpool.sh standup-bot "$@" ;;
+                onboard)    bash /Users/alexa/blackroad/carpool.sh onboard "$@" ;;
                 "")         bash /Users/alexa/blackroad/carpool.sh ;;
                 *)          bash /Users/alexa/blackroad/carpool.sh "$subcmd" "$@" ;;
             esac

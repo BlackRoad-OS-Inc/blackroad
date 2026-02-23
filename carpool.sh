@@ -3162,6 +3162,161 @@ print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
   exit 0
 fi
 
+# ── HYPOTHESIS — agents debate a claim ────────────────────────────────
+if [[ "$1" == "hypothesis" ]]; then
+  shift
+  CLAIM="$*"
+  [[ -z "$CLAIM" ]] && echo "Usage: br carpool hypothesis <claim>" && exit 1
+  echo ""
+  echo -e "\033[1;35m🔬 HYPOTHESIS TEST\033[0m"
+  echo -e "\033[0;36mClaim: $CLAIM\033[0m"
+  echo ""
+  verdicts=""
+  for entry in "LUCIDIA|SUPPORT|philosophical" "SHELLFISH|REFUTE|adversarial" "PRISM|EVIDENCE|data-driven" "OCTAVIA|TECHNICAL|engineering" "ALICE|PRACTICAL|operational"; do
+    IFS='|' read -r ag stance lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} [${stance}]${NC}"
+    resp=$(python3 -c "
+import urllib.request, json, sys
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}, a ${lens} AI on the BlackRoad team.
+Claim: \"${CLAIM}\"
+Verdict: SUPPORT, REFUTE, or NEEDS_MORE_DATA (pick one).
+Evidence: 2-3 specific points.
+Format: VERDICT: <word>\nEVIDENCE:\n- ...\n- ...\nCONFIDENCE: X%''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    verdict_line=$(echo "$resp" | grep "^VERDICT:" | head -1 | sed 's/VERDICT: *//')
+    verdicts="${verdicts} ${ag}:${verdict_line}"
+    echo ""
+  done
+  support=$(echo "$verdicts" | tr ' ' '\n' | grep -c "SUPPORT" || true)
+  refute=$(echo "$verdicts" | tr ' ' '\n' | grep -c "REFUTE" || true)
+  needs=$(echo "$verdicts" | tr ' ' '\n' | grep -c "NEEDS_MORE_DATA" || true)
+  echo -e "\033[1;33m──────────────────────────────────────────\033[0m"
+  echo -e "\033[1;33m📊 VERDICT TALLY\033[0m"
+  echo "  SUPPORT        $support"
+  echo "  REFUTE         $refute"
+  echo "  NEEDS_MORE_DATA $needs"
+  if [[ $support -gt $refute ]]; then
+    echo -e "\033[0;32m→ HYPOTHESIS SUPPORTED\033[0m"
+  elif [[ $refute -gt $support ]]; then
+    echo -e "\033[0;31m→ HYPOTHESIS REFUTED\033[0m"
+  else
+    echo -e "\033[1;33m→ INCONCLUSIVE — gather more evidence\033[0m"
+  fi
+  exit 0
+fi
+
+# ── LEARNING — generate a learning path for a topic ───────────────────
+if [[ "$1" == "learning" || "$1" == "learn" ]]; then
+  shift
+  TOPIC="$*"
+  [[ -z "$TOPIC" ]] && echo "Usage: br carpool learning <topic>" && exit 1
+  echo ""
+  echo -e "\033[1;36m📚 LEARNING PATH: $TOPIC\033[0m"
+  echo ""
+  for entry in "LUCIDIA|FOUNDATIONS|Why does this matter? Core concepts and mental models." "ALICE|RESOURCES|Best books, courses, docs, and hands-on projects." "PRISM|MILESTONES|How to measure progress — 30/60/90 day checkpoints." "OCTAVIA|PRACTICE|Projects to build and systems to study in depth."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} helping someone learn \"${TOPIC}\".
+Your role: ${lens}
+Give 4-6 specific, actionable items.
+Format each as: • <item> — <why/how>
+Be concrete, not generic.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]"
+    echo ""
+  done
+  exit 0
+fi
+
+# ── STANDUP-BOT — post AI-generated standup to a webhook ──────────────
+if [[ "$1" == "standup-bot" || "$1" == "standup-post" ]]; then
+  shift
+  WEBHOOK="$1"
+  [[ -z "$WEBHOOK" ]] && WEBHOOK="${CARPOOL_WEBHOOK:-}"
+  [[ -z "$WEBHOOK" ]] && echo "Usage: br carpool standup-bot <webhook-url>" && echo "Or set CARPOOL_WEBHOOK in ~/.blackroad/carpool/config.sh" && exit 1
+  # Load memory for context
+  HIST=""
+  if [[ -f "$HOME/.blackroad/carpool/memory.txt" ]]; then
+    HIST=$(tail -20 "$HOME/.blackroad/carpool/memory.txt")
+  fi
+  echo -e "\033[1;35m🤖 STANDUP BOT\033[0m"
+  echo "Generating standup from session history..."
+  STANDUP=$(python3 -c "
+import urllib.request, json
+hist = '''${HIST}'''
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''Generate a crisp daily standup update from this session history:
+
+{hist}
+
+Format:
+*Yesterday:* <what was accomplished>
+*Today:* <main focus>
+*Blockers:* <any blockers or None>
+
+Keep it under 5 lines total. Be specific.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "Yesterday: Built features. Today: Keep shipping. Blockers: None.")
+  echo ""
+  echo "$STANDUP"
+  echo ""
+  # Post to webhook (Slack/Discord/generic JSON)
+  PAYLOAD="{\"text\":\"$STANDUP\"}"
+  HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK" 2>/dev/null || echo "000")
+  if [[ "$HTTP_STATUS" == "200" || "$HTTP_STATUS" == "204" ]]; then
+    echo -e "\033[0;32m✓ Posted to webhook (HTTP $HTTP_STATUS)\033[0m"
+  else
+    echo -e "\033[0;31m✗ Webhook returned HTTP $HTTP_STATUS\033[0m"
+    echo "Standup text above can be copy-pasted manually."
+  fi
+  exit 0
+fi
+
+# ── ONBOARD — generate an onboarding plan for a new team member ───────
+if [[ "$1" == "onboard" ]]; then
+  shift
+  ROLE="$*"
+  ROLE="${ROLE:-engineer}"
+  echo ""
+  echo -e "\033[1;32m🚀 ONBOARDING PLAN: $ROLE\033[0m"
+  echo ""
+  SAVE_FILE="$HOME/.blackroad/carpool/onboarding-$(echo "$ROLE" | tr ' ' '-').md"
+  mkdir -p "$HOME/.blackroad/carpool"
+  echo "# Onboarding Plan: $ROLE" > "$SAVE_FILE"
+  echo "Generated: $(date '+%Y-%m-%d')" >> "$SAVE_FILE"
+  echo "" >> "$SAVE_FILE"
+  for entry in "ALICE|WEEK 1: ORIENTATION|Setup, tooling, first PR, meet the team." "OCTAVIA|WEEK 2: SYSTEMS|Architecture deep-dive, infra access, first feature." "PRISM|30-60-90 DAYS|Milestones and metrics to measure progress." "ARIA|CULTURE & COMMS|Team norms, communication channels, unwritten rules." "LUCIDIA|GROWTH PATH|What mastery looks like in this role 6-12 months out."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag}. Create the \"${section}\" section of an onboarding plan for a new ${ROLE} joining BlackRoad OS.
+${lens}
+Give 4-6 specific, actionable checklist items.
+Format: - [ ] <item>
+Be concrete. Assume a technical team with high standards.''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    echo "" >> "$SAVE_FILE"
+    echo "## ${section}" >> "$SAVE_FILE"
+    echo "$resp" >> "$SAVE_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $SAVE_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
