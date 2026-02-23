@@ -4575,6 +4575,138 @@ print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','
   exit 0
 fi
 
+# ── WAITLIST — craft waitlist page copy + growth hook ────────────────
+if [[ "$1" == "waitlist" ]]; then
+  shift
+  PRODUCT="$*"
+  [[ -z "$PRODUCT" ]] && echo "Usage: br carpool waitlist <product>" && exit 1
+  echo ""
+  echo -e "\033[1;35m📋 WAITLIST STRATEGY: $PRODUCT\033[0m"
+  echo ""
+  WL_FILE="$HOME/.blackroad/carpool/waitlists/$(echo "$PRODUCT" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/waitlists"
+  printf "# Waitlist: %s\nDate: %s\n\n" "$PRODUCT" "$(date '+%Y-%m-%d')" > "$WL_FILE"
+  for entry in "ARIA|HERO COPY|Headline (≤8 words), subheadline (≤20 words), CTA button text. No buzzwords. Make it feel exclusive." "LUCIDIA|THE PROMISE|What is the one thing this product does that nothing else does? The reason to care enough to wait." "PRISM|REFERRAL HOOK|A viral loop mechanic. How waitlist members move up by inviting others. Specific reward tiers." "ALICE|CONFIRMATION FLOW|The exact email sequence after signup: immediate, 3-day, 1-week, launch-day. Subject lines included." "SHELLFISH|SCARCITY SIGNALS|What creates urgency without being fake. Real limits, real milestones, real stakes."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} working on a waitlist for: \"${PRODUCT}\"
+Section: ${section}
+${lens}
+Be specific and copy-ready. Real words, real mechanics.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$WL_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $WL_FILE\033[0m"
+  exit 0
+fi
+
+# ── INCIDENT — live incident response runbook + comms ─────────────────
+if [[ "$1" == "incident" || "$1" == "outage" ]]; then
+  shift
+  SERVICE="$*"
+  SERVICE="${SERVICE:-production}"
+  echo ""
+  echo -e "\033[1;31m🚨 INCIDENT RESPONSE: $SERVICE\033[0m"
+  echo ""
+  INC_FILE="$HOME/.blackroad/carpool/incidents/$(echo "$SERVICE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d-%H%M).md"
+  mkdir -p "$HOME/.blackroad/carpool/incidents"
+  printf "# Incident: %s\nStarted: %s\n\n" "$SERVICE" "$(date '+%Y-%m-%d %H:%M')" > "$INC_FILE"
+  for entry in "OCTAVIA|TRIAGE STEPS|First 5 things to check right now. Commands to run. What good vs bad output looks like." "CIPHER|BLAST RADIUS|What is affected? What is NOT affected? What data is at risk? Answer confidently even with partial info." "ALICE|RUNBOOK|Step-by-step remediation. Each step is one action. Include rollback point." "ARIA|COMMS TEMPLATES|Status page update (≤50 words). Customer email (≤100 words). Internal Slack (≤30 words). Ready to copy-paste." "PRISM|POST-INCIDENT METRICS|What to capture while it is happening: start time, scope, detection lag, MTTR. Incident scorecard."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} responding to an incident with: \"${SERVICE}\"
+Section: ${section}
+${lens}
+Be direct and actionable. This is live. No fluff.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$INC_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Runbook saved to $INC_FILE\033[0m"
+  exit 0
+fi
+
+# ── BENCHMARK — define performance benchmarks + load test plan ────────
+if [[ "$1" == "benchmark" || "$1" == "perf" ]]; then
+  shift
+  SYSTEM="$*"
+  [[ -z "$SYSTEM" ]] && echo "Usage: br carpool benchmark <system or endpoint>" && exit 1
+  echo ""
+  echo -e "\033[1;36m⚡ BENCHMARK PLAN: $SYSTEM\033[0m"
+  echo ""
+  BM_FILE="$HOME/.blackroad/carpool/benchmarks/$(echo "$SYSTEM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/benchmarks"
+  printf "# Benchmark: %s\nDate: %s\n\n" "$SYSTEM" "$(date '+%Y-%m-%d')" > "$BM_FILE"
+  for entry in "PRISM|SUCCESS THRESHOLDS|p50, p95, p99 latency targets. Throughput (RPS). Error rate ceiling. These are PASS/FAIL lines." "OCTAVIA|TEST SCENARIOS|Steady state, ramp-up, spike, soak. Duration and load shape for each. Tools to use (k6/wrk/hey)." "CIPHER|FAILURE MODES|What breaks first? Connection pool? DB? Memory? CPU? The thing to watch as load climbs." "ALICE|BASELINE COMMANDS|The exact commands to establish baseline and run each test scenario. Copy-paste ready." "SHELLFISH|STRESS TEST|Push it past the limit deliberately. Find the breaking point. What is the graceful degradation story?"; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing benchmarks for: \"${SYSTEM}\"
+Section: ${section}
+${lens}
+Real numbers, real commands, real tools. No vague goals.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$BM_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $BM_FILE\033[0m"
+  exit 0
+fi
+
+# ── PRICING — debate pricing strategy + tier structure ────────────────
+if [[ "$1" == "pricing" ]]; then
+  shift
+  PRODUCT="$*"
+  [[ -z "$PRODUCT" ]] && echo "Usage: br carpool pricing <product>" && exit 1
+  echo ""
+  echo -e "\033[1;33m💰 PRICING STRATEGY: $PRODUCT\033[0m"
+  echo ""
+  PR_FILE="$HOME/.blackroad/carpool/pricing/$(echo "$PRODUCT" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | cut -c1-40)-$(date +%Y%m%d).md"
+  mkdir -p "$HOME/.blackroad/carpool/pricing"
+  printf "# Pricing: %s\nDate: %s\n\n" "$PRODUCT" "$(date '+%Y-%m-%d')" > "$PR_FILE"
+  for entry in "LUCIDIA|PRICING PHILOSOPHY|Value-based, usage-based, or seat-based? Why? What does the pricing model say about the product?" "ARIA|TIER NAMES & COPY|3 tiers: names, 1-line descriptions, who each is for. The words matter as much as the numbers." "PRISM|THE NUMBERS|Specific price points with reasoning. What competitors charge. Where to anchor, where to land." "ALICE|WHAT IS IN EACH TIER|Feature matrix: what is free, what is paid, what is enterprise-only. The upgrade trigger." "SHELLFISH|ANTI-PATTERNS TO AVOID|The pricing mistakes that kill conversion: too many tiers, hidden limits, confusing units, annual-only."; do
+    IFS='|' read -r ag section lens <<< "$entry"
+    IFS='|' read -r _ col _ emoji <<< "$(agent_meta "$ag")"
+    echo -e "${col}${emoji} ${ag} — ${section}${NC}"
+    resp=$(python3 -c "
+import urllib.request, json
+payload = json.dumps({'model':'${MODEL:-tinyllama}','prompt':f'''You are ${ag} designing pricing for: \"${PRODUCT}\"
+Section: ${section}
+${lens}
+Specific and opinionated. Real numbers where possible.
+Format: - <point>''','stream':False}).encode()
+req = urllib.request.Request('http://localhost:11434/api/generate', data=payload, headers={'Content-Type':'application/json'})
+print(json.loads(urllib.request.urlopen(req,timeout=30).read()).get('response','').strip())
+" 2>/dev/null || echo "[${ag} offline]")
+    echo "$resp"
+    printf "\n## %s\n%s\n" "$section" "$resp" >> "$PR_FILE"
+    echo ""
+  done
+  echo -e "\033[0;32m✓ Saved to $PR_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
