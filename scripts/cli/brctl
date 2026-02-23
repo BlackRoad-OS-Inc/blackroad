@@ -1,0 +1,295 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# brctl - BlackRoad OS Cluster Control
+# Usage: brctl <command> [args]
+
+set -e
+
+CLUSTER_DIR="$(dirname "$(dirname "$(readlink -f "$0")")")"
+CLUSTER_CONFIG="$CLUSTER_DIR/etc/cluster.yaml"
+CLUSTER_LIB="$CLUSTER_DIR/lib"
+
+# All nodes
+NODES="cecilia lucidia octavia alice aria blackroad os cadence"
+PI_NODES="cecilia lucidia octavia alice aria"
+CLOUD_NODES="blackroad os cadence"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PINK='\033[38;5;205m'
+NC='\033[0m'
+
+usage() {
+    cat << 'EOF'
+brctl - BlackRoad OS Cluster Control
+
+USAGE:
+    brctl <command> [args]
+
+COMMANDS:
+    status              Show cluster status
+    ping                Ping all nodes
+    exec <cmd>          Execute command on all nodes
+    exec-online <cmd>   Execute command on online nodes only
+    ssh <node>          SSH to a specific node
+    deploy              Deploy cluster tools to all nodes
+    sync                Sync configuration to all nodes
+    health              Detailed health check
+    services            Show services across cluster
+    restart <service>   Restart service on all nodes
+    logs <node>         View logs from a node
+
+NODE COMMANDS:
+    brctl <node> <cmd>  Execute command on specific node
+
+EXAMPLES:
+    brctl status
+    brctl exec "uptime"
+    brctl cecilia "docker ps"
+    brctl deploy
+EOF
+}
+
+# Check if node is online (suppress all output including banners)
+is_online() {
+    local node="$1"
+    ssh -o ConnectTimeout=2 -o BatchMode=yes -o LogLevel=ERROR "$node" "true" &>/dev/null
+}
+
+# Execute on single node (suppress banners with -T for non-interactive mode)
+exec_node() {
+    local node="$1"
+    shift
+    local cmd="$*"
+    ssh -T -o ConnectTimeout=5 -o LogLevel=ERROR "$node" "TERM=dumb $cmd" 2>/dev/null | tr -d '\r' | grep -Ev "(Welcome to BlackRoad|Node:.*User:|\[38;5;)"
+}
+
+# Execute and return single value (for table cells)
+exec_single() {
+    local node="$1"
+    shift
+    local cmd="$*"
+    ssh -T -o ConnectTimeout=5 -o LogLevel=ERROR "$node" "TERM=dumb $cmd" 2>/dev/null | tr -d '\r' | grep -Ev "(Welcome to BlackRoad|Node:.*User:|\[38;5;|^$)" | head -1
+}
+
+# Execute on all nodes
+exec_all() {
+    local cmd="$*"
+    for node in $NODES; do
+        echo -e "${PINK}=== $node ===${NC}"
+        if is_online "$node"; then
+            exec_node "$node" "$cmd" || echo -e "${RED}Command failed${NC}"
+        else
+            echo -e "${RED}OFFLINE${NC}"
+        fi
+        echo ""
+    done
+}
+
+# Execute on online nodes only
+exec_online() {
+    local cmd="$*"
+    for node in $NODES; do
+        if is_online "$node"; then
+            echo -e "${PINK}=== $node ===${NC}"
+            exec_node "$node" "$cmd" || echo -e "${RED}Command failed${NC}"
+            echo ""
+        fi
+    done
+}
+
+# Cluster status
+cmd_status() {
+    echo "================================================================================"
+    echo "  BLACKROAD OS CLUSTER STATUS"
+    echo "  $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "================================================================================"
+    echo ""
+    printf "%-12s %-8s %-8s %-12s %-20s\n" "NODE" "STATUS" "LOAD" "UPTIME" "SERVICES"
+    printf "%-12s %-8s %-8s %-12s %-20s\n" "----" "------" "----" "------" "--------"
+
+    for node in $NODES; do
+        if is_online "$node"; then
+            STATUS="${GREEN}ONLINE${NC}"
+            INFO=$(exec_single "$node" "cat /proc/loadavg | awk '{print \$1}'")
+            UPTIME=$(exec_single "$node" "uptime -p 2>/dev/null | sed 's/up //' | cut -c1-10 || echo '-'")
+            SVCS=$(exec_single "$node" "systemctl is-active docker ollama tailscaled 2>/dev/null | tr '\n' ' ' | sed 's/active/✓/g; s/inactive/✗/g; s/unknown/?/g'" || echo "?")
+        else
+            STATUS="${RED}OFFLINE${NC}"
+            INFO="-"
+            UPTIME="-"
+            SVCS="-"
+        fi
+        printf "%-12s %-8b %-8s %-12s %-20s\n" "$node" "$STATUS" "${INFO:-'-'}" "${UPTIME:-'-'}" "${SVCS:-'-'}"
+    done
+    echo ""
+}
+
+# Ping all nodes
+cmd_ping() {
+    echo "Pinging all nodes..."
+    echo ""
+    for node in $NODES; do
+        echo -n "$node: "
+        if is_online "$node"; then
+            echo -e "${GREEN}OK${NC}"
+        else
+            echo -e "${RED}FAILED${NC}"
+        fi
+    done
+}
+
+# Health check
+cmd_health() {
+    echo "================================================================================"
+    echo "  CLUSTER HEALTH CHECK"
+    echo "================================================================================"
+    echo ""
+
+    for node in $NODES; do
+        echo -e "${PINK}=== $node ===${NC}"
+        if is_online "$node"; then
+            exec_node "$node" "
+                echo 'Uptime:' \$(uptime -p 2>/dev/null || uptime | awk '{print \$3,\$4}')
+                echo 'Load:' \$(cat /proc/loadavg | awk '{print \$1, \$2, \$3}')
+                echo 'Memory:' \$(free -h | awk '/^Mem:/ {print \$3\"/\"\$2}')
+                echo 'Disk:' \$(df -h / | awk 'NR==2 {print \$3\"/\"\$2\" (\"\$5\")\"}')
+                echo 'Docker:' \$(docker ps -q 2>/dev/null | wc -l) containers
+                echo 'Tailscale:' \$(tailscale status >/dev/null 2>&1 && echo UP || echo DOWN)
+            "
+        else
+            echo -e "${RED}OFFLINE${NC}"
+        fi
+        echo ""
+    done
+}
+
+# Show services
+cmd_services() {
+    echo "================================================================================"
+    echo "  CLUSTER SERVICES"
+    echo "================================================================================"
+    echo ""
+
+    for node in $NODES; do
+        echo -e "${PINK}=== $node ===${NC}"
+        if is_online "$node"; then
+            exec_node "$node" "
+                echo 'Systemd services:'
+                systemctl list-units --type=service --state=running 2>/dev/null | grep -E '(docker|ollama|tailscale|cloudflare|node_exporter)' | awk '{print \"  \" \$1}' || echo '  (none)'
+                echo ''
+                echo 'Docker containers:'
+                docker ps --format '  {{.Names}}: {{.Status}}' 2>/dev/null || echo '  (none)'
+            "
+        else
+            echo -e "${RED}OFFLINE${NC}"
+        fi
+        echo ""
+    done
+}
+
+# Deploy cluster tools
+cmd_deploy() {
+    echo "Deploying cluster tools to all nodes..."
+    echo ""
+
+    local REMOTE_DIR="/opt/blackroad"
+
+    for node in $NODES; do
+        echo -e "${PINK}=== Deploying to $node ===${NC}"
+        if is_online "$node"; then
+            # Create directories
+            exec_node "$node" "sudo mkdir -p $REMOTE_DIR/{bin,etc,lib} && sudo chown -R \$(whoami) $REMOTE_DIR" || continue
+
+            # Copy cluster tools
+            scp -q "$CLUSTER_DIR/bin/brnode" "$node:$REMOTE_DIR/bin/" 2>/dev/null || echo "  brnode not found, skipping"
+            scp -q "$CLUSTER_DIR/etc/cluster.yaml" "$node:$REMOTE_DIR/etc/" 2>/dev/null || true
+
+            # Make executable
+            exec_node "$node" "chmod +x $REMOTE_DIR/bin/* 2>/dev/null" || true
+
+            echo -e "${GREEN}  Done${NC}"
+        else
+            echo -e "${RED}  OFFLINE - skipped${NC}"
+        fi
+    done
+
+    echo ""
+    echo "Deployment complete."
+}
+
+# Sync configuration
+cmd_sync() {
+    echo "Syncing cluster configuration..."
+    for node in $NODES; do
+        if is_online "$node"; then
+            echo -n "$node: "
+            scp -q "$CLUSTER_CONFIG" "$node:/opt/blackroad/etc/cluster.yaml" 2>/dev/null && echo -e "${GREEN}OK${NC}" || echo -e "${RED}FAILED${NC}"
+        fi
+    done
+}
+
+# Main
+case "${1:-}" in
+    status)
+        cmd_status
+        ;;
+    ping)
+        cmd_ping
+        ;;
+    exec)
+        shift
+        exec_all "$@"
+        ;;
+    exec-online)
+        shift
+        exec_online "$@"
+        ;;
+    health)
+        cmd_health
+        ;;
+    services)
+        cmd_services
+        ;;
+    deploy)
+        cmd_deploy
+        ;;
+    sync)
+        cmd_sync
+        ;;
+    ssh)
+        shift
+        ssh "$1"
+        ;;
+    logs)
+        shift
+        exec_node "$1" "journalctl -n 50 --no-pager"
+        ;;
+    cecilia|lucidia|octavia|alice|aria|blackroad os|cadence)
+        node="$1"
+        shift
+        exec_node "$node" "$@"
+        ;;
+    -h|--help|help)
+        usage
+        ;;
+    "")
+        usage
+        ;;
+    *)
+        echo "Unknown command: $1"
+        usage
+        exit 1
+        ;;
+esac

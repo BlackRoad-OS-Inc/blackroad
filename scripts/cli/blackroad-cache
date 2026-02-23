@@ -1,0 +1,40 @@
+#!/bin/bash
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+CACHE_HOST="${CACHE_HOST:-cecilia}"
+
+case "$1" in
+    start)
+        ssh "$CACHE_HOST" '~/br-cache start'
+        ;;
+    stop)
+        ssh "$CACHE_HOST" '~/br-cache stop'
+        ;;
+    fleet-start)
+        echo -e "${PINK}Starting Cache on fleet...${NC}"
+        for host in cecilia lucidia octavia aria anastasia; do
+            echo -n "$host: "
+            ssh "$host" 'nohup python3 ~/.blackroad/cache/cache_server.py > ~/.blackroad/cache/cache.log 2>&1 &' && \
+                echo -e "${GREEN}started${NC}" || echo "failed"
+        done
+        ;;
+    fleet-status)
+        echo -e "${PINK}Cache Status Across Fleet${NC}"
+        for host in cecilia lucidia octavia aria anastasia; do
+            echo -n -e "${AMBER}$host${NC}: "
+            result=$(echo "PING" | nc -w2 "$host" 6379 2>/dev/null)
+            if [[ "$result" == *"PONG"* ]]; then
+                echo -e "${GREEN}PONG${NC}"
+            else
+                echo "offline"
+            fi
+        done
+        ;;
+    *)
+        echo "br-cache - Distributed Cache"
+        echo "Usage: br-cache <start|stop|fleet-start|fleet-status>"
+        ;;
+esac

@@ -1,0 +1,166 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-fleet - BlackRoad Fleet Orchestrator (local version)
+# Execute fleet commands from Mac
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+NC='\033[0m'
+
+NODES=(cecilia lucidia octavia aria anastasia)
+
+case "$1" in
+    status|"")
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${WHITE}                   BLACKROAD FLEET STATUS${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+
+        for node in "${NODES[@]}"; do
+            echo -n -e "${AMBER}$node${NC}: "
+            if ssh -o ConnectTimeout=3 "$node" "echo ok" &>/dev/null; then
+                echo -n -e "${GREEN}ONLINE${NC} "
+
+                # Check services in parallel
+                for port in 8000 8765 8766 11434; do
+                    if ssh -o ConnectTimeout=2 "$node" "ss -tlnp 2>/dev/null | grep -q :$port" 2>/dev/null; then
+                        case $port in
+                            8000) echo -n -e "${BLUE}API${NC} " ;;
+                            8765) echo -n -e "${VIOLET}MESH${NC} " ;;
+                            8766) echo -n -e "${PINK}EVENT${NC} " ;;
+                            11434) echo -n -e "${AMBER}OLLAMA${NC} " ;;
+                        esac
+                    fi
+                done
+                echo ""
+            else
+                echo -e "${RED}OFFLINE${NC}"
+            fi
+        done
+
+        echo ""
+        echo -e "${DIM}Ports: API=8000 Mesh=8765 EventBus=8766 Ollama=11434${NC}"
+        ;;
+
+    start)
+        service="$2"
+        echo -e "${PINK}Starting $service on fleet...${NC}"
+
+        for node in "${NODES[@]}"; do
+            echo -n "$node: "
+            case "$service" in
+                api)
+                    ssh "$node" 'cd ~/blackroad-api 2>/dev/null && nohup ~/.local/bin/uvicorn main:app --host 0.0.0.0 --port 8000 > api.log 2>&1 &' && \
+                        echo -e "${GREEN}started${NC}" || echo "skip"
+                    ;;
+                mesh)
+                    ssh "$node" 'nohup python3 ~/.blackroad/mesh/mesh_hub.py > ~/.blackroad/mesh/hub.log 2>&1 &' && \
+                        echo -e "${GREEN}started${NC}" || echo "skip"
+                    ;;
+                eventbus)
+                    ssh "$node" 'nohup python3 ~/.blackroad/eventbus/event_bus.py > ~/.blackroad/eventbus/logs/bus.log 2>&1 &' && \
+                        echo -e "${GREEN}started${NC}" || echo "skip"
+                    ;;
+                health)
+                    ssh "$node" 'nohup python3 ~/.blackroad/monitor/health_daemon.py > ~/.blackroad/monitor/health.log 2>&1 &' && \
+                        echo -e "${GREEN}started${NC}" || echo "skip"
+                    ;;
+                all)
+                    ssh "$node" 'cd ~/blackroad-api 2>/dev/null && nohup ~/.local/bin/uvicorn main:app --host 0.0.0.0 --port 8000 > api.log 2>&1 &; \
+                        nohup python3 ~/.blackroad/mesh/mesh_hub.py > ~/.blackroad/mesh/hub.log 2>&1 &; \
+                        nohup python3 ~/.blackroad/eventbus/event_bus.py > ~/.blackroad/eventbus/logs/bus.log 2>&1 &; \
+                        nohup python3 ~/.blackroad/monitor/health_daemon.py > ~/.blackroad/monitor/health.log 2>&1 &' &
+                    echo -e "${GREEN}starting all${NC}"
+                    ;;
+            esac
+        done
+        wait
+        ;;
+
+    stop)
+        service="$2"
+        port=""
+        case "$service" in
+            api) port=8000 ;;
+            mesh) port=8765 ;;
+            eventbus) port=8766 ;;
+        esac
+
+        if [ -n "$port" ]; then
+            echo -e "${AMBER}Stopping $service (port $port) on fleet...${NC}"
+            for node in "${NODES[@]}"; do
+                echo -n "$node: "
+                ssh "$node" "lsof -ti:$port 2>/dev/null | xargs kill -9 2>/dev/null" && \
+                    echo -e "${GREEN}stopped${NC}" || echo "not running"
+            done
+        fi
+        ;;
+
+    exec)
+        shift
+        cmd="$*"
+        echo -e "${PINK}Executing on fleet: $cmd${NC}"
+        echo ""
+
+        for node in "${NODES[@]}"; do
+            echo -e "${AMBER}=== $node ===${NC}"
+            ssh -o ConnectTimeout=5 "$node" "$cmd" 2>/dev/null || echo "(offline)"
+            echo ""
+        done
+        ;;
+
+    resources)
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${WHITE}         FLEET RESOURCE USAGE${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+
+        printf "%-12s %8s %8s %8s\n" "NODE" "CPU" "MEM" "DISK"
+        echo "─────────────────────────────────────────"
+
+        for node in "${NODES[@]}"; do
+            cpu=$(ssh -o ConnectTimeout=3 "$node" "top -bn1 | grep 'Cpu' | awk '{print \$2}'" 2>/dev/null || echo "?")
+            mem=$(ssh -o ConnectTimeout=3 "$node" "free | awk '/Mem:/{printf \"%.1f\", \$3/\$2*100}'" 2>/dev/null || echo "?")
+            disk=$(ssh -o ConnectTimeout=3 "$node" "df / | awk 'NR==2{print \$5}'" 2>/dev/null || echo "?")
+
+            printf "%-12s %7s%% %7s%% %8s\n" "$node" "$cpu" "$mem" "$disk"
+        done
+        ;;
+
+    ssh)
+        node="$2"
+        shift 2
+        cmd="$*"
+        if [ -n "$cmd" ]; then
+            ssh "$node" "$cmd"
+        else
+            ssh "$node"
+        fi
+        ;;
+
+    *)
+        echo -e "${PINK}br-fleet${NC} - BlackRoad Fleet Orchestrator"
+        echo ""
+        echo "Commands:"
+        echo "  status        - Show fleet status"
+        echo "  start <svc>   - Start service on fleet (api/mesh/eventbus/health/all)"
+        echo "  stop <svc>    - Stop service on fleet"
+        echo "  exec <cmd>    - Execute command on all nodes"
+        echo "  resources     - Show resource usage"
+        echo "  ssh <node>    - SSH to node"
+        ;;
+esac

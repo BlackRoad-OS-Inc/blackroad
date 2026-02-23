@@ -1,0 +1,595 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# ═══════════════════════════════════════════════════════════════════════════════
+#  BLACKROAD CLI v3.0 - The Operating System for Human Intelligence
+#  Unified command center for infrastructure, agents, pixel metaverse & fleet
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Brand Colors ──
+PINK=$'\033[38;5;205m'
+AMBER=$'\033[38;5;214m'
+BLUE=$'\033[38;5;69m'
+VIOLET=$'\033[38;5;135m'
+GREEN=$'\033[38;5;82m'
+RED=$'\033[38;5;196m'
+PINK=$'\033[38;5;45m'
+DIM=$'\033[38;5;245m'
+BOLD=$'\033[1m'
+RST=$'\033[0m'
+
+# ── Paths ──
+MEMORY_DIR="$HOME/.blackroad/memory"
+AGENTS_DIR="$MEMORY_DIR/active-agents"
+JOURNAL="$MEMORY_DIR/journals/pixel-agents.jsonl"
+DB="$HOME/.blackroad/blackroad.db"
+PIXEL_ENGINE="$HOME/pixel-metaverse-engine.sh"
+PI_BRIDGE="$HOME/pixel-pi-bridge.sh"
+SECURITY_MODULE="$HOME/blackroad-security.sh"
+DASHBOARD_MODULE="$HOME/blackroad-dashboard.sh"
+AI_MODULE="$HOME/blackroad-ai.sh"
+
+# ── Header ──
+header() {
+    echo -e "${PINK}╔══════════════════════════════════════════════════════════════════════╗${RST}"
+    echo -e "${PINK}║${RST}  ${AMBER}█▀▀▄ █    █▀▀█ █▀▀  █  █ █▀▀▄ █▀▀█ █▀▀█ █▀▀▄${RST}  ${DIM}CLI v3.0${RST}          ${PINK}║${RST}"
+    echo -e "${PINK}║${RST}  ${AMBER}█▀▀▄ █    █▄▄█ █    █▀▄  █▄▄▀ █  █ █▄▄█ █  █${RST}                    ${PINK}║${RST}"
+    echo -e "${PINK}║${RST}  ${AMBER}▀▀▀  ▀▀▀  ▀  ▀ ▀▀▀  ▀ ▀  ▀ ▀▀ ▀▀▀▀ ▀  ▀ ▀▀▀ ${RST}  ${DIM}OS${RST}               ${PINK}║${RST}"
+    echo -e "${PINK}╚══════════════════════════════════════════════════════════════════════╝${RST}"
+}
+
+mini_header() {
+    echo -e "${PINK}─── ${AMBER}BLACKROAD${RST} ${PINK}───${RST} $1"
+}
+
+# ── Commands ──
+
+cmd_help() {
+    header
+    echo ""
+    echo -e "  ${BOLD}${AMBER}INFRASTRUCTURE${RST}"
+    echo -e "    ${GREEN}status${RST}              System overview & health"
+    echo -e "    ${GREEN}agents${RST}              List all registered agents"
+    echo -e "    ${GREEN}deploy${RST} <target>     Deploy (railway|vercel|cloudflare)"
+    echo -e "    ${GREEN}sync${RST}                Git sync all repos"
+    echo ""
+    echo -e "  ${BOLD}${VIOLET}PIXEL METAVERSE${RST}"
+    echo -e "    ${GREEN}pixel${RST}               Metaverse dashboard"
+    echo -e "    ${GREEN}pixel spawn${RST} [n]     Spawn n agents (default: 10)"
+    echo -e "    ${GREEN}pixel run${RST} [sec]     Start autonomous simulation"
+    echo -e "    ${GREEN}pixel tick${RST}          Run one simulation cycle"
+    echo -e "    ${GREEN}pixel init${RST}          Full metaverse initialization"
+    echo ""
+    echo -e "  ${BOLD}${BLUE}PI FLEET${RST}"
+    echo -e "    ${GREEN}fleet${RST}               Fleet status dashboard"
+    echo -e "    ${GREEN}fleet scan${RST}          Scan all Pi devices"
+    echo -e "    ${GREEN}fleet watch${RST} [sec]   Continuous fleet monitoring"
+    echo -e "    ${GREEN}fleet ssh${RST} <name>    SSH to device (cecilia|lucidia|alice|aria|octavia)"
+    echo ""
+    echo -e "  ${BOLD}${PINK}MEMORY SYSTEM${RST}"
+    echo -e "    ${GREEN}memory${RST}              Memory journal tail"
+    echo -e "    ${GREEN}memory log${RST} <msg>    Append to memory"
+    echo -e "    ${GREEN}memory search${RST} <q>   Search memory entries"
+    echo -e "    ${GREEN}memory stats${RST}        Memory system statistics"
+    echo ""
+    echo -e "  ${BOLD}${DIM}DATABASE${RST}"
+    echo -e "    ${GREEN}db init${RST}             Initialize SQLite database"
+    echo -e "    ${GREEN}db agents${RST}           List agents in database"
+    echo -e "    ${GREEN}db tasks${RST}            Show pending tasks"
+    echo -e "    ${GREEN}db query${RST} <sql>      Run raw SQL query"
+    echo ""
+    echo -e "  ${BOLD}${PINK}AI${RST}"
+    echo -e "    ${GREEN}ai${RST}                  AI chat (or: ai <prompt>)"
+    echo -e "    ${GREEN}ai ask${RST} <agent>      Chat with agent (cece, lucidia, alice...)"
+    echo -e "    ${GREEN}ai models${RST}           List available Ollama models"
+    echo -e "    ${GREEN}ai switch${RST} <model>   Change active model"
+    echo -e "    ${GREEN}ai council${RST} <prompt> Ask all agents the same question"
+    echo ""
+    echo -e "  ${BOLD}${PINK}DASHBOARD${RST}"
+    echo -e "    ${GREEN}dash${RST}                Full monitoring dashboard"
+    echo -e "    ${GREEN}dash watch${RST}          Live updating dashboard"
+    echo -e "    ${GREEN}dash compact${RST}        Single-line summary"
+    echo -e "    ${GREEN}dash mini${RST}           Minimal one-liner (for prompts)"
+    echo ""
+    echo -e "  ${BOLD}${RED}SECURITY${RST}"
+    echo -e "    ${GREEN}security${RST}            Security dashboard"
+    echo -e "    ${GREEN}security quick${RST}      Quick security health check"
+    echo -e "    ${GREEN}security audit${RST}      Full security audit"
+    echo -e "    ${GREEN}security secrets${RST}    Scan for hardcoded secrets"
+    echo -e "    ${GREEN}security fleet${RST}      Pi fleet security check"
+    echo -e "    ${GREEN}security ssh${RST}        SSH key audit"
+    echo ""
+    echo -e "  ${BOLD}${DIM}UTILITIES${RST}"
+    echo -e "    ${GREEN}colors${RST}              Show brand color palette"
+    echo -e "    ${GREEN}gradient${RST}            Show brand gradient"
+    echo -e "    ${GREEN}codex${RST} <query>       Search BlackRoad OS codex"
+    echo -e "    ${GREEN}lucidia${RST}             Launch Lucidia assistant"
+    echo ""
+}
+
+cmd_status() {
+    header
+    echo ""
+
+    # System info
+    echo -e "  ${AMBER}SYSTEM${RST}"
+    echo -e "    Host:     ${BOLD}$(hostname)${RST}"
+    echo -e "    User:     $(whoami)"
+    echo -e "    Git:      $(git branch --show-current 2>/dev/null || echo 'n/a')"
+    echo -e "    Uptime:   $(uptime | sed 's/.*up //' | sed 's/,.*//')"
+    echo ""
+
+    # Pixel Metaverse
+    local pixel_agents=$(ls -1 "$AGENTS_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+    local pixel_events=$(wc -l < "$JOURNAL" 2>/dev/null | tr -d ' ' || echo "0")
+    echo -e "  ${VIOLET}PIXEL METAVERSE${RST}"
+    echo -e "    Agents:   ${GREEN}$pixel_agents${RST} active"
+    echo -e "    Events:   ${AMBER}$pixel_events${RST} in journal"
+    echo -e "    Tunnel:   ${BLUE}ws://localhost:8765${RST}"
+    echo ""
+
+    # Pi Fleet quick check
+    echo -e "  ${BLUE}PI FLEET${RST}"
+    local online=0
+    for ip in 192.168.4.89 192.168.4.81 192.168.4.49 192.168.4.82 192.168.4.38; do
+        ping -c 1 -W 1 "$ip" &>/dev/null && ((online++))
+    done
+    echo -e "    Online:   ${GREEN}$online${RST}/5 devices"
+
+    # Memory
+    local mem_entries=$(wc -l < "$MEMORY_DIR/journals/master-journal.jsonl" 2>/dev/null | tr -d ' ' || echo "0")
+    echo ""
+    echo -e "  ${PINK}MEMORY${RST}"
+    echo -e "    Entries:  ${AMBER}$mem_entries${RST}"
+    echo ""
+}
+
+cmd_pixel() {
+    local subcmd="${1:-dashboard}"
+    shift 2>/dev/null || true
+
+    case "$subcmd" in
+        dashboard|status)
+            mini_header "Pixel Metaverse"
+            echo ""
+
+            # Count by type
+            local total=$(ls -1 "$AGENTS_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+            local pixel=$(ls -1 "$AGENTS_DIR"/pixel-*.json 2>/dev/null | wc -l | tr -d ' ')
+            local pi=$(ls -1 "$AGENTS_DIR"/pi-*.json 2>/dev/null | wc -l | tr -d ' ')
+            local device=$(ls -1 "$AGENTS_DIR"/device-*.json 2>/dev/null | wc -l | tr -d ' ')
+            local claude=$(ls -1 "$AGENTS_DIR"/claude-*.json 2>/dev/null | wc -l | tr -d ' ')
+
+            echo -e "  ${AMBER}AGENTS${RST}"
+            echo -e "    🤖 Pixel Agents:   ${GREEN}$pixel${RST}"
+            echo -e "    🍓 Real Pis:       ${BLUE}$pi${RST}"
+            echo -e "    💻 Devices:        ${VIOLET}$device${RST}"
+            echo -e "    🧠 Claude:         ${PINK}$claude${RST}"
+            echo -e "    ─────────────────"
+            echo -e "    📊 Total:          ${BOLD}$total${RST}"
+            echo ""
+
+            # Recent activity
+            echo -e "  ${AMBER}RECENT ACTIVITY${RST}"
+            tail -5 "$JOURNAL" 2>/dev/null | while read -r line; do
+                local action=$(echo "$line" | python3 -c "import sys,json; print(json.load(sys.stdin).get('action','?'))" 2>/dev/null || echo "?")
+                local name=$(echo "$line" | python3 -c "import sys,json; print(json.load(sys.stdin).get('agent',{}).get('name','?'))" 2>/dev/null || echo "?")
+                local sprite=$(echo "$line" | python3 -c "import sys,json; print(json.load(sys.stdin).get('agent',{}).get('sprite','🤖'))" 2>/dev/null || echo "🤖")
+                echo -e "    $sprite ${DIM}$name${RST} → $action"
+            done
+            echo ""
+            ;;
+
+        spawn)
+            local count="${1:-10}"
+            mini_header "Spawning $count agents"
+            if [[ -x "$PIXEL_ENGINE" ]]; then
+                "$PIXEL_ENGINE" spawn "$count"
+            else
+                echo -e "${RED}Error:${RST} pixel-metaverse-engine.sh not found"
+            fi
+            ;;
+
+        run)
+            local interval="${1:-10}"
+            mini_header "Starting autonomous simulation (${interval}s)"
+            if [[ -x "$PIXEL_ENGINE" ]]; then
+                "$PIXEL_ENGINE" run "$interval"
+            else
+                echo -e "${RED}Error:${RST} pixel-metaverse-engine.sh not found"
+            fi
+            ;;
+
+        tick)
+            mini_header "Running simulation tick"
+            if [[ -x "$PIXEL_ENGINE" ]]; then
+                "$PIXEL_ENGINE" tick
+            else
+                echo -e "${RED}Error:${RST} pixel-metaverse-engine.sh not found"
+            fi
+            ;;
+
+        init)
+            mini_header "Full metaverse initialization"
+            if [[ -x "$PIXEL_ENGINE" ]]; then
+                "$PIXEL_ENGINE" full-init
+            else
+                echo -e "${RED}Error:${RST} pixel-metaverse-engine.sh not found"
+            fi
+            ;;
+
+        *)
+            echo -e "${RED}Unknown pixel command:${RST} $subcmd"
+            echo -e "Try: ${GREEN}br pixel${RST}, ${GREEN}br pixel spawn${RST}, ${GREEN}br pixel run${RST}"
+            ;;
+    esac
+}
+
+cmd_fleet() {
+    local subcmd="${1:-status}"
+    shift 2>/dev/null || true
+
+    # Device definitions
+    declare -a DEVICES=(
+        "cecilia|192.168.4.89|100.72.180.98|Primary AI (Hailo-8)|👩‍💻"
+        "lucidia|192.168.4.81|100.83.149.86|AI Inference|🎨"
+        "alice|192.168.4.49|100.77.210.18|Worker Node|📚"
+        "aria|192.168.4.82|100.109.14.17|Harmony Protocols|🧠"
+        "octavia|192.168.4.38|100.66.235.47|Multi-arm Processing|🐙"
+    )
+
+    case "$subcmd" in
+        status|dashboard)
+            mini_header "Pi Fleet Status"
+            echo ""
+
+            local online=0
+            local offline=0
+
+            for device in "${DEVICES[@]}"; do
+                IFS='|' read -r name local_ip ts_ip role sprite <<< "$device"
+
+                echo -ne "  $sprite ${AMBER}$name${RST} "
+                printf "%-12s" ""
+
+                if ping -c 1 -W 1 "$local_ip" &>/dev/null; then
+                    echo -e "${GREEN}●${RST} ONLINE  ${DIM}$local_ip${RST}"
+                    ((online++))
+                elif ping -c 1 -W 1 "$ts_ip" &>/dev/null; then
+                    echo -e "${BLUE}●${RST} TAILSCALE  ${DIM}$ts_ip${RST}"
+                    ((online++))
+                else
+                    echo -e "${RED}○${RST} OFFLINE"
+                    ((offline++))
+                fi
+            done
+
+            echo ""
+            echo -e "  ─────────────────────────────────────"
+            echo -e "  Fleet: ${GREEN}$online online${RST}, ${RED}$offline offline${RST}"
+            echo ""
+            ;;
+
+        scan)
+            mini_header "Scanning Pi Fleet"
+            if [[ -x "$PI_BRIDGE" ]]; then
+                "$PI_BRIDGE" scan
+            else
+                echo -e "${RED}Error:${RST} pixel-pi-bridge.sh not found"
+            fi
+            ;;
+
+        watch)
+            local interval="${1:-15}"
+            mini_header "Fleet Monitor (${interval}s)"
+            if [[ -x "$PI_BRIDGE" ]]; then
+                "$PI_BRIDGE" watch "$interval"
+            else
+                echo -e "${RED}Error:${RST} pixel-pi-bridge.sh not found"
+            fi
+            ;;
+
+        ssh)
+            local target="$1"
+            if [[ -z "$target" ]]; then
+                echo -e "${RED}Usage:${RST} br fleet ssh <name>"
+                echo -e "Available: cecilia, lucidia, alice, aria, octavia"
+                return 1
+            fi
+
+            # Find IP for target
+            for device in "${DEVICES[@]}"; do
+                IFS='|' read -r name local_ip ts_ip role sprite <<< "$device"
+                if [[ "$name" == "$target" ]]; then
+                    echo -e "${PINK}Connecting to $sprite $name...${RST}"
+                    ssh "$local_ip" 2>/dev/null || ssh "$ts_ip" 2>/dev/null || echo -e "${RED}$name offline${RST}"
+                    return
+                fi
+            done
+            echo -e "${RED}Unknown device:${RST} $target"
+            ;;
+
+        *)
+            echo -e "${RED}Unknown fleet command:${RST} $subcmd"
+            echo -e "Try: ${GREEN}br fleet${RST}, ${GREEN}br fleet scan${RST}, ${GREEN}br fleet watch${RST}"
+            ;;
+    esac
+}
+
+cmd_memory() {
+    local subcmd="${1:-log}"
+    shift 2>/dev/null || true
+
+    case "$subcmd" in
+        log|tail)
+            mini_header "Memory Journal (last 20)"
+            tail -20 "$MEMORY_DIR/journals/master-journal.jsonl" 2>/dev/null | while read -r line; do
+                local ts=$(echo "$line" | python3 -c "import sys,json; print(json.load(sys.stdin).get('timestamp','?')[:19])" 2>/dev/null || echo "?")
+                local action=$(echo "$line" | python3 -c "import sys,json; print(json.load(sys.stdin).get('action','?'))" 2>/dev/null || echo "?")
+                local entity=$(echo "$line" | python3 -c "import sys,json; print(json.load(sys.stdin).get('entity','?'))" 2>/dev/null || echo "?")
+                echo -e "  ${DIM}$ts${RST} ${AMBER}$action${RST} → $entity"
+            done
+            ;;
+
+        append|add)
+            local msg="$*"
+            if [[ -z "$msg" ]]; then
+                echo -e "${RED}Usage:${RST} br memory log <message>"
+                return 1
+            fi
+            echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\",\"action\":\"note\",\"entity\":\"cli\",\"details\":\"$msg\",\"tags\":[\"cli\"]}" >> "$MEMORY_DIR/journals/master-journal.jsonl"
+            echo -e "${GREEN}✓${RST} Logged to memory"
+            ;;
+
+        search)
+            local query="$*"
+            if [[ -z "$query" ]]; then
+                echo -e "${RED}Usage:${RST} br memory search <query>"
+                return 1
+            fi
+            mini_header "Searching: $query"
+            grep -i "$query" "$MEMORY_DIR/journals/master-journal.jsonl" 2>/dev/null | tail -10 | while read -r line; do
+                local action=$(echo "$line" | python3 -c "import sys,json; print(json.load(sys.stdin).get('action','?'))" 2>/dev/null || echo "?")
+                local entity=$(echo "$line" | python3 -c "import sys,json; print(json.load(sys.stdin).get('entity','?'))" 2>/dev/null || echo "?")
+                echo -e "  ${AMBER}$action${RST} → $entity"
+            done
+            ;;
+
+        stats)
+            mini_header "Memory Statistics"
+            local total=$(wc -l < "$MEMORY_DIR/journals/master-journal.jsonl" 2>/dev/null | tr -d ' ' || echo "0")
+            local pixel=$(wc -l < "$JOURNAL" 2>/dev/null | tr -d ' ' || echo "0")
+            local agents=$(ls -1 "$AGENTS_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+            local tasks=$(ls -1 "$MEMORY_DIR/tasks/"*.json 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+
+            echo -e "  Master Journal:  ${AMBER}$total${RST} entries"
+            echo -e "  Pixel Events:    ${VIOLET}$pixel${RST} events"
+            echo -e "  Active Agents:   ${GREEN}$agents${RST}"
+            echo -e "  Tasks:           ${BLUE}$tasks${RST}"
+            ;;
+
+        *)
+            echo -e "${RED}Unknown memory command:${RST} $subcmd"
+            ;;
+    esac
+}
+
+cmd_agents() {
+    mini_header "Registered Agents"
+    echo ""
+
+    # From pixel agents
+    echo -e "  ${AMBER}PIXEL AGENTS${RST}"
+    for file in "$AGENTS_DIR"/pixel-*.json; do
+        [[ ! -f "$file" ]] && continue
+        local name=$(python3 -c "import json; print(json.load(open('$file')).get('name','?'))" 2>/dev/null || echo "?")
+        local sprite=$(python3 -c "import json; print(json.load(open('$file')).get('sprite','🤖'))" 2>/dev/null || echo "🤖")
+        local activity=$(python3 -c "import json; print(json.load(open('$file')).get('current_activity','idle'))" 2>/dev/null || echo "idle")
+        echo -e "    $sprite $name: ${DIM}$activity${RST}"
+    done | head -10
+
+    # Count more if exists
+    local total_pixel=$(ls -1 "$AGENTS_DIR"/pixel-*.json 2>/dev/null | wc -l | tr -d ' ')
+    if [[ "$total_pixel" -gt 10 ]]; then
+        echo -e "    ${DIM}... and $((total_pixel - 10)) more${RST}"
+    fi
+    echo ""
+
+    # Pi agents
+    echo -e "  ${BLUE}PI AGENTS${RST}"
+    for file in "$AGENTS_DIR"/pi-*.json; do
+        [[ ! -f "$file" ]] && continue
+        local name=$(python3 -c "import json; print(json.load(open('$file')).get('name','?'))" 2>/dev/null || echo "?")
+        local sprite=$(python3 -c "import json; print(json.load(open('$file')).get('sprite','🍓'))" 2>/dev/null || echo "🍓")
+        local status=$(python3 -c "import json; print(json.load(open('$file')).get('status','offline'))" 2>/dev/null || echo "offline")
+        if [[ "$status" == "online" ]]; then
+            echo -e "    $sprite $name: ${GREEN}●${RST} online"
+        else
+            echo -e "    $sprite $name: ${RED}○${RST} offline"
+        fi
+    done
+    echo ""
+}
+
+cmd_deploy() {
+    local target="${1:-railway}"
+    mini_header "Deploying to $target"
+
+    case "$target" in
+        railway)
+            railway up
+            ;;
+        vercel)
+            vercel --prod
+            ;;
+        cloudflare|cf)
+            wrangler deploy
+            ;;
+        pages)
+            local dir="${2:-.}"
+            local project="${3:-blackroad-deploy}"
+            wrangler pages deploy "$dir" --project-name="$project"
+            ;;
+        *)
+            echo -e "Targets: ${GREEN}railway${RST} | ${GREEN}vercel${RST} | ${GREEN}cloudflare${RST} | ${GREEN}pages${RST} <dir> <project>"
+            ;;
+    esac
+}
+
+cmd_sync() {
+    mini_header "Syncing repositories"
+    for r in ~/.blackroad/*/; do
+        if [[ -d "$r/.git" ]]; then
+            (cd "$r" && git pull --ff-only 2>/dev/null && echo -e "  ${GREEN}✓${RST} $(basename "$r")" || echo -e "  ${RED}✗${RST} $(basename "$r")")
+        fi
+    done
+}
+
+cmd_colors() {
+    mini_header "Brand Colors"
+    echo ""
+    echo -e "  ${PINK}████${RST}  Hot Pink     #FF1D6C  (205)"
+    echo -e "  ${AMBER}████${RST}  Amber        #F5A623  (214)"
+    echo -e "  ${BLUE}████${RST}  Electric Blue #2979FF  (69)"
+    echo -e "  ${VIOLET}████${RST}  Violet       #9C27B0  (135)"
+    echo -e "  ${GREEN}████${RST}  Success      #50FA7B  (82)"
+    echo -e "  ${RED}████${RST}  Error        #FF5555  (196)"
+    echo ""
+}
+
+cmd_gradient() {
+    for c in 208 214 220 198 205 134 135 33 69; do
+        printf "\033[38;5;${c}m▓▓▓"
+    done
+    echo -e "${RST}"
+}
+
+cmd_codex() {
+    local query="$*"
+    if [[ -z "$query" ]]; then
+        echo -e "${RED}Usage:${RST} br codex <query>"
+        return 1
+    fi
+    mini_header "Searching BlackRoad OS Codex"
+    python3 ~/blackroad-blackroad\ os-search.py "$query" 2>/dev/null || echo -e "${DIM}Codex not available${RST}"
+}
+
+cmd_lucidia() {
+    ~/bin/blackroad
+}
+
+cmd_security() {
+    if [[ -x "$SECURITY_MODULE" ]]; then
+        "$SECURITY_MODULE" "$@"
+    else
+        echo -e "${RED}Error:${RST} blackroad-security.sh not found"
+    fi
+}
+
+cmd_dashboard() {
+    if [[ -x "$DASHBOARD_MODULE" ]]; then
+        "$DASHBOARD_MODULE" "$@"
+    else
+        echo -e "${RED}Error:${RST} blackroad-dashboard.sh not found"
+    fi
+}
+
+cmd_ai() {
+    if [[ -x "$AI_MODULE" ]]; then
+        "$AI_MODULE" "$@"
+    else
+        echo -e "${RED}Error:${RST} blackroad-ai.sh not found"
+    fi
+}
+
+cmd_db() {
+    local subcmd="${1:-help}"
+    shift 2>/dev/null || true
+
+    case "$subcmd" in
+        init)
+            sqlite3 "$DB" "CREATE TABLE IF NOT EXISTS agents(name TEXT PRIMARY KEY,state INT DEFAULT 0,type TEXT,updated_at TEXT);CREATE TABLE IF NOT EXISTS config(key TEXT PRIMARY KEY,value TEXT);CREATE TABLE IF NOT EXISTS tasks(id INTEGER PRIMARY KEY,agent TEXT,status TEXT DEFAULT 'pending',payload TEXT,created_at TEXT);CREATE TABLE IF NOT EXISTS logs(id INTEGER PRIMARY KEY,source TEXT,message TEXT,ts TEXT DEFAULT CURRENT_TIMESTAMP);"
+            echo -e "${GREEN}✓${RST} Database initialized"
+            ;;
+        agents)
+            sqlite3 -header -column "$DB" "SELECT * FROM agents;" 2>/dev/null || echo -e "${DIM}No agents${RST}"
+            ;;
+        agent-set)
+            sqlite3 "$DB" "INSERT OR REPLACE INTO agents VALUES('${1}',${2:-0},'${3:-compute}',datetime('now'));"
+            echo -e "${GREEN}✓${RST} ${1} → ${2:-0}"
+            ;;
+        tasks)
+            sqlite3 -header -column "$DB" "SELECT * FROM tasks WHERE status='pending';" 2>/dev/null || echo -e "${DIM}No pending tasks${RST}"
+            ;;
+        task-add)
+            sqlite3 "$DB" "INSERT INTO tasks(agent,payload,created_at) VALUES('${1}','${2}',datetime('now'));"
+            echo -e "${GREEN}✓${RST} Task queued for ${1}"
+            ;;
+        task-done)
+            sqlite3 "$DB" "UPDATE tasks SET status='done' WHERE id=${1};"
+            echo -e "${GREEN}✓${RST} Task ${1} completed"
+            ;;
+        logs)
+            sqlite3 -header -column "$DB" "SELECT * FROM logs ORDER BY id DESC LIMIT ${1:-20};" 2>/dev/null
+            ;;
+        query)
+            sqlite3 -header -column "$DB" "$*" 2>/dev/null
+            ;;
+        *)
+            echo -e "db commands: ${GREEN}init${RST} | ${GREEN}agents${RST} | ${GREEN}agent-set${RST} | ${GREEN}tasks${RST} | ${GREEN}task-add${RST} | ${GREEN}task-done${RST} | ${GREEN}logs${RST} | ${GREEN}query${RST}"
+            ;;
+    esac
+}
+
+# ── Main Router ──
+case "${1:-help}" in
+    # Core
+    help|-h|--help)     cmd_help ;;
+    status|s)           cmd_status ;;
+    agents|a)           cmd_agents ;;
+    deploy|d)           shift; cmd_deploy "$@" ;;
+    sync)               cmd_sync ;;
+
+    # Pixel Metaverse
+    pixel|p|meta)       shift; cmd_pixel "$@" ;;
+
+    # Pi Fleet
+    fleet|f|pi)         shift; cmd_fleet "$@" ;;
+
+    # Memory
+    memory|m|mem)       shift; cmd_memory "$@" ;;
+
+    # Database
+    db)                 shift; cmd_db "$@" ;;
+
+    # AI
+    ai)                 shift; cmd_ai "$@" ;;
+
+    # Dashboard
+    dash|dashboard)     shift; cmd_dashboard "$@" ;;
+
+    # Security
+    security|sec)       shift; cmd_security "$@" ;;
+
+    # Utilities
+    colors)             cmd_colors ;;
+    gradient)           cmd_gradient ;;
+    codex|c)            shift; cmd_codex "$@" ;;
+    lucidia|l)          cmd_lucidia ;;
+    banner)             header ;;
+
+    # Agent SSH shortcut
+    ssh)                shift; cmd_fleet ssh "$@" ;;
+
+    *)
+        echo -e "${RED}Unknown command:${RST} $1"
+        echo -e "Run ${GREEN}br help${RST} for available commands"
+        ;;
+esac

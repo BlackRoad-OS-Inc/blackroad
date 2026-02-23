@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+set -e
+
+FAST_MODEL="phi3:mini"
+DEEP_MODEL="llama3.1:latest"
+
+if [ $# -eq 0 ]; then
+  echo "usage: ai [deep] <skill> \"text\""
+  exit 1
+fi
+
+MODE="fast"
+if [ "$1" = "deep" ]; then
+  MODE="deep"
+  shift
+fi
+
+SKILL="$1"
+shift
+PROMPT="$*"
+
+case "$SKILL" in
+  summarize)
+    TASK="Summarize clearly and concisely:"
+    ;;
+  scan)
+    TASK="Scan and give a high-level overview:"
+    ;;
+  explain)
+    TASK="Explain clearly step by step:"
+    ;;
+  fix)
+    TASK="Identify issues and suggest fixes:"
+    ;;
+  *)
+    TASK=""
+    PROMPT="$SKILL $PROMPT"
+    ;;
+esac
+
+MODEL="$FAST_MODEL"
+[ "$MODE" = "deep" ] && MODEL="$DEEP_MODEL"
+
+ollama run "$MODEL" <<< "$TASK $PROMPT"

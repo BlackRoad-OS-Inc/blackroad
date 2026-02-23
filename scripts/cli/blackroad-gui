@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# BlackRoad GUI - Quick launcher for terminal GUI system
+
+# Color functions
+c_pink()   { printf '\033[38;5;205m'; }
+c_blue()   { printf '\033[38;5;75m'; }
+c_purple() { printf '\033[38;5;141m'; }
+c_orange() { printf '\033[38;5;208m'; }
+c_gray()   { printf '\033[38;5;240m'; }
+c_reset()  { printf '\033[0m'; }
+
+show_menu() {
+    clear
+    c_pink
+    printf "╔══════════════════════════════════╗\n"
+    printf "║   BlackRoad Terminal GUI v2.0   ║\n"
+    printf "╚══════════════════════════════════╝\n"
+    c_reset
+    printf "\n"
+    
+    c_blue; printf "LAYOUTS:\n"; c_reset
+    printf "  1. Grid 2×2      - Four equal panes\n"
+    printf "  2. Grid 3×3      - Nine equal panes\n"
+    printf "  3. Dashboard     - Header + 3 columns\n"
+    printf "  4. Split V       - Left/right split\n"
+    printf "  5. Split H       - Top/bottom split\n"
+    printf "  6. Stack         - Vertical stack\n"
+    printf "\n"
+    
+    c_purple; printf "WINDOWS:\n"; c_reset
+    printf "  w. Create window - New terminal window\n"
+    printf "  l. List windows  - Show all windows\n"
+    printf "  d. Window demo   - Interactive demo\n"
+    printf "\n"
+    
+    c_orange; printf "WEB:\n"; c_reset
+    printf "  u. Render URL    - Display web page\n"
+    printf "  f. Render file   - Display HTML file\n"
+    printf "  s. Serve mode    - Local HTML server\n"
+    printf "\n"
+    
+    c_gray; printf "OTHER:\n"; c_reset
+    printf "  t. Test ANSI     - Check terminal\n"
+    printf "  h. Help          - Full guide\n"
+    printf "  q. Quit\n"
+    printf "\n"
+}
+
+main() {
+    while true; do
+        show_menu
+        read -rsn1 -p "Select option: " choice
+        printf "\n\n"
+        
+        case "$choice" in
+            1) ~/br-container-fixed.sh grid 2 2 ;;
+            2) ~/br-container-fixed.sh grid 3 3 ;;
+            3) ~/br-container-fixed.sh dashboard ;;
+            4) ~/br-container-fixed.sh split-v ;;
+            5) ~/br-container-fixed.sh split-h ;;
+            6) ~/br-container-fixed.sh stack 4 ;;
+            
+            w) 
+                read -p "Window name: " name
+                read -p "Rows [24]: " rows
+                read -p "Cols [80]: " cols
+                ~/br-window-manager-fixed.sh create "${name:-Demo}" "${rows:-24}" "${cols:-80}"
+                ;;
+            l) ~/br-window-manager-fixed.sh list ;;
+            d) ~/br-window-manager-fixed.sh demo ;;
+            
+            u)
+                read -p "URL: " url
+                ~/br-web-render-fixed.sh "$url"
+                ;;
+            f)
+                read -p "File path: " file
+                ~/br-web-render-fixed.sh "$file"
+                ;;
+            s)
+                read -p "HTML file: " file
+                ~/br-web-render-fixed.sh --serve "$file"
+                ;;
+            
+            t) ~/test-ansi-codes.sh ;;
+            h) cat ~/BR_GUI_SYSTEM_GUIDE.md | less ;;
+            
+            q|Q) 
+                c_pink; printf "\nGoodbye! 👋\n"; c_reset
+                break
+                ;;
+            
+            *)
+                c_orange; printf "Invalid option: %s\n" "$choice"; c_reset
+                sleep 2
+                ;;
+        esac
+        
+        if [[ "$choice" != "q" && "$choice" != "Q" ]]; then
+            printf "\n"
+            read -rsn1 -p "Press any key to continue..."
+        fi
+    done
+}
+
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'HELP'
+BlackRoad GUI - Terminal GUI System
+
+USAGE:
+  br-gui              Interactive menu
+  br-gui grid 2 2     Direct command
+  br-gui --help       This help
+
+AVAILABLE COMMANDS:
+  Layouts:  grid, dashboard, split-v, split-h, stack
+  Windows:  create, list, demo
+  Web:      url, file, serve
+  
+For full documentation:
+  cat ~/BR_GUI_SYSTEM_GUIDE.md
+HELP
+elif [[ -n "$1" ]]; then
+    # Direct command mode
+    case "$1" in
+        grid) ~/br-container-fixed.sh grid "${2:-2}" "${3:-2}" ;;
+        dashboard) ~/br-container-fixed.sh dashboard ;;
+        split-v) ~/br-container-fixed.sh split-v ;;
+        split-h) ~/br-container-fixed.sh split-h ;;
+        stack) ~/br-container-fixed.sh stack "${2:-3}" ;;
+        test) ~/test-ansi-codes.sh ;;
+        *) c_orange; printf "Unknown command: %s\n" "$1"; c_reset ;;
+    esac
+else
+    main
+fi

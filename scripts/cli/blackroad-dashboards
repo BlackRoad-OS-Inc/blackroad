@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# BlackRoad Dashboard Command Center - ULTIMATE EDITION
+# All 5 dashboards + 15 layout presets
+
+c_pink()   { printf '\033[38;5;205m'; }
+c_blue()   { printf '\033[38;5;75m'; }
+c_cyan()   { printf '\033[38;5;87m'; }
+c_green()  { printf '\033[38;5;82m'; }
+c_reset()  { printf '\033[0m'; }
+c_bold()   { printf '\033[1m'; }
+
+clear
+c_pink; c_bold
+printf "╔═══════════════════════════════════════════════════════════════════╗\n"
+printf "║                                                                   ║\n"
+printf "║       BLACKROAD DASHBOARD COMMAND CENTER - ULTIMATE               ║\n"
+printf "║                                                                   ║\n"
+printf "╚═══════════════════════════════════════════════════════════════════╝\n"
+c_reset
+printf "\n"
+
+c_cyan; c_bold; printf "INDIVIDUAL DASHBOARDS:\n"; c_reset
+printf "  1. Infrastructure (Fleet)      5. GitHub Actions (CI/CD)\n"
+printf "  2. Revenue (Business)\n"
+printf "  3. Quantum (Computing)\n"
+printf "  4. Agents (Coordination)\n"
+printf "\n"
+c_cyan; c_bold; printf "TWO-PANEL LAYOUTS:\n"; c_reset
+printf "  6. Infrastructure + Revenue     9. GitHub + Infrastructure\n"
+printf "  7. Quantum + Infrastructure    10. GitHub + Revenue\n"
+printf "  8. Agents + Revenue\n"
+printf "\n"
+c_cyan; c_bold; printf "MULTI-PANEL COMMAND CENTERS:\n"; c_reset
+printf " 11. Four Panel (2×2)            13. Five Panel Ultimate (custom)\n"
+printf " 12. Horizontal Strip (5×1)      14. Mission Control (3×2)\n"
+printf " 15. Full Command Center (all systems)\n"
+printf "\n"
+printf "Choice [1-15]: "
+read -r choice
+
+case "$choice" in
+    1) br-live ;;
+    2) br-revenue ;;
+    3) br-quantum ;;
+    4) br-agents ;;
+    5) br-github ;;
+    6)
+        br-container split h \
+            "Infrastructure" "br-live --interval 10" \
+            "Revenue" "br-revenue --interval 15"
+        ;;
+    7)
+        br-container split h \
+            "Quantum" "br-quantum --interval 5" \
+            "Infrastructure" "br-live --interval 10"
+        ;;
+    8)
+        br-container split h \
+            "Agents" "br-agents --interval 5" \
+            "Revenue" "br-revenue --demo --interval 15"
+        ;;
+    9)
+        br-container split h \
+            "GitHub CI/CD" "br-github --demo --interval 10" \
+            "Infrastructure" "br-live --interval 10"
+        ;;
+    10)
+        br-container split h \
+            "GitHub CI/CD" "br-github --demo --interval 10" \
+            "Revenue" "br-revenue --demo --interval 15"
+        ;;
+    11)
+        br-container grid 2 2 \
+            "Infrastructure" "br-live --interval 10" \
+            "Revenue" "br-revenue --demo --interval 15" \
+            "Quantum" "br-quantum --interval 5" \
+            "Agents" "br-agents --interval 5"
+        ;;
+    12)
+        br-container grid 5 1 \
+            "Infrastructure" "br-live --interval 10" \
+            "Revenue" "br-revenue --demo --interval 15" \
+            "Quantum" "br-quantum --interval 5" \
+            "Agents" "br-agents --interval 5" \
+            "GitHub" "br-github --demo --interval 10"
+        ;;
+    13)
+        # Custom: GitHub + 4 others in smart layout
+        br-container grid 2 2 \
+            "Fleet & CI/CD" "br-live --interval 10; echo '---'; br-github --demo --once" \
+            "Business Intel" "br-revenue --demo --interval 15" \
+            "Quantum Lab" "br-quantum --interval 5" \
+            "Agent Swarm" "br-agents --interval 5"
+        ;;
+    14)
+        br-container grid 3 2 \
+            "Infrastructure" "br-live --interval 10" \
+            "Revenue" "br-revenue --demo --interval 15" \
+            "Quantum" "br-quantum --interval 5" \
+            "Agents" "br-agents --interval 5" \
+            "GitHub CI/CD" "br-github --demo --interval 10" \
+            "System Status" "while true; do date; echo; uptime; echo; df -h / | tail -1; sleep 10; done"
+        ;;
+    15)
+        # Full command center with all 5 dashboards
+        br-container grid 2 3 \
+            "Infrastructure" "br-live --interval 10" \
+            "Revenue" "br-revenue --demo --interval 15" \
+            "Quantum" "br-quantum --interval 5" \
+            "Agents" "br-agents --interval 5" \
+            "GitHub CI/CD" "br-github --demo --interval 10" \
+            "Live Stats" "while true; do clear; date; echo; uptime; echo; df -h; sleep 5; done"
+        ;;
+    *)
+        echo "Invalid choice"
+        exit 1
+        ;;
+esac

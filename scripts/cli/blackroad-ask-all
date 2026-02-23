@@ -1,0 +1,37 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-ask-all - Ask all agents the same question in parallel
+# Usage: br-ask-all "question"
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;69m'
+WHITE='\033[1;37m'
+NC='\033[0m'
+
+AGENTS=(cecilia lucidia octavia aria)
+
+if [[ -z "$1" ]]; then
+    echo -e "${PINK}br-ask-all${NC} - Ask all agents"
+    echo "Usage: br-ask-all \"your question\""
+    exit 1
+fi
+
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${WHITE}Asking all agents: ${BLUE}$1${NC}"
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+for agent in "${AGENTS[@]}"; do
+    echo -e "${AMBER}[$agent]${NC}"
+    ~/bin/br-call "$agent" "$1" 2>/dev/null | grep -v "━━━" | grep -v "Calling" | tail -n +2 &
+done
+wait

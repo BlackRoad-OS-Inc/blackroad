@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-run — executes a BlackRoad agent
+# Supports local executables (~/bin/<agent>) OR Ollama models
+
+set -e
+
+AGENT="${1:-lucidia}"
+INPUT="$(cat)"
+
+# Colors
+C1='\033[38;5;208m'    # Amber
+C5='\033[38;5;33m'     # Blue
+CW='\033[38;5;255m'    # White
+CD='\033[38;5;240m'    # Dim
+CR='\033[0m'           # Reset
+
+# Check for local agent executable first
+LOCAL_AGENT="$HOME/bin/$AGENT"
+if [[ -x "$LOCAL_AGENT" ]]; then
+    echo "$INPUT" | "$LOCAL_AGENT"
+    exit 0
+fi
+
+# Map agent names → Ollama models
+model_for() {
+  case "$1" in
+    cecilia)  echo "llama3.1:latest" ;;
+    octavia)  echo "qwen2.5:latest" ;;
+    alice)    echo "phi3:latest" ;;
+    lucidia)  echo "llama3.1:latest" ;;
+    aria)     echo "qwen2.5:14b" ;;
+    *)        echo "$1" ;;
+  esac
+}
+
+MODEL="$(model_for "$AGENT")"
+
+printf "${CD}▶ ${C1}%s${CR} (${MODEL})\n" "$AGENT"
+
+# Run through Ollama
+ollama run "$MODEL" "$INPUT"
+

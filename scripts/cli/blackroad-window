@@ -1,0 +1,424 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# BlackRoad Window Manager - Terminal GUI with containers, panels, and web rendering
+# Usage: br-window create <name> <rows> <cols>
+#        br-window split <id> horizontal|vertical
+#        br-window render <id> <url|command>
+#        br-window list
+#        br-window focus <id>
+
+WINDOWS_DIR="$HOME/.br-windows"
+SESSIONS_DIR="$WINDOWS_DIR/sessions"
+LAYOUTS_DIR="$WINDOWS_DIR/layouts"
+STATE_FILE="$WINDOWS_DIR/state.json"
+
+mkdir -p "$SESSIONS_DIR" "$LAYOUTS_DIR"
+
+# Color functions (using printf for proper escape handling)
+c_pink()   { printf '\033[38;5;205m'; }
+c_blue()   { printf '\033[38;5;75m'; }
+c_purple() { printf '\033[38;5;141m'; }
+c_orange() { printf '\033[38;5;208m'; }
+c_gray()   { printf '\033[38;5;240m'; }
+c_reset()  { printf '\033[0m'; }
+c_clear()  { printf '\033[2J\033[H'; }
+
+# ==================
+# WINDOW PRIMITIVES
+# ==================
+
+window_create() {
+    local name="$1"
+    local rows="${2:-24}"
+    local cols="${3:-80}"
+    local id="win_$(date +%s)"
+    
+    cat > "$WINDOWS_DIR/${id}.json" <<EOF
+{
+  "id": "$id",
+  "name": "$name",
+  "rows": $rows,
+  "cols": $cols,
+  "type": "container",
+  "children": [],
+  "focused": null,
+  "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+    
+    c_blue; printf "[WINDOW] "; c_reset; printf "Created: %s (%s)\n" "$name" "$id"
+    echo "$id"
+}
+
+window_split() {
+    local id="$1"
+    local direction="$2"  # horizontal | vertical
+    local pane_id="pane_$(date +%s)"
+    
+    if [[ ! -f "$WINDOWS_DIR/${id}.json" ]]; then
+        echo "Window $id not found" >&2
+        return 1
+    fi
+    
+    # Create new pane
+    cat > "$WINDOWS_DIR/${pane_id}.json" <<EOF
+{
+  "id": "$pane_id",
+  "parent": "$id",
+  "type": "pane",
+  "direction": "$direction",
+  "content": "",
+  "renderer": "shell",
+  "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+    
+    c_purple; printf "[SPLIT] "; c_reset; printf "%s split: %s\n" "$direction" "$pane_id"
+    echo "$pane_id"
+}
+
+window_render() {
+    local id="$1"
+    local target="$2"
+    
+    if [[ ! -f "$WINDOWS_DIR/${id}.json" ]]; then
+        echo "Pane $id not found" >&2
+        return 1
+    fi
+    
+    # Detect target type and render
+    local renderer
+    if [[ "$target" =~ ^https?:// ]]; then
+        renderer="web"
+        _render_web "$id" "$target"
+    elif [[ -f "$target" && "$target" =~ \.html?$ ]]; then
+        renderer="html"
+        _render_html "$id" "$target"
+    else
+        renderer="command"
+        _render_command "$id" "$target"
+    fi
+    
+    c_orange; printf "[RENDER] "; c_reset; printf "%s: %s\n" "$renderer" "$target"
+}
+
+# ==================
+# RENDERING ENGINES
+# ==================
+
+_render_web() {
+    local id="$1"
+    local url="$2"
+    local output_file="$WINDOWS_DIR/${id}.content"
+    
+    if command -v w3m >/dev/null 2>&1; then
+        w3m -dump "$url" > "$output_file" 2>&1
+    elif command -v lynx >/dev/null 2>&1; then
+        lynx -dump "$url" > "$output_file" 2>&1
+    elif command -v curl >/dev/null 2>&1; then
+        curl -s "$url" | html2text 2>&1 > "$output_file" || \
+        curl -s "$url" > "$output_file"
+    else
+        echo "No web renderer available (install w3m or lynx)" > "$output_file"
+        return 1
+    fi
+    
+    c_blue; printf "✓ "; c_reset; printf "Rendered: %s\n" "$url"
+}
+
+_render_html() {
+    local id="$1"
+    local file="$2"
+    local output_file="$WINDOWS_DIR/${id}.content"
+    
+    if command -v w3m >/dev/null 2>&1; then
+        w3m -dump "$file" > "$output_file" 2>&1
+    elif command -v lynx >/dev/null 2>&1; then
+        lynx -dump "$file" > "$output_file" 2>&1
+    else
+        cat "$file" > "$output_file"
+    fi
+    
+    c_blue; printf "✓ "; c_reset; printf "Rendered: %s\n" "$file"
+}
+
+_render_command() {
+    local id="$1"
+    local command="$2"
+    local output_file="$WINDOWS_DIR/${id}.content"
+    
+    bash -c "$command" > "$output_file" 2>&1
+    
+    c_blue; printf "✓ "; c_reset; printf "Executed: %s\n" "$command"
+}
+
+# ==================
+# DRAWING & DISPLAY
+# ==================
+
+window_draw() {
+    local id="$1"
+    
+    if [[ ! -f "$WINDOWS_DIR/${id}.json" ]]; then
+        echo "Window $id not found" >&2
+        return 1
+    fi
+    
+    local name=$(jq -r '.name' "$WINDOWS_DIR/${id}.json")
+    local rows=$(jq -r '.rows' "$WINDOWS_DIR/${id}.json")
+    local cols=$(jq -r '.cols' "$WINDOWS_DIR/${id}.json")
+    
+    # Clear screen
+    c_clear
+    
+    # Draw window frame
+    _draw_frame "$name" "$rows" "$cols"
+    
+    # Draw content
+    _draw_content "$id" "$rows" "$cols"
+}
+
+_draw_frame() {
+    local name="$1"
+    local rows="$2"
+    local cols="$3"
+    
+    # Top border
+    c_pink
+    printf "╔"
+    printf '%.0s═' $(seq 1 $((cols - 2)))
+    printf "╗\n"
+    
+    # Title
+    printf "║ "
+    c_reset
+    printf "%s" "$name"
+    local padding=$((cols - ${#name} - 4))
+    printf '%.0s ' $(seq 1 $padding)
+    c_pink
+    printf " ║\n"
+    
+    # Separator
+    printf "╠"
+    printf '%.0s═' $(seq 1 $((cols - 2)))
+    printf "╣\n"
+    c_reset
+}
+
+_draw_content() {
+    local id="$1"
+    local rows="$2"
+    local cols="$3"
+    local content_file="$WINDOWS_DIR/${id}.content"
+    
+    c_blue; printf "[PANE:%s]" "$id"; c_reset; printf "\n"
+    
+    if [[ -f "$content_file" ]]; then
+        head -n $((rows - 5)) "$content_file" | cut -c1-$((cols - 4))
+    else
+        c_gray; printf "  (empty)\n"; c_reset
+    fi
+    
+    # Bottom border
+    c_pink
+    printf "╚"
+    printf '%.0s═' $(seq 1 $((cols - 2)))
+    printf "╝\n"
+    c_reset
+}
+
+# ==================
+# CONTAINERS
+# ==================
+
+container_create() {
+    local name="$1"
+    local layout="${2:-grid}"  # grid, stack, split
+    local id="container_$(date +%s)"
+    
+    cat > "$WINDOWS_DIR/${id}.json" <<EOF
+{
+  "id": "$id",
+  "name": "$name",
+  "type": "container",
+  "layout": "$layout",
+  "panes": [],
+  "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+    
+    c_orange; printf "[CONTAINER] "; c_reset; printf "Created: %s (%s)\n" "$name" "$layout"
+    echo "$id"
+}
+
+container_add() {
+    local container_id="$1"
+    local pane_id="$2"
+    
+    c_purple; printf "[LINK] "; c_reset; printf "%s → %s\n" "$pane_id" "$container_id"
+}
+
+# ==================
+# SESSION MANAGEMENT
+# ==================
+
+session_create() {
+    local name="$1"
+    local session_id="session_$(date +%s)"
+    local session_file="$SESSIONS_DIR/${session_id}.json"
+    
+    cat > "$session_file" <<EOF
+{
+  "id": "$session_id",
+  "name": "$name",
+  "windows": [],
+  "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+    
+    c_pink; printf "[SESSION] "; c_reset; printf "Created: %s\n" "$name"
+    echo "$session_id"
+}
+
+# ==================
+# LIST & STATUS
+# ==================
+
+window_list() {
+    c_pink; printf "═══ BlackRoad Windows ═══\n"; c_reset
+    printf "\n"
+    
+    # List windows
+    for win_file in "$WINDOWS_DIR"/win_*.json; do
+        [[ -f "$win_file" ]] || continue
+        local id=$(basename "$win_file" .json)
+        local name=$(jq -r '.name' "$win_file")
+        local rows=$(jq -r '.rows' "$win_file")
+        local cols=$(jq -r '.cols' "$win_file")
+        
+        c_blue; printf "■ "; c_reset; printf "%s " "$name"
+        c_gray; printf "(%s)" "$id"; c_reset; printf " - %s×%s\n" "$rows" "$cols"
+    done
+    
+    printf "\n"
+    c_purple; printf "═══ Containers ═══\n"; c_reset
+    printf "\n"
+    
+    # List containers
+    for container_file in "$WINDOWS_DIR"/container_*.json; do
+        [[ -f "$container_file" ]] || continue
+        local id=$(basename "$container_file" .json)
+        local name=$(jq -r '.name' "$container_file")
+        local layout=$(jq -r '.layout' "$container_file")
+        
+        c_orange; printf "▣ "; c_reset; printf "%s " "$name"
+        c_gray; printf "(%s)" "$id"; c_reset; printf " - layout: %s\n" "$layout"
+    done
+    
+    printf "\n"
+    c_gray
+    printf "Total windows: %d\n" "$(find "$WINDOWS_DIR" -name 'win_*.json' 2>/dev/null | wc -l | tr -d ' ')"
+    printf "Total containers: %d\n" "$(find "$WINDOWS_DIR" -name 'container_*.json' 2>/dev/null | wc -l | tr -d ' ')"
+    c_reset
+}
+
+# ==================
+# DEMO
+# ==================
+
+window_demo() {
+    c_pink; printf "═══ BlackRoad Window Manager Demo ═══\n"; c_reset
+    printf "\n"
+    
+    # Create demo window
+    local win_id=$(window_create "Demo Window" 24 80)
+    sleep 1
+    
+    # Split into panes
+    local pane1=$(window_split "$win_id" "horizontal")
+    sleep 1
+    local pane2=$(window_split "$win_id" "vertical")
+    sleep 1
+    
+    # Render content
+    window_render "$pane1" "echo 'Hello from Pane 1!'"
+    window_render "$pane2" "ls -lah"
+    
+    # Show window
+    window_draw "$win_id"
+    
+    printf "\n"
+    c_pink; printf "Try:\n"; c_reset
+    printf "  br-window list\n"
+    printf "  br-window render %s 'ps aux | head -10'\n" "$pane1"
+    printf "  br-window draw %s\n" "$win_id"
+}
+
+# ==================
+# MAIN CLI
+# ==================
+
+main() {
+    local cmd="${1:-help}"
+    shift
+    
+    case "$cmd" in
+        create)
+            window_create "$@"
+            ;;
+        split)
+            window_split "$@"
+            ;;
+        render)
+            window_render "$@"
+            ;;
+        draw)
+            window_draw "$@"
+            ;;
+        list)
+            window_list
+            ;;
+        container)
+            container_create "$@"
+            ;;
+        session)
+            session_create "$@"
+            ;;
+        demo)
+            window_demo
+            ;;
+        help|*)
+            cat <<'HELP'
+BlackRoad Window Manager - Terminal GUI System
+
+USAGE:
+  br-window create <name> [rows] [cols]    Create new window
+  br-window split <id> <h|v>               Split window into panes
+  br-window render <id> <url|file|cmd>     Render content in pane
+  br-window draw <id>                      Display window
+  br-window list                           List all windows
+  br-window container <name> <layout>      Create container
+  br-window session <name>                 Create session
+  br-window demo                           Run demo
+
+EXAMPLES:
+  br-window create "Dashboard" 30 100
+  br-window split win_12345 horizontal
+  br-window render pane_67890 "https://github.com"
+  br-window draw win_12345
+
+For more info: cat ~/BR_GUI_SYSTEM_GUIDE.md
+HELP
+            ;;
+    esac
+}
+
+main "$@"

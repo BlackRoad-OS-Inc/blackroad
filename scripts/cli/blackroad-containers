@@ -1,0 +1,223 @@
+#!/bin/bash
+# br-containers - Container orchestrator CLI (kubectl-like)
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+RED='\033[38;5;196m'
+NC='\033[0m'
+
+CONTAINER_DIR="$HOME/.blackroad/containers"
+API_URL="http://localhost:8100"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    start)
+        echo -e "${PINK}Starting Container Orchestrator...${NC}"
+        nohup python3 "$CONTAINER_DIR/orchestrator.py" > "$CONTAINER_DIR/logs/orchestrator.log" 2>&1 &
+        echo $! > "$CONTAINER_DIR/orchestrator.pid"
+        echo -e "${GREEN}Orchestrator started (PID: $(cat "$CONTAINER_DIR/orchestrator.pid"))${NC}"
+        echo "  API: $API_URL"
+        ;;
+    stop)
+        if [ -f "$CONTAINER_DIR/orchestrator.pid" ]; then
+            kill $(cat "$CONTAINER_DIR/orchestrator.pid") 2>/dev/null
+            rm "$CONTAINER_DIR/orchestrator.pid"
+            echo -e "${AMBER}Orchestrator stopped${NC}"
+        fi
+        ;;
+    status)
+        if [ -f "$CONTAINER_DIR/orchestrator.pid" ] && kill -0 $(cat "$CONTAINER_DIR/orchestrator.pid") 2>/dev/null; then
+            echo -e "${GREEN}●${NC} Orchestrator running"
+            curl -s "$API_URL/status" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print()
+print('Nodes:')
+for node, healthy in data['nodes'].items():
+    status = '●' if healthy else '○'
+    color = '\\033[38;5;82m' if healthy else '\\033[38;5;196m'
+    print(f'  {color}{status}\\033[0m {node}')
+print()
+print('Containers:')
+for name, info in data['containers'].items():
+    status_color = '\\033[38;5;82m' if info['status'] == 'running' else '\\033[38;5;214m'
+    print(f'  {status_color}●\\033[0m {name} ({info[\"node\"]}) - {info[\"image\"]}')
+"
+        else
+            echo -e "${RED}○${NC} Orchestrator not running"
+        fi
+        ;;
+    get)
+        resource="${1:-pods}"
+        case "$resource" in
+            pods|containers)
+                curl -s "$API_URL/containers" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'{\"NAME\":<30} {\"STATUS\":<12} {\"NODE\":<12} {\"IMAGE\":<30}')
+for name, c in data.items():
+    print(f'{name:<30} {c[\"status\"]:<12} {c[\"node\"]:<12} {c[\"image\"]:<30}')
+"
+                ;;
+            deployments|deploy)
+                curl -s "$API_URL/deployments" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'{\"NAME\":<30} {\"REPLICAS\":<10} {\"IMAGE\":<40}')
+for name, d in data.items():
+    print(f'{name:<30} {d[\"replicas\"]:<10} {d[\"image\"]:<40}')
+"
+                ;;
+            nodes)
+                curl -s "$API_URL/status" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'{\"NAME\":<15} {\"STATUS\":<10}')
+for node, healthy in data['nodes'].items():
+    status = 'Ready' if healthy else 'NotReady'
+    print(f'{node:<15} {status:<10}')
+"
+                ;;
+        esac
+        ;;
+    apply)
+        manifest="$1"
+        if [ -z "$manifest" ]; then
+            echo "Usage: br-containers apply <manifest.yaml>"
+            exit 1
+        fi
+
+        if [ ! -f "$manifest" ]; then
+            echo "File not found: $manifest"
+            exit 1
+        fi
+
+        # Parse and apply manifest
+        api_request=$(python3 "$CONTAINER_DIR/manifest_parser.py" "$manifest")
+        curl -s -X POST "$API_URL/deploy" \
+            -H "Content-Type: application/json" \
+            -d "$api_request" | python3 -m json.tool
+        ;;
+    run)
+        name="$1"; image="$2"
+        if [ -z "$name" ] || [ -z "$image" ]; then
+            echo "Usage: br-containers run <name> <image> [--port=8080:80] [--node=cecilia]"
+            exit 1
+        fi
+
+        # Parse additional args
+        ports="{}"
+        node="null"
+        env="{}"
+
+        for arg in "${@:3}"; do
+            case "$arg" in
+                --port=*)
+                    mapping="${arg#--port=}"
+                    host="${mapping%:*}"
+                    container="${mapping#*:}"
+                    ports="{\"$container\": $host}"
+                    ;;
+                --node=*)
+                    node="\"${arg#--node=}\""
+                    ;;
+                --env=*)
+                    kv="${arg#--env=}"
+                    key="${kv%=*}"
+                    val="${kv#*=}"
+                    env="{\"$key\": \"$val\"}"
+                    ;;
+            esac
+        done
+
+        curl -s -X POST "$API_URL/deploy" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"$name\",\"image\":\"$image\",\"replicas\":1,\"ports\":$ports,\"node\":$node,\"env\":$env}" | python3 -m json.tool
+        ;;
+    scale)
+        name="$1"; replicas="$2"
+        if [ -z "$name" ] || [ -z "$replicas" ]; then
+            echo "Usage: br-containers scale <deployment> <replicas>"
+            exit 1
+        fi
+        curl -s -X POST "$API_URL/scale/$name" \
+            -H "Content-Type: application/json" \
+            -d "{\"replicas\":$replicas}" | python3 -m json.tool
+        ;;
+    delete)
+        name="$1"
+        if [ -z "$name" ]; then
+            echo "Usage: br-containers delete <container>"
+            exit 1
+        fi
+        curl -s -X DELETE "$API_URL/delete/$name" | python3 -m json.tool
+        ;;
+    logs)
+        name="$1"
+        if [ -z "$name" ]; then
+            echo "Usage: br-containers logs <container>"
+            exit 1
+        fi
+        # Get container node and fetch logs
+        node=$(curl -s "$API_URL/containers" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if '$name' in data:
+    print(data['$name']['node'])
+")
+        if [ -n "$node" ]; then
+            ssh "$node" "docker logs $name --tail 100"
+        else
+            echo "Container not found: $name"
+        fi
+        ;;
+    exec)
+        name="$1"
+        shift
+        cmd="${*:-/bin/sh}"
+        if [ -z "$name" ]; then
+            echo "Usage: br-containers exec <container> [command]"
+            exit 1
+        fi
+        node=$(curl -s "$API_URL/containers" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if '$name' in data:
+    print(data['$name']['node'])
+")
+        if [ -n "$node" ]; then
+            ssh -t "$node" "docker exec -it $name $cmd"
+        fi
+        ;;
+    fleet-status)
+        echo -e "${PINK}╭─ CONTAINER FLEET STATUS ──────────────────────────────────────────────────────╮${NC}"
+        for host in cecilia lucidia octavia aria; do
+            echo -e "${PINK}│${NC}  ${BLUE}$host:${NC}"
+            ssh -o ConnectTimeout=3 "$host" 'docker ps --format "    {{.Names}}: {{.Image}} ({{.Status}})"' 2>/dev/null || echo "    (offline)"
+        done
+        echo -e "${PINK}╰────────────────────────────────────────────────────────────────────────────────╯${NC}"
+        ;;
+    help|*)
+        echo -e "${PINK}br-containers - Container Orchestrator CLI${NC}"
+        echo ""
+        echo "Management:"
+        echo "  start                     Start orchestrator"
+        echo "  stop                      Stop orchestrator"
+        echo "  status                    Show cluster status"
+        echo ""
+        echo "Resources:"
+        echo "  get pods|deployments|nodes  List resources"
+        echo "  apply <manifest.yaml>       Apply manifest"
+        echo "  run <name> <image> [opts]   Run container"
+        echo "  scale <deploy> <replicas>   Scale deployment"
+        echo "  delete <container>          Delete container"
+        echo ""
+        echo "Operations:"
+        echo "  logs <container>            View logs"
+        echo "  exec <container> [cmd]      Execute command"
+        echo "  fleet-status                Docker status on all nodes"
+        ;;
+esac

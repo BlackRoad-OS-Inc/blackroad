@@ -1,0 +1,259 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# BlackRoad Service Registry CLI
+# Usage: br-services <command> [registry.yaml]
+#
+# Commands:
+#   validate  - Check registry for errors and port reachability
+#   diff      - Show what would change vs current K8s state
+#   apply     - Generate and apply K8s manifests
+#   list      - Show all services in registry
+#   generate  - Output K8s manifests (dry-run)
+
+set -e
+
+REGISTRY="${2:-$HOME/blackroad-services.yaml}"
+GATEWAY_HOST="192.168.4.49"
+SSH_OPTS="-o ConnectTimeout=3 -o StrictHostKeyChecking=no"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# Parse YAML (simple bash parser - works for our flat structure)
+parse_services() {
+    python3 -c "
+import yaml
+import sys
+with open('$REGISTRY') as f:
+    data = yaml.safe_load(f)
+    
+nodes = data.get('nodes', {})
+for svc in data.get('services', []):
+    node = svc.get('node', 'alice')
+    ip = nodes.get(node, {}).get('ip', '192.168.4.49')
+    print(f\"{svc['name']}|{svc['path']}|{ip}|{svc['port']}|{svc.get('health','/')}|{svc.get('description','')}\")
+"
+}
+
+# Validate command
+cmd_validate() {
+    echo -e "${BLUE}🔍 Validating registry: $REGISTRY${NC}"
+    echo ""
+    
+    local errors=0
+    local warnings=0
+    
+    # Check file exists
+    if [[ ! -f "$REGISTRY" ]]; then
+        echo -e "${RED}✗ Registry file not found: $REGISTRY${NC}"
+        exit 1
+    fi
+    
+    # Parse and validate
+    echo "Checking services..."
+    local seen_ports=""
+    local seen_paths=""
+    
+    while IFS='|' read -r name path ip port health desc; do
+        echo -n "  $name ($path → $ip:$port): "
+        
+        # Check port conflicts
+        if echo "$seen_ports" | grep -q ":$port:"; then
+            echo -e "${RED}✗ Port conflict${NC}"
+            ((errors++))
+            continue
+        fi
+        seen_ports="$seen_ports:$port:"
+        
+        # Check path conflicts
+        if echo "$seen_paths" | grep -q ":$path:"; then
+            echo -e "${RED}✗ Path conflict${NC}"
+            ((errors++))
+            continue
+        fi
+        seen_paths="$seen_paths:$path:"
+        
+        # Check port reachability
+        if nc -z -w 1 "$ip" "$port" 2>/dev/null; then
+            echo -e "${GREEN}✓ reachable${NC}"
+        else
+            echo -e "${YELLOW}⚠ unreachable${NC}"
+            ((warnings++))
+        fi
+    done < <(parse_services)
+    
+    echo ""
+    if [[ $errors -gt 0 ]]; then
+        echo -e "${RED}✗ Validation failed: $errors errors, $warnings warnings${NC}"
+        exit 1
+    elif [[ $warnings -gt 0 ]]; then
+        echo -e "${YELLOW}⚠ Validation passed with $warnings warnings${NC}"
+    else
+        echo -e "${GREEN}✓ Validation passed${NC}"
+    fi
+}
+
+# List command
+cmd_list() {
+    echo -e "${BLUE}📋 Services in $REGISTRY${NC}"
+    echo ""
+    printf "%-15s %-15s %-20s %-6s %s\n" "NAME" "PATH" "ENDPOINT" "PORT" "DESCRIPTION"
+    echo "─────────────────────────────────────────────────────────────────────────────"
+    
+    while IFS='|' read -r name path ip port health desc; do
+        printf "%-15s %-15s %-20s %-6s %s\n" "$name" "$path" "$ip:$port" "$port" "$desc"
+    done < <(parse_services)
+}
+
+# Generate K8s manifests
+cmd_generate() {
+    while IFS='|' read -r name path ip port health desc; do
+        cat << MANIFEST
+---
+# Service: $name - $desc
+apiVersion: v1
+kind: Service
+metadata:
+  name: $name
+  namespace: default
+  labels:
+    app.kubernetes.io/name: $name
+    app.kubernetes.io/managed-by: br-services
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: $port
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: $name
+  namespace: default
+subsets:
+  - addresses:
+      - ip: $ip
+    ports:
+      - name: http
+        port: $port
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ${name}-strip
+  namespace: default
+spec:
+  stripPrefix:
+    prefixes:
+      - $path
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: $name
+  namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.middlewares: default-${name}-strip@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - http:
+        paths:
+          - path: $path
+            pathType: Prefix
+            backend:
+              service:
+                name: $name
+                port:
+                  number: 80
+MANIFEST
+    done < <(parse_services)
+}
+
+# Diff command
+cmd_diff() {
+    echo -e "${BLUE}📊 Comparing registry vs K8s state${NC}"
+    echo ""
+    
+    # Get current ingresses
+    local current=$(ssh $SSH_OPTS pi@$GATEWAY_HOST "kubectl get ingress -o jsonpath='{.items[*].metadata.name}'" 2>/dev/null || echo "")
+    
+    echo "Current K8s ingresses: $current"
+    echo ""
+    
+    echo "Registry services:"
+    while IFS='|' read -r name path ip port health desc; do
+        if echo "$current" | grep -qw "$name"; then
+            echo -e "  ${GREEN}✓ $name${NC} (exists)"
+        else
+            echo -e "  ${YELLOW}+ $name${NC} (will create)"
+        fi
+    done < <(parse_services)
+}
+
+# Apply command
+cmd_apply() {
+    echo -e "${BLUE}🚀 Applying registry to K8s${NC}"
+    echo ""
+    
+    # Validate first
+    cmd_validate || exit 1
+    echo ""
+    
+    # Generate and apply
+    echo "Applying manifests..."
+    cmd_generate | ssh $SSH_OPTS pi@$GATEWAY_HOST "kubectl apply -f -" 2>&1 | grep -E "configured|created|unchanged"
+    
+    echo ""
+    echo -e "${GREEN}✓ Registry applied${NC}"
+    
+    # Verify
+    echo ""
+    echo "Verifying routes..."
+    sleep 2
+    while IFS='|' read -r name path ip port health desc; do
+        local url="http://$GATEWAY_HOST$path/"
+        local status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 "$url" 2>/dev/null || echo "000")
+        if [[ "$status" == "200" ]]; then
+            echo -e "  ${GREEN}✓ $path → $status${NC}"
+        else
+            echo -e "  ${YELLOW}⚠ $path → $status${NC}"
+        fi
+    done < <(parse_services)
+}
+
+# Main
+case "${1:-help}" in
+    validate) cmd_validate ;;
+    list)     cmd_list ;;
+    diff)     cmd_diff ;;
+    generate) cmd_generate ;;
+    apply)    cmd_apply ;;
+    *)
+        echo "BlackRoad Service Registry CLI"
+        echo ""
+        echo "Usage: br-services <command> [registry.yaml]"
+        echo ""
+        echo "Commands:"
+        echo "  validate  - Check registry for errors and port reachability"
+        echo "  list      - Show all services in registry"
+        echo "  diff      - Show what would change vs current K8s state"
+        echo "  generate  - Output K8s manifests (dry-run)"
+        echo "  apply     - Generate and apply K8s manifests"
+        echo ""
+        echo "Default registry: $HOME/blackroad-services.yaml"
+        ;;
+esac

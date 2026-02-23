@@ -1,0 +1,66 @@
+#!/bin/bash
+# br-vault - Fleet-wide secrets management
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    init)
+        echo -e "${PINK}Initializing vault across fleet...${NC}"
+        for host in cecilia lucidia octavia aria; do
+            echo -n "  $host: "
+            ssh "$host" '~/br-vault init 2>/dev/null && echo "OK"' 2>/dev/null || echo "SKIP"
+        done
+        ;;
+    set)
+        key="$1"; value="$2"
+        if [ -z "$key" ] || [ -z "$value" ]; then
+            echo "Usage: br-vault set <key> <value>"
+            exit 1
+        fi
+        echo -e "${AMBER}Setting secret '$key' across fleet...${NC}"
+        for host in cecilia lucidia octavia aria; do
+            echo -n "  $host: "
+            ssh "$host" "~/br-vault set '$key' '$value'" 2>/dev/null && echo -e "${GREEN}OK${NC}" || echo "FAIL"
+        done
+        ;;
+    get)
+        key="$1"
+        if [ -z "$key" ]; then
+            echo "Usage: br-vault get <key>"
+            exit 1
+        fi
+        echo -e "${AMBER}Getting secret '$key' from primary...${NC}"
+        ssh cecilia "~/br-vault get '$key'" 2>/dev/null
+        ;;
+    list)
+        echo -e "${PINK}Secrets across fleet:${NC}"
+        for host in cecilia lucidia octavia aria; do
+            echo -e "\n${AMBER}=== $host ===${NC}"
+            ssh "$host" '~/br-vault list' 2>/dev/null
+        done
+        ;;
+    sync)
+        echo -e "${PINK}Syncing vault from cecilia to all nodes...${NC}"
+        ssh cecilia 'cat ~/.blackroad/vault/secrets.enc' > /tmp/vault-sync.enc 2>/dev/null
+        for host in lucidia octavia aria; do
+            echo -n "  $host: "
+            scp -q /tmp/vault-sync.enc "$host":~/.blackroad/vault/secrets.enc 2>/dev/null && echo -e "${GREEN}OK${NC}" || echo "FAIL"
+        done
+        rm -f /tmp/vault-sync.enc
+        ;;
+    help|*)
+        echo -e "${PINK}br-vault - Fleet Secrets Manager${NC}"
+        echo ""
+        echo "Commands:"
+        echo "  init              Initialize vault on all nodes"
+        echo "  set <key> <val>   Set secret across fleet"
+        echo "  get <key>         Get secret from primary"
+        echo "  list              List all secrets"
+        echo "  sync              Sync vault from cecilia to all"
+        ;;
+esac

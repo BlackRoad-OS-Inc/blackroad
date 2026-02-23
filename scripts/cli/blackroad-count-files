@@ -1,0 +1,65 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+
+ORGS=("BlackRoad-OS" "BlackRoad-AI" "BlackRoad-Cloud" "BlackRoad-Foundation" "BlackRoad-Archive" "BlackRoad-Education" "BlackRoad-Gov" "BlackRoad-Hardware" "BlackRoad-Interactive" "BlackRoad-Labs" "BlackRoad-Media" "BlackRoad-Security" "BlackRoad-Studio" "BlackRoad-Ventures" "Blackbox-Enterprises")
+
+total_files=0
+total_repos=0
+
+echo "Counting files across all GitHub organizations..."
+echo ""
+
+for org in "${ORGS[@]}"; do
+    echo "=== $org ==="
+    repos=$(gh repo list "$org" --limit 1000 --json nameWithOwner -q '.[].nameWithOwner' 2>/dev/null)
+
+    if [ -z "$repos" ]; then
+        echo "  No repos or no access"
+        continue
+    fi
+
+    org_files=0
+    org_repos=0
+
+    while IFS= read -r repo; do
+        if [ -z "$repo" ]; then
+            continue
+        fi
+
+        # Get file count from the repo's default branch
+        file_count=$(gh api "repos/$repo/git/trees/main?recursive=1" 2>/dev/null | jq '.tree | length' 2>/dev/null)
+
+        # If main doesn't exist, try master
+        if [ "$file_count" = "null" ] || [ -z "$file_count" ]; then
+            file_count=$(gh api "repos/$repo/git/trees/master?recursive=1" 2>/dev/null | jq '.tree | length' 2>/dev/null)
+        fi
+
+        # If still nothing, skip
+        if [ "$file_count" = "null" ] || [ -z "$file_count" ]; then
+            file_count=0
+        fi
+
+        org_files=$((org_files + file_count))
+        org_repos=$((org_repos + 1))
+
+        echo "  $repo: $file_count files"
+    done <<< "$repos"
+
+    echo "  Subtotal: $org_files files in $org_repos repos"
+    echo ""
+
+    total_files=$((total_files + org_files))
+    total_repos=$((total_repos + org_repos))
+done
+
+echo "========================================="
+echo "TOTAL: $total_files files across $total_repos repositories"
+echo "========================================="

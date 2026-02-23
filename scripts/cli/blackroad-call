@@ -1,0 +1,115 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-call - Call any BlackRoad agent on any device
+# Usage: br-call <agent> "message"
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;69m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+NC='\033[0m'
+
+get_host() {
+    case "$1" in
+        cecilia|cece) echo "cecilia" ;;
+        lucidia) echo "lucidia" ;;
+        octavia) echo "octavia" ;;
+        aria) echo "aria" ;;
+        alice) echo "alice" ;;
+        gematria) echo "gematria" ;;
+        anastasia|shellfish) echo "anastasia" ;;
+        *) echo "" ;;
+    esac
+}
+
+get_model() {
+    case "$1" in
+        cecilia) echo "cecilia:latest" ;;
+        cece) echo "cece:latest" ;;
+        lucidia) echo "phi3.5:latest" ;;
+        octavia) echo "lucidia:latest" ;;
+        aria) echo "tinyllama:latest" ;;
+        alice) echo "tinyllama:latest" ;;
+        gematria) echo "llama3.2:3b" ;;
+        anastasia) echo "llama3.2:3b" ;;
+        *) echo "tinyllama:latest" ;;
+    esac
+}
+
+usage() {
+    echo -e "${PINK}br-call${NC} - Call BlackRoad Agents"
+    echo ""
+    echo "Usage: br-call <agent> \"message\""
+    echo ""
+    echo -e "${AMBER}Agents:${NC} cecilia, lucidia, octavia, aria, gematria, anastasia"
+    echo ""
+    echo "Example: br-call cecilia \"what's your status?\""
+}
+
+call_agent() {
+    local agent="$1"
+    local message="$2"
+    local host=$(get_host "$agent")
+    local model=$(get_model "$agent")
+
+    if [[ -z "$host" ]]; then
+        echo -e "${PINK}Unknown agent:${NC} $agent"
+        usage
+        return 1
+    fi
+
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${WHITE}Calling ${AMBER}$agent${WHITE} @ ${BLUE}$host${NC}"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    response=$(ssh -o ConnectTimeout=10 "$host" "ollama run $model \"$message\" 2>/dev/null" 2>&1)
+
+    if [[ $? -eq 0 && -n "$response" ]]; then
+        echo -e "${AMBER}$agent:${NC}"
+        echo "$response"
+    else
+        echo -e "${PINK}Error:${NC} Could not reach $agent"
+    fi
+    echo ""
+}
+
+list_agents() {
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${WHITE}         BlackRoad Agent Fleet${NC}"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    for agent in cecilia lucidia octavia aria gematria anastasia; do
+        host=$(get_host "$agent")
+        model=$(get_model "$agent")
+        echo -n -e "${AMBER}$agent${NC} @ $host: "
+        if ssh -o ConnectTimeout=3 "$host" "echo ok" &>/dev/null; then
+            echo -e "${PINK}online${NC} ($model)"
+        else
+            echo -e "${DIM}offline${NC}"
+        fi
+    done
+    echo ""
+}
+
+case "$1" in
+    -h|--help|"") usage ;;
+    -l|--list|list) list_agents ;;
+    *)
+        if [[ -z "$2" ]]; then
+            echo "Usage: br-call $1 \"your message\""
+            exit 1
+        fi
+        call_agent "$1" "$2"
+        ;;
+esac

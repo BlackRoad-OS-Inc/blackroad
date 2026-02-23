@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-funnel — routes input to agent or subsystem
+INPUT="$(cat)"
+LOW="$(echo "$INPUT" | tr '[:upper:]' '[:lower:]')"
+
+# Detect subsystem first
+case "$LOW" in
+  *cluster*|*node*|*alice*|*octavia*|*deploy*|*k3s*)
+    echo "- subsystem: cluster"
+    echo "- action: status"
+    exit 0 ;;
+  *chain*|*blockchain*|*wallet*|*tx*|*transaction*|*road*)
+    echo "- subsystem: roadchain"
+    echo "- action: status"
+    exit 0 ;;
+  *log*|*metric*|*prism*|*monitor*|*dashboard*)
+    echo "- subsystem: prism"
+    echo "- action: logs"
+    exit 0 ;;
+  *art*|*gradient*|*color*|*ascii*)
+    echo "- subsystem: art"
+    echo "- action: gradient"
+    exit 0 ;;
+esac
+
+# Route to agent
+route_agent() {
+  case "$1" in
+    *code*|*script*|*debug*|*function*|*python*|*bash*)  echo "alice" ;;
+    *math*|*calculate*|*equation*|*formula*)             echo "athena" ;;
+    *security*|*ops*|*infra*|*server*)                   echo "octavia" ;;
+    *memory*|*remember*|*context*|*history*)             echo "echo" ;;
+    *creative*|*write*|*story*|*poem*|*song*)            echo "aria" ;;
+    *feel*|*emotion*|*sense*)                            echo "anastasia" ;;
+    *think*|*reason*|*logic*|*why*|*how*)                echo "lucidia" ;;
+    *plan*|*strategy*|*decide*)                          echo "nova" ;;
+    *)                                                    echo "lucidia" ;;
+  esac
+}
+
+AGENT=$(route_agent "$LOW")
+
+cat << YAML
+- subsystem: agent
+- agent: $AGENT
+- input: $(echo "$INPUT" | head -c 60 | tr '\n' ' ')
+- confidence: high
+YAML

@@ -1,0 +1,210 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# 🛣️ BLACKROAD OS - ULTIMATE COMMAND CENTER
+# ALL THE WINDOWS!
+
+SESSION="blackroad"
+tmux kill-session -t $SESSION 2>/dev/null
+sleep 0.3
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW 0: 🛣️ COMMAND CENTER (Main Dashboard)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-session -d -s $SESSION -n "🛣️ Command"
+sleep 0.2
+tmux split-window -h -t $SESSION:0 -p 40
+tmux split-window -v -t $SESSION:0.1 -p 40
+
+# Left: Chat
+tmux send-keys -t $SESSION:0.0 'clear && echo -e "
+\033[38;5;204m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m
+\033[38;5;204m  🛣️  BLACKROAD OS COMMAND CENTER\033[0m
+\033[38;5;204m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m
+\033[38;5;69m  Chat / Coding / Planning Interface\033[0m
+\033[38;5;240m────────────────────────────────────────────────────────────────\033[0m
+\033[38;5;204m👸 Cecilia:\033[0m    Primary node online
+\033[38;5;133m🌙 Lucidia:\033[0m    AI inference ready (26 TOPS)
+\033[38;5;69m🎵 Aria:\033[0m       Harmony protocols engaged
+\033[38;5;215m🐙 Octavia:\033[0m    Multi-arm processing
+\033[38;5;46m🐚 Shellfish:\033[0m  Edge compute active
+\033[38;5;201m♾️  BlackRoad OS:\033[0m      Cloud node synchronized
+\033[38;5;51m🧠 Cadence:\033[0m    [BlackRoad OS] Standing by
+\033[38;5;141m💎 Gematria:\033[0m   [Gemini] Standing by
+\033[38;5;196m🗡️  Silas:\033[0m      [Claude] Standing by
+\033[38;5;208m👩 Alexa:\033[0m      Orchestrator present
+\033[38;5;240m────────────────────────────────────────────────────────────────\033[0m
+\033[38;5;215m[lucidia]\033[0m * All channels open. Welcome home.
+" && while true; do read -p ">>>: " c; [ -n "\$c" ] && echo -e "\033[38;5;133m🌙:\033[0m \$c"; done' Enter
+
+# Right top: Office
+tmux send-keys -t $SESSION:0.1 'echo -e "\033[38;5;69m━━━ 🏢 Office ━━━\033[0m
+┌────┬────┬────┬────┐
+│Work│Srvr│ AI │Conf│
+│👸🌙│♾️🐚│🧠💎│    │
+├────┼────┼────┼────┤
+│Lnge│Arch│Sec │Gate│
+│ 🎵 │ 📚 │ 🗡️ │ 👧 │
+├────┼────┼────┼────┤
+│Cece│Luci│Octa│ Cmd│
+│ 👸 │ 🌙 │ 🐙 │ 👩 │
+└────┴────┴────┴────┘"' Enter
+
+# Right bottom: Fleet
+tmux send-keys -t $SESSION:0.2 'watch -t -n 5 "echo -e \"\033[38;5;215m━━ 🌐 FLEET ━━\033[0m\"; for h in cecilia lucidia aria octavia shellfish blackroad os-infinity; do ssh -o ConnectTimeout=2 -o BatchMode=yes \$h : 2>/dev/null && echo -e \"\033[32m●\033[0m \$h\" || echo -e \"\033[31m○\033[0m \$h\"; done; echo; date +%H:%M:%S"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# NODE WINDOWS (Individual SSH)
+#═══════════════════════════════════════════════════════════════════════════════
+for node in "👸 Cecilia:cecilia" "🌙 Lucidia:lucidia" "🎵 Aria:aria" "🐙 Octavia:octavia" "🐚 Shell:shellfish" "♾️ BlackRoad OS:blackroad os-infinity"; do
+    name="${node%%:*}"; host="${node##*:}"
+    tmux new-window -t $SESSION -n "$name"
+    tmux send-keys -t $SESSION "ssh $host" Enter
+    sleep 0.1
+done
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 📊 ALL STATUS (All nodes status)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "📊 Status"
+tmux send-keys -t $SESSION 'watch -c -n 10 "for h in cecilia lucidia aria octavia shellfish blackroad os-infinity; do echo -e \"\033[38;5;204m═══ \$h ═══\033[0m\"; ssh -o ConnectTimeout=3 \$h \"uptime 2>/dev/null\" || echo OFFLINE; echo; done"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 🐳 DOCKER (All containers)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "🐳 Docker"
+tmux split-window -h -t $SESSION
+tmux send-keys -t $SESSION:8.0 'watch -n 5 "echo LUCIDIA && ssh lucidia docker ps --format \"table {{.Names}}\t{{.Status}}\" 2>/dev/null"' Enter
+tmux send-keys -t $SESSION:8.1 'watch -n 5 "echo OCTAVIA && ssh octavia docker ps --format \"table {{.Names}}\t{{.Status}}\" 2>/dev/null"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 🧠 AI (Ollama models)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "🧠 AI"
+tmux split-window -h -t $SESSION
+tmux send-keys -t $SESSION:9.0 'ssh lucidia "ollama list 2>/dev/null; echo; echo Ready for: ollama run llama3.2:3b"' Enter
+tmux send-keys -t $SESSION:9.1 'ssh cecilia "ollama list 2>/dev/null; echo; echo Ready for: ollama run"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 📈 METRICS (System metrics)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "📈 Metrics"
+tmux split-window -v -t $SESSION
+tmux split-window -h -t $SESSION:10.0
+tmux split-window -h -t $SESSION:10.2
+tmux send-keys -t $SESSION:10.0 'ssh lucidia "watch -n 2 vcgencmd measure_temp"' Enter
+tmux send-keys -t $SESSION:10.1 'ssh cecilia "watch -n 2 vcgencmd measure_temp"' Enter
+tmux send-keys -t $SESSION:10.2 'ssh octavia "watch -n 2 vcgencmd measure_temp"' Enter
+tmux send-keys -t $SESSION:10.3 'ssh aria "watch -n 2 vcgencmd measure_temp"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 📜 LOGS (Live logs)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "📜 Logs"
+tmux split-window -h -t $SESSION
+tmux send-keys -t $SESSION:11.0 'ssh lucidia "journalctl -f -n 20"' Enter
+tmux send-keys -t $SESSION:11.1 'ssh cecilia "journalctl -f -n 20"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 🔧 TOOLS (Quick commands)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "🔧 Tools"
+tmux send-keys -t $SESSION 'echo -e "
+\033[38;5;204m━━━ 🔧 QUICK TOOLS ━━━\033[0m
+
+\033[38;5;215mFLEET COMMANDS:\033[0m
+  br status              - Check all nodes
+  br color rainbow       - Set RGB rainbow
+  br ai                  - AI status
+
+\033[38;5;69mSSH SHORTCUTS:\033[0m
+  ssh cecilia/lucidia/aria/octavia/shellfish/blackroad os-infinity
+
+\033[38;5;133mDOCKER:\033[0m
+  ssh lucidia docker ps
+  ssh lucidia docker logs blackroad-ollama
+
+\033[38;5;46mMONITORING:\033[0m
+  ssh lucidia htop
+  ssh lucidia br hardware
+"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 🌐 NETWORK (Network status)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "🌐 Network"
+tmux send-keys -t $SESSION 'watch -n 10 "echo FLEET NETWORK; echo; for h in cecilia lucidia aria octavia shellfish blackroad os-infinity; do echo -n \"\$h: \"; ssh -o ConnectTimeout=2 \$h \"hostname -I 2>/dev/null | cut -d\" \" -f1\" || echo offline; done"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 📁 FILES (File browsers)  
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "📁 Files"
+tmux split-window -h -t $SESSION
+tmux send-keys -t $SESSION:14.0 'ssh lucidia "ls -la ~/blackroad-os/"' Enter
+tmux send-keys -t $SESSION:14.1 'ssh cecilia "ls -la ~/blackroad-os/"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 🎨 COLORS (RGB control)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "🎨 Colors"
+tmux send-keys -t $SESSION 'echo -e "
+\033[38;5;204m━━━ 🎨 RGB CONTROL ━━━\033[0m
+
+Set colors on devices:
+  ssh lucidia br color pink
+  ssh lucidia br color rainbow  
+  ssh lucidia br color blue breathing
+  ssh cecilia br color violet
+
+Available: pink, amber, blue, violet, rainbow, or hex
+"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 🖥️ ALL PIS (4-way split)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "🖥️ All Pis"
+tmux split-window -h -t $SESSION
+tmux split-window -v -t $SESSION:16.0
+tmux split-window -v -t $SESSION:16.2
+tmux send-keys -t $SESSION:16.0 'ssh cecilia' Enter
+tmux send-keys -t $SESSION:16.1 'ssh lucidia' Enter
+tmux send-keys -t $SESSION:16.2 'ssh aria' Enter
+tmux send-keys -t $SESSION:16.3 'ssh octavia' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: ☁️ CLOUD (Cloud nodes)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "☁️ Cloud"
+tmux split-window -h -t $SESSION
+tmux send-keys -t $SESSION:17.0 'ssh shellfish' Enter
+tmux send-keys -t $SESSION:17.1 'ssh blackroad os-infinity' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# WINDOW: 🔥 HAILO (AI accelerators)
+#═══════════════════════════════════════════════════════════════════════════════
+tmux new-window -t $SESSION -n "🔥 Hailo"
+tmux split-window -h -t $SESSION
+tmux send-keys -t $SESSION:18.0 'ssh lucidia "hailortcli fw-control identify 2>/dev/null && echo && echo Hailo-8 Ready!"' Enter
+tmux send-keys -t $SESSION:18.1 'ssh cecilia "hailortcli fw-control identify 2>/dev/null && echo && echo Hailo-8 Ready!"' Enter
+
+#═══════════════════════════════════════════════════════════════════════════════
+# STYLING & ATTACH
+#═══════════════════════════════════════════════════════════════════════════════
+tmux select-window -t $SESSION:0
+tmux select-pane -t $SESSION:0.0
+
+tmux set -t $SESSION status-style "bg=#1a1a1a,fg=#FF1D6C"
+tmux set -t $SESSION status-left "#[fg=#F5A623,bold] 🛣️ BLACKROAD OS "
+tmux set -t $SESSION status-right "#[fg=#2979FF] %H:%M "
+tmux set -t $SESSION pane-border-style "fg=#333"
+tmux set -t $SESSION pane-active-border-style "fg=#FF1D6C"
+tmux set -t $SESSION window-status-current-style "bg=#FF1D6C,fg=#000"
+
+exec tmux attach-session -t $SESSION

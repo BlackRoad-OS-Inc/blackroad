@@ -1,0 +1,522 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# BlackRoad Agent Coordination Hub
+# Real-time multi-agent system monitoring and coordination
+# ============================================================================
+
+set -e
+
+# Color functions (printf-based, escape-safe)
+c_pink()   { printf '\033[38;5;205m'; }
+c_blue()   { printf '\033[38;5;75m'; }
+c_green()  { printf '\033[38;5;82m'; }
+c_yellow() { printf '\033[38;5;226m'; }
+c_red()    { printf '\033[38;5;196m'; }
+c_purple() { printf '\033[38;5;141m'; }
+c_orange() { printf '\033[38;5;208m'; }
+c_gray()   { printf '\033[38;5;240m'; }
+c_pink()   { printf '\033[38;5;205m'; }
+c_white()  { printf '\033[38;5;255m'; }
+c_reset()  { printf '\033[0m'; }
+c_clear()  { printf '\033[2J\033[H'; }
+c_bold()   { printf '\033[1m'; }
+
+# Paths
+MEMORY_DIR="${HOME}/.blackroad/memory"
+MEMORY_JOURNALS="${MEMORY_DIR}/journals"
+ACTIVE_AGENTS_DIR="${MEMORY_DIR}/active-agents"
+AGENT_REGISTRY_DB="${HOME}/.blackroad-agent-registry.db"
+TRAFFIC_LIGHT_DB="${HOME}/.blackroad-traffic-light.db"
+
+# ==================
+# DATA COLLECTORS
+# ==================
+
+get_active_agent_count() {
+    if [[ -d "$ACTIVE_AGENTS_DIR" ]]; then
+        find "$ACTIVE_AGENTS_DIR" -name "*.json" 2>/dev/null | wc -l | tr -d ' '
+    else
+        echo "0"
+    fi
+}
+
+get_memory_entry_count() {
+    if [[ -d "$MEMORY_JOURNALS" ]]; then
+        find "$MEMORY_JOURNALS" -name "*.journal" -type f -exec wc -l {} + 2>/dev/null | tail -1 | awk '{print $1}' || echo "0"
+    else
+        echo "0"
+    fi
+}
+
+get_recent_agents() {
+    if [[ -d "$ACTIVE_AGENTS_DIR" ]]; then
+        find "$ACTIVE_AGENTS_DIR" -name "*.json" -type f 2>/dev/null | head -7
+    fi
+}
+
+get_agent_info() {
+    local agent_file="$1"
+    
+    if [[ -f "$agent_file" ]] && command -v jq >/dev/null 2>&1; then
+        local name=$(jq -r '.name // "Unknown"' "$agent_file" 2>/dev/null)
+        local role=$(jq -r '.role // "N/A"' "$agent_file" 2>/dev/null)
+        local status=$(jq -r '.status // "active"' "$agent_file" 2>/dev/null)
+        echo "${name}|${role}|${status}"
+    else
+        local basename=$(basename "$agent_file" .json)
+        echo "${basename}|Agent|active"
+    fi
+}
+
+get_memory_stats() {
+    if command -v sqlite3 >/dev/null 2>&1 && [[ -f "${MEMORY_DIR}/memory-system.db" ]]; then
+        sqlite3 "${MEMORY_DIR}/memory-system.db" "SELECT COUNT(*) FROM memories" 2>/dev/null || echo "0"
+    else
+        echo "0"
+    fi
+}
+
+get_recent_memory_actions() {
+    if [[ -d "$MEMORY_JOURNALS" ]]; then
+        find "$MEMORY_JOURNALS" -name "*.journal" -type f -exec tail -5 {} + 2>/dev/null | \
+            grep -E "announce|progress|deployed|created|milestone" | tail -5
+    fi
+}
+
+get_traffic_light_summary() {
+    if command -v sqlite3 >/dev/null 2>&1 && [[ -f "$TRAFFIC_LIGHT_DB" ]]; then
+        local green=$(sqlite3 "$TRAFFIC_LIGHT_DB" "SELECT COUNT(*) FROM projects WHERE status='green'" 2>/dev/null || echo "0")
+        local yellow=$(sqlite3 "$TRAFFIC_LIGHT_DB" "SELECT COUNT(*) FROM projects WHERE status='yellow'" 2>/dev/null || echo "0")
+        local red=$(sqlite3 "$TRAFFIC_LIGHT_DB" "SELECT COUNT(*) FROM projects WHERE status='red'" 2>/dev/null || echo "0")
+        echo "${green}|${yellow}|${red}"
+    else
+        echo "0|0|0"
+    fi
+}
+
+# ==================
+# DISPLAY COMPONENTS
+# ==================
+
+draw_header() {
+    c_clear
+    c_pink; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║                                                                                ║\n"
+    printf "║                    BLACKROAD OS - AGENT COORDINATION HUB                       ║\n"
+    printf "║                                                                                ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    printf "\n"
+}
+
+draw_agent_overview() {
+    local agent_count="$1"
+    local memory_count="$2"
+    
+    c_pink; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 🤖 AGENT FLEET OVERVIEW                                                        ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    
+    # Agent count
+    printf "  "
+    c_purple; printf "Active Agents:      "; c_reset
+    c_green; c_bold; printf "%s\n" "$agent_count"; c_reset
+    
+    # Memory entries
+    printf "  "
+    c_purple; printf "Memory Entries:     "; c_reset
+    c_pink; c_bold; printf "%s\n" "$memory_count"; c_reset
+    
+    # System status
+    printf "  "
+    c_purple; printf "Coordination:       "; c_reset
+    c_green; printf "OPERATIONAL\n"; c_reset
+    
+    # Memory system
+    printf "  "
+    c_purple; printf "Memory System:      "; c_reset
+    if [[ -d "$MEMORY_DIR" ]]; then
+        c_green; printf "ONLINE\n"; c_reset
+    else
+        c_red; printf "OFFLINE\n"; c_reset
+    fi
+    
+    printf "\n"
+}
+
+draw_active_agents() {
+    c_blue; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 👥 ACTIVE AGENTS                                                               ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    
+    # Header
+    printf "  "
+    c_gray
+    printf "%-20s %-35s %-10s\n" "Agent" "Role" "Status"
+    c_reset
+    
+    printf "  "
+    c_gray
+    printf "─────────────────────────────────────────────────────────────────────────────\n"
+    c_reset
+    
+    # List agents
+    local agent_files=$(get_recent_agents)
+    local count=0
+    
+    if [[ -n "$agent_files" ]]; then
+        while IFS= read -r agent_file; do
+            local info=$(get_agent_info "$agent_file")
+            IFS='|' read -r name role status <<< "$info"
+            
+            printf "  "
+            
+            # Status indicator
+            case "$status" in
+                active)
+                    c_green; printf "●"; c_reset
+                    ;;
+                idle)
+                    c_yellow; printf "●"; c_reset
+                    ;;
+                offline)
+                    c_red; printf "○"; c_reset
+                    ;;
+                *)
+                    c_gray; printf "○"; c_reset
+                    ;;
+            esac
+            
+            printf " "
+            
+            # Name (truncate if needed)
+            c_pink; c_bold
+            printf "%-19s" "${name:0:19}"
+            c_reset
+            
+            printf " "
+            
+            # Role (truncate if needed)
+            c_gray
+            printf "%-35s" "${role:0:35}"
+            c_reset
+            
+            printf " "
+            
+            # Status text
+            case "$status" in
+                active)
+                    c_green; printf "%-10s" "Active"; c_reset
+                    ;;
+                idle)
+                    c_yellow; printf "%-10s" "Idle"; c_reset
+                    ;;
+                offline)
+                    c_red; printf "%-10s" "Offline"; c_reset
+                    ;;
+                *)
+                    c_gray; printf "%-10s" "$status"; c_reset
+                    ;;
+            esac
+            
+            printf "\n"
+            
+            ((count++))
+            if [[ $count -ge 7 ]]; then
+                break
+            fi
+        done <<< "$agent_files"
+    else
+        printf "  "
+        c_gray; printf "No active agents found\n"; c_reset
+    fi
+    
+    printf "\n"
+}
+
+draw_memory_system() {
+    c_purple; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 🧠 MEMORY SYSTEM STATUS                                                        ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    
+    # Memory stats
+    local db_entries=$(get_memory_stats)
+    local journal_lines=$(get_memory_entry_count)
+    
+    printf "  "
+    c_purple; printf "Database Entries:   "; c_reset
+    c_pink; printf "%s\n" "$db_entries"; c_reset
+    
+    printf "  "
+    c_purple; printf "Journal Lines:      "; c_reset
+    c_pink; printf "%s\n" "$journal_lines"; c_reset
+    
+    printf "  "
+    c_purple; printf "Storage Format:     "; c_reset
+    c_gray; printf "PS-SHA-∞ append-only\n"; c_reset
+    
+    printf "  "
+    c_purple; printf "Memory Location:    "; c_reset
+    c_gray; printf "~/.blackroad/memory/\n"; c_reset
+    
+    printf "\n"
+}
+
+draw_recent_activity() {
+    c_orange; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 📋 RECENT ACTIVITY                                                             ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    
+    local activities=$(get_recent_memory_actions)
+    
+    if [[ -n "$activities" ]]; then
+        local count=0
+        while IFS= read -r line; do
+            # Parse journal line (simplified)
+            printf "  "
+            c_gray; printf "• "; c_reset
+            c_white
+            printf "%s\n" "${line:0:75}"
+            c_reset
+            
+            ((count++))
+            if [[ $count -ge 5 ]]; then
+                break
+            fi
+        done <<< "$activities"
+    else
+        printf "  "
+        c_gray; printf "No recent activity\n"; c_reset
+    fi
+    
+    printf "\n"
+}
+
+draw_traffic_lights() {
+    local summary="$1"
+    IFS='|' read -r green yellow red <<< "$summary"
+    
+    c_green; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 🚦 PROJECT STATUS (TRAFFIC LIGHTS)                                             ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    
+    # Green projects
+    printf "  "
+    c_green; printf "● Green (Ready):    "; c_reset
+    c_green; c_bold; printf "%s projects\n" "$green"; c_reset
+    
+    # Yellow projects
+    printf "  "
+    c_yellow; printf "● Yellow (In Progress): "; c_reset
+    c_yellow; c_bold; printf "%s projects\n" "$yellow"; c_reset
+    
+    # Red projects
+    printf "  "
+    c_red; printf "● Red (Blocked):    "; c_reset
+    c_red; c_bold; printf "%s projects\n" "$red"; c_reset
+    
+    # Total
+    local total=$((green + yellow + red))
+    printf "  "
+    c_purple; printf "Total Projects:     "; c_reset
+    c_pink; printf "%s\n" "$total"; c_reset
+    
+    printf "\n"
+}
+
+draw_coordination_metrics() {
+    c_pink; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 📊 COORDINATION METRICS                                                        ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    
+    # Calculate some metrics
+    local agent_count=$(get_active_agent_count)
+    local memory_count=$(get_memory_entry_count)
+    
+    # Messages per agent (simulated)
+    if [[ "$agent_count" -gt 0 ]]; then
+        local msg_per_agent=$((memory_count / agent_count))
+    else
+        local msg_per_agent=0
+    fi
+    
+    printf "  "
+    c_purple; printf "Avg Messages/Agent: "; c_reset
+    c_pink; printf "%s\n" "$msg_per_agent"; c_reset
+    
+    # Collaboration index (simulated)
+    local collab_index=$(awk -v a="$agent_count" 'BEGIN{printf "%.2f", a * 0.85}')
+    printf "  "
+    c_purple; printf "Collaboration Index: "; c_reset
+    c_green; printf "%s\n" "$collab_index"; c_reset
+    
+    # System uptime
+    local uptime=$(uptime | awk -F'up ' '{print $2}' | awk -F',' '{print $1}' | xargs)
+    printf "  "
+    c_purple; printf "System Uptime:      "; c_reset
+    c_gray; printf "%s\n" "$uptime"; c_reset
+    
+    printf "\n"
+}
+
+draw_footer() {
+    local timestamp="$1"
+    
+    printf "\n"
+    c_gray
+    printf "═══════════════════════════════════════════════════════════════════════════════\n"
+    printf "Agent coordination active | Last updated: %s | Press Ctrl+C to exit\n" "$timestamp"
+    c_reset
+}
+
+# ==================
+# MAIN DASHBOARD
+# ==================
+
+run_dashboard() {
+    local refresh_interval="${1:-5}"
+    
+    while true; do
+        draw_header
+        
+        # Get data
+        local agent_count=$(get_active_agent_count)
+        local memory_count=$(get_memory_entry_count)
+        local traffic_summary=$(get_traffic_light_summary)
+        
+        # Draw sections
+        draw_agent_overview "$agent_count" "$memory_count"
+        draw_active_agents
+        draw_memory_system
+        draw_recent_activity
+        draw_traffic_lights "$traffic_summary"
+        draw_coordination_metrics
+        
+        # Footer
+        local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+        draw_footer "$timestamp"
+        
+        # Wait before refresh
+        sleep "$refresh_interval"
+    done
+}
+
+# ==================
+# CLI INTERFACE
+# ==================
+
+show_help() {
+    cat <<'HELP'
+BlackRoad Agent Coordination Hub
+
+USAGE:
+  blackroad-agent-hub.sh [OPTIONS]
+
+OPTIONS:
+  --interval N    Refresh interval in seconds (default: 5)
+  --once          Run once and exit (no loop)
+  --help          Show this help
+
+EXAMPLES:
+  blackroad-agent-hub.sh                # Live coordination hub
+  blackroad-agent-hub.sh --once         # Single snapshot
+  blackroad-agent-hub.sh --interval 3   # Fast refresh
+
+MONITORED SYSTEMS:
+  • Active agents (from ~/.blackroad/memory/active-agents/)
+  • Memory system (PS-SHA-infinity journals)
+  • Traffic lights (project status)
+  • Recent activity (memory journal entries)
+  • Coordination metrics
+
+AGENT REGISTRY:
+  Agents are tracked in: ~/.blackroad/memory/active-agents/*.json
+
+MEMORY SYSTEM:
+  Location: ~/.blackroad/memory/
+  Format: PS-SHA-∞ append-only journals
+
+Press Ctrl+C to exit live mode.
+HELP
+}
+
+# ==================
+# MAIN
+# ==================
+
+main() {
+    local interval=5
+    local once=false
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --interval)
+                interval="$2"
+                shift 2
+                ;;
+            --once)
+                once=true
+                shift
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+    
+    if $once; then
+        draw_header
+        
+        local agent_count=$(get_active_agent_count)
+        local memory_count=$(get_memory_entry_count)
+        local traffic_summary=$(get_traffic_light_summary)
+        
+        draw_agent_overview "$agent_count" "$memory_count"
+        draw_active_agents
+        draw_memory_system
+        draw_recent_activity
+        draw_traffic_lights "$traffic_summary"
+        draw_coordination_metrics
+        
+        local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+        c_gray
+        printf "\nSnapshot taken at %s\n" "$timestamp"
+        c_reset
+    else
+        run_dashboard "$interval"
+    fi
+}
+
+main "$@"

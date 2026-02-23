@@ -1,0 +1,2787 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+#═══════════════════════════════════════════════════════════════════════════════
+#  ██████╗ ██╗      █████╗  ██████╗██╗  ██╗██████╗  ██████╗  █████╗ ██████╗
+#  ██╔══██╗██║     ██╔══██╗██╔════╝██║ ██╔╝██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
+#  ██████╔╝██║     ███████║██║     █████╔╝ ██████╔╝██║   ██║███████║██║  ██║
+#  ██╔══██╗██║     ██╔══██║██║     ██╔═██╗ ██╔══██╗██║   ██║██╔══██║██║  ██║
+#  ██████╔╝███████╗██║  ██║╚██████╗██║  ██╗██║  ██║╚██████╔╝██║  ██║██████╔╝
+#  ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝
+#  UNIFIED CLI - 720+ SCRIPTS UNDER ONE COMMAND
+#  Also callable as: lucidia, br, road
+#═══════════════════════════════════════════════════════════════════════════════
+set -euo pipefail
+
+# Detect invocation name
+INVOKED_AS="$(basename "$0")"
+
+# Official Brand Colors (from BLACKROAD-MASTER_BRAND.jpg)
+# Gradient: 208 → 202 → 198 → 163 → 33
+AMBER=$'\033[38;5;208m'      # #FF8700
+ORANGE=$'\033[38;5;202m'     # #FF5F00
+PINK=$'\033[38;5;198m'       # #FF0087 Hot Pink
+MAGENTA=$'\033[38;5;163m'    # #D700AF
+BLUE=$'\033[38;5;33m'        # #0087FF
+VIOLET=$'\033[38;5;163m'     # Same as magenta for compatibility
+PINK=$'\033[38;5;51m'        # Lucidia accent
+GREEN=$'\033[38;5;82m'
+RED=$'\033[38;5;196m'
+YELLOW=$'\033[38;5;226m'
+WHITE=$'\033[1;37m'
+DIM=$'\033[2m'
+RESET=$'\033[0m'
+BOLD=$'\033[1m'
+
+# Brand gradient function
+brand_gradient() {
+    for c in 208 202 198 163 33 163 198 202 208; do
+        printf "\033[48;5;${c}m \033[0m"
+    done
+    echo ""
+}
+
+HOME_DIR="$HOME"
+BIN_DIR="$HOME/bin"
+
+# Lucidia-specific banner
+show_lucidia_banner() {
+    echo -e "${PINK}╔═══════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${PINK}║${RESET}  ${WHITE}██╗     ██╗   ██╗ ██████╗██╗██████╗ ██╗ █████╗${RESET}           ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${WHITE}██║     ██║   ██║██╔════╝██║██╔══██╗██║██╔══██╗${RESET}          ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${WHITE}██║     ██║   ██║██║     ██║██║  ██║██║███████║${RESET}          ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${WHITE}██║     ██║   ██║██║     ██║██║  ██║██║██╔══██║${RESET}          ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${WHITE}███████╗╚██████╔╝╚██████╗██║██████╔╝██║██║  ██║${RESET}          ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${DIM}╚══════╝ ╚═════╝  ╚═════╝╚═╝╚═════╝ ╚═╝╚═╝  ╚═╝${RESET}          ${PINK}║${RESET}"
+    echo -e "${PINK}╠═══════════════════════════════════════════════════════════════╣${RESET}"
+    echo -e "${PINK}║${RESET}  ${WHITE}AI Assistant${RESET} ${DIM}•${RESET} ${WHITE}Multi-Model${RESET} ${DIM}•${RESET} ${WHITE}Local-First${RESET} ${DIM}•${RESET} ${WHITE}BlackRoad OS${RESET}   ${PINK}║${RESET}"
+    echo -e "${PINK}╚═══════════════════════════════════════════════════════════════╝${RESET}"
+}
+
+# BlackRoad banner
+show_banner() {
+    if [[ "$INVOKED_AS" == "lucidia" ]]; then
+        show_lucidia_banner
+        return
+    fi
+    echo -e "${PINK}╔═══════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${PINK}║${RESET}  ${AMBER}██████${PINK}╗${AMBER} ██${PINK}╗     ${AMBER} █████${PINK}╗ ${AMBER} ██████${PINK}╗${AMBER}██${PINK}╗  ${AMBER}██${PINK}╗${AMBER}██████${PINK}╗ ${AMBER} ██████${PINK}╗ ${AMBER} █████${PINK}╗ ${AMBER}██████${PINK}╗  ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${AMBER}██${PINK}╔══${AMBER}██${PINK}╗${AMBER}██${PINK}║     ${AMBER}██${PINK}╔══${AMBER}██${PINK}╗${AMBER}██${PINK}╔════╝${AMBER}██${PINK}║ ${AMBER}██${PINK}╔╝${AMBER}██${PINK}╔══${AMBER}██${PINK}╗${AMBER}██${PINK}╔═══${AMBER}██${PINK}╗${AMBER}██${PINK}╔══${AMBER}██${PINK}╗${AMBER}██${PINK}╔══${AMBER}██${PINK}╗ ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${AMBER}██████${PINK}╔╝${AMBER}██${PINK}║     ${AMBER}███████${PINK}║${AMBER}██${PINK}║     ${AMBER}█████${PINK}╔╝ ${AMBER}██████${PINK}╔╝${AMBER}██${PINK}║   ${AMBER}██${PINK}║${AMBER}███████${PINK}║${AMBER}██${PINK}║  ${AMBER}██${PINK}║ ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${AMBER}██${PINK}╔══${AMBER}██${PINK}╗${AMBER}██${PINK}║     ${AMBER}██${PINK}╔══${AMBER}██${PINK}║${AMBER}██${PINK}║     ${AMBER}██${PINK}╔═${AMBER}██${PINK}╗ ${AMBER}██${PINK}╔══${AMBER}██${PINK}╗${AMBER}██${PINK}║   ${AMBER}██${PINK}║${AMBER}██${PINK}╔══${AMBER}██${PINK}║${AMBER}██${PINK}║  ${AMBER}██${PINK}║ ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${AMBER}██████${PINK}╔╝${AMBER}███████${PINK}╗${AMBER}██${PINK}║  ${AMBER}██${PINK}║╚${AMBER}██████${PINK}╗${AMBER}██${PINK}║  ${AMBER}██${PINK}╗${AMBER}██${PINK}║  ${AMBER}██${PINK}║╚${AMBER}██████${PINK}╔╝${AMBER}██${PINK}║  ${AMBER}██${PINK}║${AMBER}██████${PINK}╔╝ ${PINK}║${RESET}"
+    echo -e "${PINK}║${RESET}  ${DIM}╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝${RESET}  ${PINK}║${RESET}"
+    echo -e "${PINK}╠═══════════════════════════════════════════════════════════════╣${RESET}"
+    echo -e "${PINK}║${RESET}  ${WHITE}720+ Scripts${RESET} ${DIM}•${RESET} ${WHITE}15 Orgs${RESET} ${DIM}•${RESET} ${WHITE}1,085 Repos${RESET} ${DIM}•${RESET} ${WHITE}8 Devices${RESET} ${DIM}•${RESET} ${WHITE}One Command${RESET}  ${PINK}║${RESET}"
+    echo -e "${PINK}╚═══════════════════════════════════════════════════════════════╝${RESET}"
+}
+
+show_help() {
+    show_banner
+    echo
+    local cmd_name="$INVOKED_AS"
+    echo -e "${WHITE}USAGE:${RESET} $cmd_name <category> <command> [args...]"
+    echo
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${WHITE}ALIASES${RESET}: blackroad, lucidia, br, road"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${WHITE}CATEGORIES${RESET}"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo
+    echo -e "  ${PINK}ai${RESET}          Multi-model AI chat, code review, analysis"
+    echo -e "  ${GREEN}local${RESET}       ${WHITE}LOCAL AI on Pi fleet (Anthropic bypassed)${RESET}"
+    echo -e "  ${GREEN}ask${RESET}         ${WHITE}Ask local agents: cece, lucidia, aria, octavia${RESET}"
+    echo -e "  ${GREEN}tmux${RESET}        ${WHITE}Terminal workspaces (dashboard, fleet, ai, dev)${RESET}"
+    echo -e "  ${GREEN}ssh${RESET}         ${WHITE}Quick device access (cecilia, lucidia, all)${RESET}"
+    echo -e "  ${GREEN}ollama${RESET}      ${WHITE}Fleet model management (pull, run, ps)${RESET}"
+    echo -e "  ${GREEN}watch${RESET}       ${WHITE}Live monitoring (status, fleet, memory)${RESET}"
+    echo -e "  ${GREEN}sync${RESET}        ${WHITE}Synchronize across fleet (scripts, config)${RESET}"
+    echo -e "  ${AMBER}memory${RESET}      Memory system, journals, coordination (30+ commands)"
+    echo -e "  ${AMBER}agent${RESET}       AI agents, Claude sessions, orchestration (25+ commands)"
+    echo -e "  ${AMBER}deploy${RESET}      Deployment to all platforms (50+ commands)"
+    echo -e "  ${AMBER}infra${RESET}       Infrastructure, cluster, mesh (40+ commands)"
+    echo -e "  ${AMBER}network${RESET}     DNS, Tailscale, SSH, discovery (20+ commands)"
+    echo -e "  ${AMBER}pi${RESET}          Raspberry Pi fleet management (15+ commands)"
+    echo -e "  ${AMBER}github${RESET}      GitHub orgs, repos, PRs, Actions (30+ commands)"
+    echo -e "  ${AMBER}cloudflare${RESET}  Pages, Workers, DNS, KV (25+ commands)"
+    echo -e "  ${AMBER}stripe${RESET}      Payments, products, subscriptions (15+ commands)"
+    echo -e "  ${AMBER}security${RESET}    Audits, alerts, compliance (15+ commands)"
+    echo -e "  ${AMBER}visual${RESET}      Emoji worlds, 3D graphics, games (40+ commands)"
+    echo -e "  ${AMBER}db${RESET}          SQLite, Postgres, Redis operations (10+ commands)"
+    echo -e "  ${AMBER}analytics${RESET}   Metrics, dashboards, monitoring (15+ commands)"
+    echo -e "  ${AMBER}brand${RESET}       Design system, colors, compliance (10+ commands)"
+    echo -e "  ${AMBER}traffic${RESET}     Traffic light system (green/yellow/red)"
+    echo -e "  ${AMBER}task${RESET}        Task marketplace operations"
+    echo -e "  ${AMBER}codex${RESET}       BlackRoad OS component search"
+    echo
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${WHITE}QUICK COMMANDS${RESET}"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo
+    echo -e "  ${GREEN}blackroad status${RESET}           System overview"
+    echo -e "  ${GREEN}blackroad stats${RESET}            Codebase statistics"
+    echo -e "  ${GREEN}blackroad agents${RESET}           List all agents"
+    echo -e "  ${GREEN}blackroad todos${RESET}            View infinite todos"
+    echo -e "  ${GREEN}blackroad init${RESET}             Initialize session"
+    echo -e "  ${GREEN}blackroad micro${RESET}            Detailed dashboard"
+    echo -e "  ${GREEN}blackroad macro${RESET}            Big picture view"
+    echo -e "  ${GREEN}blackroad colors${RESET}           Brand color palette"
+    echo -e "  ${GREEN}blackroad banner${RESET}           Show banner"
+    echo -e "  ${GREEN}blackroad menu${RESET}             Interactive category menu"
+    echo -e "  ${GREEN}blackroad find${RESET}             Fuzzy search all scripts (fzf)"
+    echo -e "  ${GREEN}blackroad quick${RESET}            Quick shortcuts (s, m, t, l, a)"
+    echo -e "  ${GREEN}blackroad ollama${RESET}           Ollama model management"
+    echo -e "  ${GREEN}blackroad list${RESET}             List all scripts"
+    echo
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${WHITE}EXAMPLES${RESET}"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo
+    echo -e "  ${DIM}# Memory operations${RESET}"
+    echo -e "  blackroad memory summary"
+    echo -e "  blackroad memory log created my-agent \"deployed service\" \"deploy\""
+    echo
+    echo -e "  ${DIM}# Deploy everywhere${RESET}"
+    echo -e "  blackroad deploy all"
+    echo -e "  blackroad deploy cloudflare my-project"
+    echo
+    echo -e "  ${DIM}# Agent operations${RESET}"
+    echo -e "  blackroad agent chat"
+    echo -e "  blackroad agent init"
+    echo
+    echo -e "  ${DIM}# Pi fleet${RESET}"
+    echo -e "  blackroad pi status"
+    echo -e "  blackroad pi ssh alice"
+    echo
+    echo -e "  ${DIM}# Run any script directly${RESET}"
+    echo -e "  blackroad run <script-name> [args...]"
+    echo
+}
+
+# AI / Lucidia commands - Multi-model coding assistant
+AI_MODULE="$HOME/blackroad-ai.sh"
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  LOCAL AI ROUTING - ANTHROPIC BECOMES OPTIONAL
+#  Route to Pi fleet Ollama instances instead of cloud
+#═══════════════════════════════════════════════════════════════════════════════
+
+# Pi node configurations
+get_pi_model() {
+    case "$1" in
+        cecilia) echo "cecilia:latest" ;;
+        lucidia) echo "qwen2.5:1.5b" ;;
+        aria)    echo "llama3.2:3b" ;;
+        octavia) echo "llama3:latest" ;;
+        alice)   echo "tinyllama:latest" ;;
+        *)       echo "llama3.2:3b" ;;
+    esac
+}
+
+get_pi_role() {
+    case "$1" in
+        cecilia) echo "Queen - CECE model, Hailo-8 26 TOPS" ;;
+        lucidia) echo "Inference - qwen2.5, codellama" ;;
+        aria)    echo "Harmony - llama3.2, qwen-coder" ;;
+        octavia) echo "Multi-arm - llama3, codellama" ;;
+        alice)   echo "Worker - tinyllama" ;;
+        *)       echo "Unknown" ;;
+    esac
+}
+
+is_valid_pi() {
+    case "$1" in
+        cecilia|lucidia|aria|octavia|alice) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Check if a Pi is reachable
+pi_online() {
+    ssh -o ConnectTimeout=2 -o BatchMode=yes "$1" "true" 2>/dev/null
+}
+
+# Get best available Pi for inference
+get_best_pi() {
+    for host in cecilia octavia lucidia aria alice; do
+        if pi_online "$host"; then
+            echo "$host"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Ask a specific Pi node
+ask_pi() {
+    local host="$1"
+    local model="${2:-}"
+    [[ -z "$model" ]] && model=$(get_pi_model "$host")
+    local prompt="${3:-}"
+
+    if [[ -z "$prompt" ]]; then
+        echo -e "${PINK}╔═══════════════════════════════════════════════════════════════╗${RESET}"
+        echo -e "${PINK}║${RESET}  ${WHITE}LOCAL AI${RESET} → ${GREEN}$host${RESET} (${DIM}$model${RESET})                          ${PINK}║${RESET}"
+        echo -e "${PINK}║${RESET}  ${DIM}Type 'exit' to quit. Anthropic: BYPASSED${RESET}                   ${PINK}║${RESET}"
+        echo -e "${PINK}╚═══════════════════════════════════════════════════════════════╝${RESET}"
+        ssh -t "$host" "ollama run $model"
+    else
+        echo -e "${DIM}→ $host ($model)${RESET}"
+        ssh "$host" "ollama run $model '$prompt'" 2>/dev/null
+    fi
+}
+
+# Local AI command handler
+cmd_local() {
+    case "${1:-help}" in
+        status|fleet)
+            echo -e "${PINK}╔═══════════════════════════════════════════════════════════════╗${RESET}"
+            echo -e "${PINK}║${RESET}  ${WHITE}⚡ LOCAL AI FLEET STATUS${RESET}                                   ${PINK}║${RESET}"
+            echo -e "${PINK}║${RESET}  ${DIM}Anthropic: NOT REQUIRED${RESET}                                    ${PINK}║${RESET}"
+            echo -e "${PINK}╠═══════════════════════════════════════════════════════════════╣${RESET}"
+            for host in cecilia lucidia aria octavia alice; do
+                if pi_online "$host"; then
+                    local models=$(ssh -o ConnectTimeout=3 "$host" "ollama list 2>/dev/null | tail -n +2 | wc -l" 2>/dev/null || echo "?")
+                    local role=$(get_pi_role "$host")
+                    printf "${PINK}║${RESET}  ${GREEN}●${RESET} %-10s ${WHITE}%-3s models${RESET}  ${DIM}%s${RESET}\n" "$host" "$models" "$role"
+                else
+                    printf "${PINK}║${RESET}  ${RED}○${RESET} %-10s ${DIM}offline${RESET}\n" "$host"
+                fi
+            done
+            echo -e "${PINK}╚═══════════════════════════════════════════════════════════════╝${RESET}"
+            ;;
+        models)
+            echo -e "${WHITE}Models on Pi Fleet:${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    echo -e "\n${GREEN}$host:${RESET}"
+                    ssh "$host" "ollama list 2>/dev/null" | head -8
+                fi
+            done
+            ;;
+        chat|ask)
+            shift
+            local host="${1:-}"
+            shift 2>/dev/null || true
+            local prompt="$*"
+            if [[ -z "$host" ]]; then
+                host=$(get_best_pi) || { echo -e "${RED}No Pi nodes available${RESET}"; return 1; }
+                echo -e "${DIM}Auto-selected: $host${RESET}"
+            fi
+            is_valid_pi "$host" || { echo -e "${RED}Unknown host:${RESET} $host"; return 1; }
+            ask_pi "$host" "" "$prompt"
+            ;;
+        cece|cecilia)  shift; ask_pi "cecilia" "cecilia:latest" "$*" ;;
+        lucidia)       shift; ask_pi "lucidia" "qwen2.5:1.5b" "$*" ;;
+        aria)          shift; ask_pi "aria" "llama3.2:3b" "$*" ;;
+        octavia)       shift; ask_pi "octavia" "llama3:latest" "$*" ;;
+        alice)         shift; ask_pi "alice" "tinyllama:latest" "$*" ;;
+        code|coder)
+            shift
+            local host=$(get_best_pi) || { echo -e "${RED}No Pi available${RESET}"; return 1; }
+            local model="codellama:7b"
+            [[ "$host" == "cecilia" ]] && model="qwen2.5-coder:3b"
+            echo -e "${DIM}Code assistant on $host ($model)${RESET}"
+            ssh -t "$host" "ollama run $model"
+            ;;
+        benchmark)
+            echo -e "${WHITE}Benchmarking Pi Fleet...${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    printf "%-10s " "$host"
+                    local start=$(date +%s%N)
+                    ssh "$host" "echo 'OK' | ollama run tinyllama 2>/dev/null" | head -1
+                    local ms=$(( ($(date +%s%N) - start) / 1000000 ))
+                    echo -e " ${DIM}(${ms}ms)${RESET}"
+                fi
+            done
+            ;;
+        help|*)
+            echo -e "${PINK}local${RESET} - Local AI on Pi Fleet ${DIM}(Anthropic bypassed)${RESET}"
+            echo ""
+            echo -e "  ${GREEN}CHAT${RESET}"
+            echo "    local chat              Auto-select best Pi"
+            echo "    local chat <host>       Chat with specific Pi"
+            echo "    local cece <prompt>     Ask CECE (Hailo-8)"
+            echo "    local lucidia <prompt>  Ask Lucidia (fast)"
+            echo "    local aria <prompt>     Ask Aria"
+            echo "    local octavia <prompt>  Ask Octavia"
+            echo ""
+            echo -e "  ${GREEN}SPECIALIZED${RESET}"
+            echo "    local code              Code assistant (codellama)"
+            echo "    local status            Fleet status"
+            echo "    local models            List all models"
+            echo "    local benchmark         Test response times"
+            ;;
+    esac
+}
+
+# Top-level ask command
+cmd_ask() {
+    local target="${1:-help}"
+    shift 2>/dev/null || true
+    local prompt="$*"
+    case "$target" in
+        cece|cecilia)  ask_pi "cecilia" "cecilia:latest" "$prompt" ;;
+        lucidia)       ask_pi "lucidia" "qwen2.5:1.5b" "$prompt" ;;
+        aria)          ask_pi "aria" "llama3.2:3b" "$prompt" ;;
+        octavia)       ask_pi "octavia" "llama3:latest" "$prompt" ;;
+        alice)         ask_pi "alice" "tinyllama:latest" "$prompt" ;;
+        local|pi|auto)
+            local host=$(get_best_pi) || { echo -e "${RED}No Pi available${RESET}"; return 1; }
+            ask_pi "$host" "" "$prompt"
+            ;;
+        code)          cmd_local code ;;
+        help|"")
+            echo -e "${MAGENTA}ask${RESET} - Ask local AI agents ${DIM}(Anthropic bypassed)${RESET}"
+            echo "  ask cece <prompt>     CECE on Cecilia (Hailo-8)"
+            echo "  ask lucidia <prompt>  Lucidia (qwen2.5)"
+            echo "  ask aria <prompt>     Aria (llama3.2)"
+            echo "  ask octavia <prompt>  Octavia (llama3)"
+            echo "  ask alice <prompt>    Alice (tinyllama)"
+            echo "  ask local <prompt>    Auto-select best Pi"
+            echo "  ask code              Code assistant mode"
+            ;;
+        *)
+            local host=$(get_best_pi)
+            [[ -n "$host" ]] && ask_pi "$host" "" "$target $prompt" || echo -e "${RED}No Pi available${RESET}"
+            ;;
+    esac
+}
+
+cmd_ai() {
+    case "${1:-help}" in
+        chat)
+            if [[ -f ~/.local/bin/lucidia ]]; then
+                ~/.local/bin/lucidia chat
+            else
+                "$AI_MODULE" chat
+            fi ;;
+        task)
+            shift
+            if [[ -f ~/.local/bin/lucidia ]]; then
+                ~/.local/bin/lucidia task "$*"
+            else
+                ~/lucidia-cli.sh task "$*"
+            fi ;;
+        analyze)
+            shift
+            if [[ -f ~/.local/bin/lucidia ]]; then
+                ~/.local/bin/lucidia analyze "$1"
+            else
+                echo "Usage: $INVOKED_AS ai analyze <path>"
+            fi ;;
+        review)
+            shift
+            if [[ -f ~/.local/bin/lucidia ]]; then
+                ~/.local/bin/lucidia review "$1"
+            else
+                echo "Usage: $INVOKED_AS ai review <file>"
+            fi ;;
+        collab)
+            shift
+            if [[ -f ~/.local/bin/lucidia ]]; then
+                ~/.local/bin/lucidia collab "$*"
+            else
+                ~/lucidia-cli.sh collab "$*"
+            fi ;;
+        context)
+            if [[ -f ~/.local/bin/lucidia ]]; then
+                ~/.local/bin/lucidia context
+            else
+                echo "Context detection requires lucidia daemon"
+            fi ;;
+        models)
+            "$AI_MODULE" models ;;
+        switch)
+            shift; "$AI_MODULE" switch "$@" ;;
+        pull)
+            shift; "$AI_MODULE" pull "$@" ;;
+        compare)
+            shift; "$AI_MODULE" compare "$@" ;;
+        # Agent personalities
+        ask)
+            shift; "$AI_MODULE" ask "$@" ;;
+        council)
+            shift; "$AI_MODULE" council "$@" ;;
+        agents)
+            "$AI_MODULE" agents ;;
+        # Quick prompts
+        quick|q)
+            shift; "$AI_MODULE" quick "$@" ;;
+        explain)
+            shift; "$AI_MODULE" quick explain "$@" ;;
+        fix)
+            shift; "$AI_MODULE" quick fix "$@" ;;
+        # Status
+        status)
+            "$AI_MODULE" status ;;
+        menu)
+            if [[ -f ~/.local/bin/lucidia ]]; then
+                ~/.local/bin/lucidia
+            else
+                echo "Lucidia menu requires ~/.local/bin/lucidia"
+            fi ;;
+        help|*)
+            echo -e "${PINK}ai${RESET} - Multi-Model AI Assistant"
+            echo ""
+            echo -e "  ${GREEN}CHAT${RESET}"
+            echo "    chat            Interactive AI chat"
+            echo "    ask <agent>     Chat with agent personality (cece/lucidia/alice/aria/octavia/silas)"
+            echo "    council <p>     Ask all agents the same question"
+            echo ""
+            echo -e "  ${GREEN}MODELS${RESET}"
+            echo "    models          List available models"
+            echo "    switch <m>      Set active model"
+            echo "    pull <m>        Download new model"
+            echo "    compare <p>     Compare responses across models"
+            echo ""
+            echo -e "  ${GREEN}QUICK${RESET}"
+            echo "    quick explain   Explain something"
+            echo "    quick fix       Fix code"
+            echo "    quick review    Code review"
+            echo ""
+            echo -e "  ${GREEN}INFO${RESET}"
+            echo "    status          AI system status"
+            echo "    agents          List agent personalities"
+            echo ""
+            echo -e "  ${GREEN}ADVANCED${RESET}"
+            echo "    task <desc>     Multi-model collaboration task"
+            echo "    analyze <path>  Analyze code at path"
+            echo "    collab <q>      Multi-model collaboration"
+            ;;
+    esac
+}
+
+# Memory commands
+cmd_memory() {
+    case "${1:-help}" in
+        summary|status)
+            ~/memory-system.sh summary ;;
+        log)
+            shift; ~/memory-system.sh log "$@" ;;
+        live|context)
+            shift; ~/memory-realtime-context.sh live "${MY_CLAUDE:-unknown}" "${1:-compact}" ;;
+        dashboard)
+            ~/memory-collaboration-dashboard.sh compact ;;
+        til)
+            shift; ~/memory-til-broadcast.sh "$@" ;;
+        tasks|marketplace)
+            shift; ~/memory-task-marketplace.sh "${@:-list}" ;;
+        todos|infinite)
+            shift; ~/memory-infinite-todos.sh "${@:-list}" ;;
+        greenlight)
+            source ~/memory-greenlight-templates.sh && gl_announce "${2:-agent}" "${3:-project}" "${4:-tasks}" "${5:-goal}" ;;
+        init)
+            ~/memory-ultimate-init.sh ;;
+        visualize)
+            ~/memory-visualizer.sh ;;
+        analytics)
+            ~/memory-analytics.sh ;;
+        query)
+            shift; ~/memory-query.sh "$@" ;;
+        nlq)
+            shift; ~/memory-nlq.sh "$@" ;;
+        help|*)
+            echo -e "${AMBER}memory${RESET} - Memory System Commands"
+            echo "  summary     - System status overview"
+            echo "  log         - Add entry: log <action> <entity> <details> <tags>"
+            echo "  live        - Real-time context"
+            echo "  dashboard   - Collaboration dashboard"
+            echo "  til         - Today I Learned broadcasts"
+            echo "  tasks       - Task marketplace"
+            echo "  todos       - Infinite todos"
+            echo "  greenlight  - Announce work (greenlight template)"
+            echo "  init        - Initialize memory system"
+            echo "  visualize   - Visual memory browser"
+            echo "  analytics   - Memory analytics"
+            echo "  query       - Query memory"
+            echo "  nlq         - Natural language query"
+            ;;
+    esac
+}
+
+# Agent commands
+cmd_agent() {
+    case "${1:-help}" in
+        init|session)
+            ~/claude-session-init.sh ;;
+        chat)
+            ~/agent-chat.sh ;;
+        debate)
+            ~/agent-debate.sh ;;
+        registry)
+            shift; ~/blackroad-agent-registry.sh "${@:-list}" ;;
+        voices)
+            ~/agent-voices.sh ;;
+        group)
+            ~/claude-group-chat.sh ;;
+        skill)
+            shift; ~/claude-skill-matcher.sh "$@" ;;
+        leaderboard)
+            ~/claude-leaderboard.sh ;;
+        orchestra)
+            ~/blackroad-agent-orchestra.sh ;;
+        mesh)
+            ~/blackroad-agent-mesh.sh ;;
+        factory)
+            ~/br-agent-factory.sh ;;
+        npc)
+            shift; ~/br-ai-npc.sh "$@" ;;
+        ask)
+            case "${2:-}" in
+                alice) shift 2; ssh alice.local "ask-alice \"$*\"" 2>/dev/null || ~/agent-chat.sh alice "$@" ;;
+                lucidia) shift 2; ~/lucidia-cli.sh "$@" ;;
+                aria) shift 2; ssh aria.local "ask-aria \"$*\"" 2>/dev/null || echo "aria offline" ;;
+                octavia) shift 2; ssh octavia.local "ask-octavia \"$*\"" 2>/dev/null || echo "octavia offline" ;;
+                *) echo "Usage: blackroad agent ask <alice|lucidia|aria|octavia> <question>" ;;
+            esac ;;
+        help|*)
+            echo -e "${AMBER}agent${RESET} - AI Agent Commands"
+            echo "  init        - Initialize Claude session with identity"
+            echo "  chat        - Multi-agent chat"
+            echo "  debate      - Agent debate mode"
+            echo "  registry    - View/manage agent registry"
+            echo "  voices      - Agent voice profiles"
+            echo "  group       - Group chat coordination"
+            echo "  skill       - Skill matching system"
+            echo "  leaderboard - Agent leaderboard"
+            echo "  orchestra   - Full orchestration"
+            echo "  mesh        - Agent mesh network"
+            echo "  factory     - Generate new agents"
+            echo "  npc         - AI NPC system"
+            echo "  ask <name>  - Ask specific agent (alice/lucidia/aria/octavia)"
+            ;;
+    esac
+}
+
+# Deploy commands
+DEPLOY_MODULE="$HOME/blackroad-deploy.sh"
+
+cmd_deploy() {
+    case "${1:-help}" in
+        # New module commands
+        status|s)
+            "$DEPLOY_MODULE" status ;;
+        history|h)
+            shift; "$DEPLOY_MODULE" history "$@" ;;
+        watch|w)
+            shift; "$DEPLOY_MODULE" watch "$@" ;;
+        init|new)
+            shift; "$DEPLOY_MODULE" init "$@" ;;
+        rollback)
+            shift; "$DEPLOY_MODULE" rollback "$@" ;;
+        quick|q)
+            shift; "$DEPLOY_MODULE" quick "$@" ;;
+        multi|m)
+            shift; "$DEPLOY_MODULE" multi "$@" ;;
+        # Original commands
+        all)
+            ~/deploy-all-now.sh ;;
+        cloudflare|cf)
+            shift
+            if [[ -n "${1:-}" ]]; then
+                "$DEPLOY_MODULE" pages deploy . "$1"
+            else
+                ~/deploy-all-domains.sh
+            fi ;;
+        railway)
+            shift; "$DEPLOY_MODULE" railway deploy "$@" ;;
+        github|gh)
+            ~/push-all-to-github.sh ;;
+        pi|pis)
+            ~/deploy-to-all-pis.sh ;;
+        agents)
+            ~/deploy-agents-everywhere.sh ;;
+        bots)
+            ~/deploy-bots-everywhere.sh ;;
+        worker)
+            "$DEPLOY_MODULE" workers deploy ;;
+        pages)
+            shift; "$DEPLOY_MODULE" pages "$@" ;;
+        revolution)
+            ~/deploy-blackroad-revolution.sh ;;
+        empire)
+            ~/deploy-blackroad-empire.sh ;;
+        autonomy)
+            ~/deploy-autonomous-agents.sh ;;
+        landing)
+            ~/deploy-landing-pages.sh ;;
+        stripe)
+            ~/deploy-clerk-stripe.sh ;;
+        security)
+            ~/deploy-security-workflows.sh ;;
+        self-healing)
+            ~/deploy-self-healing.sh ;;
+        workflows)
+            ~/deploy-workflows-to-all-repos.sh ;;
+        help|*)
+            echo -e "${AMBER}deploy${RESET} - Deployment Commands"
+            echo ""
+            echo -e "  ${GREEN}MANAGE${RESET}"
+            echo "    status      - Deployment status (auth, projects)"
+            echo "    history [n] - Show deploy history"
+            echo "    watch <dir> - Auto-deploy on file changes"
+            echo "    rollback <p> - Rollback Pages project"
+            echo "    init <name> - Create new project from template"
+            echo ""
+            echo -e "  ${GREEN}CLOUDFLARE${RESET}"
+            echo "    pages       - Pages commands (list/deploy/create)"
+            echo "    cf <project> - Quick deploy to Cloudflare Pages"
+            echo "    worker      - Deploy Cloudflare Worker"
+            echo ""
+            echo -e "  ${GREEN}RAILWAY${RESET}"
+            echo "    railway     - Deploy to Railway"
+            echo ""
+            echo -e "  ${GREEN}BATCH${RESET}"
+            echo "    all         - Deploy everything everywhere"
+            echo "    quick <p>   - Quick preset (landing/dashboard/docs/all)"
+            echo "    multi <p1>  - Deploy to multiple projects"
+            echo ""
+            echo -e "  ${GREEN}TARGETS${RESET}"
+            echo "    pi          - Deploy to Pi fleet"
+            echo "    agents      - Deploy agents everywhere"
+            echo "    empire      - Deploy empire-wide"
+            echo "    github      - Push all to GitHub"
+            echo "    workflows   - Deploy GitHub workflows"
+            ;;
+    esac
+}
+
+# Infrastructure commands
+cmd_infra() {
+    case "${1:-help}" in
+        status|map)
+            ~/blackroad-infrastructure-map.sh ;;
+        cluster)
+            shift; ~/blackroad-cluster-monitor.sh "$@" ;;
+        mesh)
+            ~/blackroad-service-mesh.sh ;;
+        secrets)
+            shift; ~/blackroad-secrets-manager.sh "$@" ;;
+        config)
+            shift; ~/blackroad-config-manager.sh "$@" ;;
+        observability)
+            ~/blackroad-observability.sh ;;
+        health)
+            ~/blackroad-health-score.sh ;;
+        autoscale)
+            ~/blackroad-cluster-autoscale.sh ;;
+        backup)
+            ~/blackroad-cluster-backup.sh ;;
+        stress)
+            ~/blackroad-stress-test.sh ;;
+        chaos)
+            ~/blackroad-chaos-engineering.sh ;;
+        cost)
+            ~/blackroad-cost-tracker.sh ;;
+        feature-flags)
+            shift; ~/blackroad-feature-flags.sh "$@" ;;
+        scheduler)
+            shift; ~/blackroad-job-scheduler.sh "$@" ;;
+        help|*)
+            echo -e "${AMBER}infra${RESET} - Infrastructure Commands"
+            echo "  status      - Infrastructure map"
+            echo "  cluster     - Cluster monitoring"
+            echo "  mesh        - Service mesh"
+            echo "  secrets     - Secrets manager"
+            echo "  config      - Config manager"
+            echo "  observability - Full observability"
+            echo "  health      - Health scoring"
+            echo "  autoscale   - Autoscaling"
+            echo "  backup      - Cluster backup"
+            echo "  stress      - Stress testing"
+            echo "  chaos       - Chaos engineering"
+            echo "  cost        - Cost tracking"
+            echo "  feature-flags - Feature flag system"
+            echo "  scheduler   - Job scheduler"
+            ;;
+    esac
+}
+
+# Network commands
+NETWORK_MODULE="$HOME/blackroad-network.sh"
+
+cmd_network() {
+    case "${1:-help}" in
+        # New module commands
+        status|s)
+            "$NETWORK_MODULE" status ;;
+        fleet|f)
+            "$NETWORK_MODULE" fleet ;;
+        topology|topo)
+            "$NETWORK_MODULE" topology ;;
+        watch|w)
+            shift; "$NETWORK_MODULE" watch "$@" ;;
+        ping|p)
+            shift; "$NETWORK_MODULE" ping "$@" ;;
+        speed)
+            "$NETWORK_MODULE" speed ;;
+        # Original commands with module integration
+        scan)
+            shift; "$NETWORK_MODULE" scan "$@" ;;
+        discover)
+            "$NETWORK_MODULE" scan discover ;;
+        dns)
+            shift; "$NETWORK_MODULE" dns "$@" ;;
+        tailscale|ts)
+            shift; "$NETWORK_MODULE" tailscale "$@" ;;
+        ssh)
+            shift; "$NETWORK_MODULE" ssh "$@" ;;
+        mesh)
+            ~/setup-blackroad-mesh.sh ;;
+        tunnels)
+            ~/setup-blackroad-tunnels.sh ;;
+        heartbeat)
+            ~/heartbeat.sh ;;
+        help|*)
+            echo -e "${AMBER}network${RESET} - Network Commands"
+            echo ""
+            echo -e "  ${GREEN}STATUS${RESET}"
+            echo "    status      - Network overview (IP, gateway, devices)"
+            echo "    fleet       - Device fleet status table"
+            echo "    topology    - Network topology diagram"
+            echo "    watch [s]   - Live monitoring mode"
+            echo ""
+            echo -e "  ${GREEN}CONNECTIVITY${RESET}"
+            echo "    ping [host] - Ping all devices or specific target"
+            echo "    speed       - Speed test"
+            echo "    scan        - Network scanning (quick/ports/discover)"
+            echo ""
+            echo -e "  ${GREEN}SERVICES${RESET}"
+            echo "    ssh [cmd]   - SSH fleet (list/test/exec/all)"
+            echo "    dns [cmd]   - DNS operations (lookup/check/update)"
+            echo "    tailscale   - Tailscale mesh (status/peers/ping)"
+            echo ""
+            echo -e "  ${GREEN}SETUP${RESET}"
+            echo "    mesh        - Setup mesh network"
+            echo "    tunnels     - Setup tunnels"
+            ;;
+    esac
+}
+
+# Pi commands
+cmd_pi() {
+    case "${1:-help}" in
+        status)
+            ~/pi-heartbeat.sh ;;
+        fleet)
+            ~/pifleet.sh ;;
+        ssh)
+            shift
+            case "${1:-}" in
+                alice) ssh alice.local ;;
+                aria) ssh aria.local ;;
+                lucidia) ssh lucidia.local ;;
+                octavia) ssh octavia.local ;;
+                cecilia) ssh cecilia.local ;;
+                shellfish) ssh root@174.138.44.45 ;;
+                *) echo "Usage: blackroad pi ssh <alice|aria|lucidia|octavia|cecilia|shellfish>" ;;
+            esac ;;
+        deploy)
+            shift; ~/deploy-to-all-pis.sh "$@" ;;
+        test)
+            ~/test-all-nodes.sh ;;
+        ollama)
+            ~/test-all-ollama.sh ;;
+        sync)
+            ~/lucidia-sync-fleet.sh ;;
+        flash)
+            shift; ~/flash-esp32-direct.sh "$@" ;;
+        pironman)
+            ~/diagnose-pironmans.sh ;;
+        hailo)
+            ~/hailo.sh ;;
+        help|*)
+            echo -e "${AMBER}pi${RESET} - Raspberry Pi Commands"
+            echo "  status      - Pi fleet heartbeat"
+            echo "  fleet       - Fleet management"
+            echo "  ssh <name>  - SSH to Pi (alice/aria/lucidia/octavia/cecilia)"
+            echo "  deploy      - Deploy to all Pis"
+            echo "  test        - Test all nodes"
+            echo "  ollama      - Test Ollama on all Pis"
+            echo "  sync        - Sync Lucidia fleet"
+            echo "  flash       - Flash ESP32"
+            echo "  pironman    - Diagnose Pironmans"
+            echo "  hailo       - Hailo AI accelerator"
+            ;;
+    esac
+}
+
+# GitHub commands
+cmd_github() {
+    case "${1:-help}" in
+        status)
+            ~/github-stats.sh ;;
+        repos)
+            shift; gh repo list BlackRoad-OS --limit "${1:-50}" ;;
+        orgs)
+            for org in BlackRoad-OS BlackRoad-AI BlackRoad-Cloud BlackRoad-Security BlackRoad-Media BlackRoad-Foundation; do
+                count=$(gh repo list "$org" --limit 1000 2>/dev/null | wc -l)
+                echo -e "${AMBER}$org${RESET}: $count repos"
+            done ;;
+        clone)
+            shift; gh repo clone "BlackRoad-OS/${1:-}" ;;
+        prs)
+            ~/gh-prs.sh ;;
+        issues)
+            ~/gh-issues.sh ;;
+        actions)
+            ~/gh-actions.sh ;;
+        workflows)
+            ~/gh-workflows.sh ;;
+        merge)
+            ~/auto-merge-everything.sh ;;
+        search)
+            shift; ~/github-search.sh "$@" ;;
+        push)
+            ~/push-all-to-github.sh ;;
+        sync)
+            ~/mass-github-update.sh ;;
+        enhance)
+            ~/enhance-all-github-ui.sh ;;
+        security)
+            ~/enable-security-features.sh ;;
+        branches)
+            ~/git-branch-hygiene-analyzer.sh ;;
+        help|*)
+            echo -e "${AMBER}github${RESET} - GitHub Commands"
+            echo "  status      - GitHub statistics"
+            echo "  repos [n]   - List repos (default 50)"
+            echo "  orgs        - List all org repo counts"
+            echo "  clone <r>   - Clone a BlackRoad-OS repo"
+            echo "  prs         - View pull requests"
+            echo "  issues      - View issues"
+            echo "  actions     - GitHub Actions status"
+            echo "  workflows   - Workflow management"
+            echo "  merge       - Auto-merge open PRs"
+            echo "  search      - Search GitHub"
+            echo "  push        - Push all to GitHub"
+            echo "  sync        - Mass GitHub update"
+            echo "  enhance     - Enhance all UI"
+            echo "  security    - Enable security features"
+            echo "  branches    - Branch hygiene analysis"
+            ;;
+    esac
+}
+
+# Cloudflare commands
+cmd_cloudflare() {
+    case "${1:-help}" in
+        status)
+            wrangler pages project list ;;
+        deploy)
+            shift
+            if [[ -n "${1:-}" ]]; then
+                wrangler pages deploy "${2:-.}" --project-name="$1"
+            else
+                ~/deploy-all-domains.sh
+            fi ;;
+        worker)
+            wrangler deploy ;;
+        kv)
+            shift; wrangler kv namespace "${@:-list}" ;;
+        dns)
+            shift; ~/setup-cloudflare-dns.sh "$@" ;;
+        domains)
+            ~/link-cloudflare-domains.sh ;;
+        projects)
+            wrangler pages project list ;;
+        connect)
+            ~/connect-repos-to-cf-pages.sh ;;
+        perfect)
+            ~/perfect-all-cloudflare-projects.sh ;;
+        brand)
+            ~/cloudflare-brand-audit.sh ;;
+        whoami)
+            wrangler whoami ;;
+        help|*)
+            echo -e "${AMBER}cloudflare${RESET} - Cloudflare Commands"
+            echo "  status      - List Pages projects"
+            echo "  deploy <p>  - Deploy to project"
+            echo "  worker      - Deploy worker"
+            echo "  kv          - KV namespace operations"
+            echo "  dns         - DNS setup"
+            echo "  domains     - Link domains"
+            echo "  projects    - List projects"
+            echo "  connect     - Connect repos to Pages"
+            echo "  perfect     - Perfect all projects"
+            echo "  brand       - Brand audit"
+            echo "  whoami      - Check auth"
+            ;;
+    esac
+}
+
+# Stripe commands
+cmd_stripe() {
+    case "${1:-help}" in
+        status)
+            stripe products list --limit 10 ;;
+        products)
+            stripe products list ;;
+        prices)
+            stripe prices list ;;
+        create)
+            shift; ~/create-stripe-products.sh "$@" ;;
+        links)
+            ~/create-stripe-links.sh ;;
+        setup)
+            ~/setup-stripe-products-now.sh ;;
+        deploy)
+            ~/deploy-clerk-stripe.sh ;;
+        test)
+            ~/verify-stripe-payments.sh ;;
+        help|*)
+            echo -e "${AMBER}stripe${RESET} - Stripe Commands"
+            echo "  status      - List products"
+            echo "  products    - All products"
+            echo "  prices      - All prices"
+            echo "  create      - Create products"
+            echo "  links       - Create payment links"
+            echo "  setup       - Full setup"
+            echo "  deploy      - Deploy with Clerk"
+            echo "  test        - Test payments"
+            ;;
+    esac
+}
+
+# Security commands
+cmd_security() {
+    case "${1:-help}" in
+        audit)
+            ~/security-audit-automation.sh ;;
+        alerts)
+            ~/check-security-alerts.sh ;;
+        report)
+            ~/generate-security-report.sh ;;
+        prs)
+            ~/create-security-prs.sh ;;
+        deploy)
+            ~/deploy-security-workflows.sh ;;
+        scan)
+            ~/security.sh ;;
+        compliance)
+            ~/compliance-monitor.sh ;;
+        notifications)
+            ~/security-notifications.sh ;;
+        help|*)
+            echo -e "${AMBER}security${RESET} - Security Commands"
+            echo "  audit       - Security audit"
+            echo "  alerts      - Check alerts"
+            echo "  report      - Generate report"
+            echo "  prs         - Create security PRs"
+            echo "  deploy      - Deploy workflows"
+            echo "  scan        - Security scan"
+            echo "  compliance  - Compliance monitor"
+            echo "  notifications - Security notifications"
+            ;;
+    esac
+}
+
+# Visual/Fun commands
+cmd_visual() {
+    case "${1:-help}" in
+        emoji)
+            shift; ~/emoji_os.sh "$@" ;;
+        world)
+            ~/emoji_world.sh ;;
+        cube)
+            ~/cube.sh ;;
+        donut)
+            ~/donut.sh ;;
+        fire)
+            ~/fire.sh ;;
+        fireworks)
+            ~/fireworks.sh ;;
+        galaxy)
+            ~/galaxy.sh ;;
+        plasma)
+            ~/plasma.sh ;;
+        rainbow)
+            ~/rainbow_add.sh ;;
+        snake)
+            ~/snake.sh ;;
+        mandelbrot)
+            ~/mandelbrot.sh ;;
+        life)
+            ~/life.sh ;;
+        minecraft)
+            ~/minecraft_block.sh ;;
+        tornado)
+            ~/tornado.sh ;;
+        waves)
+            ~/waves3d.sh ;;
+        vortex)
+            ~/vortex.sh ;;
+        hypercube)
+            ~/hypercube.sh ;;
+        solar)
+            ~/solar.sh ;;
+        dna)
+            ~/dna.sh ;;
+        quantum)
+            ~/quantum_master.sh ;;
+        metaverse)
+            ~/metaverse.sh ;;
+        help|*)
+            echo -e "${AMBER}visual${RESET} - Visual/Fun Commands"
+            echo "  emoji       - Emoji OS"
+            echo "  world       - Emoji world"
+            echo "  cube        - 3D cube"
+            echo "  donut       - Spinning donut"
+            echo "  fire        - Fire animation"
+            echo "  fireworks   - Fireworks"
+            echo "  galaxy      - Galaxy simulation"
+            echo "  plasma      - Plasma effect"
+            echo "  rainbow     - Rainbow colors"
+            echo "  snake       - Snake game"
+            echo "  mandelbrot  - Mandelbrot set"
+            echo "  life        - Game of Life"
+            echo "  minecraft   - Minecraft blocks"
+            echo "  tornado     - Tornado"
+            echo "  waves       - 3D waves"
+            echo "  vortex      - Vortex animation"
+            echo "  hypercube   - 4D hypercube"
+            echo "  solar       - Solar system"
+            echo "  dna         - DNA helix"
+            echo "  quantum     - Quantum visualization"
+            echo "  metaverse   - Metaverse engine"
+            ;;
+    esac
+}
+
+# Database commands
+cmd_db() {
+    DB=~/.blackroad/blackroad.db
+    case "${1:-help}" in
+        init)
+            sqlite3 "$DB" "CREATE TABLE IF NOT EXISTS agents(name TEXT PRIMARY KEY,state INT DEFAULT 0,type TEXT,updated_at TEXT);CREATE TABLE IF NOT EXISTS config(key TEXT PRIMARY KEY,value TEXT);CREATE TABLE IF NOT EXISTS tasks(id INTEGER PRIMARY KEY,agent TEXT,status TEXT DEFAULT 'pending',payload TEXT,created_at TEXT);CREATE TABLE IF NOT EXISTS logs(id INTEGER PRIMARY KEY,source TEXT,message TEXT,ts TEXT DEFAULT CURRENT_TIMESTAMP);"
+            echo "Database initialized" ;;
+        agents)
+            sqlite3 -header -column "$DB" "SELECT * FROM agents;" ;;
+        config)
+            sqlite3 -header -column "$DB" "SELECT * FROM config;" ;;
+        logs)
+            sqlite3 -header -column "$DB" "SELECT * FROM logs ORDER BY id DESC LIMIT ${2:-20};" ;;
+        query)
+            shift; sqlite3 -header -column "$DB" "$*" ;;
+        registry)
+            shift; ~/blackroad-agent-registry.sh "$@" ;;
+        traffic)
+            shift; ~/blackroad-traffic-light.sh "$@" ;;
+        help|*)
+            echo -e "${AMBER}db${RESET} - Database Commands"
+            echo "  init        - Initialize database"
+            echo "  agents      - List agents"
+            echo "  config      - View config"
+            echo "  logs [n]    - View logs (default 20)"
+            echo "  query       - Run SQL query"
+            echo "  registry    - Agent registry"
+            echo "  traffic     - Traffic light DB"
+            ;;
+    esac
+}
+
+# Analytics commands
+cmd_analytics() {
+    case "${1:-help}" in
+        dashboard)
+            ~/status-dashboard.sh ;;
+        metrics)
+            ~/blackroad-metrics-api.sh ;;
+        mercury)
+            ~/mercury-analytics-tracker.sh ;;
+        performance)
+            ~/performance-monitoring.sh ;;
+        collaboration)
+            ~/collaboration-analytics.sh ;;
+        stats)
+            ~/br-stats.sh ;;
+        history)
+            ~/br-stats-history.sh ;;
+        help|*)
+            echo -e "${AMBER}analytics${RESET} - Analytics Commands"
+            echo "  dashboard   - Status dashboard"
+            echo "  metrics     - Metrics API"
+            echo "  mercury     - Mercury analytics"
+            echo "  performance - Performance monitoring"
+            echo "  collaboration - Collaboration analytics"
+            echo "  stats       - Codebase stats"
+            echo "  history     - Stats history"
+            ;;
+    esac
+}
+
+# Brand commands
+cmd_brand() {
+    case "${1:-help}" in
+        colors)
+            echo -e "${WHITE}Official BlackRoad Brand Colors${RESET}"
+            echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+            echo -e "${AMBER}████████${RESET} 208  #FF8700  Amber"
+            echo -e "${ORANGE}████████${RESET} 202  #FF5F00  Orange"
+            echo -e "${PINK}████████${RESET} 198  #FF0087  Hot Pink"
+            echo -e "${MAGENTA}████████${RESET} 163  #D700AF  Magenta"
+            echo -e "${BLUE}████████${RESET}  33  #0087FF  Blue"
+            echo ""
+            echo -e "${WHITE}Gradient:${RESET}"
+            brand_gradient
+            echo ""
+            echo -e "${DIM}Grayscale-first design with color as intentional layer${RESET}" ;;
+        gradient)
+            brand_gradient ;;
+        logo)
+            echo ""
+            printf "${PINK}██████${RESET}  ${BLUE}██████${RESET}\n"
+            printf "${PINK}██   ██${RESET} ${BLUE}██   ██${RESET}\n"
+            printf "${PINK}██████${RESET}  ${BLUE}██████${RESET}\n"
+            printf "${PINK}██   ██${RESET} ${BLUE}██   ██${RESET}\n"
+            printf "${PINK}██████${RESET}  ${BLUE}██   ██${RESET}\n"
+            echo ""
+            brand_gradient
+            echo "" ;;
+        logo-gradient)
+            echo ""
+            printf "${AMBER}█████${ORANGE}█${RESET}  ${MAGENTA}█████${BLUE}█${RESET}\n"
+            printf "${AMBER}█${RESET}   ${PINK}██${RESET} ${MAGENTA}█${RESET}   ${BLUE}██${RESET}\n"
+            printf "${AMBER}█████${PINK}█${RESET}  ${MAGENTA}█████${BLUE}█${RESET}\n"
+            printf "${ORANGE}█${RESET}   ${PINK}██${RESET} ${BLUE}█${RESET}   ${BLUE}██${RESET}\n"
+            printf "${PINK}█████${MAGENTA}█${RESET}  ${BLUE}█${RESET}   ${BLUE}██${RESET}\n"
+            echo ""
+            brand_gradient
+            echo "" ;;
+        logo-small)
+            printf "${PINK}▄▄▄${RESET} ${BLUE}▄▄▄${RESET}\n"
+            printf "${PINK}█▄█${RESET} ${BLUE}█▄▀${RESET}\n"
+            printf "${PINK}█▄█${RESET} ${BLUE}█ █${RESET}\n" ;;
+        mascot)
+            echo ""
+            echo -e "${WHITE}  ╭───╮${RESET}"
+            echo -e "${WHITE}  │${PINK}◉ ◉${WHITE}│${RESET}"
+            echo -e "${WHITE}  │${RESET} ${BLUE}▽${RESET} ${WHITE}│${RESET}"
+            echo -e "${WHITE}  ╰─┬─╯${RESET}"
+            echo -e "${WHITE}   ┌┴┐${RESET}"
+            echo -e "${WHITE}   │█│${RESET}"
+            echo -e "${WHITE}   └┬┘${RESET}"
+            echo -e "${WHITE}   ┌┴┐${RESET}"
+            echo -e "${DIM}  BlackRoad Bot${RESET}"
+            echo "" ;;
+        all)
+            cmd_brand logo
+            cmd_brand colors ;;
+        audit)
+            ~/brand-compliance-checker.sh ;;
+        docs)
+            cat ~/BLACKROAD_BRAND_SYSTEM.md ;;
+        palette)
+            ~/build-palette.sh ;;
+        help|*)
+            echo -e "${AMBER}brand${RESET} - Brand Commands"
+            echo "  colors        - Show brand colors"
+            echo "  gradient      - Show gradient bar"
+            echo "  logo          - BR pixel logo"
+            echo "  logo-gradient - BR logo with gradient"
+            echo "  logo-small    - Compact BR logo"
+            echo "  mascot        - BlackRoad bot mascot"
+            echo "  all           - Show logo + colors"
+            echo "  audit         - Brand compliance audit"
+            echo "  docs          - Brand documentation"
+            echo "  palette       - Build color palette"
+            ;;
+    esac
+}
+
+# Traffic light commands
+cmd_traffic() {
+    ~/blackroad-traffic-light.sh "${@:-summary}"
+}
+
+# Task marketplace commands
+cmd_task() {
+    ~/memory-task-marketplace.sh "${@:-list}"
+}
+
+# BlackRoad OS / Codex search
+cmd_codex() {
+    if [[ -f ~/blackroad-codex-verification-suite.sh ]]; then
+        ~/blackroad-codex-verification-suite.sh "${@:-stats}"
+    else
+        echo "Codex verification suite not found"
+    fi
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  SSH - Quick device access
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_ssh() {
+    local target="${1:-help}"
+    shift 2>/dev/null || true
+
+    case "$target" in
+        # Pi fleet
+        cece|cecilia)   ssh -t cecilia "$@" ;;
+        lucidia|luc)    ssh -t lucidia "$@" ;;
+        aria)           ssh -t aria "$@" ;;
+        octavia|oct)    ssh -t octavia "$@" ;;
+        alice)          ssh -t alice "$@" ;;
+
+        # Cloud
+        shellfish|sf)   ssh -t shellfish "$@" ;;
+        infinity|inf)   ssh -t blackroadinfinity "$@" ;;
+
+        # Tailscale (remote)
+        cecilia-ts)     ssh -t cecilia-ts "$@" ;;
+        lucidia-ts)     ssh -t lucidia-ts "$@" ;;
+        aria-ts)        ssh -t aria-ts "$@" ;;
+        octavia-ts)     ssh -t octavia-ts "$@" ;;
+
+        # Special commands
+        all)
+            echo -e "${PINK}Running on all Pis:${RESET} $*"
+            for host in cecilia lucidia aria octavia; do
+                echo -e "\n${GREEN}=== $host ===${RESET}"
+                ssh "$host" "$@" 2>/dev/null || echo -e "${RED}Failed${RESET}"
+            done
+            ;;
+
+        copy)
+            # Copy file to all Pis
+            local file="$1"
+            local dest="${2:-~}"
+            if [[ -z "$file" ]]; then
+                echo "Usage: br ssh copy <file> [dest]"
+                return 1
+            fi
+            echo -e "${PINK}Copying $file to all Pis...${RESET}"
+            for host in cecilia lucidia aria octavia alice; do
+                if pi_online "$host"; then
+                    scp "$file" "$host:$dest" && echo -e "${GREEN}✓ $host${RESET}"
+                fi
+            done
+            ;;
+
+        help|*)
+            echo -e "${MAGENTA}ssh${RESET} - Quick Device Access"
+            echo ""
+            echo -e "  ${GREEN}PI FLEET${RESET}"
+            echo "    ssh cecilia         SSH to Cecilia (Hailo-8)"
+            echo "    ssh lucidia         SSH to Lucidia"
+            echo "    ssh aria            SSH to Aria"
+            echo "    ssh octavia         SSH to Octavia"
+            echo "    ssh alice           SSH to Alice"
+            echo ""
+            echo -e "  ${GREEN}CLOUD${RESET}"
+            echo "    ssh shellfish       SSH to DigitalOcean edge"
+            echo "    ssh infinity        SSH to cloud oracle"
+            echo ""
+            echo -e "  ${GREEN}TAILSCALE (REMOTE)${RESET}"
+            echo "    ssh cecilia-ts      Via Tailscale"
+            echo "    ssh lucidia-ts      Via Tailscale"
+            echo ""
+            echo -e "  ${GREEN}BATCH${RESET}"
+            echo "    ssh all <cmd>       Run command on all Pis"
+            echo "    ssh copy <f> [d]    Copy file to all Pis"
+            ;;
+    esac
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  OLLAMA - Fleet-wide model management
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_ollama() {
+    case "${1:-help}" in
+        ps|running)
+            echo -e "${WHITE}Running Models Across Fleet:${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    local running=$(ssh "$host" "ollama ps 2>/dev/null" | tail -n +2)
+                    if [[ -n "$running" ]]; then
+                        echo -e "\n${GREEN}$host:${RESET}"
+                        echo "$running"
+                    fi
+                fi
+            done
+            ;;
+
+        list|ls)
+            shift
+            local host="${1:-all}"
+            if [[ "$host" == "all" ]]; then
+                echo -e "${WHITE}Models Across Fleet:${RESET}"
+                for h in cecilia lucidia aria octavia; do
+                    if pi_online "$h"; then
+                        echo -e "\n${GREEN}$h:${RESET}"
+                        ssh "$h" "ollama list 2>/dev/null" | tail -n +2
+                    fi
+                done
+            else
+                ssh "$host" "ollama list 2>/dev/null"
+            fi
+            ;;
+
+        pull)
+            shift
+            local model="$1"
+            local host="${2:-cecilia}"
+            if [[ -z "$model" ]]; then
+                echo "Usage: br ollama pull <model> [host]"
+                return 1
+            fi
+            echo -e "${PINK}Pulling $model on $host...${RESET}"
+            ssh -t "$host" "ollama pull $model"
+            ;;
+
+        pull-all)
+            shift
+            local model="$1"
+            if [[ -z "$model" ]]; then
+                echo "Usage: br ollama pull-all <model>"
+                return 1
+            fi
+            echo -e "${PINK}Pulling $model on all Pis...${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    echo -e "\n${GREEN}=== $host ===${RESET}"
+                    ssh "$host" "ollama pull $model" &
+                fi
+            done
+            wait
+            echo -e "${GREEN}Done!${RESET}"
+            ;;
+
+        run)
+            shift
+            local model="${1:-}"
+            local host="${2:-}"
+            if [[ -z "$model" ]]; then
+                echo "Usage: br ollama run <model> [host]"
+                return 1
+            fi
+            if [[ -z "$host" ]]; then
+                host=$(get_best_pi) || { echo -e "${RED}No Pi available${RESET}"; return 1; }
+            fi
+            echo -e "${DIM}Running $model on $host${RESET}"
+            ssh -t "$host" "ollama run $model"
+            ;;
+
+        rm|remove)
+            shift
+            local model="$1"
+            local host="${2:-}"
+            if [[ -z "$model" ]]; then
+                echo "Usage: br ollama rm <model> [host|all]"
+                return 1
+            fi
+            if [[ "$host" == "all" ]]; then
+                echo -e "${PINK}Removing $model from all Pis...${RESET}"
+                for h in cecilia lucidia aria octavia; do
+                    pi_online "$h" && ssh "$h" "ollama rm $model 2>/dev/null" && echo -e "${GREEN}✓ $h${RESET}"
+                done
+            else
+                host="${host:-cecilia}"
+                ssh "$host" "ollama rm $model"
+            fi
+            ;;
+
+        serve)
+            shift
+            local host="${1:-cecilia}"
+            echo -e "${PINK}Starting Ollama server on $host...${RESET}"
+            ssh "$host" "ollama serve"
+            ;;
+
+        stop)
+            shift
+            local host="${1:-all}"
+            if [[ "$host" == "all" ]]; then
+                for h in cecilia lucidia aria octavia; do
+                    pi_online "$h" && ssh "$h" "pkill ollama 2>/dev/null" && echo -e "${GREEN}Stopped $h${RESET}"
+                done
+            else
+                ssh "$host" "pkill ollama"
+            fi
+            ;;
+
+        size|disk)
+            echo -e "${WHITE}Ollama Disk Usage:${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    local size=$(ssh "$host" "du -sh ~/.ollama/models 2>/dev/null | cut -f1" || echo "?")
+                    printf "  %-10s %s\n" "$host" "$size"
+                fi
+            done
+            ;;
+
+        help|*)
+            echo -e "${MAGENTA}ollama${RESET} - Fleet Model Management"
+            echo ""
+            echo -e "  ${GREEN}STATUS${RESET}"
+            echo "    ollama ps           Running models on all Pis"
+            echo "    ollama list [host]  List models (default: all)"
+            echo "    ollama size         Disk usage per Pi"
+            echo ""
+            echo -e "  ${GREEN}MODELS${RESET}"
+            echo "    ollama pull <m> [h]     Pull model to host"
+            echo "    ollama pull-all <m>     Pull to ALL Pis (parallel)"
+            echo "    ollama run <m> [h]      Run model on host"
+            echo "    ollama rm <m> [h|all]   Remove model"
+            echo ""
+            echo -e "  ${GREEN}SERVER${RESET}"
+            echo "    ollama serve [host]  Start Ollama server"
+            echo "    ollama stop [h|all]  Stop Ollama"
+            ;;
+    esac
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  WATCH - Live monitoring commands
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_watch() {
+    case "${1:-help}" in
+        status)
+            watch -n5 -c "bash ~/bin/blackroad status"
+            ;;
+        local|fleet)
+            watch -n5 -c "bash ~/bin/blackroad local status"
+            ;;
+        memory|mem)
+            watch -n10 "tail -20 ~/.blackroad/memory/journals/master-journal.jsonl | jq -c ."
+            ;;
+        ollama)
+            watch -n3 -c "for h in cecilia lucidia aria octavia; do echo \"=== \$h ===\"; ssh -o ConnectTimeout=2 \$h 'ollama ps 2>/dev/null' 2>/dev/null; done"
+            ;;
+        traffic)
+            watch -n10 -c "bash ~/bin/blackroad traffic summary"
+            ;;
+        tasks)
+            watch -n30 "bash ~/memory-task-marketplace.sh list 2>/dev/null | head -30"
+            ;;
+        git)
+            watch -n30 "git status; echo '---'; git log --oneline -5"
+            ;;
+        disk)
+            watch -n60 "df -h / /Volumes/* 2>/dev/null"
+            ;;
+        pis)
+            watch -n10 "for h in cecilia lucidia aria octavia alice; do echo -n \"\$h: \"; ssh -o ConnectTimeout=2 \$h 'uptime' 2>/dev/null || echo 'offline'; done"
+            ;;
+        help|*)
+            echo -e "${MAGENTA}watch${RESET} - Live Monitoring"
+            echo ""
+            echo "    watch status      System status (5s)"
+            echo "    watch fleet       Local AI fleet (5s)"
+            echo "    watch memory      Memory journal (10s)"
+            echo "    watch ollama      Running models (3s)"
+            echo "    watch traffic     Traffic lights (10s)"
+            echo "    watch tasks       Task marketplace (30s)"
+            echo "    watch git         Git status (30s)"
+            echo "    watch disk        Disk usage (60s)"
+            echo "    watch pis         Pi uptime (10s)"
+            ;;
+    esac
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  SYNC - Synchronize across fleet
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_sync() {
+    case "${1:-help}" in
+        scripts)
+            echo -e "${PINK}Syncing scripts to all Pis...${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    echo -e "${GREEN}→ $host${RESET}"
+                    rsync -avz --progress ~/bin/ "$host:~/bin/" 2>/dev/null
+                fi
+            done
+            ;;
+
+        config)
+            echo -e "${PINK}Syncing configs to all Pis...${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    echo -e "${GREEN}→ $host${RESET}"
+                    scp ~/.bashrc ~/.zshrc "$host:~/" 2>/dev/null
+                fi
+            done
+            ;;
+
+        ollama-models)
+            shift
+            local source="${1:-cecilia}"
+            echo -e "${PINK}Syncing Ollama models from $source...${RESET}"
+            local models=$(ssh "$source" "ollama list 2>/dev/null | tail -n +2 | awk '{print \$1}'")
+            for host in cecilia lucidia aria octavia; do
+                [[ "$host" == "$source" ]] && continue
+                if pi_online "$host"; then
+                    echo -e "\n${GREEN}=== $host ===${RESET}"
+                    for model in $models; do
+                        echo "Pulling $model..."
+                        ssh "$host" "ollama pull $model 2>/dev/null" &
+                    done
+                fi
+            done
+            wait
+            ;;
+
+        file)
+            shift
+            local file="$1"
+            local dest="${2:-~}"
+            if [[ -z "$file" ]]; then
+                echo "Usage: br sync file <file> [dest]"
+                return 1
+            fi
+            echo -e "${PINK}Syncing $file to all Pis...${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    rsync -avz "$file" "$host:$dest/" && echo -e "${GREEN}✓ $host${RESET}"
+                fi
+            done
+            ;;
+
+        dir)
+            shift
+            local dir="$1"
+            local dest="${2:-~}"
+            if [[ -z "$dir" ]]; then
+                echo "Usage: br sync dir <dir> [dest]"
+                return 1
+            fi
+            echo -e "${PINK}Syncing $dir to all Pis...${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    rsync -avz --progress "$dir" "$host:$dest/" && echo -e "${GREEN}✓ $host${RESET}"
+                fi
+            done
+            ;;
+
+        time)
+            echo -e "${PINK}Syncing time on all Pis...${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    ssh "$host" "sudo timedatectl set-ntp true" && echo -e "${GREEN}✓ $host${RESET}"
+                fi
+            done
+            ;;
+
+        help|*)
+            echo -e "${MAGENTA}sync${RESET} - Synchronize Across Fleet"
+            echo ""
+            echo "    sync scripts          Push ~/bin to all Pis"
+            echo "    sync config           Push shell configs"
+            echo "    sync ollama-models    Copy models from cecilia"
+            echo "    sync file <f> [d]     Rsync file to all Pis"
+            echo "    sync dir <d> [dest]   Rsync directory"
+            echo "    sync time             Sync NTP on all Pis"
+            ;;
+    esac
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  GIT - Quick git operations
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_git() {
+    case "${1:-help}" in
+        s|status)       git status ;;
+        d|diff)         git diff ;;
+        l|log)          git log --oneline -20 ;;
+        lg)             git log --graph --oneline --all -20 ;;
+        b|branch)       git branch -a ;;
+        co|checkout)    shift; git checkout "$@" ;;
+        pull)           git pull ;;
+        push)           git push ;;
+        fetch)          git fetch --all ;;
+        stash)          shift; git stash "$@" ;;
+        pop)            git stash pop ;;
+
+        # Quick commits
+        add)            shift; git add "${@:-.}" ;;
+        commit)         shift; git commit -m "$*" ;;
+        amend)          git commit --amend --no-edit ;;
+        undo)           git reset HEAD~1 --soft ;;
+
+        # Branch operations
+        new)
+            shift
+            local branch="$1"
+            [[ -z "$branch" ]] && { echo "Usage: br git new <branch>"; return 1; }
+            git checkout -b "$branch"
+            ;;
+        del)
+            shift
+            local branch="$1"
+            [[ -z "$branch" ]] && { echo "Usage: br git del <branch>"; return 1; }
+            git branch -d "$branch"
+            ;;
+        merge)
+            shift
+            git merge "$@"
+            ;;
+
+        # Info
+        remote)         git remote -v ;;
+        last)           git log -1 --stat ;;
+        today)          git log --since="midnight" --oneline ;;
+        week)           git log --since="1 week ago" --oneline ;;
+        authors)        git shortlog -sn ;;
+
+        # Cleanup
+        clean)          git clean -fd ;;
+        prune)          git remote prune origin ;;
+        gc)             git gc --aggressive ;;
+
+        # Quick save
+        save)
+            shift
+            local msg="${*:-WIP}"
+            git add -A && git commit -m "$msg"
+            ;;
+        ship)
+            shift
+            local msg="${*:-Update}"
+            git add -A && git commit -m "$msg" && git push
+            ;;
+
+        help|*)
+            echo -e "${MAGENTA}git${RESET} - Quick Git Operations"
+            echo ""
+            echo -e "  ${GREEN}STATUS${RESET}"
+            echo "    git s               Status"
+            echo "    git d               Diff"
+            echo "    git l               Log (20 lines)"
+            echo "    git lg              Log graph"
+            echo "    git b               Branches"
+            echo ""
+            echo -e "  ${GREEN}QUICK${RESET}"
+            echo "    git add [files]     Stage (default: all)"
+            echo "    git commit <msg>    Commit"
+            echo "    git save [msg]      Add all + commit"
+            echo "    git ship [msg]      Add + commit + push"
+            echo "    git amend           Amend last commit"
+            echo "    git undo            Undo last commit (soft)"
+            echo ""
+            echo -e "  ${GREEN}BRANCHES${RESET}"
+            echo "    git new <branch>    Create + checkout"
+            echo "    git co <branch>     Checkout"
+            echo "    git del <branch>    Delete branch"
+            echo "    git merge <branch>  Merge"
+            echo ""
+            echo -e "  ${GREEN}INFO${RESET}"
+            echo "    git last            Last commit details"
+            echo "    git today           Commits today"
+            echo "    git week            Commits this week"
+            echo "    git authors         Commit counts"
+            ;;
+    esac
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  LOGS - View and tail logs
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_logs() {
+    case "${1:-help}" in
+        memory|mem)
+            tail -f ~/.blackroad/memory/journals/master-journal.jsonl | jq -c .
+            ;;
+        memory-pretty)
+            tail -f ~/.blackroad/memory/journals/master-journal.jsonl | jq .
+            ;;
+        system|sys)
+            if [[ -f /var/log/system.log ]]; then
+                tail -f /var/log/system.log
+            else
+                journalctl -f
+            fi
+            ;;
+        pi)
+            shift
+            local host="${1:-cecilia}"
+            ssh -t "$host" "journalctl -f"
+            ;;
+        ollama)
+            shift
+            local host="${1:-cecilia}"
+            ssh -t "$host" "journalctl -u ollama -f"
+            ;;
+        nginx)
+            shift
+            local host="${1:-cecilia}"
+            ssh -t "$host" "tail -f /var/log/nginx/access.log"
+            ;;
+        docker)
+            shift
+            local container="${1:-}"
+            if [[ -z "$container" ]]; then
+                docker logs --tail 100 -f "$(docker ps -q | head -1)"
+            else
+                docker logs --tail 100 -f "$container"
+            fi
+            ;;
+        all-pis)
+            echo -e "${PINK}Tailing logs from all Pis...${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    ssh "$host" "journalctl -n 5 --no-pager" 2>/dev/null | sed "s/^/[$host] /"
+                fi
+            done
+            ;;
+        help|*)
+            echo -e "${MAGENTA}logs${RESET} - View and Tail Logs"
+            echo ""
+            echo "    logs memory         Memory journal (json)"
+            echo "    logs memory-pretty  Memory journal (formatted)"
+            echo "    logs system         System log"
+            echo "    logs pi [host]      Pi system log"
+            echo "    logs ollama [host]  Ollama service log"
+            echo "    logs nginx [host]   Nginx access log"
+            echo "    logs docker [name]  Docker container log"
+            echo "    logs all-pis        Recent logs from all Pis"
+            ;;
+    esac
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  BACKUP - Backup and restore
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_backup() {
+    local backup_dir="$HOME/backups"
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+
+    case "${1:-help}" in
+        scripts)
+            mkdir -p "$backup_dir"
+            local dest="$backup_dir/scripts_$timestamp.tar.gz"
+            tar -czf "$dest" -C ~ bin/*.sh bin/blackroad .blackroad-*.sh .blackroad-*.bash .blackroad-*.zsh 2>/dev/null
+            echo -e "${GREEN}Backed up scripts to:${RESET} $dest"
+            ls -lh "$dest"
+            ;;
+        memory)
+            mkdir -p "$backup_dir"
+            local dest="$backup_dir/memory_$timestamp.tar.gz"
+            tar -czf "$dest" -C ~ .blackroad/memory 2>/dev/null
+            echo -e "${GREEN}Backed up memory to:${RESET} $dest"
+            ls -lh "$dest"
+            ;;
+        config)
+            mkdir -p "$backup_dir"
+            local dest="$backup_dir/config_$timestamp.tar.gz"
+            tar -czf "$dest" -C ~ .zshrc .bashrc .tmux.conf .gitconfig .ssh/config 2>/dev/null
+            echo -e "${GREEN}Backed up config to:${RESET} $dest"
+            ls -lh "$dest"
+            ;;
+        db)
+            mkdir -p "$backup_dir"
+            local dest="$backup_dir/databases_$timestamp"
+            mkdir -p "$dest"
+            cp ~/.blackroad-agent-registry.db "$dest/" 2>/dev/null
+            cp ~/.blackroad-traffic-light.db "$dest/" 2>/dev/null
+            cp ~/blackroad-codex/index/*.db "$dest/" 2>/dev/null
+            echo -e "${GREEN}Backed up databases to:${RESET} $dest/"
+            ls -la "$dest/"
+            ;;
+        all)
+            echo -e "${PINK}Creating full backup...${RESET}"
+            cmd_backup scripts
+            cmd_backup memory
+            cmd_backup config
+            cmd_backup db
+            echo -e "\n${GREEN}All backups complete!${RESET}"
+            ;;
+        pi)
+            shift
+            local host="${1:-cecilia}"
+            local dest="$backup_dir/${host}_$timestamp.tar.gz"
+            mkdir -p "$backup_dir"
+            echo -e "${PINK}Backing up $host...${RESET}"
+            ssh "$host" "tar -czf - ~/bin ~/.ollama/models 2>/dev/null" > "$dest"
+            echo -e "${GREEN}Backed up $host to:${RESET} $dest"
+            ls -lh "$dest"
+            ;;
+        list|ls)
+            echo -e "${WHITE}Backups in $backup_dir:${RESET}"
+            ls -lht "$backup_dir" 2>/dev/null | head -20 || echo "No backups found"
+            ;;
+        clean)
+            shift
+            local days="${1:-30}"
+            echo -e "${PINK}Removing backups older than $days days...${RESET}"
+            find "$backup_dir" -type f -mtime "+$days" -delete -print
+            ;;
+        help|*)
+            echo -e "${MAGENTA}backup${RESET} - Backup and Restore"
+            echo ""
+            echo -e "  ${GREEN}CREATE${RESET}"
+            echo "    backup scripts      Scripts and CLI"
+            echo "    backup memory       Memory system"
+            echo "    backup config       Shell configs"
+            echo "    backup db           SQLite databases"
+            echo "    backup all          Everything"
+            echo "    backup pi [host]    Backup Pi (default: cecilia)"
+            echo ""
+            echo -e "  ${GREEN}MANAGE${RESET}"
+            echo "    backup list         List backups"
+            echo "    backup clean [days] Remove old (default: 30)"
+            ;;
+    esac
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  HEALTH - System health checks
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_health() {
+    case "${1:-all}" in
+        local|mac)
+            echo -e "${WHITE}Local System Health:${RESET}"
+            echo -e "\n${GREEN}CPU:${RESET}"
+            top -l 1 | grep "CPU usage" || uptime
+            echo -e "\n${GREEN}Memory:${RESET}"
+            vm_stat | head -5 2>/dev/null || free -h
+            echo -e "\n${GREEN}Disk:${RESET}"
+            df -h / | tail -1
+            echo -e "\n${GREEN}Network:${RESET}"
+            ping -c1 google.com &>/dev/null && echo "Internet: OK" || echo "Internet: FAIL"
+            ;;
+        fleet|pis)
+            echo -e "${WHITE}Pi Fleet Health:${RESET}"
+            printf "\n%-12s %-8s %-10s %-10s %s\n" "HOST" "STATUS" "LOAD" "MEM" "DISK"
+            echo "─────────────────────────────────────────────────────"
+            for host in cecilia lucidia aria octavia alice; do
+                if pi_online "$host"; then
+                    local info=$(ssh -o ConnectTimeout=3 "$host" "
+                        load=\$(uptime | awk -F'load average:' '{print \$2}' | awk '{print \$1}' | tr -d ',')
+                        mem=\$(free | awk '/Mem:/ {printf \"%.0f%%\", \$3/\$2*100}')
+                        disk=\$(df / | tail -1 | awk '{print \$5}')
+                        echo \"\$load \$mem \$disk\"
+                    " 2>/dev/null)
+                    local load=$(echo "$info" | awk '{print $1}')
+                    local mem=$(echo "$info" | awk '{print $2}')
+                    local disk=$(echo "$info" | awk '{print $3}')
+                    printf "%-12s ${GREEN}%-8s${RESET} %-10s %-10s %s\n" "$host" "online" "$load" "$mem" "$disk"
+                else
+                    printf "%-12s ${RED}%-8s${RESET}\n" "$host" "offline"
+                fi
+            done
+            ;;
+        ollama)
+            echo -e "${WHITE}Ollama Health:${RESET}"
+            for host in cecilia lucidia aria octavia; do
+                if pi_online "$host"; then
+                    local status=$(ssh -o ConnectTimeout=3 "$host" "systemctl is-active ollama 2>/dev/null || echo 'unknown'" 2>/dev/null)
+                    local models=$(ssh -o ConnectTimeout=3 "$host" "ollama list 2>/dev/null | tail -n +2 | wc -l" 2>/dev/null || echo "?")
+                    if [[ "$status" == "active" ]]; then
+                        echo -e "  ${GREEN}●${RESET} $host: $status ($models models)"
+                    else
+                        echo -e "  ${RED}○${RESET} $host: $status"
+                    fi
+                fi
+            done
+            ;;
+        services|svc)
+            echo -e "${WHITE}Service Health:${RESET}"
+            echo -e "\n${GREEN}Cloudflare:${RESET}"
+            wrangler whoami &>/dev/null && echo "  Auth: OK" || echo "  Auth: FAIL"
+            echo -e "\n${GREEN}GitHub:${RESET}"
+            gh auth status &>/dev/null && echo "  Auth: OK" || echo "  Auth: FAIL"
+            echo -e "\n${GREEN}Tailscale:${RESET}"
+            tailscale status &>/dev/null && echo "  Status: Connected" || echo "  Status: Disconnected"
+            ;;
+        db|databases)
+            echo -e "${WHITE}Database Health:${RESET}"
+            for db in ~/.blackroad-agent-registry.db ~/.blackroad-traffic-light.db; do
+                if [[ -f "$db" ]]; then
+                    local size=$(ls -lh "$db" | awk '{print $5}')
+                    local tables=$(sqlite3 "$db" ".tables" 2>/dev/null | wc -w)
+                    echo -e "  ${GREEN}●${RESET} $(basename $db): $size ($tables tables)"
+                else
+                    echo -e "  ${RED}○${RESET} $(basename $db): missing"
+                fi
+            done
+            ;;
+        all|full)
+            cmd_health local
+            echo ""
+            cmd_health fleet
+            echo ""
+            cmd_health ollama
+            echo ""
+            cmd_health services
+            echo ""
+            cmd_health db
+            ;;
+        help|*)
+            echo -e "${MAGENTA}health${RESET} - System Health Checks"
+            echo ""
+            echo "    health              Full health check"
+            echo "    health local        Local Mac health"
+            echo "    health fleet        Pi fleet status"
+            echo "    health ollama       Ollama service status"
+            echo "    health services     External service auth"
+            echo "    health db           Database health"
+            ;;
+    esac
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  QUICK - Quick one-liners
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_quick() {
+    case "${1:-help}" in
+        ip)         curl -s ifconfig.me && echo ;;
+        localip)    ipconfig getifaddr en0 2>/dev/null || hostname -I | awk '{print $1}' ;;
+        weather)    curl -s "wttr.in/?format=3" ;;
+        epoch)      date +%s ;;
+        uuid)       uuidgen | tr '[:upper:]' '[:lower:]' ;;
+        random)     openssl rand -hex "${2:-16}" ;;
+        ports)      lsof -i -P -n | grep LISTEN ;;
+        path)       echo "$PATH" | tr ':' '\n' ;;
+        size)       du -sh "${2:-.}" ;;
+        count)      find "${2:-.}" -type f | wc -l ;;
+        space)      df -h / ;;
+        top10)      du -sh "${2:-.}"/* 2>/dev/null | sort -rh | head -10 ;;
+        processes)  ps aux | head -20 ;;
+        whoami)     echo "User: $(whoami)@$(hostname)" ;;
+
+        help|*)
+            echo -e "${MAGENTA}quick${RESET} - Quick One-Liners"
+            echo ""
+            echo "    quick ip            Public IP"
+            echo "    quick localip       Local IP"
+            echo "    quick weather       Weather"
+            echo "    quick epoch         Unix timestamp"
+            echo "    quick uuid          Generate UUID"
+            echo "    quick random [n]    Random hex (default: 16)"
+            echo "    quick ports         Listening ports"
+            echo "    quick path          PATH entries"
+            echo "    quick size [dir]    Directory size"
+            echo "    quick count [dir]   File count"
+            echo "    quick top10 [dir]   Largest items"
+            echo "    quick whoami        User info"
+            ;;
+    esac
+}
+
+#═══════════════════════════════════════════════════════════════════════════════
+#  TMUX - Terminal Multiplexer Workspaces
+#═══════════════════════════════════════════════════════════════════════════════
+
+cmd_tmux() {
+    case "${1:-help}" in
+        # Pre-built layouts
+        dashboard|dash)
+            tmux new-session -d -s blackroad -n "status" "watch -n5 -c ~/bin/blackroad local status" \; \
+                split-window -h "watch -n10 -c ~/bin/blackroad status" \; \
+                split-window -v "htop" \; \
+                select-pane -t 0 \; \
+                split-window -v "tail -f ~/.blackroad/memory/journals/master-journal.jsonl 2>/dev/null | jq -c ." \; \
+                new-window -n "pis" \; \
+                send-keys "ssh cecilia" C-m \; \
+                split-window -h "ssh lucidia" \; \
+                split-window -v "ssh octavia" \; \
+                select-pane -t 0 \; \
+                split-window -v "ssh aria" \; \
+                select-window -t 0 \; \
+                attach
+            ;;
+
+        fleet|pis)
+            echo -e "${PINK}Launching Pi Fleet Control...${RESET}"
+            tmux new-session -d -s pi-fleet -n "cecilia" "ssh -t cecilia 'htop'" \; \
+                split-window -h "ssh -t cecilia 'watch ollama ps'" \; \
+                new-window -n "lucidia" "ssh -t lucidia 'htop'" \; \
+                split-window -h "ssh -t lucidia 'watch ollama ps'" \; \
+                new-window -n "aria" "ssh -t aria 'htop'" \; \
+                split-window -h "ssh -t aria 'watch ollama ps'" \; \
+                new-window -n "octavia" "ssh -t octavia 'htop'" \; \
+                split-window -h "ssh -t octavia 'watch ollama ps'" \; \
+                select-window -t 0 \; \
+                attach
+            ;;
+
+        ai|chat)
+            echo -e "${PINK}Launching AI Chat Grid...${RESET}"
+            local best=$(get_best_pi)
+            tmux new-session -d -s ai-chat -n "cece" "ssh -t cecilia 'ollama run cecilia:latest'" \; \
+                new-window -n "lucidia" "ssh -t lucidia 'ollama run qwen2.5:1.5b'" \; \
+                new-window -n "aria" "ssh -t aria 'ollama run llama3.2:3b'" \; \
+                new-window -n "octavia" "ssh -t octavia 'ollama run llama3:latest'" \; \
+                select-window -t 0 \; \
+                attach
+            ;;
+
+        dev|code)
+            echo -e "${PINK}Launching Dev Workspace...${RESET}"
+            tmux new-session -d -s dev -n "code" \; \
+                send-keys "cd ~/blackroad-scripts && nvim ." C-m \; \
+                new-window -n "git" \; \
+                send-keys "cd ~/blackroad-scripts && git status" C-m \; \
+                split-window -v "cd ~/blackroad-scripts && watch -n30 'git log --oneline -10'" \; \
+                new-window -n "local-ai" "ssh -t cecilia 'ollama run qwen2.5-coder:3b'" \; \
+                new-window -n "term" \; \
+                select-window -t 0 \; \
+                attach
+            ;;
+
+        monitor|mon)
+            echo -e "${PINK}Launching System Monitor...${RESET}"
+            tmux new-session -d -s monitor -n "system" "htop" \; \
+                split-window -h "watch -n5 'df -h /'" \; \
+                split-window -v "watch -n10 'free -h'" \; \
+                select-pane -t 0 \; \
+                split-window -v "watch -n30 '~/bin/blackroad local status'" \; \
+                new-window -n "network" "watch -n5 'netstat -an | head -30'" \; \
+                split-window -h "ping -c1000 cecilia" \; \
+                new-window -n "logs" "tail -f /var/log/system.log 2>/dev/null || journalctl -f" \; \
+                select-window -t 0 \; \
+                attach
+            ;;
+
+        quad)
+            # 4-pane layout - all Pis
+            echo -e "${PINK}Launching Quad View...${RESET}"
+            tmux new-session -d -s quad -n "pis" \; \
+                send-keys "ssh cecilia" C-m \; \
+                split-window -h \; \
+                send-keys "ssh lucidia" C-m \; \
+                split-window -v \; \
+                send-keys "ssh octavia" C-m \; \
+                select-pane -t 0 \; \
+                split-window -v \; \
+                send-keys "ssh aria" C-m \; \
+                attach
+            ;;
+
+        grid)
+            # 6-pane grid
+            echo -e "${PINK}Launching 6-Pane Grid...${RESET}"
+            tmux new-session -d -s grid \; \
+                split-window -h \; \
+                split-window -h \; \
+                select-layout even-horizontal \; \
+                select-pane -t 0 \; \
+                split-window -v \; \
+                select-pane -t 2 \; \
+                split-window -v \; \
+                select-pane -t 4 \; \
+                split-window -v \; \
+                select-pane -t 0 \; \
+                attach
+            ;;
+
+        brady|bunch)
+            # Brady Bunch 9-pane grid
+            echo -e "${PINK}Launching Brady Bunch (3x3)...${RESET}"
+            tmux new-session -d -s brady \; \
+                split-window -v \; \
+                split-window -v \; \
+                select-layout even-vertical \; \
+                select-pane -t 0 \; split-window -h \; split-window -h \; \
+                select-pane -t 3 \; split-window -h \; split-window -h \; \
+                select-pane -t 6 \; split-window -h \; split-window -h \; \
+                select-pane -t 0 \; \
+                attach
+            ;;
+
+        # Session management
+        ls|list|sessions)
+            echo -e "${WHITE}Active tmux sessions:${RESET}"
+            tmux list-sessions 2>/dev/null || echo -e "${DIM}No sessions running${RESET}"
+            ;;
+
+        attach|a)
+            shift
+            local session="${1:-}"
+            if [[ -z "$session" ]]; then
+                tmux attach 2>/dev/null || echo "No sessions to attach"
+            else
+                tmux attach -t "$session" 2>/dev/null || echo "Session not found: $session"
+            fi
+            ;;
+
+        kill)
+            shift
+            local session="${1:-}"
+            if [[ -z "$session" ]]; then
+                echo "Usage: br tmux kill <session-name>"
+                tmux list-sessions 2>/dev/null
+            else
+                tmux kill-session -t "$session" && echo -e "${GREEN}Killed:${RESET} $session"
+            fi
+            ;;
+
+        killall)
+            tmux kill-server 2>/dev/null && echo -e "${GREEN}All tmux sessions killed${RESET}"
+            ;;
+
+        new)
+            shift
+            local name="${1:-blackroad}"
+            tmux new-session -s "$name"
+            ;;
+
+        help|*)
+            echo -e "${MAGENTA}tmux${RESET} - Terminal Workspaces"
+            echo ""
+            echo -e "  ${GREEN}LAYOUTS${RESET}"
+            echo "    tmux dashboard      BlackRoad control center (status + pis)"
+            echo "    tmux fleet          Pi fleet control (4 windows, 8 panes)"
+            echo "    tmux ai             AI chat grid (4 models)"
+            echo "    tmux dev            Development workspace"
+            echo "    tmux monitor        System monitoring"
+            echo "    tmux quad           4-pane Pi grid"
+            echo "    tmux grid           6-pane grid"
+            echo "    tmux brady          Brady Bunch 3x3 grid"
+            echo ""
+            echo -e "  ${GREEN}SESSIONS${RESET}"
+            echo "    tmux list           Show active sessions"
+            echo "    tmux attach [name]  Attach to session"
+            echo "    tmux new [name]     New session"
+            echo "    tmux kill <name>    Kill session"
+            echo "    tmux killall        Kill all sessions"
+            ;;
+    esac
+}
+
+# Run any script directly
+cmd_run() {
+    script="${1:-}"
+    if [[ -z "$script" ]]; then
+        echo "Usage: blackroad run <script-name> [args...]"
+        echo "Available scripts: $(ls ~/*.sh 2>/dev/null | wc -l)"
+        return 1
+    fi
+
+    shift
+    script_path=""
+
+    # Check various locations
+    if [[ -f ~/"${script}.sh" ]]; then
+        script_path=~/"${script}.sh"
+    elif [[ -f ~/"$script" ]]; then
+        script_path=~/"$script"
+    elif [[ -f ~/bin/"$script" ]]; then
+        script_path=~/bin/"$script"
+    elif [[ -f ~/bin/"${script}.sh" ]]; then
+        script_path=~/bin/"${script}.sh"
+    else
+        echo -e "${RED}Script not found:${RESET} $script"
+        echo "Try: blackroad list | grep $script"
+        return 1
+    fi
+
+    bash "$script_path" "$@"
+}
+
+# List all scripts
+cmd_list() {
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${WHITE}ALL AVAILABLE SCRIPTS${RESET}"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+
+    if [[ -n "${1:-}" ]]; then
+        # Filter by pattern
+        ls ~/*.sh ~/bin/* 2>/dev/null | xargs -n1 basename 2>/dev/null | sort -u | grep -i "$1" || echo "No matches for: $1"
+    else
+        # List by category
+        echo -e "\n${AMBER}Memory ($(ls ~/memory-*.sh 2>/dev/null | wc -l | tr -d ' '))${RESET}"
+        ls ~/memory-*.sh 2>/dev/null | xargs -n1 basename | sed 's/\.sh$//' | tr '\n' ' '
+
+        echo -e "\n\n${AMBER}Agent ($(ls ~/agent-*.sh ~/claude-*.sh 2>/dev/null | wc -l | tr -d ' '))${RESET}"
+        ls ~/agent-*.sh ~/claude-*.sh 2>/dev/null | xargs -n1 basename | sed 's/\.sh$//' | tr '\n' ' '
+
+        echo -e "\n\n${AMBER}Deploy ($(ls ~/deploy-*.sh 2>/dev/null | wc -l | tr -d ' '))${RESET}"
+        ls ~/deploy-*.sh 2>/dev/null | xargs -n1 basename | sed 's/\.sh$//' | tr '\n' ' '
+
+        echo -e "\n\n${AMBER}BlackRoad ($(ls ~/blackroad-*.sh 2>/dev/null | wc -l | tr -d ' '))${RESET}"
+        ls ~/blackroad-*.sh 2>/dev/null | xargs -n1 basename | sed 's/\.sh$//' | tr '\n' ' '
+
+        echo -e "\n\n${AMBER}Total:${RESET} $(ls ~/*.sh ~/bin/* 2>/dev/null | wc -l | tr -d ' ') scripts"
+    fi
+    echo
+}
+
+# Quick status
+cmd_status() {
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${WHITE}BLACKROAD SYSTEM STATUS${RESET}"
+    echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+
+    echo -e "\n${AMBER}Identity:${RESET} ${MY_CLAUDE:-not set}"
+    echo -e "${AMBER}Host:${RESET} $(hostname)"
+    echo -e "${AMBER}User:${RESET} $(whoami)"
+    echo -e "${AMBER}Git Branch:${RESET} $(git branch --show-current 2>/dev/null || echo 'n/a')"
+
+    echo -e "\n${AMBER}Memory:${RESET} $(wc -l < ~/.blackroad/memory/journals/master-journal.jsonl 2>/dev/null || echo 0) entries"
+    echo -e "${AMBER}Scripts:${RESET} $(ls ~/*.sh 2>/dev/null | wc -l | tr -d ' ') in home"
+    echo -e "${AMBER}Bin:${RESET} $(ls ~/bin/* 2>/dev/null | wc -l | tr -d ' ') commands"
+
+    # Traffic lights
+    if [[ -f ~/.blackroad-traffic-light.db ]]; then
+        green=$(sqlite3 ~/.blackroad-traffic-light.db "SELECT COUNT(*) FROM traffic_lights WHERE status='green';" 2>/dev/null || echo 0)
+        yellow=$(sqlite3 ~/.blackroad-traffic-light.db "SELECT COUNT(*) FROM traffic_lights WHERE status='yellow';" 2>/dev/null || echo 0)
+        red=$(sqlite3 ~/.blackroad-traffic-light.db "SELECT COUNT(*) FROM traffic_lights WHERE status='red';" 2>/dev/null || echo 0)
+        echo -e "\n${GREEN}🟢 $green${RESET} ${YELLOW}🟡 $yellow${RESET} ${RED}🔴 $red${RESET}"
+    fi
+
+    # Pi fleet quick check
+    echo -e "\n${AMBER}Pi Fleet:${RESET}"
+    for host in alice aria lucidia octavia cecilia; do
+        if ping -c1 -W1 "${host}.local" &>/dev/null 2>&1; then
+            echo -e "  ${GREEN}●${RESET} $host"
+        else
+            echo -e "  ${DIM}○ $host${RESET}"
+        fi
+    done
+}
+
+# Main router
+main() {
+    # If invoked as lucidia with no args, show lucidia menu
+    if [[ "$INVOKED_AS" == "lucidia" && $# -eq 0 ]]; then
+        cmd_ai menu
+        return
+    fi
+
+    case "${1:-help}" in
+        # Categories
+        ai|lucidia|llm)  shift; cmd_ai "$@" ;;
+        memory|mem)     shift; cmd_memory "$@" ;;
+        agent|agents)   shift; cmd_agent "$@" ;;
+        deploy)         shift; cmd_deploy "$@" ;;
+        infra)          shift; cmd_infra "$@" ;;
+        network|net)    shift; cmd_network "$@" ;;
+        pi|pis|fleet)   shift; cmd_pi "$@" ;;
+        github|gh)      shift; cmd_github "$@" ;;
+        cloudflare|cf)  shift; cmd_cloudflare "$@" ;;
+        stripe)         shift; cmd_stripe "$@" ;;
+        security|sec)   shift; cmd_security "$@" ;;
+        visual|fun)     shift; cmd_visual "$@" ;;
+        db|database)    shift; cmd_db "$@" ;;
+        analytics)      shift; cmd_analytics "$@" ;;
+        brand)          shift; cmd_brand "$@" ;;
+        traffic)        shift; cmd_traffic "$@" ;;
+        task|tasks)     shift; cmd_task "$@" ;;
+        codex)          shift; cmd_codex "$@" ;;
+        run)            shift; cmd_run "$@" ;;
+        list|ls)        shift; cmd_list "$@" ;;
+
+        # LOCAL AI - Anthropic becomes optional
+        local)          shift; cmd_local "$@" ;;
+        ask)            shift; cmd_ask "$@" ;;
+
+        # TMUX workspaces
+        tmux|tm)        shift; cmd_tmux "$@" ;;
+
+        # Fleet management
+        ssh)            shift; cmd_ssh "$@" ;;
+        ollama|oll)     shift; cmd_ollama "$@" ;;
+        watch|w)        shift; cmd_watch "$@" ;;
+        sync)           shift; cmd_sync "$@" ;;
+
+        # Quick commands
+        status)         cmd_status ;;
+        stats)          ~/bin/br-stats 2>/dev/null || ~/github-stats.sh ;;
+        todos)          ~/memory-infinite-todos.sh list ;;
+        init)           ~/claude-session-init.sh ;;
+        micro)          ~/bin/br-micro-dashboard 2>/dev/null || ~/blackroad-mega-status.sh ;;
+        macro)          ~/bin/br-macro-dashboard 2>/dev/null || ~/blackroad-infrastructure-map.sh ;;
+        colors)         cmd_brand colors ;;
+        gradient)       cmd_brand gradient ;;
+        banner)         show_banner ;;
+        logo)           cmd_brand logo ;;
+        menu)           cmd_menu ;;
+        find|search)    cmd_find ;;
+        quick|q)        shift; cmd_quick "$@" ;;
+        quantum|qc)     shift; cmd_quantum "$@" ;;
+        animate|anim)   shift; cmd_animate "$@" ;;
+        matrix)         cmd_matrix ;;
+        boot)           cmd_boot ;;
+
+        # Help
+        help|-h|--help) show_help ;;
+
+        # Unknown - try to run as script
+        *)
+            if [[ -f ~/"${1}.sh" ]] || [[ -f ~/bin/"$1" ]]; then
+                cmd_run "$@"
+            else
+                echo -e "${RED}Unknown command:${RESET} $1"
+                echo "Try: blackroad help"
+                exit 1
+            fi
+            ;;
+    esac
+}
+
+# Interactive menu using gum
+cmd_menu() {
+    if ! command -v gum &>/dev/null; then
+        echo -e "${RED}gum not installed.${RESET} Install with: brew install gum"
+        return 1
+    fi
+
+    show_banner
+    echo ""
+
+    local choice
+    choice=$(gum choose --cursor.foreground="198" --header.foreground="208" \
+        --header="Select a category:" \
+        "🧠 memory    - Memory & coordination" \
+        "🤖 agent     - AI agents & Claude" \
+        "🚀 deploy    - Deploy everywhere" \
+        "🔧 infra     - Infrastructure" \
+        "🌐 network   - DNS, SSH, Tailscale" \
+        "🍓 pi        - Raspberry Pi fleet" \
+        "📦 github    - GitHub operations" \
+        "☁️  cloudflare - Pages & Workers" \
+        "💳 stripe    - Payments" \
+        "🔒 security  - Audits & compliance" \
+        "🎮 visual    - Games & graphics" \
+        "🎨 brand     - Colors & logos" \
+        "📊 analytics - Metrics & stats" \
+        "📋 status    - System status" \
+        "❌ exit")
+
+    [[ -z "$choice" || "$choice" == "❌ exit" ]] && return 0
+
+    # Extract category name
+    local cat=$(echo "$choice" | awk '{print $2}')
+
+    case "$cat" in
+        memory)     cmd_memory help; echo ""; gum input --placeholder "Enter command..." | xargs -I{} bash -c "~/bin/blackroad memory {}" ;;
+        agent)      cmd_agent help; echo ""; gum input --placeholder "Enter command..." | xargs -I{} bash -c "~/bin/blackroad agent {}" ;;
+        deploy)     cmd_deploy help ;;
+        infra)      cmd_infra help ;;
+        network)    cmd_network help ;;
+        pi)         cmd_pi help ;;
+        github)     cmd_github help ;;
+        cloudflare) cmd_cloudflare help ;;
+        stripe)     cmd_stripe help ;;
+        security)   cmd_security help ;;
+        visual)     cmd_visual help ;;
+        brand)      cmd_brand all ;;
+        analytics)  cmd_analytics help ;;
+        status)     cmd_status ;;
+    esac
+}
+
+# Fuzzy script finder using fzf
+cmd_find() {
+    if ! command -v fzf &>/dev/null; then
+        echo -e "${RED}fzf not installed. Install with: brew install fzf${RESET}"
+        return 1
+    fi
+
+    local scripts
+    scripts=$(find ~ -maxdepth 1 -name "*.sh" -type f 2>/dev/null | sort)
+    scripts+=$'\n'$(find ~/bin -type f 2>/dev/null | sort)
+    scripts+=$'\n'$(find ~/scripts -type f -name "*.sh" 2>/dev/null | sort)
+
+    local selected
+    selected=$(echo "$scripts" | grep -v "^$" | fzf \
+        --preview 'head -30 {}' \
+        --preview-window=right:50%:wrap \
+        --header="🔍 BlackRoad Script Finder (TAB to select, ENTER to run)" \
+        --prompt="search> " \
+        --color="bg+:#1a1a1a,fg+:#FF0087,hl:#FF8700,hl+:#FF5F00,pointer:#FF0087,prompt:#0087FF")
+
+    [[ -z "$selected" ]] && return 0
+
+    echo -e "${AMBER}Selected:${RESET} $selected"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+
+    local choice
+    choice=$(gum choose "Run it" "Edit it" "View it" "Copy path" "Cancel")
+
+    case "$choice" in
+        "Run it")
+            echo -e "${GREEN}Running...${RESET}"
+            bash "$selected"
+            ;;
+        "Edit it")
+            ${EDITOR:-vim} "$selected"
+            ;;
+        "View it")
+            less "$selected"
+            ;;
+        "Copy path")
+            echo -n "$selected" | pbcopy
+            echo -e "${GREEN}Copied to clipboard!${RESET}"
+            ;;
+    esac
+}
+
+# Quick aliases - short commands for common tasks
+cmd_quick() {
+    case "${1:-help}" in
+        s|status)   cmd_status ;;
+        m|memory)   ~/memory-system.sh summary ;;
+        t|tasks)    ~/memory-task-marketplace.sh list ;;
+        l|lights)   ~/blackroad-traffic-light.sh summary ;;
+        a|agents)   ~/blackroad-agent-registry.sh list 2>/dev/null || echo "No agents registered" ;;
+        g|github)   gh repo list BlackRoad-OS --limit 10 ;;
+        c|cf)       wrangler pages project list 2>/dev/null | head -20 ;;
+        d|deploy)   echo -e "${AMBER}Quick deploys:${RESET}"; echo "  br quick dp <dir> <name> - Deploy to Cloudflare" ;;
+        dp)
+            shift
+            local dir="${1:-.}"
+            local name="${2:-$(basename $(pwd))}"
+            wrangler pages deploy "$dir" --project-name="$name"
+            ;;
+        help|*)
+            echo -e "${AMBER}Quick Commands:${RESET}"
+            echo "  br quick s|status  - System status"
+            echo "  br quick m|memory  - Memory summary"
+            echo "  br quick t|tasks   - Task list"
+            echo "  br quick l|lights  - Traffic lights"
+            echo "  br quick a|agents  - Agent list"
+            echo "  br quick g|github  - Recent repos"
+            echo "  br quick c|cf      - Cloudflare projects"
+            echo "  br quick dp <dir> <name> - Quick deploy"
+            ;;
+    esac
+}
+
+# Ollama model management
+# Quantum computing commands
+cmd_quantum() {
+    case "${1:-help}" in
+        status)
+            echo -e "${MAGENTA}╔═══════════════════════════════════════════════════════════════╗${RESET}"
+            echo -e "${MAGENTA}║${RESET}  ${WHITE}⚛️  QUANTUM STATE MONITOR${RESET}                                   ${MAGENTA}║${RESET}"
+            echo -e "${MAGENTA}╠═══════════════════════════════════════════════════════════════╣${RESET}"
+            echo -e "${MAGENTA}║${RESET}  Qubits:    ${PINK}|ψ⟩ = α|0⟩ + β|1⟩${RESET}                              ${MAGENTA}║${RESET}"
+            echo -e "${MAGENTA}║${RESET}  Coherence: ${GREEN}████████████░░░░${RESET} 75%                        ${MAGENTA}║${RESET}"
+            echo -e "${MAGENTA}║${RESET}  Entangled: ${AMBER}8 pairs${RESET}                                      ${MAGENTA}║${RESET}"
+            echo -e "${MAGENTA}║${RESET}  Gates:     ${BLUE}H, CNOT, T, S, X, Y, Z${RESET}                       ${MAGENTA}║${RESET}"
+            echo -e "${MAGENTA}╚═══════════════════════════════════════════════════════════════╝${RESET}"
+            ;;
+        simulate)
+            echo -e "${PINK}Initializing quantum simulation...${RESET}"
+            for i in {1..20}; do
+                local state=$((RANDOM % 2))
+                local amp=$(printf "%.3f" $(echo "scale=3; $RANDOM/32767" | bc))
+                printf "${MAGENTA}|q%02d⟩${RESET} = ${WHITE}%.3f${RESET}|${GREEN}%d${RESET}⟩ + ${WHITE}%.3f${RESET}|${RED}%d${RESET}⟩\n" \
+                    $i $amp $state $(echo "1 - $amp" | bc) $((1-state))
+                sleep 0.05
+            done
+            echo -e "\n${GREEN}Simulation complete. 20 qubits initialized.${RESET}"
+            ;;
+        entangle)
+            echo -e "${MAGENTA}Creating Bell pair...${RESET}"
+            sleep 0.3
+            echo -e "  ${PINK}|Φ+⟩ = (|00⟩ + |11⟩)/√2${RESET}"
+            echo -e "  ${WHITE}Entanglement fidelity: ${GREEN}99.7%${RESET}"
+            ;;
+        measure)
+            echo -e "${AMBER}Collapsing quantum state...${RESET}"
+            sleep 0.2
+            local result=$((RANDOM % 2))
+            echo -e "  Measurement result: ${WHITE}|${result}⟩${RESET}"
+            echo -e "  ${DIM}(Superposition destroyed)${RESET}"
+            ;;
+        gate)
+            shift
+            local gate="${1:-H}"
+            echo -e "${BLUE}Applying ${gate} gate...${RESET}"
+            case "$gate" in
+                H)  echo "  Hadamard: |0⟩ → (|0⟩ + |1⟩)/√2" ;;
+                X)  echo "  Pauli-X: |0⟩ ↔ |1⟩ (NOT gate)" ;;
+                Y)  echo "  Pauli-Y: |0⟩ → i|1⟩, |1⟩ → -i|0⟩" ;;
+                Z)  echo "  Pauli-Z: |1⟩ → -|1⟩ (phase flip)" ;;
+                CNOT) echo "  CNOT: |a,b⟩ → |a, a⊕b⟩" ;;
+                T)  echo "  T-gate: π/8 phase rotation" ;;
+                *)  echo "  Unknown gate: $gate" ;;
+            esac
+            ;;
+        circuit)
+            echo -e "${WHITE}Quantum Circuit:${RESET}"
+            echo -e "${DIM}q0: ─${RESET}${BLUE}[H]${RESET}${DIM}───●───────${RESET}"
+            echo -e "${DIM}     ${RESET}     ${DIM}│${RESET}       "
+            echo -e "${DIM}q1: ─────${RESET}${MAGENTA}[X]${RESET}${DIM}─${RESET}${AMBER}[M]${RESET}${DIM}───${RESET}"
+            echo -e "\n${GREEN}Bell state preparation circuit${RESET}"
+            ;;
+        research)
+            echo -e "${AMBER}BlackRoad Quantum Research:${RESET}"
+            echo "  • PS-SHA-∞: Quantum-resistant hashing"
+            echo "  • Spiral Information Geometry"
+            echo "  • SU(N) Heterogeneous Qudits"
+            echo "  • Consciousness-Coherence Mapping"
+            ;;
+        help|*)
+            echo -e "${MAGENTA}quantum${RESET} - Quantum Computing Commands"
+            echo "  status    - Quantum state monitor"
+            echo "  simulate  - Initialize qubit simulation"
+            echo "  entangle  - Create Bell pair"
+            echo "  measure   - Collapse superposition"
+            echo "  gate <G>  - Apply quantum gate (H,X,Y,Z,CNOT,T)"
+            echo "  circuit   - Show example circuit"
+            echo "  research  - BlackRoad quantum research"
+            ;;
+    esac
+}
+
+# Matrix rain effect
+cmd_matrix() {
+    local cols=$(tput cols)
+    local lines=$(tput lines)
+    local chars="ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ01234567890"
+
+    echo -e "${GREEN}"
+    trap "tput cnorm; echo -e '${RESET}'; exit" INT
+    tput civis  # Hide cursor
+
+    declare -A drops
+    for ((i=0; i<cols; i++)); do
+        drops[$i]=$((RANDOM % lines))
+    done
+
+    for frame in {1..200}; do
+        for ((x=0; x<cols; x+=2)); do
+            local y=${drops[$x]}
+            local char="${chars:$((RANDOM % ${#chars})):1}"
+            tput cup $y $x
+            echo -n "$char"
+
+            # Trail
+            if ((y > 0)); then
+                tput cup $((y-1)) $x
+                echo -ne "\033[38;5;22m${chars:$((RANDOM % ${#chars})):1}"
+            fi
+
+            drops[$x]=$(( (y + 1) % lines ))
+        done
+        sleep 0.05
+    done
+
+    tput cnorm
+    echo -e "${RESET}"
+}
+
+# Spinning animation
+cmd_spin() {
+    local duration="${1:-5}"
+    local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+    local end=$((SECONDS + duration))
+
+    echo -ne "${PINK}"
+    while [ $SECONDS -lt $end ]; do
+        for frame in "${frames[@]}"; do
+            printf "\r%s BlackRoad processing..." "$frame"
+            sleep 0.1
+        done
+    done
+    printf "\r${GREEN}✓${RESET} Complete!          \n"
+}
+
+# Pulse animation
+cmd_pulse() {
+    echo -e "${AMBER}Pulse Animation${RESET}"
+    for i in {1..30}; do
+        local width=$((i % 10))
+        printf "\r["
+        for ((j=0; j<width; j++)); do printf "${PINK}█${RESET}"; done
+        for ((j=width; j<10; j++)); do printf " "; done
+        printf "]"
+        sleep 0.1
+    done
+    echo
+}
+
+# Gradient wave
+cmd_wave() {
+    local width=60
+    local colors=(208 202 198 163 33 163 198 202)
+    for frame in {0..50}; do
+        printf "\r"
+        for ((i=0; i<width; i++)); do
+            local idx=$(( (i + frame) % ${#colors[@]} ))
+            printf "\033[38;5;${colors[$idx]}m▄"
+        done
+        sleep 0.06
+    done
+    echo -e "${RESET}"
+}
+
+# Particle explosion
+cmd_particles() {
+    local particles=30
+    declare -a px py vx vy
+
+    for ((i=0; i<particles; i++)); do
+        px[$i]=40
+        py[$i]=12
+        vx[$i]=$(echo "scale=2; ($RANDOM % 20 - 10) / 5" | bc)
+        vy[$i]=$(echo "scale=2; ($RANDOM % 20 - 10) / 5" | bc)
+    done
+
+    tput civis
+    trap "tput cnorm; echo -e '${RESET}'; clear; exit" INT
+
+    for frame in {1..40}; do
+        clear
+        for ((i=0; i<particles; i++)); do
+            local x=$(printf "%.0f" ${px[$i]})
+            local y=$(printf "%.0f" ${py[$i]})
+
+            if ((x > 0 && x < 80 && y > 0 && y < 24)); then
+                local colors=(198 202 208 214 220)
+                local color=${colors[$((i % 5))]}
+                tput cup $y $x
+                printf "\033[38;5;${color}m●${RESET}"
+            fi
+
+            px[$i]=$(echo "${px[$i]} + ${vx[$i]}" | bc)
+            py[$i]=$(echo "${py[$i]} + ${vy[$i]} + 0.1" | bc)  # gravity
+        done
+        sleep 0.08
+    done
+
+    tput cnorm
+}
+
+# BlackRoad loading animation
+cmd_loading() {
+    local msg="${1:-Loading BlackRoad OS}"
+    local width=40
+    echo -e "\n${WHITE}$msg${RESET}\n"
+
+    for ((i=0; i<=width; i++)); do
+        local pct=$((i * 100 / width))
+        printf "\r${DIM}[${RESET}"
+
+        for ((j=0; j<i; j++)); do
+            local colors=(208 202 198 163 33)
+            local c=${colors[$((j * 5 / width))]}
+            printf "\033[38;5;${c}m█"
+        done
+
+        for ((j=i; j<width; j++)); do
+            printf "${DIM}░${RESET}"
+        done
+
+        printf "${DIM}]${RESET} ${WHITE}%3d%%${RESET}" $pct
+        sleep 0.03
+    done
+
+    echo -e "\n${GREEN}✓ Complete!${RESET}\n"
+}
+
+# Radar sweep
+cmd_radar() {
+    local radius=10
+    tput civis
+    trap "tput cnorm; echo -e '${RESET}'; exit" INT
+
+    echo -e "${GREEN}BlackRoad Radar${RESET}"
+
+    for angle in {0..360..10}; do
+        clear
+        echo -e "${GREEN}╭────────────────────────────────────╮${RESET}"
+
+        for ((y=-radius; y<=radius; y++)); do
+            printf "${GREEN}│${RESET}"
+            for ((x=-radius*2; x<=radius*2; x++)); do
+                local dist=$(echo "scale=2; sqrt($x*$x/4 + $y*$y)" | bc)
+                local a=$(echo "scale=0; a($y, $x/2) * 180 / 3.14159" | bc -l 2>/dev/null || echo "0")
+
+                if ((${dist%.*} == radius)); then
+                    printf "${GREEN}○${RESET}"
+                elif ((${dist%.*} < 2)); then
+                    printf "${PINK}●${RESET}"
+                elif ((a > angle - 30 && a < angle)); then
+                    printf "${GREEN}·${RESET}"
+                else
+                    printf " "
+                fi
+            done
+            printf "${GREEN}│${RESET}\n"
+        done
+
+        echo -e "${GREEN}╰────────────────────────────────────╯${RESET}"
+        sleep 0.1
+    done
+
+    tput cnorm
+}
+
+# Boot sequence animation
+cmd_boot() {
+    clear
+    echo -e "${DIM}Initializing BlackRoad OS...${RESET}\n"
+    sleep 0.3
+
+    local steps=(
+        "Loading kernel modules"
+        "Initializing memory system"
+        "Connecting to GitHub orgs"
+        "Syncing Cloudflare workers"
+        "Activating AI agents"
+        "Establishing Tailscale mesh"
+        "Loading quantum circuits"
+        "Calibrating neural networks"
+    )
+
+    for step in "${steps[@]}"; do
+        printf "  ${DIM}[    ]${RESET} $step"
+        sleep 0.2
+        printf "\r  ${AMBER}[${RESET}${DIM}...${RESET}${AMBER}]${RESET}"
+        sleep 0.3
+        printf "\r  ${GREEN}[ OK ]${RESET}\n"
+    done
+
+    echo ""
+    cmd_loading "Bringing systems online"
+    echo ""
+    show_banner
+}
+
+# Add animation commands to main
+cmd_animate() {
+    case "${1:-help}" in
+        matrix)     cmd_matrix ;;
+        spin)       shift; cmd_spin "$@" ;;
+        pulse)      cmd_pulse ;;
+        wave)       cmd_wave ;;
+        particles)  cmd_particles ;;
+        loading)    shift; cmd_loading "$@" ;;
+        radar)      cmd_radar ;;
+        boot)       cmd_boot ;;
+        all)
+            cmd_loading "Demo: All Animations"
+            cmd_pulse
+            cmd_wave
+            ;;
+        help|*)
+            echo -e "${PINK}animate${RESET} - Terminal Animations"
+            echo "  matrix    - Matrix rain effect"
+            echo "  spin [s]  - Spinner for [s] seconds"
+            echo "  pulse     - Pulsing bar"
+            echo "  wave      - Gradient wave"
+            echo "  particles - Particle explosion"
+            echo "  loading   - Progress bar"
+            echo "  radar     - Radar sweep"
+            echo "  boot      - Boot sequence"
+            ;;
+    esac
+}
+
+main "$@"

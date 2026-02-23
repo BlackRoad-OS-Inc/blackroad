@@ -1,0 +1,62 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-chat - Interactive chat with an agent
+# Usage: br-chat <agent>
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;69m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+NC='\033[0m'
+
+get_model() {
+    case "$1" in
+        cecilia) echo "cecilia:latest" ;;
+        cece) echo "cece:latest" ;;
+        lucidia) echo "phi3.5:latest" ;;
+        octavia) echo "lucidia:latest" ;;
+        aria) echo "tinyllama:latest" ;;
+        *) echo "tinyllama:latest" ;;
+    esac
+}
+
+if [[ -z "$1" ]]; then
+    echo -e "${PINK}br-chat${NC} - Interactive chat with agent"
+    echo ""
+    echo "Usage: br-chat <agent>"
+    echo "Agents: cecilia, lucidia, octavia, aria"
+    exit 1
+fi
+
+agent="$1"
+model=$(get_model "$agent")
+
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${WHITE}Chat with ${AMBER}$agent${WHITE} (${BLUE}$model${WHITE})${NC}"
+echo -e "${DIM}Type 'exit' to quit${NC}"
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+while true; do
+    echo -n -e "${WHITE}you: ${NC}"
+    read -r input
+
+    [[ "$input" == "exit" || "$input" == "quit" ]] && break
+    [[ -z "$input" ]] && continue
+
+    echo -e "${AMBER}$agent:${NC}"
+    ssh -o ConnectTimeout=30 "$agent" "ollama run $model '$input'" 2>/dev/null | \
+        sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' | grep -v "^$"
+    echo ""
+done
+
+echo -e "${DIM}Chat ended${NC}"

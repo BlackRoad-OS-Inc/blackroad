@@ -1,0 +1,52 @@
+#!/bin/bash
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+LB_DIR="$HOME/.blackroad/loadbalancer"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    start)
+        echo -e "${PINK}Starting DNS Server...${NC}"
+        nohup python3 "$LB_DIR/dns_server.py" > "$LB_DIR/logs/dns.log" 2>&1 &
+        echo $! > "$LB_DIR/dns.pid"
+        echo -e "${GREEN}DNS Server started (PID: $(cat "$LB_DIR/dns.pid"))${NC}"
+        echo "  Listening: udp://localhost:5353"
+        ;;
+    stop)
+        if [ -f "$LB_DIR/dns.pid" ]; then
+            kill $(cat "$LB_DIR/dns.pid") 2>/dev/null
+            rm "$LB_DIR/dns.pid"
+            echo -e "${AMBER}DNS Server stopped${NC}"
+        fi
+        ;;
+    status)
+        if [ -f "$LB_DIR/dns.pid" ] && kill -0 $(cat "$LB_DIR/dns.pid") 2>/dev/null; then
+            echo -e "${GREEN}●${NC} DNS Server running (PID: $(cat "$LB_DIR/dns.pid"))"
+        else
+            echo -e "${AMBER}○${NC} DNS Server not running"
+        fi
+        ;;
+    lookup)
+        name="$1"
+        if [ -z "$name" ]; then
+            echo "Usage: br-dns lookup <name>"
+            exit 1
+        fi
+        dig @localhost -p 5353 "$name" +short 2>/dev/null || \
+            echo "DNS server not responding"
+        ;;
+    help|*)
+        echo -e "${PINK}br-dns - DNS Server Control${NC}"
+        echo ""
+        echo "Commands:"
+        echo "  start           Start DNS server"
+        echo "  stop            Stop DNS server"
+        echo "  status          Show status"
+        echo "  lookup <name>   Lookup domain"
+        ;;
+esac

@@ -1,0 +1,43 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-wake - Wake up / ping all agents
+# Usage: br-wake
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+WHITE='\033[1;37m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+NC='\033[0m'
+
+AGENTS=(cecilia lucidia octavia aria alice gematria anastasia)
+
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${WHITE}Waking BlackRoad Fleet...${NC}"
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+online=0
+offline=0
+
+for agent in "${AGENTS[@]}"; do
+    echo -n -e "${AMBER}$agent${NC}: "
+    if ssh -o ConnectTimeout=3 "$agent" "echo awake" &>/dev/null; then
+        echo -e "${GREEN}awake${NC}"
+        ((online++))
+    else
+        echo -e "${RED}sleeping${NC}"
+        ((offline++))
+    fi
+done
+
+echo ""
+echo -e "${GREEN}$online online${NC}, ${RED}$offline offline${NC}"

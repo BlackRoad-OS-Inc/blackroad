@@ -1,0 +1,75 @@
+#!/bin/bash
+# br-dashboard - BlackRoad Dashboard CLI
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+RED='\033[38;5;196m'
+NC='\033[0m'
+
+DASHBOARD_DIR="$HOME/.blackroad/dashboard"
+PORT=${DASHBOARD_PORT:-3000}
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    start)
+        echo -e "${PINK}Starting BlackRoad Dashboard...${NC}"
+        nohup python3 "$DASHBOARD_DIR/dashboard_server.py" "$PORT" > "$DASHBOARD_DIR/dashboard.log" 2>&1 &
+        echo $! > "$DASHBOARD_DIR/dashboard.pid"
+        sleep 1
+        if kill -0 $(cat "$DASHBOARD_DIR/dashboard.pid") 2>/dev/null; then
+            echo -e "${GREEN}✓${NC} Dashboard running on http://localhost:$PORT"
+            echo -e "  PID: $(cat "$DASHBOARD_DIR/dashboard.pid")"
+        else
+            echo -e "${RED}✗${NC} Failed to start dashboard"
+            cat "$DASHBOARD_DIR/dashboard.log"
+        fi
+        ;;
+    stop)
+        if [ -f "$DASHBOARD_DIR/dashboard.pid" ]; then
+            kill $(cat "$DASHBOARD_DIR/dashboard.pid") 2>/dev/null
+            rm "$DASHBOARD_DIR/dashboard.pid"
+            echo -e "${AMBER}Dashboard stopped${NC}"
+        else
+            echo "Dashboard not running"
+        fi
+        ;;
+    status)
+        if [ -f "$DASHBOARD_DIR/dashboard.pid" ] && kill -0 $(cat "$DASHBOARD_DIR/dashboard.pid") 2>/dev/null; then
+            echo -e "${GREEN}●${NC} Dashboard running"
+            echo "  PID: $(cat "$DASHBOARD_DIR/dashboard.pid")"
+            echo "  URL: http://localhost:$PORT"
+        else
+            echo -e "${RED}○${NC} Dashboard not running"
+        fi
+        ;;
+    open)
+        if [ -f "$DASHBOARD_DIR/dashboard.pid" ] && kill -0 $(cat "$DASHBOARD_DIR/dashboard.pid") 2>/dev/null; then
+            open "http://localhost:$PORT" 2>/dev/null || xdg-open "http://localhost:$PORT" 2>/dev/null || echo "Open http://localhost:$PORT"
+        else
+            echo "Dashboard not running. Start with: br-dashboard start"
+        fi
+        ;;
+    log|logs)
+        if [ -f "$DASHBOARD_DIR/dashboard.log" ]; then
+            tail -f "$DASHBOARD_DIR/dashboard.log"
+        else
+            echo "No log file found"
+        fi
+        ;;
+    help|*)
+        echo -e "${PINK}br-dashboard - BlackRoad Dashboard CLI${NC}"
+        echo ""
+        echo "Commands:"
+        echo "  start       Start dashboard server"
+        echo "  stop        Stop dashboard server"
+        echo "  status      Show dashboard status"
+        echo "  open        Open dashboard in browser"
+        echo "  logs        Tail dashboard logs"
+        echo ""
+        echo "Environment:"
+        echo "  DASHBOARD_PORT  Port to run on (default: 3000)"
+        ;;
+esac

@@ -1,0 +1,51 @@
+#!/bin/bash
+# br-exec - Execute commands across BlackRoad fleet
+# Usage: br-exec [target] <command>
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+NODES=(cecilia lucidia octavia aria anastasia)
+
+target="$1"
+shift
+
+case "$target" in
+    all)
+        echo -e "${PINK}Executing on all nodes: $*${NC}"
+        for node in "${NODES[@]}"; do
+            echo -e "${AMBER}=== $node ===${NC}"
+            ssh -o ConnectTimeout=5 "$node" "$*" 2>/dev/null || echo "(offline)"
+        done
+        ;;
+
+    parallel)
+        echo -e "${PINK}Executing in parallel: $*${NC}"
+        for node in "${NODES[@]}"; do
+            (
+                result=$(ssh -o ConnectTimeout=10 "$node" "$*" 2>/dev/null)
+                echo -e "${AMBER}$node${NC}: $result"
+            ) &
+        done
+        wait
+        ;;
+
+    pis)
+        for node in cecilia lucidia octavia aria; do
+            echo -e "${AMBER}=== $node ===${NC}"
+            ssh -o ConnectTimeout=5 "$node" "$*" 2>/dev/null || echo "(offline)"
+        done
+        ;;
+
+    cecilia|lucidia|octavia|aria|alice|anastasia)
+        ssh -o ConnectTimeout=10 "$target" "$*"
+        ;;
+
+    *)
+        echo "br-exec - Execute commands across fleet"
+        echo "Usage: br-exec <target> <command>"
+        echo "Targets: all, parallel, pis, cecilia, lucidia, octavia, aria, anastasia"
+        ;;
+esac

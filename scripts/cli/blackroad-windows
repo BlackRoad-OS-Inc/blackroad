@@ -1,0 +1,37 @@
+#!/bin/bash
+# BLACKROAD OS - WINDOWS INTEGRATION
+
+PINK='\033[38;5;205m'
+VIOLET='\033[38;5;135m'
+RESET='\033[0m'
+
+case "$1" in
+    wsl)
+        echo -e "${PINK}▶ WSL2 setup for $2${RESET}"
+        echo 'wsl --install -d Ubuntu' > /tmp/blackroad-wsl.ps1
+        echo "Script: /tmp/blackroad-wsl.ps1"
+        ;;
+    ai|ollama)
+        echo -e "${PINK}▶ Ollama for Windows $2${RESET}"
+        echo 'Invoke-WebRequest -Uri "https://ollama.ai/download/OllamaSetup.exe" -OutFile "$env:TEMP\OllamaSetup.exe"; Start-Process "$env:TEMP\OllamaSetup.exe" -Wait' > /tmp/blackroad-ollama.ps1
+        echo "Script: /tmp/blackroad-ollama.ps1"
+        ;;
+    ps)
+        echo -e "${PINK}▶ PowerShell module${RESET}"
+        mkdir -p /tmp/BlackRoadOS
+        printf 'function k { param($p); (Invoke-RestMethod -Uri "http://localhost:11434/api/generate" -Method Post -Body (@{model="llama3";prompt=$p;stream=$false}|ConvertTo-Json) -ContentType "application/json").response }\n' > /tmp/BlackRoadOS/BlackRoadOS.psm1
+        echo "Module: /tmp/BlackRoadOS/"
+        ;;
+    deploy)
+        $0 wsl "$2"
+        $0 ai "$2"
+        $0 ps
+        ;;
+    *)
+        echo -e "${VIOLET}BlackRoad Windows${RESET}"
+        echo "  blackroad windows wsl <host>"
+        echo "  blackroad windows ai <host>"
+        echo "  blackroad windows ps"
+        echo "  blackroad windows deploy <host>"
+        ;;
+esac

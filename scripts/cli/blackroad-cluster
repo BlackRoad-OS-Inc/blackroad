@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-cluster — cluster operations
+ACTION="${1:-status}"
+C1='\033[38;5;208m'
+C5='\033[38;5;33m'
+CW='\033[38;5;255m'
+CD='\033[38;5;240m'
+CR='\033[0m'
+
+case "$ACTION" in
+  status)
+    printf "${C1}╔══════════════════════════════════════════╗${CR}\n"
+    printf "${C1}║${CR}  ${CW}BLACKROAD CLUSTER${CR}                       ${C1}║${CR}\n"
+    printf "${C1}╠══════════════════════════════════════════╣${CR}\n"
+    printf "${C1}║${CR}  ${C5}●${CR} Alice    ${CD}K3s/Gateway${CR}    ${C5}online${CR}     ${C1}║${CR}\n"
+    printf "${C1}║${CR}  ${C5}●${CR} Octavia  ${CD}Hailo Worker${CR}   ${C5}online${CR}     ${C1}║${CR}\n"
+    printf "${C1}║${CR}  ${C5}●${CR} Lucidia  ${CD}Pi 5 Inference${CR} ${C5}online${CR}     ${C1}║${CR}\n"
+    printf "${C1}║${CR}  ${CD}○${CR} BlackRoad OS    ${CD}VPS Edge${CR}       ${CD}standby${CR}    ${C1}║${CR}\n"
+    printf "${C1}╚══════════════════════════════════════════╝${CR}\n"
+    ;;
+  nodes)
+    printf "${CD}NODE       IP              ROLE        STATUS${CR}\n"
+    printf "${CD}─────────────────────────────────────────────${CR}\n"
+    printf "${CW}Alice${CR}      192.168.1.100   gateway     ${C5}up${CR}\n"
+    printf "${CW}Octavia${CR}    192.168.1.101   hailo       ${C5}up${CR}\n"
+    printf "${CW}Lucidia${CR}    192.168.1.102   inference   ${C5}up${CR}\n"
+    ;;
+  ssh)
+    NODE="${2:-alice}"
+    echo "ssh ${NODE}.blackroad.lan"
+    ;;
+  *)
+    echo "Usage: br-cluster [status|nodes|ssh <node>]"
+    ;;
+esac

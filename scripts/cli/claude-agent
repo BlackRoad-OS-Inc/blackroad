@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# claude-agent — wrapper for Claude CLI
+# Used for complex reasoning, code review, safety checks
+
+set -e
+
+INPUT="$(cat)"
+
+# Colors
+BLUE='\033[38;5;33m'
+DIM='\033[38;5;240m'
+RESET='\033[0m'
+
+printf "${BLUE}🔵 CLAUDE${RESET} ${DIM}[reasoning]${RESET}\n"
+printf "${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
+
+# Check if claude CLI is available
+if command -v claude &>/dev/null; then
+    # Use claude CLI with print mode (non-interactive)
+    echo "$INPUT" | claude --print 2>/dev/null || {
+        printf "${DIM}(Claude CLI not responding, falling back to codellama)${RESET}\n"
+        ollama run codellama:latest "$INPUT"
+    }
+else
+    # Fallback to codellama for code-focused reasoning
+    printf "${DIM}(Claude CLI not installed, using codellama)${RESET}\n"
+    ollama run codellama:latest "$INPUT"
+fi

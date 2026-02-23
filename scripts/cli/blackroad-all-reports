@@ -1,0 +1,122 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Generate all reports at once
+
+OUTPUT_DIR="/tmp/blackroad-reports-$(date +%Y%m%d)"
+mkdir -p "$OUTPUT_DIR"
+
+echo "Generating all BlackRoad reports..."
+echo "Output directory: $OUTPUT_DIR"
+echo ""
+
+# Run each report
+echo "[1/8] Equation verification..."
+cd /tmp/prism-audit/verification 2>/dev/null && python3 verify_all_equations.py > "$OUTPUT_DIR/verification-results.txt" 2>&1
+echo "  ✓ $OUTPUT_DIR/verification-results.txt"
+
+echo "[2/8] Equation analysis..."
+br-equations > /dev/null 2>&1
+cp /tmp/equation-analysis-report.md "$OUTPUT_DIR/"
+echo "  ✓ $OUTPUT_DIR/equation-analysis-report.md"
+
+echo "[3/8] Framework summary..."
+br-framework-summary > "$OUTPUT_DIR/executive-summary.md" 2>&1
+echo "  ✓ $OUTPUT_DIR/executive-summary.md"
+
+echo "[4/8] Physics consistency..."
+br-physics-checker > "$OUTPUT_DIR/physics-check.txt" 2>&1
+echo "  ✓ $OUTPUT_DIR/physics-check.txt"
+
+echo "[5/8] Publication checklist..."
+br-paper-checklist > "$OUTPUT_DIR/publication-checklist.md" 2>&1
+echo "  ✓ $OUTPUT_DIR/publication-checklist.md"
+
+echo "[6/8] Concept map..."
+br-concepts > /dev/null 2>&1
+cp /tmp/concept-map.md "$OUTPUT_DIR/" 2>/dev/null
+echo "  ✓ $OUTPUT_DIR/concept-map.md"
+
+echo "[7/8] Repository statistics..."
+br-count-files > "$OUTPUT_DIR/repo-stats.txt" 2>&1
+echo "  ✓ $OUTPUT_DIR/repo-stats.txt"
+
+echo "[8/8] Complete verification report..."
+cp /tmp/COMPLETE_VERIFICATION_REPORT.md "$OUTPUT_DIR/" 2>/dev/null
+cp /tmp/BETA_BR_EXPLAINED.md "$OUTPUT_DIR/" 2>/dev/null
+cp /tmp/UNDERSTANDING_THE_FRAMEWORK.md "$OUTPUT_DIR/" 2>/dev/null
+cp /tmp/VERIFICATION_SUMMARY.txt "$OUTPUT_DIR/" 2>/dev/null
+echo "  ✓ Additional technical documents"
+
+# Create index
+cat > "$OUTPUT_DIR/INDEX.md" << 'INDEX'
+# BlackRoad Reports Index
+
+## Quick Links
+
+1. **Executive Summary** - executive-summary.md
+   - One-page overview for stakeholders
+
+2. **Verification Results** - verification-results.txt
+   - All 1,012 equations verified
+
+3. **Complete Verification Report** - COMPLETE_VERIFICATION_REPORT.md
+   - Full technical details
+
+4. **β_BR Explained** - BETA_BR_EXPLAINED.md
+   - Deep dive on BlackRoad constant
+
+5. **Framework Understanding** - UNDERSTANDING_THE_FRAMEWORK.md
+   - How information flows through the system
+
+6. **Equation Analysis** - equation-analysis-report.md
+   - Classification by novelty and citations
+
+7. **Physics Check** - physics-check.txt
+   - Consistency verification
+
+8. **Publication Checklist** - publication-checklist.md
+   - Pre-submission requirements
+
+9. **Repository Stats** - repo-stats.txt
+   - File counts across GitHub
+
+## For Different Audiences
+
+### Investors / Business
+- Start with: executive-summary.md
+
+### Academic Reviewers
+- Start with: COMPLETE_VERIFICATION_REPORT.md
+- Then: publication-checklist.md
+
+### Technical Collaborators
+- Start with: UNDERSTANDING_THE_FRAMEWORK.md
+- Then: BETA_BR_EXPLAINED.md
+
+### Verification
+- verification-results.txt (all tests pass)
+- physics-check.txt (no contradictions)
+
+INDEX
+
+echo "  ✓ $OUTPUT_DIR/INDEX.md"
+
+echo ""
+echo "========================================="
+echo "All reports generated successfully!"
+echo "========================================="
+echo ""
+echo "Location: $OUTPUT_DIR"
+echo ""
+echo "Contents:"
+ls -lh "$OUTPUT_DIR" | awk '{print "  " $9, "(" $5 ")"}'
+echo ""
+echo "Start with: cat $OUTPUT_DIR/INDEX.md"

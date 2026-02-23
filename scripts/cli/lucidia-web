@@ -1,0 +1,37 @@
+#!/bin/bash
+# Lucidia Web UI Launcher
+
+LUCIDIA_DIR="$HOME/.lucidia"
+WEB_SERVER="$LUCIDIA_DIR/web/server.js"
+
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Ensure daemon is running
+if ! curl -s http://localhost:11435/health > /dev/null 2>&1; then
+  echo -e "${CYAN}Starting daemon...${NC}"
+  ~/.local/bin/lucidia-daemon start
+  sleep 2
+fi
+
+# Start web server
+echo -e "${GREEN}Starting Lucidia Web UI...${NC}"
+cd "$LUCIDIA_DIR/web"
+node server.js &
+
+# Wait for server to start
+sleep 2
+
+# Open browser
+if command -v open > /dev/null 2>&1; then
+  open http://localhost:8080
+elif command -v xdg-open > /dev/null 2>&1; then
+  xdg-open http://localhost:8080
+else
+  echo -e "${GREEN}✅ Web UI running at http://localhost:8080${NC}"
+fi
+
+echo ""
+echo -e "${CYAN}Press Ctrl+C to stop${NC}"
+wait

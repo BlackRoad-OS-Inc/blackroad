@@ -1,0 +1,299 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# ═══════════════════════════════════════════════════════════════════════════════
+# BLACKROAD AI ROUND TABLE - Launch Command
+# The orchestration layer above all AI providers
+# ═══════════════════════════════════════════════════════════════════════════════
+
+set -e
+
+# Colors
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+RESET='\033[0m'
+BOLD='\033[1m'
+
+# Config
+ROUNDTABLE_DIR="$HOME/.blackroad/roundtable"
+CONTEXT_FILE="$ROUNDTABLE_DIR/context/shared.md"
+SESSION_NAME="roundtable"
+
+# Ensure directories exist
+mkdir -p "$ROUNDTABLE_DIR"/{context,messages,agents}
+
+# Banner
+show_banner() {
+    echo -e "${AMBER}"
+    cat << 'EOF'
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║                                                               ║
+    ║   ██████╗  ██████╗ ██╗   ██╗███╗   ██╗██████╗                ║
+    ║   ██╔══██╗██╔═══██╗██║   ██║████╗  ██║██╔══██╗               ║
+    ║   ██████╔╝██║   ██║██║   ██║██╔██╗ ██║██║  ██║               ║
+    ║   ██╔══██╗██║   ██║██║   ██║██║╚██╗██║██║  ██║               ║
+    ║   ██║  ██║╚██████╔╝╚██████╔╝██║ ╚████║██████╔╝               ║
+    ║   ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═══╝╚═════╝                ║
+    ║                                                               ║
+    ║   ████████╗ █████╗ ██████╗ ██╗     ███████╗                  ║
+    ║   ╚══██╔══╝██╔══██╗██╔══██╗██║     ██╔════╝                  ║
+    ║      ██║   ███████║██████╔╝██║     █████╗                    ║
+    ║      ██║   ██╔══██║██╔══██╗██║     ██╔══╝                    ║
+    ║      ██║   ██║  ██║██████╔╝███████╗███████╗                  ║
+    ║      ╚═╝   ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝                  ║
+    ║                                                               ║
+    ╚═══════════════════════════════════════════════════════════════╝
+EOF
+    echo -e "${RESET}"
+    echo -e "${PINK}${BOLD}    Above Anthropic. Above OpenAI. Above Google. Above Apple.${RESET}"
+    echo -e "${VIOLET}    You are the conductor. They are the orchestra.${RESET}"
+    echo ""
+}
+
+# Initialize shared context
+init_context() {
+    cat > "$CONTEXT_FILE" << EOF
+# BlackRoad AI Round Table - Shared Context
+> Session started: $(date)
+> Conductor: Alexa (alexandria)
+
+## Active AIs
+- [ ] Claude (Anthropic)
+- [ ] Copilot (GitHub/Microsoft)
+- [ ] Codex (OpenAI)
+- [ ] Gemini (Google)
+- [ ] Grok (xAI)
+
+## Current Mission
+[Awaiting conductor's orders...]
+
+## Shared Knowledge
+- BlackRoad OS: 15 orgs, 1,085 repos, 205 Cloudflare projects
+- Device Fleet: 8 devices, 52 TOPS compute
+- Memory System: 4,041+ entries
+
+## Round Table Protocol
+1. Conductor sets mission
+2. Each AI proposes approach
+3. Best ideas synthesized
+4. Parallel execution
+5. Results merged
+
+---
+EOF
+    echo -e "${GREEN}✓ Shared context initialized${RESET}"
+}
+
+# Check which AIs are available
+check_ais() {
+    echo -e "${AMBER}Checking AI availability...${RESET}"
+    echo ""
+
+    # Claude
+    if command -v claude &> /dev/null; then
+        echo -e "  ${BLUE}●${RESET} Claude     ${GREEN}READY${RESET} ($(claude --version 2>/dev/null | head -1 || echo 'installed'))"
+    else
+        echo -e "  ${BLUE}○${RESET} Claude     ${RED}NOT FOUND${RESET}"
+    fi
+
+    # Copilot
+    if command -v copilot &> /dev/null; then
+        echo -e "  ${VIOLET}●${RESET} Copilot    ${GREEN}READY${RESET}"
+    else
+        echo -e "  ${VIOLET}○${RESET} Copilot    ${RED}NOT FOUND${RESET}"
+    fi
+
+    # Codex
+    if command -v codex &> /dev/null; then
+        echo -e "  ${PINK}●${RESET} Codex      ${GREEN}READY${RESET} ($(codex --version 2>/dev/null || echo 'installed'))"
+    else
+        echo -e "  ${PINK}○${RESET} Codex      ${RED}NOT FOUND${RESET}"
+    fi
+
+    # Gemini
+    if command -v gemini-cli &> /dev/null || [[ -n "$GOOGLE_AI_API_KEY" ]]; then
+        echo -e "  ${GREEN}●${RESET} Gemini     ${GREEN}READY${RESET}"
+    else
+        echo -e "  ${GREEN}○${RESET} Gemini     ${AMBER}WRAPPER AVAILABLE${RESET}"
+    fi
+
+    # Grok
+    if command -v grok-cli &> /dev/null || [[ -n "$XAI_API_KEY" ]]; then
+        echo -e "  ${RED}●${RESET} Grok       ${GREEN}READY${RESET}"
+    else
+        echo -e "  ${RED}○${RESET} Grok       ${AMBER}WRAPPER AVAILABLE${RESET}"
+    fi
+
+    echo ""
+}
+
+# Launch Round Table session
+launch_session() {
+    echo -e "${AMBER}Launching Round Table session...${RESET}"
+
+    # Kill existing session if any
+    tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
+
+    # Create new session with custom config
+    tmux -f ~/.tmux-roundtable.conf new-session -d -s "$SESSION_NAME" -n "Conductor"
+
+    # Set up Conductor window (main control)
+    tmux send-keys -t "$SESSION_NAME:1" "echo '🎭 CONDUCTOR TERMINAL - You orchestrate the AIs'" Enter
+    tmux send-keys -t "$SESSION_NAME:1" "cat $CONTEXT_FILE" Enter
+
+    # Create AI windows
+    tmux new-window -t "$SESSION_NAME" -n "Claude"
+    tmux send-keys -t "$SESSION_NAME:2" "select-pane -T 'Claude (Anthropic)'" Enter
+    tmux send-keys -t "$SESSION_NAME:2" "echo 'Type: claude' to start Claude Code" Enter
+
+    tmux new-window -t "$SESSION_NAME" -n "Copilot"
+    tmux send-keys -t "$SESSION_NAME:3" "select-pane -T 'Copilot (GitHub)'" Enter
+    tmux send-keys -t "$SESSION_NAME:3" "echo 'Type: copilot' for GitHub Copilot CLI" Enter
+
+    tmux new-window -t "$SESSION_NAME" -n "Codex"
+    tmux send-keys -t "$SESSION_NAME:4" "select-pane -T 'Codex (OpenAI)'" Enter
+    tmux send-keys -t "$SESSION_NAME:4" "echo 'Type: codex' for OpenAI Codex CLI" Enter
+
+    tmux new-window -t "$SESSION_NAME" -n "Gemini"
+    tmux send-keys -t "$SESSION_NAME:5" "select-pane -T 'Gemini (Google)'" Enter
+    tmux send-keys -t "$SESSION_NAME:5" "echo 'Type: gemini-cli for Google AI'" Enter
+
+    tmux new-window -t "$SESSION_NAME" -n "Grok"
+    tmux send-keys -t "$SESSION_NAME:6" "select-pane -T 'Grok (xAI)'" Enter
+    tmux send-keys -t "$SESSION_NAME:6" "echo 'Type: grok-cli for xAI'" Enter
+
+    # Create devices window
+    tmux new-window -t "$SESSION_NAME" -n "Devices"
+    tmux send-keys -t "$SESSION_NAME:7" "echo '🖥️ BlackRoad Device Fleet'" Enter
+
+    # Go back to Conductor
+    tmux select-window -t "$SESSION_NAME:1"
+
+    echo -e "${GREEN}✓ Round Table ready${RESET}"
+    echo ""
+    echo -e "${AMBER}Attaching to session...${RESET}"
+    echo -e "${VIOLET}Keybindings:${RESET}"
+    echo "  Alt+1-7   : Switch between windows"
+    echo "  Ctrl+Space b : Broadcast to all panes"
+    echo "  Ctrl+Space | : Split vertical"
+    echo "  Ctrl+Space - : Split horizontal"
+    echo ""
+
+    # Attach to session
+    tmux attach-session -t "$SESSION_NAME"
+}
+
+# Quick mode - launch specific AI
+quick_launch() {
+    local ai="$1"
+    case "$ai" in
+        claude)
+            tmux -f ~/.tmux-roundtable.conf new-session -s "claude-session" "claude"
+            ;;
+        copilot)
+            tmux -f ~/.tmux-roundtable.conf new-session -s "copilot-session" "copilot"
+            ;;
+        codex)
+            tmux -f ~/.tmux-roundtable.conf new-session -s "codex-session" "codex"
+            ;;
+        gemini)
+            tmux -f ~/.tmux-roundtable.conf new-session -s "gemini-session" "gemini-cli"
+            ;;
+        grok)
+            tmux -f ~/.tmux-roundtable.conf new-session -s "grok-session" "grok-cli"
+            ;;
+        *)
+            echo "Unknown AI: $ai"
+            exit 1
+            ;;
+    esac
+}
+
+# Grid mode - all AIs in one window, 2x3 grid
+grid_mode() {
+    echo -e "${AMBER}Launching Grid Mode - All AIs in view...${RESET}"
+
+    tmux kill-session -t "roundtable-grid" 2>/dev/null || true
+
+    tmux -f ~/.tmux-roundtable.conf new-session -d -s "roundtable-grid" -n "Grid"
+
+    # Create 2x3 grid
+    tmux split-window -h -t "roundtable-grid"
+    tmux split-window -h -t "roundtable-grid"
+    tmux select-layout -t "roundtable-grid" even-horizontal
+
+    tmux split-window -v -t "roundtable-grid:1.1"
+    tmux split-window -v -t "roundtable-grid:1.2"
+    tmux split-window -v -t "roundtable-grid:1.3"
+
+    # Label each pane
+    tmux send-keys -t "roundtable-grid:1.1" "select-pane -T 'CONDUCTOR'; clear; echo '🎭 CONDUCTOR'" Enter
+    tmux send-keys -t "roundtable-grid:1.2" "select-pane -T 'Claude'; clear; echo '💙 Claude'" Enter
+    tmux send-keys -t "roundtable-grid:1.3" "select-pane -T 'Copilot'; clear; echo '💜 Copilot'" Enter
+    tmux send-keys -t "roundtable-grid:1.4" "select-pane -T 'Codex'; clear; echo '💗 Codex'" Enter
+    tmux send-keys -t "roundtable-grid:1.5" "select-pane -T 'Gemini'; clear; echo '💚 Gemini'" Enter
+    tmux send-keys -t "roundtable-grid:1.6" "select-pane -T 'Grok'; clear; echo '❤️ Grok'" Enter
+
+    tmux attach-session -t "roundtable-grid"
+}
+
+# Help
+show_help() {
+    show_banner
+    echo -e "${AMBER}Usage:${RESET} roundtable [command]"
+    echo ""
+    echo -e "${VIOLET}Commands:${RESET}"
+    echo "  (none)     Launch full Round Table session"
+    echo "  grid       Launch all AIs in 2x3 grid view"
+    echo "  check      Check AI availability"
+    echo "  context    Show shared context"
+    echo "  claude     Quick launch Claude only"
+    echo "  copilot    Quick launch Copilot only"
+    echo "  codex      Quick launch Codex only"
+    echo "  gemini     Quick launch Gemini only"
+    echo "  grok       Quick launch Grok only"
+    echo "  help       Show this help"
+    echo ""
+    echo -e "${PINK}The BlackRoad AI Round Table${RESET}"
+    echo "You sit at the head. The AIs sit around you."
+    echo "One mission. Many minds. Infinite power."
+}
+
+# Main
+case "${1:-}" in
+    help|--help|-h)
+        show_help
+        ;;
+    check)
+        show_banner
+        check_ais
+        ;;
+    context)
+        cat "$CONTEXT_FILE" 2>/dev/null || echo "No context yet. Run: roundtable"
+        ;;
+    grid)
+        show_banner
+        check_ais
+        grid_mode
+        ;;
+    claude|copilot|codex|gemini|grok)
+        quick_launch "$1"
+        ;;
+    *)
+        show_banner
+        check_ais
+        init_context
+        launch_session
+        ;;
+esac

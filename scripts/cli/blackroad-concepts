@@ -1,0 +1,36 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Extract key concepts and their relationships
+
+cat > /tmp/concept-map.md << 'HEADER'
+# BlackRoad Concept Map
+## Key Ideas and Their Connections
+
+HEADER
+
+cd /tmp/prism-audit 2>/dev/null || exit
+
+echo "## Core Concepts" >> /tmp/concept-map.md
+echo "" >> /tmp/concept-map.md
+
+# Extract unique concepts
+grep -roh "\*\*[A-Za-z ]*\*\*" --include="*.md" . 2>/dev/null | sort -u | head -100 >> /tmp/concept-map.md
+
+echo "" >> /tmp/concept-map.md
+echo "## Mathematical Objects" >> /tmp/concept-map.md
+echo "" >> /tmp/concept-map.md
+
+# Extract mathematical terms
+grep -roh "spiral\|quantum\|entropy\|consciousness\|manifold\|operator" --include="*.md" . 2>/dev/null | sort | uniq -c | sort -rn | head -20 >> /tmp/concept-map.md
+
+echo ""
+echo "Concept map created: /tmp/concept-map.md"
+wc -l /tmp/concept-map.md

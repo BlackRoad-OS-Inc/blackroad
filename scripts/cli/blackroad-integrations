@@ -1,0 +1,58 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+NC='\033[0m'
+
+AGENTS=(cecilia lucidia octavia aria anastasia)
+
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${WHITE}              BlackRoad Integration Status${NC}"
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+printf "%-12s %-10s %-10s %-10s %-10s %-10s\n" "AGENT" "MEMORY" "GIT" "SLACK" "MAIL" "RAILWAY"
+echo "────────────────────────────────────────────────────────────────────"
+
+for agent in "${AGENTS[@]}"; do
+    printf "%-12s" "$agent"
+
+    # Check memory
+    mem=$(ssh -o ConnectTimeout=2 "$agent" 'test -f ~/.blackroad/memory/journals/master-journal.jsonl && echo "✓" || echo "✗"' 2>/dev/null)
+    [[ "$mem" == "✓" ]] && printf "${GREEN}%-10s${NC}" "✓" || printf "${DIM}%-10s${NC}" "✗"
+
+    # Check git
+    git=$(ssh -o ConnectTimeout=2 "$agent" 'which git &>/dev/null && echo "✓" || echo "✗"' 2>/dev/null)
+    [[ "$git" == "✓" ]] && printf "${GREEN}%-10s${NC}" "✓" || printf "${DIM}%-10s${NC}" "✗"
+
+    # Check slack
+    slack=$(ssh -o ConnectTimeout=2 "$agent" 'test -f ~/blackroad-integrations/slack.py && echo "✓" || echo "✗"' 2>/dev/null)
+    [[ "$slack" == "✓" ]] && printf "${GREEN}%-10s${NC}" "✓" || printf "${DIM}%-10s${NC}" "✗"
+
+    # Check mail
+    mail=$(ssh -o ConnectTimeout=2 "$agent" 'test -f ~/blackroad-integrations/mail.py && echo "✓" || echo "✗"' 2>/dev/null)
+    [[ "$mail" == "✓" ]] && printf "${GREEN}%-10s${NC}" "✓" || printf "${DIM}%-10s${NC}" "✗"
+
+    # Check railway
+    railway=$(ssh -o ConnectTimeout=2 "$agent" 'which railway &>/dev/null && echo "✓" || echo "○"' 2>/dev/null)
+    [[ "$railway" == "✓" ]] && printf "${GREEN}%-10s${NC}" "✓" || printf "${DIM}%-10s${NC}" "○"
+
+    echo ""
+done
+
+echo ""
+echo -e "${BLUE}Legend:${NC} ${GREEN}✓${NC} = installed  ${DIM}✗${NC} = missing  ${DIM}○${NC} = optional"

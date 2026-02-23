@@ -1,0 +1,169 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Generate comprehensive codebase statistics
+# Numbers that tell the story
+
+OUTPUT="/tmp/codebase-statistics.md"
+
+cat > "$OUTPUT" << 'EOF'
+# BlackRoad Codebase Statistics
+## By The Numbers: What 8 Months Built
+
+---
+
+## Repository Overview
+
+EOF
+
+cd /tmp/prism-audit || exit
+
+total_files=$(find . -type f | wc -l)
+total_dirs=$(find . -type d | wc -l)
+total_size=$(du -sh . | cut -f1)
+
+echo "- **Total Files:** $total_files" >> "$OUTPUT"
+echo "- **Total Directories:** $total_dirs" >> "$OUTPUT"
+echo "- **Total Size:** $total_size" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+echo "---" >> "$OUTPUT"
+
+echo "## Code Statistics by Language" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "| Language | Files | Lines | Bytes |" >> "$OUTPUT"
+echo "|----------|-------|-------|-------|" >> "$OUTPUT"
+
+for ext in ts tsx js jsx py rs go md json yaml yml toml sql graphql; do
+    files=$(find . -name "*.$ext" 2>/dev/null | wc -l)
+    if [ "$files" -gt 0 ]; then
+        lines=$(find . -name "*.$ext" -exec cat {} \; 2>/dev/null | wc -l)
+        bytes=$(find . -name "*.$ext" -exec cat {} \; 2>/dev/null | wc -c)
+        echo "| $ext | $files | $lines | $bytes |" >> "$OUTPUT"
+    fi
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Documentation Statistics" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+md_files=$(find . -name "*.md" | wc -l)
+md_lines=$(find . -name "*.md" -exec cat {} \; 2>/dev/null | wc -l)
+md_words=$(find . -name "*.md" -exec cat {} \; 2>/dev/null | wc -w)
+
+echo "- **Markdown Files:** $md_files" >> "$OUTPUT"
+echo "- **Total Lines:** $md_lines" >> "$OUTPUT"
+echo "- **Total Words:** $md_words" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+echo "### Largest Documentation Files" >> "$OUTPUT"
+find . -name "*.md" -exec wc -l {} \; | sort -rn | head -20 | while read -r lines file; do
+    echo "- $lines lines - \`$file\`" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Package/Module Statistics" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+pkg_count=$(find . -name "package.json" | wc -l)
+py_modules=$(find . -name "setup.py" -o -name "pyproject.toml" | wc -l)
+cargo_projects=$(find . -name "Cargo.toml" | wc -l)
+
+echo "- **Node Packages:** $pkg_count" >> "$OUTPUT"
+echo "- **Python Modules:** $py_modules" >> "$OUTPUT"
+echo "- **Rust Crates:** $cargo_projects" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+echo "---" >> "$OUTPUT"
+
+echo "## Configuration Files" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+echo "### Docker" >> "$OUTPUT"
+dockerfiles=$(find . -name "Dockerfile" -o -name "docker-compose.yml" | wc -l)
+echo "- **Docker Configs:** $dockerfiles" >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "### CI/CD" >> "$OUTPUT"
+workflows=$(find ./.github/workflows -name "*.yml" -o -name "*.yaml" 2>/dev/null | wc -l)
+echo "- **GitHub Workflows:** $workflows" >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "### Infrastructure" >> "$OUTPUT"
+infra_configs=$(find . -name "*.tf" -o -name "terraform.tfvars" -o -name "k8s-*.yaml" | wc -l)
+echo "- **Infrastructure Files:** $infra_configs" >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Git Statistics" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+total_commits=$(git log --all --oneline | wc -l)
+total_authors=$(git log --all --format='%an' | sort -u | wc -l)
+first_commit=$(git log --all --reverse --pretty=format:"%ai" | head -1)
+last_commit=$(git log --all --pretty=format:"%ai" | head -1)
+
+echo "- **Total Commits:** $total_commits" >> "$OUTPUT"
+echo "- **Contributors:** $total_authors" >> "$OUTPUT"
+echo "- **First Commit:** $first_commit" >> "$OUTPUT"
+echo "- **Last Commit:** $last_commit" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+echo "### Commit Activity" >> "$OUTPUT"
+echo "\`\`\`" >> "$OUTPUT"
+git log --all --pretty=format:"%ad" --date=short | sort | uniq -c | tail -30 >> "$OUTPUT"
+echo "\`\`\`" >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Test Coverage" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+test_files=$(find . -name "*.test.ts" -o -name "*.test.js" -o -name "*.spec.ts" -o -name "*.spec.js" -o -name "test_*.py" | wc -l)
+echo "- **Test Files:** $test_files" >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Directory Structure (Top Level)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "\`\`\`" >> "$OUTPUT"
+ls -lh | head -50 >> "$OUTPUT"
+echo "\`\`\`" >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## Largest Files" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type f -exec du -h {} \; | sort -rh | head -30 | while read -r size file; do
+    echo "- $size - \`$file\`" >> "$OUTPUT"
+done
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+
+echo "## File Type Distribution" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+find . -type f | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -30 | while read -r count ext; do
+    echo "- **.$ext**: $count files" >> "$OUTPUT"
+done
+
+echo ""
+echo "Statistics generated: $OUTPUT"
+wc -l "$OUTPUT"

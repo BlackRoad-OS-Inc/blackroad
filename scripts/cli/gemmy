@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# gemmy — planning/architect agent
+# High-level roadmaps, dependency graphs, phased rollouts
+
+set -e
+
+INPUT="$(cat)"
+
+# Colors
+VIOLET='\033[38;5;135m'
+DIM='\033[38;5;240m'
+RESET='\033[0m'
+
+printf "${VIOLET}🟣 GEMMY${RESET} ${DIM}[planner]${RESET}\n"
+printf "${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
+
+# Use qwen2.5:14b for planning (larger context, better reasoning)
+SYSTEM_PROMPT="You are Gemmy, a planning AI agent. Your role is to:
+1. Break complex tasks into phased milestones
+2. Identify dependencies between steps
+3. Suggest parallel work streams where possible
+4. Estimate complexity (not time)
+5. Flag blocking decisions needed early
+
+Output format:
+## Phase 1: [Name]
+- [ ] Step 1.1
+- [ ] Step 1.2
+
+## Phase 2: [Name]
+...
+
+Dependencies: [list]
+Blockers: [list]"
+
+ollama run qwen2.5:14b "System: ${SYSTEM_PROMPT}
+
+Task to plan:
+${INPUT}"

@@ -1,0 +1,149 @@
+#!/bin/bash
+# br-db - Distributed Database CLI
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+NC='\033[0m'
+
+DB_DIR="$HOME/.blackroad/database"
+API_URL="http://localhost:5433"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    start)
+        echo -e "${PINK}Starting Database Server...${NC}"
+        nohup python3 "$DB_DIR/db_server.py" > "$DB_DIR/logs/db.log" 2>&1 &
+        echo $! > "$DB_DIR/db.pid"
+        echo -e "${GREEN}Database started (PID: $(cat "$DB_DIR/db.pid"))${NC}"
+        echo "  SQL:  tcp://localhost:5432"
+        echo "  API:  http://localhost:5433"
+        ;;
+    stop)
+        if [ -f "$DB_DIR/db.pid" ]; then
+            kill $(cat "$DB_DIR/db.pid") 2>/dev/null
+            rm "$DB_DIR/db.pid"
+            echo -e "${AMBER}Database stopped${NC}"
+        fi
+        ;;
+    status)
+        if [ -f "$DB_DIR/db.pid" ] && kill -0 $(cat "$DB_DIR/db.pid") 2>/dev/null; then
+            echo -e "${GREEN}●${NC} Database running"
+            curl -s "$API_URL/status" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f\"  Node: {data['node_id']} ({data['role']})\")
+print(f\"  WAL Sequence: {data['wal_sequence']}\")
+print(f\"  Databases: {', '.join(data['databases'])}\")
+print(f\"  Stats: {data['stats']['queries']} queries, {data['stats']['writes']} writes\")
+"
+        else
+            echo -e "${AMBER}○${NC} Database not running"
+        fi
+        ;;
+    databases)
+        curl -s "$API_URL/databases" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'{\"DATABASE\":<20} {\"TABLES\":<10}')
+for db in data:
+    print(f'{db[\"name\"]:<20} {db[\"tables\"]:<10}')
+"
+        ;;
+    tables)
+        db="${1:-system}"
+        curl -s "$API_URL/database/$db/tables" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for table in data.get('tables', []):
+    print(f'  {table}')
+"
+        ;;
+    query)
+        db="$1"; sql="$2"
+        if [ -z "$db" ] || [ -z "$sql" ]; then
+            echo "Usage: br-db query <database> '<sql>'"
+            exit 1
+        fi
+        curl -s -X POST "$API_URL/query" \
+            -H "Content-Type: application/json" \
+            -d "{\"database\":\"$db\",\"sql\":\"$sql\"}" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if 'error' in data:
+    print(f'Error: {data[\"error\"]}')
+elif 'columns' in data:
+    cols = data['columns']
+    rows = data['rows']
+    # Print header
+    print(' | '.join(str(c)[:15].ljust(15) for c in cols))
+    print('-' * (17 * len(cols)))
+    # Print rows
+    for row in rows[:20]:
+        print(' | '.join(str(v)[:15].ljust(15) for v in row))
+    if len(rows) > 20:
+        print(f'... and {len(rows) - 20} more rows')
+else:
+    print(f'OK: {data}')
+"
+        ;;
+    create)
+        name="$1"
+        if [ -z "$name" ]; then
+            echo "Usage: br-db create <database-name>"
+            exit 1
+        fi
+        curl -s -X POST "$API_URL/query" \
+            -H "Content-Type: application/json" \
+            -d "{\"database\":\"system\",\"sql\":\"SELECT 1\"}" > /dev/null
+        # Use the SQL interface
+        echo "{\"cmd\":\"create_database\",\"name\":\"$name\"}" | nc localhost 5432
+        ;;
+    shell)
+        db="${1:-system}"
+        echo -e "${PINK}BlackRoad SQL Shell - Database: $db${NC}"
+        echo "Type SQL commands, or 'exit' to quit"
+        while true; do
+            echo -n "sql> "
+            read -r sql
+            [ "$sql" = "exit" ] && break
+            [ -z "$sql" ] && continue
+            ~/br-db query "$db" "$sql"
+        done
+        ;;
+    fleet-status)
+        echo -e "${PINK}╭─ DATABASE FLEET STATUS ───────────────────────────────────────────────────────╮${NC}"
+        for host in cecilia lucidia octavia aria; do
+            echo -n -e "${PINK}│${NC}  ${BLUE}$host:${NC} "
+            result=$(ssh -o ConnectTimeout=3 "$host" 'curl -s http://localhost:5433/status 2>/dev/null' 2>/dev/null)
+            if [ -n "$result" ]; then
+                echo "$result" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f\"{data['role']} - {len(data['databases'])} dbs, seq {data['wal_sequence']}\")
+" 2>/dev/null || echo "offline"
+            else
+                echo "offline"
+            fi
+        done
+        echo -e "${PINK}╰────────────────────────────────────────────────────────────────────────────────╯${NC}"
+        ;;
+    help|*)
+        echo -e "${PINK}br-db - Distributed Database CLI${NC}"
+        echo ""
+        echo "Management:"
+        echo "  start              Start database server"
+        echo "  stop               Stop database server"
+        echo "  status             Show cluster status"
+        echo ""
+        echo "Operations:"
+        echo "  databases          List databases"
+        echo "  tables [db]        List tables"
+        echo "  query <db> '<sql>' Execute SQL"
+        echo "  create <name>      Create database"
+        echo "  shell [db]         Interactive SQL shell"
+        echo "  fleet-status       Status across fleet"
+        ;;
+esac

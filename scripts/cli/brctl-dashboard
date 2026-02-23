@@ -1,0 +1,129 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# brctl-dashboard - Real-time cluster monitoring dashboard
+# Usage: brctl-dashboard [refresh_seconds]
+
+REFRESH=${1:-5}
+NODES="cecilia lucidia octavia alice aria blackroad os cadence"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PINK='\033[38;5;205m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+get_node_status() {
+    local node=$1
+    if ssh -o ConnectTimeout=2 -o BatchMode=yes "$node" "true" 2>/dev/null; then
+        local info=$(ssh -o ConnectTimeout=3 "$node" "
+            load=\$(cat /proc/loadavg | awk '{print \$1}')
+            mem=\$(free | awk '/^Mem:/ {printf \"%.0f\", \$3/\$2*100}')
+            disk=\$(df / | awk 'NR==2 {print \$5}' | tr -d '%')
+            ts=\$(tailscale status >/dev/null 2>&1 && echo 'Y' || echo 'N')
+            docker=\$(docker ps -q 2>/dev/null | wc -l)
+            echo \"\$load|\$mem|\$disk|\$ts|\$docker\"
+        " 2>/dev/null)
+        echo "ONLINE|$info"
+    else
+        echo "OFFLINE|-|-|-|-|-"
+    fi
+}
+
+render_dashboard() {
+    clear
+
+    echo -e "${BOLD}╔══════════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BOLD}║                    🛣️  BLACKROAD OS CLUSTER DASHBOARD                        ║${NC}"
+    echo -e "${BOLD}║                         $(date '+%Y-%m-%d %H:%M:%S')                              ║${NC}"
+    echo -e "${BOLD}╚══════════════════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+
+    printf "${PINK}%-12s %-10s %-8s %-8s %-8s %-6s %-10s${NC}\n" \
+        "NODE" "STATUS" "LOAD" "MEM%" "DISK%" "TS" "DOCKER"
+    printf "%-12s %-10s %-8s %-8s %-8s %-6s %-10s\n" \
+        "────────────" "──────────" "────────" "────────" "────────" "──────" "──────────"
+
+    for node in $NODES; do
+        local result=$(get_node_status "$node")
+        IFS='|' read -r status load mem disk ts docker <<< "$result"
+
+        # Color status
+        if [ "$status" = "ONLINE" ]; then
+            status_color="${GREEN}● ONLINE${NC}"
+        else
+            status_color="${RED}○ OFFLINE${NC}"
+        fi
+
+        # Color disk
+        if [ "$disk" != "-" ]; then
+            if [ "$disk" -gt 90 ]; then
+                disk_color="${RED}${disk}%${NC}"
+            elif [ "$disk" -gt 80 ]; then
+                disk_color="${YELLOW}${disk}%${NC}"
+            else
+                disk_color="${GREEN}${disk}%${NC}"
+            fi
+        else
+            disk_color="-"
+        fi
+
+        # Color memory
+        if [ "$mem" != "-" ]; then
+            if [ "$mem" -gt 90 ]; then
+                mem_color="${RED}${mem}%${NC}"
+            elif [ "$mem" -gt 80 ]; then
+                mem_color="${YELLOW}${mem}%${NC}"
+            else
+                mem_color="${GREEN}${mem}%${NC}"
+            fi
+        else
+            mem_color="-"
+        fi
+
+        # Tailscale status
+        if [ "$ts" = "Y" ]; then
+            ts_color="${GREEN}✓${NC}"
+        elif [ "$ts" = "N" ]; then
+            ts_color="${RED}✗${NC}"
+        else
+            ts_color="-"
+        fi
+
+        printf "%-12s %-18b %-8s %-16b %-16b %-14b %-10s\n" \
+            "$node" "$status_color" "${load:-'-'}" "$mem_color" "$disk_color" "$ts_color" "${docker:-'-'}"
+    done
+
+    echo ""
+    echo -e "${PINK}────────────────────────────────────────────────────────────────────────────────${NC}"
+
+    # Cluster summary
+    local online=0
+    local total=0
+    for node in $NODES; do
+        total=$((total + 1))
+        if ssh -o ConnectTimeout=1 -o BatchMode=yes "$node" "true" 2>/dev/null; then
+            online=$((online + 1))
+        fi
+    done
+
+    echo -e "Cluster: ${GREEN}${online}${NC}/${total} nodes online | Refresh: ${REFRESH}s | Press Ctrl+C to exit"
+}
+
+# Main loop
+trap 'echo ""; echo "Dashboard stopped."; exit 0' INT
+
+while true; do
+    render_dashboard
+    sleep "$REFRESH"
+done

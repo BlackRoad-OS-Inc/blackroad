@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# BlackRoad Shell Interpreter
+# Routes all input through BlackRoad OS
+
+QUERY="$*"
+
+echo "╔═══════════════════════════════════════╗"
+echo "║       DIG - BlackRoad AI Query        ║"
+echo "╚═══════════════════════════════════════╝"
+echo ""
+echo "; <<>> DIG AI <<>> $QUERY"
+echo "Ask: $QUERY"
+echo ""
+
+# Route to your backend (cecilia/ollama)
+ssh -o ConnectTimeout=3 cecilia "ollama run cece3b:latest '$QUERY'" 2>/dev/null || echo "BLACKROAD: offline"

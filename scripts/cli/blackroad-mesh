@@ -1,0 +1,145 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-mesh - BlackRoad mesh network management
+# Usage: br-mesh <command>
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+NC='\033[0m'
+
+# Fleet configuration
+declare -A LOCAL_IPS
+LOCAL_IPS=(
+    [cecilia]="192.168.4.89"
+    [lucidia]="192.168.4.81"
+    [octavia]="192.168.4.38"
+    [aria]="192.168.4.82"
+    [alice]="192.168.4.49"
+    [gematria]="174.138.44.45"
+    [anastasia]="159.65.43.12"
+    [alexandria]="192.168.4.28"
+)
+
+declare -A TAILSCALE_IPS
+TAILSCALE_IPS=(
+    [cecilia]="100.72.180.98"
+    [lucidia]="100.83.149.86"
+    [octavia]="100.66.235.47"
+    [alice]="100.77.210.18"
+    [aria]="100.109.14.17"
+    [shellfish]="100.94.33.37"
+    [blackroad-infinity]="100.108.132.8"
+)
+
+# Service ports
+declare -A PORTS
+PORTS=(
+    [fastapi]=8000
+    [webhooks]=9000
+    [node]=3000
+    [ollama]=11434
+    [nginx]=80
+    [ssh]=22
+)
+
+case "$1" in
+    status|"")
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${WHITE}           BlackRoad Mesh Network${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        echo -e "${BLUE}Local Network:${NC}"
+        for host in cecilia lucidia octavia aria alice; do
+            ip="${LOCAL_IPS[$host]}"
+            if ping -c 1 -W 1 "$ip" &>/dev/null; then
+                echo -e "  ${GREEN}●${NC} $host: $ip"
+            else
+                echo -e "  ${RED}○${NC} $host: $ip ${DIM}(offline)${NC}"
+            fi
+        done
+        echo ""
+        echo -e "${VIOLET}Cloud:${NC}"
+        for host in gematria anastasia; do
+            ip="${LOCAL_IPS[$host]}"
+            if ping -c 1 -W 2 "$ip" &>/dev/null; then
+                echo -e "  ${GREEN}●${NC} $host: $ip"
+            else
+                echo -e "  ${RED}○${NC} $host: $ip"
+            fi
+        done
+        echo ""
+        echo -e "${AMBER}Tailscale Mesh:${NC}"
+        tailscale status 2>/dev/null | head -10 || echo "  Run: tailscale status"
+        ;;
+
+    ports)
+        host="${2:-cecilia}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${WHITE}Open Ports on ${AMBER}$host${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        for svc in fastapi webhooks node ollama nginx ssh; do
+            port="${PORTS[$svc]}"
+            if nc -z -w 2 "$host" "$port" 2>/dev/null; then
+                echo -e "  ${GREEN}●${NC} $svc: port $port open"
+            else
+                echo -e "  ${DIM}○${NC} $svc: port $port closed"
+            fi
+        done
+        ;;
+
+    connect)
+        host="${2:-cecilia}"
+        echo -e "${AMBER}Connecting to $host...${NC}"
+        ssh "$host"
+        ;;
+
+    scan)
+        echo -e "${PINK}Scanning local network for new devices...${NC}"
+        for i in $(seq 1 100); do
+            ip="192.168.4.$i"
+            if ping -c 1 -W 1 "$ip" &>/dev/null; then
+                hostname=$(ssh -o ConnectTimeout=1 -o StrictHostKeyChecking=no "blackroad@$ip" "hostname" 2>/dev/null || echo "unknown")
+                echo -e "${GREEN}●${NC} $ip: $hostname"
+            fi
+        done
+        ;;
+
+    dns)
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${WHITE}BlackRoad DNS Records${NC}"
+        echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        for host in cecilia lucidia octavia aria alice gematria anastasia; do
+            ip="${LOCAL_IPS[$host]}"
+            ts_ip="${TAILSCALE_IPS[$host]:-N/A}"
+            echo -e "${AMBER}$host${NC}"
+            echo "  Local: $ip"
+            echo "  Tailscale: $ts_ip"
+            echo "  .blackroad.io: $host.blackroad.io"
+        done
+        ;;
+
+    *)
+        echo -e "${PINK}br-mesh${NC} - BlackRoad mesh network manager"
+        echo ""
+        echo "Commands:"
+        echo "  status   - Show mesh status (default)"
+        echo "  ports    - Check open ports on host"
+        echo "  connect  - SSH to host"
+        echo "  scan     - Scan for new devices"
+        echo "  dns      - Show DNS records"
+        ;;
+esac

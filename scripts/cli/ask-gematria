@@ -1,0 +1,147 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Universal BlackRoad Agent CLI
+# Creates CLI commands for any Ollama model
+#
+# Usage: blackroad-agent <model-name> [message]
+# Or: symlink to create dedicated command: ln -s blackroad-agent lucidia
+
+OLLAMA_URL="http://localhost:11434"
+
+# Detect agent name from command name or first arg
+SCRIPT_NAME=$(basename "$0")
+if [ "$SCRIPT_NAME" = "blackroad-agent" ]; then
+  AGENT_NAME="$1"
+  shift
+else
+  AGENT_NAME="$SCRIPT_NAME"
+fi
+
+# Normalize agent name (capitalize first letter for Ollama model name)
+MODEL_NAME="$(echo ${AGENT_NAME:0:1} | tr '[:lower:]' '[:upper:]')${AGENT_NAME:1}:latest"
+
+# Agent colors (hash-based for consistency)
+get_agent_color() {
+  local name="$1"
+  local colors=("198" "214" "39" "82" "141" "208" "51" "226" "201" "45")
+  local hash=$(echo -n "$name" | md5 | cut -c1-2)
+  local idx=$((16#$hash % ${#colors[@]}))
+  echo "${colors[$idx]}"
+}
+
+COLOR_CODE=$(get_agent_color "$AGENT_NAME")
+AGENT_COLOR="\033[38;5;${COLOR_CODE}m"
+GRAY='\033[38;5;245m'
+BLUE='\033[38;5;39m'
+GREEN='\033[38;5;82m'
+RESET='\033[0m'
+
+# Header
+show_header() {
+  local upper_name=$(echo "$AGENT_NAME" | tr '[:lower:]' '[:upper:]')
+  echo -e "${AGENT_COLOR}╔═══════════════════════════════════════════════════════════╗${RESET}"
+  echo -e "${AGENT_COLOR}║${RESET}  ◆ ${AGENT_COLOR}${upper_name}${RESET} ${GRAY}· BlackRoad OS Agent${RESET}"
+  echo -e "${AGENT_COLOR}╚═══════════════════════════════════════════════════════════╝${RESET}"
+}
+
+# Check Ollama
+check_ollama() {
+  curl -s --connect-timeout 1 "$OLLAMA_URL/api/tags" > /dev/null 2>&1
+}
+
+# Check if model exists
+check_model() {
+  ollama list 2>/dev/null | grep -qi "^${AGENT_NAME}"
+}
+
+# Chat
+chat() {
+  local message="$1"
+  response=$(curl -s "$OLLAMA_URL/api/generate" \
+    -d "{\"model\": \"$MODEL_NAME\", \"prompt\": \"$message\", \"stream\": false}" 2>/dev/null)
+
+  if [ $? -ne 0 ] || [ -z "$response" ]; then
+    echo -e "${AGENT_COLOR}[error]${RESET} Could not reach Ollama"
+    return 1
+  fi
+
+  local text=$(echo "$response" | jq -r '.response // empty')
+  if [ -n "$text" ]; then
+    echo -e "${GREEN}[local · ollama]${RESET}"
+    echo -e "${AGENT_COLOR}${AGENT_NAME^}:${RESET} $text"
+  else
+    echo -e "${AGENT_COLOR}[no response]${RESET}"
+  fi
+}
+
+# Status
+status() {
+  echo -e "${GRAY}Agent:${RESET} $AGENT_NAME"
+  echo -e "${GRAY}Model:${RESET} $MODEL_NAME"
+  if check_ollama; then
+    echo -e "${GREEN}●${RESET} Ollama running"
+    if check_model; then
+      echo -e "${GREEN}●${RESET} Model available"
+      ollama list 2>/dev/null | grep -i "^${AGENT_NAME}" | head -1
+    else
+      echo -e "${AGENT_COLOR}○${RESET} Model not found"
+    fi
+  else
+    echo -e "${AGENT_COLOR}○${RESET} Ollama offline"
+  fi
+}
+
+# Help
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  show_header
+  echo -e "${GRAY}Usage:${RESET}"
+  echo "  $AGENT_NAME [message]     Send a message"
+  echo "  $AGENT_NAME               Interactive mode"
+  echo "  $AGENT_NAME --status      Show agent status"
+  echo ""
+  echo -e "${GRAY}Available agents:${RESET}"
+  ollama list 2>/dev/null | grep -v "^NAME" | awk '{print "  " $1}' | head -20
+  exit 0
+fi
+
+if [ "$1" = "--status" ] || [ "$1" = "-s" ]; then
+  show_header
+  status
+  exit 0
+fi
+
+# One-shot
+if [ -n "$1" ]; then
+  show_header
+  echo -e "${BLUE}You:${RESET} $*"
+  echo ""
+  chat "$*"
+  exit 0
+fi
+
+# Interactive
+show_header
+echo -e "${GRAY}Type your message (Ctrl+C to exit)${RESET}"
+if check_ollama && check_model; then
+  echo -e "${GREEN}●${RESET} ${GRAY}$MODEL_NAME ready${RESET}"
+else
+  echo -e "${AGENT_COLOR}●${RESET} ${GRAY}Model may not be available${RESET}"
+fi
+echo ""
+
+while true; do
+  echo -ne "${BLUE}You:${RESET} "
+  read -r input
+  [ -z "$input" ] && continue
+  echo ""
+  chat "$input"
+  echo ""
+done

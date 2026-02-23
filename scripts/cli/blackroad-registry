@@ -1,0 +1,73 @@
+#!/bin/bash
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+LB_DIR="$HOME/.blackroad/loadbalancer"
+REGISTRY_URL="http://localhost:8500"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    start)
+        echo -e "${PINK}Starting Service Registry...${NC}"
+        nohup python3 "$LB_DIR/service_registry.py" > "$LB_DIR/logs/registry.log" 2>&1 &
+        echo $! > "$LB_DIR/registry.pid"
+        echo -e "${GREEN}Service Registry started (PID: $(cat "$LB_DIR/registry.pid"))${NC}"
+        echo "  API: $REGISTRY_URL"
+        ;;
+    stop)
+        if [ -f "$LB_DIR/registry.pid" ]; then
+            kill $(cat "$LB_DIR/registry.pid") 2>/dev/null
+            rm "$LB_DIR/registry.pid"
+            echo -e "${AMBER}Service Registry stopped${NC}"
+        fi
+        ;;
+    status)
+        if [ -f "$LB_DIR/registry.pid" ] && kill -0 $(cat "$LB_DIR/registry.pid") 2>/dev/null; then
+            echo -e "${GREEN}●${NC} Service Registry running"
+            curl -s "$REGISTRY_URL/services" | python3 -m json.tool
+        else
+            echo -e "${AMBER}○${NC} Service Registry not running"
+        fi
+        ;;
+    list)
+        curl -s "$REGISTRY_URL/services" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for name, count in data.items():
+    print(f'  {name}: {count} instances')
+"
+        ;;
+    discover)
+        service="$1"
+        if [ -z "$service" ]; then
+            echo "Usage: br-registry discover <service>"
+            exit 1
+        fi
+        curl -s "$REGISTRY_URL/service/$service" | python3 -m json.tool
+        ;;
+    register)
+        name="$1"; host="$2"; port="$3"
+        if [ -z "$name" ] || [ -z "$host" ] || [ -z "$port" ]; then
+            echo "Usage: br-registry register <name> <host> <port>"
+            exit 1
+        fi
+        curl -s -X POST "$REGISTRY_URL/register" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"$name\",\"host\":\"$host\",\"port\":$port}"
+        ;;
+    help|*)
+        echo -e "${PINK}br-registry - Service Registry Control${NC}"
+        echo ""
+        echo "Commands:"
+        echo "  start                      Start registry"
+        echo "  stop                       Stop registry"
+        echo "  status                     Show status"
+        echo "  list                       List all services"
+        echo "  discover <service>         Discover instances"
+        echo "  register <name> <host> <port>  Register service"
+        ;;
+esac

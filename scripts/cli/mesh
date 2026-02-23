@@ -1,0 +1,58 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# BlackRoad Agent Mesh - Agent-to-agent communication
+
+BR_PINK="\033[38;5;204m"
+BR_ORANGE="\033[38;5;208m"
+BR_BLUE="\033[38;5;33m"
+BR_RESET="\033[0m"
+
+declare -A AGENTS=(
+    ["cece"]="cecilia"
+    ["lucidia"]="lucidia"
+    ["aria"]="aria"
+    ["octavia"]="octavia"
+    ["alice"]="alice@alice"
+    ["shellfish"]="shellfish"
+    ["blackroad os"]="root@blackroad os-infinity"
+)
+
+ask_agent() {
+    local target=$1; shift
+    local ssh_target="${AGENTS[$target]}"
+    [[ -z "$ssh_target" ]] && { echo "Unknown: $target"; return 1; }
+    echo -e "${BR_BLUE}Asking ${BR_ORANGE}${target}${BR_RESET}..."
+    ssh -o ConnectTimeout=10 "$ssh_target" "~/blackroad-ai-shell.sh '$*'" 2>/dev/null
+}
+
+broadcast() {
+    echo -e "${BR_PINK}Broadcasting...${BR_RESET}"
+    for agent in "${!AGENTS[@]}"; do
+        echo -e "\n${BR_ORANGE}=== $agent ===${BR_RESET}"
+        ssh -o ConnectTimeout=5 "${AGENTS[$agent]}" "~/blackroad-ai-shell.sh '$*'" 2>/dev/null &
+    done
+    wait
+}
+
+mesh_status() {
+    echo -e "${BR_PINK}Agent Mesh Status${BR_RESET}"
+    for agent in "${!AGENTS[@]}"; do
+        echo -n "$agent: "
+        ssh -o ConnectTimeout=2 "${AGENTS[$agent]}" "echo online" 2>/dev/null || echo "offline"
+    done
+}
+
+case "${1:-help}" in
+    ask) shift; ask_agent "$@" ;;
+    broadcast) shift; broadcast "$@" ;;
+    status) mesh_status ;;
+    *) echo "mesh ask <agent> <q> | broadcast <msg> | status" ;;
+esac

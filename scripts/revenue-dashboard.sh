@@ -1,0 +1,535 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# BlackRoad Revenue Dashboard
+# Real-time Stripe metrics and business intelligence
+# ============================================================================
+
+set -e
+
+# Color functions (printf-based, escape-safe)
+c_pink()   { printf '\033[38;5;205m'; }
+c_blue()   { printf '\033[38;5;75m'; }
+c_green()  { printf '\033[38;5;82m'; }
+c_yellow() { printf '\033[38;5;226m'; }
+c_red()    { printf '\033[38;5;196m'; }
+c_purple() { printf '\033[38;5;141m'; }
+c_orange() { printf '\033[38;5;208m'; }
+c_gray()   { printf '\033[38;5;240m'; }
+c_pink()   { printf '\033[38;5;205m'; }
+c_reset()  { printf '\033[0m'; }
+c_clear()  { printf '\033[2J\033[H'; }
+c_bold()   { printf '\033[1m'; }
+
+# Check for Stripe CLI
+check_stripe_cli() {
+    if ! command -v stripe >/dev/null 2>&1; then
+        return 1
+    fi
+    return 0
+}
+
+# Check for jq
+check_jq() {
+    if ! command -v jq >/dev/null 2>&1; then
+        return 1
+    fi
+    return 0
+}
+
+# ==================
+# STRIPE DATA COLLECTORS
+# ==================
+
+get_stripe_balance() {
+    if check_stripe_cli; then
+        stripe balance retrieve 2>/dev/null | jq -r '.available[0].amount // 0' | awk '{printf "%.2f", $1/100}'
+    else
+        echo "N/A"
+    fi
+}
+
+get_recent_charges() {
+    if check_stripe_cli && check_jq; then
+        stripe charges list --limit 5 2>/dev/null | jq -r '.data[] | "\(.amount/100)|\(.currency)|\(.status)|\(.created)"' 2>/dev/null || echo ""
+    else
+        echo ""
+    fi
+}
+
+get_customer_count() {
+    if check_stripe_cli && check_jq; then
+        stripe customers list --limit 100 2>/dev/null | jq '.data | length' 2>/dev/null || echo "0"
+    else
+        echo "0"
+    fi
+}
+
+get_subscription_count() {
+    if check_stripe_cli && check_jq; then
+        stripe subscriptions list --limit 100 2>/dev/null | jq '.data | length' 2>/dev/null || echo "0"
+    else
+        echo "0"
+    fi
+}
+
+get_mrr() {
+    # Calculate MRR from active subscriptions
+    if check_stripe_cli && check_jq; then
+        stripe subscriptions list --status active --limit 100 2>/dev/null | \
+            jq '[.data[].items.data[].price.unit_amount] | add // 0' 2>/dev/null | \
+            awk '{printf "%.2f", $1/100}' || echo "0.00"
+    else
+        echo "0.00"
+    fi
+}
+
+get_recent_payments() {
+    if check_stripe_cli && check_jq; then
+        stripe payment_intents list --limit 5 2>/dev/null | \
+            jq -r '.data[] | "\(.amount/100)|\(.currency)|\(.status)|\(.created)"' 2>/dev/null || echo ""
+    else
+        echo ""
+    fi
+}
+
+# ==================
+# MOCK DATA (for demo when Stripe unavailable)
+# ==================
+
+generate_mock_balance() {
+    echo "12847.50"
+}
+
+generate_mock_charges() {
+    cat <<EOF
+299.00|usd|succeeded|$(date +%s)
+199.00|usd|succeeded|$(($(date +%s) - 3600))
+499.00|usd|succeeded|$(($(date +%s) - 7200))
+99.00|usd|succeeded|$(($(date +%s) - 10800))
+299.00|usd|pending|$(($(date +%s) - 14400))
+EOF
+}
+
+generate_mock_customers() {
+    echo "47"
+}
+
+generate_mock_subscriptions() {
+    echo "23"
+}
+
+generate_mock_mrr() {
+    echo "6899.00"
+}
+
+# ==================
+# DISPLAY COMPONENTS
+# ==================
+
+draw_header() {
+    c_clear
+    c_pink; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║                                                                                ║\n"
+    printf "║                     BLACKROAD OS - REVENUE DASHBOARD                           ║\n"
+    printf "║                                                                                ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    printf "\n"
+}
+
+draw_balance_card() {
+    local balance="$1"
+    
+    c_green; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 💰 AVAILABLE BALANCE                                                           ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    printf "  "
+    c_green; c_bold
+    printf "$%s USD" "$balance"
+    c_reset
+    printf "\n\n"
+}
+
+draw_key_metrics() {
+    local customers="$1"
+    local subscriptions="$2"
+    local mrr="$3"
+    
+    c_blue; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 📊 KEY METRICS                                                                 ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    
+    # Customers
+    printf "  "
+    c_purple; printf "Total Customers:    "; c_reset
+    c_pink; c_bold; printf "%s\n" "$customers"; c_reset
+    
+    # Subscriptions
+    printf "  "
+    c_purple; printf "Active Subscriptions: "; c_reset
+    c_pink; c_bold; printf "%s\n" "$subscriptions"; c_reset
+    
+    # MRR
+    printf "  "
+    c_purple; printf "Monthly Recurring:  "; c_reset
+    c_green; c_bold; printf "$%s USD\n" "$mrr"; c_reset
+    
+    # ARR calculation
+    local arr=$(echo "$mrr * 12" | bc)
+    printf "  "
+    c_purple; printf "Annual Recurring:   "; c_reset
+    c_green; c_bold; printf "$%s USD\n" "$arr"; c_reset
+    
+    printf "\n"
+}
+
+draw_recent_charges() {
+    local charges_data="$1"
+    
+    c_orange; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 💳 RECENT CHARGES                                                              ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    
+    if [[ -z "$charges_data" ]]; then
+        printf "  "
+        c_gray; printf "No recent charges\n"; c_reset
+    else
+        while IFS='|' read -r amount currency status timestamp; do
+            printf "  "
+            
+            # Status indicator
+            case "$status" in
+                succeeded)
+                    c_green; printf "●"; c_reset
+                    ;;
+                pending)
+                    c_yellow; printf "●"; c_reset
+                    ;;
+                failed)
+                    c_red; printf "●"; c_reset
+                    ;;
+                *)
+                    c_gray; printf "○"; c_reset
+                    ;;
+            esac
+            
+            printf " "
+            
+            # Amount
+            c_pink; c_bold
+            printf "$%-8s" "$amount"
+            c_reset
+            
+            printf " "
+            
+            # Currency
+            c_gray
+            printf "%-5s" "$(echo "$currency" | tr '[:lower:]' '[:upper:]')"
+            c_reset
+            
+            printf " "
+            
+            # Status
+            case "$status" in
+                succeeded)
+                    c_green
+                    ;;
+                pending)
+                    c_yellow
+                    ;;
+                failed)
+                    c_red
+                    ;;
+                *)
+                    c_gray
+                    ;;
+            esac
+            printf "%-10s" "$status"
+            c_reset
+            
+            printf " "
+            
+            # Time ago
+            local now=$(date +%s)
+            local diff=$((now - timestamp))
+            local time_ago=""
+            
+            if (( diff < 60 )); then
+                time_ago="${diff}s ago"
+            elif (( diff < 3600 )); then
+                time_ago="$((diff / 60))m ago"
+            elif (( diff < 86400 )); then
+                time_ago="$((diff / 3600))h ago"
+            else
+                time_ago="$((diff / 86400))d ago"
+            fi
+            
+            c_gray
+            printf "%s" "$time_ago"
+            c_reset
+            
+            printf "\n"
+        done <<< "$charges_data"
+    fi
+    
+    printf "\n"
+}
+
+draw_revenue_chart() {
+    local mrr="$1"
+    
+    c_purple; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ 📈 REVENUE TREND (Last 6 Months - Simulated)                                  ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    
+    # Generate simple bar chart (simulated growth)
+    local base_mrr=$(echo "$mrr * 0.5" | bc | awk '{printf "%.0f", $1}')
+    
+    for month in {1..6}; do
+        local month_name=$(date -v-${month}m +"%b" 2>/dev/null || date -d "-${month} months" +"%b" 2>/dev/null || echo "M$month")
+        local month_mrr=$(echo "$base_mrr + ($mrr - $base_mrr) * $month / 6" | bc | awk '{printf "%.0f", $1}')
+        local bar_length=$(echo "$month_mrr / 100" | bc)
+        
+        printf "  "
+        c_gray; printf "%-5s" "$month_name"; c_reset
+        printf " "
+        c_green
+        printf "%0.s▓" $(seq 1 $bar_length 2>/dev/null)
+        c_reset
+        printf " "
+        c_pink; printf "$%s" "$month_mrr"; c_reset
+        printf "\n"
+    done
+    
+    printf "\n"
+}
+
+draw_footer() {
+    local mode="$1"
+    local timestamp="$2"
+    
+    printf "\n"
+    c_gray
+    printf "═══════════════════════════════════════════════════════════════════════════════\n"
+    
+    if [[ "$mode" == "demo" ]]; then
+        printf "Demo Mode (Mock Data) | Last updated: %s | Press Ctrl+C to exit\n" "$timestamp"
+    else
+        printf "Live Stripe Data | Last updated: %s | Press Ctrl+C to exit\n" "$timestamp"
+    fi
+    
+    c_reset
+}
+
+draw_setup_notice() {
+    c_clear
+    c_yellow; c_bold
+    printf "╔════════════════════════════════════════════════════════════════════════════════╗\n"
+    printf "║ ⚠️  STRIPE CLI NOT CONFIGURED                                                  ║\n"
+    printf "╚════════════════════════════════════════════════════════════════════════════════╝\n"
+    c_reset
+    
+    printf "\n"
+    printf "The Stripe CLI is not installed or not configured.\n"
+    printf "\n"
+    
+    c_blue; printf "To use live data:\n"; c_reset
+    printf "  1. Install Stripe CLI: brew install stripe/stripe-cli/stripe\n"
+    printf "  2. Login: stripe login\n"
+    printf "  3. Run this dashboard again\n"
+    printf "\n"
+    
+    c_green; printf "Running in DEMO MODE with mock data...\n"; c_reset
+    printf "\n"
+    
+    sleep 3
+}
+
+# ==================
+# MAIN DASHBOARD
+# ==================
+
+run_dashboard() {
+    local mode="live"
+    local refresh_interval="${1:-10}"
+    
+    # Check dependencies
+    if ! check_stripe_cli; then
+        draw_setup_notice
+        mode="demo"
+    fi
+    
+    while true; do
+        draw_header
+        
+        # Fetch or generate data
+        local balance customers subscriptions mrr charges
+        
+        if [[ "$mode" == "demo" ]]; then
+            balance=$(generate_mock_balance)
+            customers=$(generate_mock_customers)
+            subscriptions=$(generate_mock_subscriptions)
+            mrr=$(generate_mock_mrr)
+            charges=$(generate_mock_charges)
+        else
+            balance=$(get_stripe_balance)
+            customers=$(get_customer_count)
+            subscriptions=$(get_subscription_count)
+            mrr=$(get_mrr)
+            charges=$(get_recent_charges)
+        fi
+        
+        # Draw sections
+        draw_balance_card "$balance"
+        draw_key_metrics "$customers" "$subscriptions" "$mrr"
+        draw_recent_charges "$charges"
+        draw_revenue_chart "$mrr"
+        
+        # Footer
+        local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+        draw_footer "$mode" "$timestamp"
+        
+        # Wait before refresh
+        sleep "$refresh_interval"
+    done
+}
+
+# ==================
+# CLI INTERFACE
+# ==================
+
+show_help() {
+    cat <<'HELP'
+BlackRoad Revenue Dashboard
+
+USAGE:
+  blackroad-revenue-dashboard.sh [OPTIONS]
+
+OPTIONS:
+  --interval N    Refresh interval in seconds (default: 10)
+  --demo          Force demo mode with mock data
+  --once          Run once and exit (no loop)
+  --help          Show this help
+
+EXAMPLES:
+  blackroad-revenue-dashboard.sh                # Live dashboard
+  blackroad-revenue-dashboard.sh --demo         # Demo mode
+  blackroad-revenue-dashboard.sh --once         # Single snapshot
+
+REQUIREMENTS:
+  • Stripe CLI (brew install stripe/stripe-cli/stripe)
+  • Authenticated with: stripe login
+  • jq (brew install jq)
+
+METRICS SHOWN:
+  • Available balance
+  • Total customers
+  • Active subscriptions
+  • Monthly Recurring Revenue (MRR)
+  • Annual Recurring Revenue (ARR)
+  • Recent charges (last 5)
+  • 6-month revenue trend
+
+Press Ctrl+C to exit live mode.
+HELP
+}
+
+# ==================
+# MAIN
+# ==================
+
+main() {
+    local mode="auto"
+    local interval=10
+    local once=false
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --interval)
+                interval="$2"
+                shift 2
+                ;;
+            --demo)
+                mode="demo"
+                shift
+                ;;
+            --once)
+                once=true
+                shift
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+    
+    # Run dashboard
+    if $once; then
+        # Single run
+        draw_header
+        
+        local balance customers subscriptions mrr charges
+        
+        if [[ "$mode" == "demo" ]] || ! check_stripe_cli; then
+            balance=$(generate_mock_balance)
+            customers=$(generate_mock_customers)
+            subscriptions=$(generate_mock_subscriptions)
+            mrr=$(generate_mock_mrr)
+            charges=$(generate_mock_charges)
+            mode="demo"
+        else
+            balance=$(get_stripe_balance)
+            customers=$(get_customer_count)
+            subscriptions=$(get_subscription_count)
+            mrr=$(get_mrr)
+            charges=$(get_recent_charges)
+            mode="live"
+        fi
+        
+        draw_balance_card "$balance"
+        draw_key_metrics "$customers" "$subscriptions" "$mrr"
+        draw_recent_charges "$charges"
+        draw_revenue_chart "$mrr"
+        
+        local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+        
+        c_gray
+        printf "\n"
+        if [[ "$mode" == "demo" ]]; then
+            printf "Snapshot taken at %s (Demo Mode)\n" "$timestamp"
+        else
+            printf "Snapshot taken at %s (Live Data)\n" "$timestamp"
+        fi
+        c_reset
+    else
+        # Live monitoring
+        run_dashboard "$interval"
+    fi
+}
+
+main "$@"

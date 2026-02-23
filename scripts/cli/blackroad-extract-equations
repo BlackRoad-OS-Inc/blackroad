@@ -1,0 +1,74 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# Extract EVERY equation from ALL BlackRoad repositories
+# Find all mathematical expressions, LaTeX, formulas
+
+OUTPUT="/tmp/all-equations-catalog.md"
+
+cat > "$OUTPUT" << 'EOF'
+# Complete Equation Catalog
+## Every Mathematical Expression Across All BlackRoad Repositories
+
+---
+
+## LaTeX Equations ($$...$$)
+
+EOF
+
+cd /tmp/prism-audit || exit
+
+echo "Scanning for LaTeX equations..."
+
+# Find all LaTeX equations in markdown files
+grep -r -h '\$\$' --include="*.md" . | grep -v "^#" | sort -u >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+echo "## Inline Math (\$...\$)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Find inline math
+grep -r -h '\$[^$]*\$' --include="*.md" . | grep -v "^\$\$" | grep -v "^#" | sort -u | head -200 >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+echo "## Code Equations (TypeScript/Python)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Find mathematical operations in code
+grep -r -h -E "Math\.|np\.|exp\(|cos\(|sin\(|sqrt\(|log\(|pow\(" --include="*.ts" --include="*.js" --include="*.py" . | grep -v "^//" | grep -v "^#" | sort -u | head -200 >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+echo "## Special Operators" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Find special mathematical symbols
+grep -r -h -E "∇|∂|∫|∑|∏|⊗|⊕|Ψ|ψ|φ|θ|ω|α|β|γ|δ|ε|π|ℏ|∞" --include="*.md" --include="*.ts" --include="*.js" . | sort -u | head -200 >> "$OUTPUT"
+
+echo "" >> "$OUTPUT"
+echo "---" >> "$OUTPUT"
+echo "## Equations by File" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Catalog equations per file
+find . -name "*.md" -exec grep -l '\$\$\|Math\.\|exp(' {} \; | while read -r file; do
+    count=$(grep -c '\$\$\|exp\|cos\|sin' "$file" 2>/dev/null || echo 0)
+    if [ "$count" -gt 5 ]; then
+        echo "### $file ($count mathematical expressions)" >> "$OUTPUT"
+        grep -h '\$\$' "$file" 2>/dev/null | head -10 >> "$OUTPUT"
+        echo "" >> "$OUTPUT"
+    fi
+done
+
+echo ""
+echo "Complete equation catalog: $OUTPUT"
+wc -l "$OUTPUT"

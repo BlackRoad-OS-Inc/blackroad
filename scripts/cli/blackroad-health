@@ -1,0 +1,53 @@
+#!/bin/bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-health - Get health stats from all agents
+# Usage: br-health
+
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+BLUE='\033[38;5;69m'
+VIOLET='\033[38;5;135m'
+WHITE='\033[1;37m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+DIM='\033[2m'
+NC='\033[0m'
+
+AGENTS=(cecilia lucidia octavia aria gematria anastasia)
+
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${WHITE}                 BlackRoad Agent Health${NC}"
+echo -e "${PINK}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+printf "${DIM}%-12s %-8s %-10s %-10s %-10s %-12s${NC}\n" "AGENT" "STATUS" "LOAD" "MEM FREE" "DISK" "UPTIME"
+echo -e "${DIM}───────────────────────────────────────────────────────────────${NC}"
+
+for agent in "${AGENTS[@]}"; do
+    stats=$(ssh -o ConnectTimeout=5 "$agent" '
+        load=$(cat /proc/loadavg 2>/dev/null | awk "{print \$1}" || echo "?")
+        mem=$(free -m 2>/dev/null | awk "/Mem:/ {print \$4}" || echo "?")
+        disk=$(df -h / 2>/dev/null | awk "NR==2 {print \$4}" || echo "?")
+        up=$(uptime -p 2>/dev/null | sed "s/up //" | cut -c1-10 || echo "?")
+        echo "$load|$mem|$disk|$up"
+    ' 2>/dev/null)
+
+    if [[ -n "$stats" && "$stats" != *"Connection"* ]]; then
+        IFS='|' read -r load mem disk up <<< "$stats"
+        printf "%-12s ${GREEN}%-8s${NC} ${AMBER}%-10s${NC} ${BLUE}%-10s${NC} ${VIOLET}%-10s${NC} %-12s\n" \
+            "$agent" "UP" "$load" "${mem}MB" "$disk" "$up"
+    else
+        printf "%-12s ${RED}%-8s${NC} %-10s %-10s %-10s %-12s\n" \
+            "$agent" "DOWN" "-" "-" "-" "-"
+    fi
+done
+
+echo ""
+echo -e "${DIM}$(date '+%Y-%m-%d %H:%M:%S')${NC}"

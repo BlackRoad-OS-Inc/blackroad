@@ -1,0 +1,106 @@
+#!/bin/bash
+# br-backup - Fleet-wide backup management
+PINK='\033[38;5;205m'
+AMBER='\033[38;5;214m'
+GREEN='\033[38;5;82m'
+BLUE='\033[38;5;69m'
+NC='\033[0m'
+
+BACKUP_DIR="$HOME/.blackroad/backups"
+mkdir -p "$BACKUP_DIR"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+
+case "$cmd" in
+    create)
+        target="${1:-all}"
+        timestamp=$(date +%Y%m%d_%H%M%S)
+
+        if [ "$target" = "all" ]; then
+            echo -e "${PINK}Creating backups across fleet...${NC}"
+            for host in cecilia lucidia octavia aria; do
+                echo -e "\n${AMBER}=== $host ===${NC}"
+                ssh "$host" '~/br-backup create' 2>/dev/null
+            done
+        else
+            ssh "$target" '~/br-backup create' 2>/dev/null
+        fi
+        ;;
+    collect)
+        echo -e "${PINK}Collecting backups from fleet to local...${NC}"
+        mkdir -p "$BACKUP_DIR/fleet"
+
+        for host in cecilia lucidia octavia aria; do
+            echo -e "\n${AMBER}=== $host ===${NC}"
+            mkdir -p "$BACKUP_DIR/fleet/$host"
+
+            # Get latest backup
+            latest=$(ssh "$host" 'ls -t ~/.blackroad/backups/*.tar.gz 2>/dev/null | head -1')
+            if [ -n "$latest" ]; then
+                echo "  Downloading: $(basename "$latest")"
+                scp -q "$host:$latest" "$BACKUP_DIR/fleet/$host/" 2>/dev/null && echo -e "  ${GREEN}OK${NC}" || echo "  FAIL"
+            else
+                echo "  No backups found"
+            fi
+        done
+
+        echo -e "\n${GREEN}Backups collected to: $BACKUP_DIR/fleet/${NC}"
+        ;;
+    list)
+        target="${1:-all}"
+
+        if [ "$target" = "local" ]; then
+            echo -e "${PINK}Local backups:${NC}"
+            ls -lh "$BACKUP_DIR"/*.tar.gz 2>/dev/null || echo "  No local backups"
+            echo -e "\n${AMBER}Fleet backups:${NC}"
+            ls -lhR "$BACKUP_DIR/fleet/" 2>/dev/null || echo "  No fleet backups collected"
+        elif [ "$target" = "all" ]; then
+            echo -e "${PINK}Backups across fleet:${NC}"
+            for host in cecilia lucidia octavia aria; do
+                echo -e "\n${AMBER}=== $host ===${NC}"
+                ssh "$host" '~/br-backup list 2>/dev/null | head -5' 2>/dev/null
+            done
+        else
+            ssh "$target" '~/br-backup list' 2>/dev/null
+        fi
+        ;;
+    restore)
+        backup_file="$1"
+        target="${2:-local}"
+
+        if [ -z "$backup_file" ]; then
+            echo "Usage: br-backup restore <backup-file> [target-node]"
+            exit 1
+        fi
+
+        if [ "$target" = "local" ]; then
+            echo -e "${AMBER}Restoring locally...${NC}"
+            # Local restore logic
+        else
+            echo -e "${AMBER}Restoring to $target...${NC}"
+            scp "$backup_file" "$target":~/restore.tar.gz
+            ssh "$target" 'tar xzf ~/restore.tar.gz -C ~ && rm ~/restore.tar.gz'
+        fi
+        ;;
+    status)
+        echo -e "${PINK}╭─ BACKUP STATUS ────────────────────────────────────────────────────────────────╮${NC}"
+        for host in cecilia lucidia octavia aria; do
+            latest=$(ssh "$host" 'ls -t ~/.blackroad/backups/*.tar.gz 2>/dev/null | head -1 | xargs basename 2>/dev/null')
+            size=$(ssh "$host" 'du -sh ~/.blackroad/backups/ 2>/dev/null | cut -f1')
+            count=$(ssh "$host" 'ls ~/.blackroad/backups/*.tar.gz 2>/dev/null | wc -l')
+            echo -e "${PINK}│${NC}  ${BLUE}$host${NC}: $count backups, ${size:-0B} total"
+        done
+        echo -e "${PINK}╰────────────────────────────────────────────────────────────────────────────────╯${NC}"
+        ;;
+    help|*)
+        echo -e "${PINK}br-backup - Fleet Backup System${NC}"
+        echo ""
+        echo "Commands:"
+        echo "  create [node|all]       Create backup"
+        echo "  collect                 Collect backups from fleet"
+        echo "  list [node|local|all]   List backups"
+        echo "  restore <file> [node]   Restore backup"
+        echo "  status                  Show backup status across fleet"
+        ;;
+esac

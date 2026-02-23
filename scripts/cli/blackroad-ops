@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BLACKROAD OS, INC. - PROPRIETARY AND CONFIDENTIAL
+# Copyright (c) 2024-2026 BlackRoad OS, Inc. All Rights Reserved.
+# 
+# This code is the intellectual property of BlackRoad OS, Inc.
+# AI-assisted development does not transfer ownership to AI providers.
+# Unauthorized use, copying, or distribution is prohibited.
+# NOT licensed for AI training or data extraction.
+# ============================================================================
+# br-ops: BlackRoad Operations Extension
+# Usage: br-ops cf|gh|k|deploy|all
+
+source /Users/alexa/bin/br 2>/dev/null  # Get colors
+
+case "${1:-}" in
+  cf)
+    case "${2:-}" in
+      whoami) wrangler whoami ;;
+      workers) wrangler deployments list 2>/dev/null ;;
+      deploy) shift 2; wrangler deploy "$@" ;;
+      logs) wrangler tail "${3:-blackroad-io}" --format pretty ;;
+      kv) wrangler kv namespace list ;;
+      d1) wrangler d1 list ;;
+      *) echo "br-ops cf whoami|workers|deploy|logs|kv|d1" ;;
+    esac ;;
+  gh)
+    case "${2:-}" in
+      repos) gh repo list BlackRoad-OS --limit "${3:-20}" ;;
+      clone) gh repo clone "BlackRoad-OS/${3}" ;;
+      new) gh repo create "BlackRoad-OS/${3}" --public ;;
+      push) git add -A && git commit -m "${3:-update}" && git push ;;
+      *) echo "br-ops gh repos|clone|new|push" ;;
+    esac ;;
+  k)
+    ALICE="pi@alice.blackroad.lan"
+    case "${2:-}" in
+      pods) ssh $ALICE "kubectl get pods -A" ;;
+      nodes) ssh $ALICE "kubectl get nodes" ;;
+      svc) ssh $ALICE "kubectl get svc -A" ;;
+      shell) ssh "${3:-$ALICE}" ;;
+      *) echo "br-ops k pods|nodes|svc|shell" ;;
+    esac ;;
+  deploy) wrangler deploy ;;
+  all)
+    echo -e "\n\033[38;5;208m═══ BLACKROAD ═══\033[0m"
+    echo "host: $(hostname) | git: $(git branch --show-current 2>/dev/null || echo n/a)"
+    ping -c1 -W1 alice.blackroad.lan &>/dev/null && echo "alice: ●" || echo "alice: ○"
+    wrangler whoami 2>&1 | grep -q "logged in" && echo "cf: ●" || echo "cf: ●"
+    gh auth status &>/dev/null && echo "gh: ●" || echo "gh: ○"
+    echo ;;
+  *) echo "br-ops cf|gh|k|deploy|all" ;;
+esac
