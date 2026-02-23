@@ -276,6 +276,17 @@ export default {
       });
     }
 
+    // ── Debug (temp) ──────────────────────────────────────────
+    if (path === "/debug") {
+      return json({
+        has_railway: !!env.RAILWAY_TOKEN,
+        has_github: !!env.GITHUB_TOKEN,
+        railway_len: (env.RAILWAY_TOKEN || "").length,
+        github_len: (env.GITHUB_TOKEN || "").length,
+        env_keys: Object.keys(env),
+      });
+    }
+
     // ── Railway ──────────────────────────────────────────────
     if (path === "/railway" || path.startsWith("/railway/")) {
       if (!env.RAILWAY_TOKEN) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User } from 'lucide-react';
+import { Send, Bot, User, Sparkles } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
 interface Message {
@@ -48,17 +48,38 @@ export default function ConversationPage() {
     setInput('');
     setIsLoading(true);
 
-    // TODO: Replace with actual WebSocket/API call
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage.content,
+          conversationId: params.id,
+          history: messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      if (!res.ok) throw new Error('Chat request failed');
+
+      const data = await res.json();
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I received your message: "' + userMessage.content + '". This is a placeholder response. WebSocket streaming will be integrated next.',
+        content: data.content || data.message || 'No response.',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch {
+      const errMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: '⚠️ Could not reach the gateway. Is it running? (`br gateway start`)',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -80,16 +101,16 @@ export default function ConversationPage() {
               )}
 
               <div
-                className={`max-w-[70%] rounded-lg px-4 py-3 ${
-                  message.role === 'user'
-                    ? 'bg-blue-800 text-white'
-                    : 'bg-white border border-gray-200 text-gray-900'
-                }`}
-              >
+              className={`max-w-[70%] rounded-xl px-4 py-3 ${
+                message.role === 'user'
+                  ? 'bg-gradient-to-br from-[#FF1D6C] to-violet-600 text-white'
+                  : 'bg-white/5 border border-white/10 text-gray-100'
+              }`}
+            >
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 <p
                   className={`text-xs mt-2 ${
-                    message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                    message.role === 'user' ? 'text-pink-200' : 'text-gray-500'
                   }`}
                 >
                   {message.timestamp.toLocaleTimeString()}
@@ -109,7 +130,7 @@ export default function ConversationPage() {
               <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-blue-800 to-blue-600 flex items-center justify-center text-white">
                 <Bot className="h-5 w-5" />
               </div>
-              <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+              <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
                 <div className="flex gap-1">
                   <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                   <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -124,26 +145,33 @@ export default function ConversationPage() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-gray-200 bg-white px-4 py-4">
+      <div className="border-t border-white/10 bg-black/80 backdrop-blur px-4 py-4">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-          <div className="flex gap-4">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              disabled={isLoading}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-            />
+          <div className="flex gap-3 items-end">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Message Lucidia..."
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#FF1D6C]/50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              />
+              {input && (
+                <Sparkles className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF1D6C] opacity-60 pointer-events-none" />
+              )}
+            </div>
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="px-6 py-3 bg-blue-800 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-5 py-3 bg-gradient-to-r from-[#FF1D6C] to-violet-600 hover:from-[#FF1D6C]/90 hover:to-violet-600/90 text-white rounded-xl font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              <Send className="h-5 w-5" />
-              Send
+              <Send className="h-4 w-4" />
             </button>
           </div>
+          <p className="text-xs text-gray-600 text-center mt-2">
+            Routes through BlackRoad Gateway · <a href="http://127.0.0.1:8787" className="hover:text-gray-400 transition-colors">:8787</a>
+          </p>
         </form>
       </div>
     </div>
