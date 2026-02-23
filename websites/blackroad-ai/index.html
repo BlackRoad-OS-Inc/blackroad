@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlackRoad AI — The AI Platform for Builders</title>
+  <meta name="description" content="Run Qwen, DeepSeek, Llama locally or at scale. Tokenless gateway. 30,000 agents. No cloud tax.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../_shared/design.css">
+  <style>
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 120px var(--sp-xl) var(--sp-2xl);
+      max-width: 1200px; margin: 0 auto;
+    }
+    .model-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-sm); margin-top: var(--sp-xl); }
+    @media (max-width: 900px) { .model-grid { grid-template-columns: repeat(2, 1fr); } }
+    .model-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: var(--sp-md);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .model-card:hover { border-color: var(--muted); transform: translateY(-2px); }
+    .model-name { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; margin-bottom: 4px; }
+    .model-tag {
+      display: inline-block; font-size: 0.65rem; font-family: var(--font-mono);
+      padding: 2px 8px; border-radius: 4px; margin-bottom: var(--sp-xs);
+    }
+    .tag-local  { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .tag-cloud  { background: rgba(41,121,255,0.15); color: #2979ff; }
+    .tag-reason { background: rgba(156,39,176,0.15); color: #9c27b0; }
+    .model-desc { font-size: 0.78rem; color: var(--subtle); line-height: 1.55; }
+
+    /* Gateway diagram */
+    .gateway-diagram {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: var(--sp-xl); margin-top: var(--sp-xl);
+      font-family: var(--font-mono); font-size: 0.8rem;
+    }
+    .gd-row { display: flex; align-items: center; gap: var(--sp-md); margin: var(--sp-sm) 0; }
+    .gd-box {
+      padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .gd-agents { border-color: #9c27b0; color: #9c27b0; }
+    .gd-gateway { background: var(--grad); color: white; border: none; font-weight: 700; }
+    .gd-providers { border-color: #2979ff; color: #2979ff; }
+    .gd-arrow { color: var(--muted); font-size: 1.2rem; }
+    .gd-label { color: var(--muted); font-size: 0.7rem; }
+
+    .api-block {
+      background: #0d0d0d; border: 1px solid var(--border); border-radius: 10px;
+      padding: var(--sp-lg); font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.9;
+      overflow-x: auto;
+    }
+    .ac { color: #888; }
+    .ak { color: #FF1D6C; }
+    .av { color: #22c55e; }
+    .as { color: #F5A623; }
+  </style>
+</head>
+<body class="dot-bg">
+
+  <nav>
+    <div class="nav-logo grad-text">blackroad.ai</div>
+    <div class="nav-links">
+      <a href="#models">Models</a>
+      <a href="#gateway">Gateway</a>
+      <a href="#api">API</a>
+      <a href="https://blackroad.io">OS Platform</a>
+    </div>
+    <a href="mailto:alexa@blackroad.io" class="nav-cta">Talk to us →</a>
+  </nav>
+
+  <div class="hero">
+    <div class="section-label">BlackRoad AI</div>
+    <h1>The AI platform<br>for <span class="grad-text">builders</span>.</h1>
+    <p style="font-size:1.1rem;color:var(--subtle);max-width:520px;margin:var(--sp-lg) 0;">
+      Run Qwen, DeepSeek, and Llama locally or at scale. Tokenless gateway keeps your keys safe. 30,000 agents ready to work.
+    </p>
+    <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;">
+      <a href="#gateway" class="btn-primary" style="background:var(--grad);color:#fff;padding:14px 28px;border-radius:8px;font-weight:700;">Explore the Gateway →</a>
+      <a href="#api" class="btn-ghost" style="border:1px solid var(--border);color:var(--subtle);padding:14px 28px;border-radius:8px;display:inline-flex;align-items:center;">API Docs</a>
+    </div>
+
+    <!-- Models -->
+    <div style="margin-top:var(--sp-2xl);">
+      <div class="section-label" id="models">Supported Models</div>
+      <div class="model-grid" style="margin-top:var(--sp-md);">
+        <div class="model-card">
+          <div class="model-name">Qwen 2.5</div>
+          <span class="model-tag tag-local">local</span>
+          <div class="model-desc">General purpose. Fast. 7B–72B. Best for agents.</div>
+        </div>
+        <div class="model-card">
+          <div class="model-name">DeepSeek R1</div>
+          <span class="model-tag tag-reason">reasoning</span>
+          <div class="model-desc">Chain-of-thought. Code + math. 7B locally.</div>
+        </div>
+        <div class="model-card">
+          <div class="model-name">Llama 3.2</div>
+          <span class="model-tag tag-local">local</span>
+          <div class="model-desc">Lightweight. 1B–3B. Runs on Raspberry Pi.</div>
+        </div>
+        <div class="model-card">
+          <div class="model-name">Claude</div>
+          <span class="model-tag tag-cloud">cloud</span>
+          <div class="model-desc">Via gateway only. Token never touches agents.</div>
+        </div>
+        <div class="model-card">
+          <div class="model-name">GPT-4o</div>
+          <span class="model-tag tag-cloud">cloud</span>
+          <div class="model-desc">Via gateway only. Zero token exposure.</div>
+        </div>
+        <div class="model-card">
+          <div class="model-name">Mistral</div>
+          <span class="model-tag tag-local">local</span>
+          <div class="model-desc">Balanced. 7B. Fast inference on CPU.</div>
+        </div>
+        <div class="model-card">
+          <div class="model-name">Whisper</div>
+          <span class="model-tag tag-local">local</span>
+          <div class="model-desc">Speech-to-text. Local. Private. No API.</div>
+        </div>
+        <div class="model-card">
+          <div class="model-name">Custom</div>
+          <span class="model-tag tag-reason">modelfile</span>
+          <div class="model-desc">CECE, Lucidia — personality-tuned via Ollama modelfiles.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gateway -->
+  <section id="gateway">
+    <div class="section-label">Architecture</div>
+    <h2>The <span class="grad-text">Tokenless Gateway</span></h2>
+    <p style="margin-top:var(--sp-md);max-width:560px;">
+      Agents never see provider API keys. All traffic routes through the gateway at <code style="color:var(--pink);font-size:0.85em">localhost:8787</code>. One trust boundary. No leaks.
+    </p>
+    <div class="gateway-diagram">
+      <div class="gd-row">
+        <div class="gd-box gd-agents">Agents (30,000)</div>
+        <div class="gd-arrow">──▶</div>
+        <div class="gd-box gd-gateway">BlackRoad Gateway :8787</div>
+        <div class="gd-arrow">──▶</div>
+        <div class="gd-box gd-providers">Ollama / Claude / OpenAI</div>
+      </div>
+      <div style="margin-top:var(--sp-md);color:var(--muted);font-size:0.72rem;line-height:1.8;">
+        <div>● Agents authenticated by capability registry — no raw tokens</div>
+        <div>● Gateway owns all secrets — stored in encrypted vault</div>
+        <div>● Gateway binds to 127.0.0.1 by default — no external exposure</div>
+        <div>● Verify: <span style="color:var(--pink)">./blackroad-core/scripts/verify-tokenless-agents.sh</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- API -->
+  <section id="api" style="padding-top:0;">
+    <div class="section-label">API</div>
+    <h2>Simple. <span class="grad-text">Local-first.</span></h2>
+    <div class="api-block" style="margin-top:var(--sp-lg);">
+      <div><span class="ac"># Chat with memory (Ollama wrapper)</span></div>
+      <div><span class="ak">curl</span> <span class="av">-X POST</span> http://localhost:8001/chat \</div>
+      <div>&nbsp;&nbsp;<span class="ak">-H</span> <span class="as">"Content-Type: application/json"</span> \</div>
+      <div>&nbsp;&nbsp;<span class="ak">-d</span> <span class="as">'{</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="as">"model": "qwen2.5:7b",</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="as">"message": "What did we build yesterday?",</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="as">"use_memory": true,</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="as">"session_id": "alexa-session-1"</span></div>
+      <div>&nbsp;&nbsp;<span class="as">}'</span></div>
+      <br>
+      <div><span class="ac"># List models</span></div>
+      <div><span class="ak">curl</span> http://localhost:11434/api/tags</div>
+      <br>
+      <div><span class="ac"># Agent inbox</span></div>
+      <div><span class="ak">curl</span> https://blackroad-email.amundsonalexa.workers.dev/inbox/lucidia</div>
+    </div>
+  </section>
+
+  <footer>
+    <span>© 2026 BlackRoad OS, Inc.</span>
+    <span style="display:flex;gap:var(--sp-lg);">
+      <a href="https://blackroad.io" style="color:var(--muted)">blackroad.io</a>
+      <a href="https://lucidia.earth" style="color:var(--muted)">lucidia.earth</a>
+      <a href="mailto:alexa@blackroad.io" style="color:var(--muted)">alexa@blackroad.io</a>
+    </span>
+  </footer>
+
+</body>
+</html>
