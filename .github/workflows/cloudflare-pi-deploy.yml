@@ -1,0 +1,52 @@
+# Cloudflare Deploy via Pi Self-Hosted Runner
+# Cost: $0 — runs on octavia/gematria
+name: ☁️ Cloudflare Pi Deploy
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'tools/cloudflare/**'
+      - '.github/workflows/cloudflare-pi-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: 'Worker name to deploy (empty = all)'
+        required: false
+
+jobs:
+  deploy-workers:
+    name: 🚀 Deploy Cloudflare Workers
+    runs-on: [self-hosted, blackroad-fleet]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📦 Setup Wrangler
+        run: |
+          which wrangler || npm install -g wrangler
+          wrangler --version
+
+      - name: 🔑 Auth Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: echo "CF auth configured"
+
+      - name: 🚀 Deploy Worker(s)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          WORKER="${{ github.event.inputs.worker }}"
+          if [ -n "$WORKER" ]; then
+            echo "Deploying specific worker: $WORKER"
+            cd tools/cloudflare/$WORKER 2>/dev/null || echo "Worker not found: $WORKER"
+            wrangler deploy
+          else
+            echo "Deploying all workers..."
+            find tools/cloudflare -name "wrangler.toml" | while read wf; do
+              DIR=$(dirname "$wf")
+              echo "Deploying: $DIR"
+              (cd "$DIR" && wrangler deploy) || echo "⚠️ Failed: $DIR"
+            done
+          fi

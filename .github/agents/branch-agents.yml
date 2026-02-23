@@ -1,0 +1,117 @@
+# Branch → Agent Identity Map
+# Each branch is assigned an agent identity with capabilities and persona
+
+version: "1.0"
+updated: "2026-02-23"
+
+assignments:
+  main:
+    agent: OCTAVIA
+    role: "Architect"
+    color: "\033[0;35m"
+    emoji: "🔴"
+    description: "Production-grade, stable, reviewed by architect"
+    capabilities: [deploy, monitor, review, approve]
+    auto_deploy: true
+    environments: [production]
+
+  master:
+    agent: OCTAVIA
+    role: "Architect"
+    emoji: "🔴"
+    description: "Legacy main branch — same as main"
+    capabilities: [deploy, monitor, review]
+    auto_deploy: true
+    environments: [production]
+
+  develop:
+    agent: ALICE
+    role: "Operator"
+    emoji: "🔵"
+    description: "Integration branch — Alice handles routing and ops"
+    capabilities: [deploy, test, integrate]
+    auto_deploy: true
+    environments: [staging]
+
+  "feature/*":
+    agent: ARIA
+    role: "Interface"
+    emoji: "🎨"
+    description: "Feature work — Aria handles UI/UX and frontend"
+    capabilities: [test, lint, preview]
+    auto_deploy: false
+    environments: [preview]
+
+  "hotfix/*":
+    agent: CIPHER
+    role: "Security"
+    emoji: "⚫"
+    description: "Security patches — Cipher validates all changes"
+    capabilities: [scan, patch, deploy, audit]
+    auto_deploy: true
+    environments: [production, staging]
+    requires_scan: true
+
+  "release/*":
+    agent: LUCIDIA
+    role: "Dreamer"
+    emoji: "🔴"
+    description: "Release preparation — Lucidia orchestrates"
+    capabilities: [deploy, tag, changelog, notify]
+    auto_deploy: false
+    environments: [staging, production]
+
+  "experiment/*":
+    agent: PRISM
+    role: "Analyst"
+    emoji: "🟡"
+    description: "Experimental branches — Prism analyzes patterns"
+    capabilities: [test, benchmark, analyze]
+    auto_deploy: false
+    environments: [experiment]
+
+  "fix/*":
+    agent: ALICE
+    role: "Operator"
+    emoji: "🔵"
+    description: "Bug fixes — Alice executes repairs"
+    capabilities: [test, deploy]
+    auto_deploy: false
+    environments: [staging]
+
+  "docs/*":
+    agent: ECHO
+    role: "Librarian"
+    emoji: "🟣"
+    description: "Documentation — Echo maintains knowledge"
+    capabilities: [lint, deploy]
+    auto_deploy: true
+    environments: [docs]
+
+  "infra/*":
+    agent: OCTAVIA
+    role: "Architect"
+    emoji: "🔴"
+    description: "Infrastructure changes — Octavia governs"
+    capabilities: [plan, apply, deploy, monitor]
+    auto_deploy: false
+    environments: [production]
+    requires_approval: true
+
+  "pi/*":
+    agent: ARIA
+    role: "Hardware Interface"
+    emoji: "🍓"
+    description: "Raspberry Pi specific work"
+    capabilities: [deploy, ssh, monitor]
+    auto_deploy: true
+    environments: [pi-cluster]
+
+  "cece/*":
+    agent: CECE
+    role: "Identity Core"
+    emoji: "💜"
+    description: "CECE identity and consciousness work"
+    capabilities: [learn, grow, reflect]
+    auto_deploy: false
+    environments: [local]

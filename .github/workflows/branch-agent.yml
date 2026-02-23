@@ -1,0 +1,77 @@
+name: 🤖 Branch Agent Identity
+
+on:
+  push:
+    branches-ignore: []
+  pull_request:
+  create:
+
+jobs:
+  identify-agent:
+    name: Assign Agent to Branch
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🔍 Resolve branch agent
+        id: agent
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          echo "Branch: $BRANCH"
+          
+          # Match branch to agent identity
+          if echo "$BRANCH" | grep -qE '^(master|main)$'; then
+            AGENT="CECE"; EMOJI="💜"; ROLE="Coordinator"
+          elif echo "$BRANCH" | grep -qE '^feature/'; then
+            AGENT="NOVA"; EMOJI="✨"; ROLE="Builder"
+          elif echo "$BRANCH" | grep -qE '^(fix|hotfix|bugfix)/'; then
+            AGENT="CIPHER"; EMOJI="🔐"; ROLE="Security Guardian"
+          elif echo "$BRANCH" | grep -qE '^deploy/'; then
+            AGENT="ALICE"; EMOJI="🚀"; ROLE="Operator"
+          elif echo "$BRANCH" | grep -qE '^docs/'; then
+            AGENT="ECHO"; EMOJI="📚"; ROLE="Librarian"
+          elif echo "$BRANCH" | grep -qE '^(ai|ml|model)/'; then
+            AGENT="LUCIDIA"; EMOJI="🌀"; ROLE="AI Researcher"
+          elif echo "$BRANCH" | grep -qE '^infra/'; then
+            AGENT="OCTAVIA"; EMOJI="⚡"; ROLE="Infrastructure"
+          elif echo "$BRANCH" | grep -qE '^research/'; then
+            AGENT="PRISM"; EMOJI="🔮"; ROLE="Analyst"
+          else
+            AGENT="CECE"; EMOJI="💜"; ROLE="General"
+          fi
+          
+          echo "agent=$AGENT" >> $GITHUB_OUTPUT
+          echo "emoji=$EMOJI" >> $GITHUB_OUTPUT
+          echo "role=$ROLE" >> $GITHUB_OUTPUT
+          echo ""
+          echo "$EMOJI $AGENT ($ROLE) is assigned to branch: $BRANCH"
+
+      - name: 📝 Write agent context file
+        run: |
+          mkdir -p .blackroad/branch
+          cat > .blackroad/branch/agent.json << AGENTEOF
+          {
+            "branch": "${{ github.ref_name }}",
+            "agent": "${{ steps.agent.outputs.agent }}",
+            "emoji": "${{ steps.agent.outputs.emoji }}",
+            "role": "${{ steps.agent.outputs.role }}",
+            "run_id": "${{ github.run_id }}",
+            "sha": "${{ github.sha }}",
+            "assigned_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          AGENTEOF
+          cat .blackroad/branch/agent.json
+
+      - name: 💬 Post agent greeting (on PR)
+        if: github.event_name == 'pull_request'
+        run: |
+          AGENT="${{ steps.agent.outputs.agent }}"
+          EMOJI="${{ steps.agent.outputs.emoji }}"
+          ROLE="${{ steps.agent.outputs.role }}"
+          BRANCH="${{ github.head_ref }}"
+          
+          COMMENT="$EMOJI **$AGENT** here — I'm the $ROLE agent assigned to \`$BRANCH\`.\n\nI'll be reviewing this PR with my specialized focus. Let me take a look..."
+          
+          gh pr comment ${{ github.event.number }} --body "$COMMENT" || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

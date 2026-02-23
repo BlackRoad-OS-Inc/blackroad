@@ -1,0 +1,61 @@
+# ============================================================
+# BlackRoad Workflow Watchdog
+# Re-triggers continuous-agent.yml after a 3-second gap
+# Ensures 24/7 operation with $0 cost on self-hosted runners
+# ============================================================
+name: "🐕 Workflow Watchdog"
+
+on:
+  workflow_run:
+    workflows:
+      - "♾️ Continuous Agent Workflow (24h+3s)"
+      - "⚡ Continuous Engine"
+      - "♾️ Continuous 24h Orchestrator"
+    types: [completed]
+  # Failsafe: restart even if workflow_run event missed
+  schedule:
+    - cron: '3 0 * * *'   # 00:03 UTC daily — 3-second-offset restart
+
+concurrency:
+  group: watchdog
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  watchdog:
+    name: "🐕 Watchdog — Restart Continuous Agent"
+    runs-on: ubuntu-latest   # Small job — OK on hosted runner (< 1 min)
+    timeout-minutes: 5
+    steps:
+      - name: "Wait 3 seconds (gap between runs)"
+        run: sleep 3
+
+      - name: "Re-trigger continuous-agent workflow"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Watchdog triggered at $(date -u)"
+          echo "Triggering event: ${{ github.event.workflow_run.name || 'scheduled' }}"
+          echo "Status: ${{ github.event.workflow_run.conclusion || 'n/a' }}"
+
+          # Re-dispatch the continuous agent
+          gh workflow run "continuous-agent.yml" \
+            --repo "${{ github.repository }}" \
+            --field chain=true \
+            --field mode=sync \
+            2>/dev/null && echo "✅ Continuous agent re-triggered" \
+            || echo "⚠️ Could not re-trigger — workflow may already be running"
+
+      - name: "Summary"
+        run: |
+          echo "## 🐕 Watchdog Report" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Previous run**: ${{ github.event.workflow_run.name || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ github.event.workflow_run.conclusion || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Action**: Dispatched new continuous-agent run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> 💡 Billable time: \$0 (continuous work runs on self-hosted Pi runners)" >> $GITHUB_STEP_SUMMARY

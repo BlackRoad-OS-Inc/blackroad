@@ -1,0 +1,95 @@
+# CROSS-ORG COHESION ENGINE
+# Keeps all 17 BlackRoad orgs in sync, sharing secrets via CF KV,
+# coordinating deployments, unified status dashboard
+
+name: "🏢 Orgs Cohesion Engine"
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # Every 6 hours
+  push:
+    branches: [main]
+    paths: ['.github/workflows/orgs-cohesion.yml', 'coordination/**']
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action'
+        required: false
+        default: 'sync'
+        type: choice
+        options: [sync, audit, push-settings, status]
+
+jobs:
+  org-status:
+    name: "📊 Org Status Check"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check all orgs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ORGS=(
+            "BlackRoad-OS-Inc"
+            "BlackRoad-OS"
+            "blackboxprogramming"
+            "BlackRoad-AI"
+            "BlackRoad-Cloud"
+            "BlackRoad-Security"
+            "BlackRoad-Media"
+            "BlackRoad-Foundation"
+            "BlackRoad-Interactive"
+            "BlackRoad-Hardware"
+            "BlackRoad-Labs"
+            "BlackRoad-Studio"
+            "BlackRoad-Ventures"
+            "BlackRoad-Education"
+            "BlackRoad-Gov"
+            "Blackbox-Enterprises"
+            "BlackRoad-Archive"
+          )
+          
+          echo "## 🏢 Org Status Report" >> $GITHUB_STEP_SUMMARY
+          echo "| Org | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          for org in "${ORGS[@]}"; do
+            STATUS=$(gh api "orgs/$org" --jq '.login' 2>/dev/null && echo "✅ active" || echo "❌ error")
+            echo "| $org | $STATUS |" >> $GITHUB_STEP_SUMMARY
+          done
+
+  sync-workflows:
+    name: "🔄 Sync Core Workflows"
+    runs-on: ubuntu-latest
+    if: inputs.action == 'sync' || github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Distribute core workflows to key repos
+        env:
+          GH_TOKEN: ${{ secrets.PAT_CROSS_ORG || secrets.GITHUB_TOKEN }}
+        run: |
+          # Core workflows to sync across all repos
+          CORE_WORKFLOWS=(
+            ".github/workflows/continuous-engine.yml"
+            ".github/workflows/branch-agent-identity.yml"
+          )
+          
+          # Target repos (one per org for now, expand as needed)
+          TARGET_REPOS=(
+            "BlackRoad-OS/blackroad"
+            "BlackRoad-AI/blackroad-ai-api-gateway"
+          )
+          
+          for repo in "${TARGET_REPOS[@]}"; do
+            echo "Syncing workflows to $repo..."
+            for wf in "${CORE_WORKFLOWS[@]}"; do
+              if [ -f "$wf" ]; then
+                gh api -X PUT "repos/$repo/contents/$wf" \
+                  --field message="chore: sync core workflow from blackroad monorepo" \
+                  --field content="$(base64 < $wf)" \
+                  2>/dev/null && echo "  ✅ $wf → $repo" || echo "  ⚠️ $wf → $repo (skipped)"
+              fi
+            done
+          done

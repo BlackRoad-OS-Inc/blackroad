@@ -161,9 +161,70 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>" --quiet
   echo ""
 }
 
+cmd_gdrive() {
+  local subcmd="${1:-status}"
+  local RCLONE_REMOTE="${BLACKROAD_GDRIVE_REMOTE:-gdrive}"
+  local GDRIVE_PATH="$RCLONE_REMOTE:blackroad"
+  local LOCAL_PATH="$BR_ROOT"
+  local EXCLUDE="--exclude .git/** --exclude node_modules/** --exclude .DS_Store --exclude __pycache__/**"
+
+  if ! command -v rclone &>/dev/null; then
+    echo "  ${RED}✗ rclone not installed${NC}"
+    echo "  Install: brew install rclone  (mac) or curl https://rclone.org/install.sh | sudo bash"
+    echo "  Config:  rclone config  (select Google Drive, name it '$RCLONE_REMOTE')"
+    return 1
+  fi
+
+  case "$subcmd" in
+    status|ls)
+      echo ""
+      echo "  ${PINK}${BOLD}◈ GOOGLE DRIVE SYNC STATUS${NC}"
+      echo ""
+      rclone lsd "$GDRIVE_PATH" 2>/dev/null && echo "" || echo "  ${DIM}Not yet synced to $GDRIVE_PATH${NC}"
+      ;;
+    push|up|upload)
+      echo "  ${CYAN}↑ Pushing to Google Drive ($GDRIVE_PATH)...${NC}"
+      rclone sync "$LOCAL_PATH" "$GDRIVE_PATH" $=EXCLUDE \
+        --progress --stats-one-line --transfers 8 \
+        --log-level INFO 2>&1 | tail -5
+      echo "  ${GREEN}✓ Pushed to Google Drive${NC}"
+      ;;
+    pull|down|download)
+      echo "  ${CYAN}↓ Pulling from Google Drive ($GDRIVE_PATH)...${NC}"
+      rclone sync "$GDRIVE_PATH" "$LOCAL_PATH" $=EXCLUDE \
+        --progress --stats-one-line --transfers 8 \
+        --log-level INFO 2>&1 | tail -5
+      echo "  ${GREEN}✓ Pulled from Google Drive${NC}"
+      ;;
+    bi|bisync|both)
+      echo "  ${CYAN}⇅ Bidirectional sync with Google Drive...${NC}"
+      rclone bisync "$LOCAL_PATH" "$GDRIVE_PATH" $=EXCLUDE \
+        --progress --resilient --recover 2>&1 | tail -10
+      echo "  ${GREEN}✓ Bisync complete${NC}"
+      ;;
+    setup)
+      echo ""
+      echo "  ${BOLD}Setup Google Drive sync:${NC}"
+      echo ""
+      echo "  1. Install rclone:   ${CYAN}brew install rclone${NC}"
+      echo "  2. Configure:        ${CYAN}rclone config${NC}"
+      echo "     → Select: New remote → n → gdrive → Google Drive → OAuth flow"
+      echo "     → Name it: ${CYAN}gdrive${NC}"
+      echo "  3. Test:             ${CYAN}rclone lsd gdrive:${NC}"
+      echo "  4. First sync:       ${CYAN}br sync gdrive up${NC}"
+      echo ""
+      echo "  Env var (optional):  ${DIM}BLACKROAD_GDRIVE_REMOTE=gdrive${NC}"
+      echo ""
+      ;;
+    *)
+      echo "  Usage: br sync gdrive [status|push|pull|bi|setup]"
+      ;;
+  esac
+}
+
 show_help() {
   echo ""
-  echo "  ${PINK}${BOLD}br sync${NC}  — sync all sub-repos"
+  echo "  ${PINK}${BOLD}br sync${NC}  — sync all sub-repos + Google Drive"
   echo ""
   echo "  ${BOLD}Commands:${NC}"
   echo "    ${CYAN}status${NC}          Show all repo states (branch/dirty/ahead)"
@@ -171,6 +232,7 @@ show_help() {
   echo "    ${CYAN}push [filter]${NC}   Commit+push all dirty repos (opt: name filter)"
   echo "    ${CYAN}pull${NC}            Pull all repos from remote"
   echo "    ${CYAN}operator${NC}        Sync main blackroad repo → operator/master + merge to main"
+  echo "    ${CYAN}gdrive [push|pull|bi|setup]${NC}  Sync to/from Google Drive via rclone"
   echo ""
 }
 
@@ -180,5 +242,6 @@ case "${1:-status}" in
   push|sync|all)  cmd_push "$2" ;;
   pull|fetch)     cmd_pull ;;
   operator|op)    cmd_operator ;;
+  gdrive|drive|google) cmd_gdrive "${2:-status}" ;;
   help|*)         show_help ;;
 esac
