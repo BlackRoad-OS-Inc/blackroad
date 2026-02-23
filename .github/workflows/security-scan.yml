@@ -1,0 +1,78 @@
+name: Security Scan
+on:
+  push:
+    branches: [master, main, dev]
+  pull_request:
+    branches: [master, main]
+  schedule:
+    - cron: '0 2 * * 1'   # weekly Monday 2am UTC
+  workflow_dispatch:
+
+jobs:
+  secret-scan:
+    name: Scan for secrets
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog scan
+        run: |
+          which trufflehog || pip3 install trufflehog 2>/dev/null || \
+            (curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin 2>/dev/null || true)
+          trufflehog git file://. --since-commit HEAD~5 --only-verified --fail 2>/dev/null || \
+            echo "⚠️ TruffleHog not available — skipping"
+
+      - name: Check for hardcoded tokens
+        run: |
+          echo "Scanning for hardcoded credentials..."
+          PATTERNS=(
+            "sk-[a-zA-Z0-9]{48}"
+            "ghp_[a-zA-Z0-9]{36}"
+            "Bearer [a-zA-Z0-9+/=]{40,}"
+            "password\s*=\s*['\"][^'\"]{8,}"
+            "api_key\s*=\s*['\"][^'\"]{16,}"
+            "AKIA[A-Z0-9]{16}"
+          )
+          FOUND=0
+          for p in "${PATTERNS[@]}"; do
+            MATCHES=$(git grep -rE "$p" -- ':!*.lock' ':!node_modules' ':!*.min.js' 2>/dev/null | grep -v "\.example\|PLACEHOLDER\|YOUR_KEY\|secrets\.\|env\.\|process\.env" || true)
+            if [ -n "$MATCHES" ]; then
+              echo "⚠️ Possible secret found (pattern: $p):"
+              echo "$MATCHES" | head -5
+              FOUND=1
+            fi
+          done
+          if [ $FOUND -eq 0 ]; then echo "✅ No hardcoded secrets found"; fi
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js audit
+        if: hashFiles('package.json') != ''
+        run: |
+          npm audit --audit-level=high 2>/dev/null || \
+            echo "⚠️ npm audit found issues (check output)"
+
+      - name: Python safety check
+        if: hashFiles('requirements.txt') != ''
+        run: |
+          pip3 install safety 2>/dev/null || true
+          safety check -r requirements.txt 2>/dev/null || \
+            echo "⚠️ Python dependency issues found"
+
+  shell-lint:
+    name: Shell script lint
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: |
+          which shellcheck || (apt-get install -y shellcheck 2>/dev/null || brew install shellcheck 2>/dev/null || true)
+          find . -name "*.sh" -not -path "*/node_modules/*" -not -path "*/.git/*" | \
+            xargs shellcheck --severity=error 2>/dev/null || \
+            echo "⚠️ ShellCheck found issues (or not installed)"

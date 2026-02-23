@@ -1,0 +1,90 @@
+name: Version Bump
+on:
+  push:
+    branches: [master, main]
+    paths-ignore:
+      - 'package.json'
+      - 'CHANGELOG.md'
+      - '**.md'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        default: patch
+        type: choice
+        options: [patch, minor, major]
+
+jobs:
+  bump:
+    runs-on: [self-hosted, pi]
+    if: "!contains(github.event.head_commit.message, '[skip-bump]') && !contains(github.event.head_commit.message, 'chore: bump version')"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "blackroad-bot"
+          git config user.email "blackroad.systems@gmail.com"
+
+      - name: Determine bump type from commit
+        id: bump_type
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+          if [ -n "${{ github.event.inputs.bump }}" ]; then
+            echo "type=${{ github.event.inputs.bump }}" >> $GITHUB_OUTPUT
+          elif echo "$MSG" | grep -qi "BREAKING\|major"; then
+            echo "type=major" >> $GITHUB_OUTPUT
+          elif echo "$MSG" | grep -qi "^feat\|feature"; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          else
+            echo "type=patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump version
+        run: |
+          BUMP="${{ steps.bump_type.outputs.type }}"
+
+          if [ ! -f package.json ]; then
+            echo '{"version":"0.0.0"}' > package.json
+          fi
+
+          CURRENT=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          case "$BUMP" in
+            major) NEW="$((MAJOR+1)).0.0" ;;
+            minor) NEW="$MAJOR.$((MINOR+1)).0" ;;
+            patch) NEW="$MAJOR.$MINOR.$((PATCH+1))" ;;
+          esac
+
+          # Update package.json
+          node -e "
+            const pkg = require('./package.json');
+            pkg.version = '$NEW';
+            require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+          # Update CHANGELOG
+          DATE=$(date +%Y-%m-%d)
+          if [ -f CHANGELOG.md ]; then
+            ENTRY="## [$NEW] - $DATE\n- ${{ github.event.head_commit.message }}\n"
+            sed -i.bak "s/# Changelog/# Changelog\n\n$ENTRY/" CHANGELOG.md
+            rm -f CHANGELOG.md.bak
+          fi
+
+          git add package.json CHANGELOG.md 2>/dev/null || git add package.json
+          git commit -m "chore: bump version $CURRENT → $NEW [skip ci]" || echo "Nothing to commit"
+          git push origin ${{ github.ref_name }} || echo "Push failed (may need write permission)"
+
+          echo "🚀 Version bumped: $CURRENT → $NEW ($BUMP)"
+
+      - name: Create git tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+          git tag "v$VERSION" 2>/dev/null && \
+            git push origin "v$VERSION" 2>/dev/null && \
+            echo "🏷️ Tagged v$VERSION" || \
+            echo "Tag already exists or push failed"

@@ -1,0 +1,95 @@
+name: Agent Broadcast
+on:
+  push:
+    branches: [master, main]
+  release:
+    types: [published]
+  issues:
+    types: [opened]
+  workflow_run:
+    workflows: ["Wrangler Deploy", "Railway Pi Deploy"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      message:
+        description: Message to broadcast to all agents
+        required: true
+      priority:
+        description: Priority level
+        default: normal
+        type: choice
+        options: [normal, high, critical]
+
+jobs:
+  broadcast:
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine broadcast message
+        id: msg
+        run: |
+          EVENT="${{ github.event_name }}"
+          case "$EVENT" in
+            push)
+              MSG="📦 New push to ${{ github.ref_name }} by ${{ github.actor }}: ${{ github.event.head_commit.message }}"
+              PRIORITY="normal"
+              ;;
+            release)
+              MSG="🚀 New release published: ${{ github.event.release.tag_name }} — ${{ github.event.release.name }}"
+              PRIORITY="high"
+              ;;
+            issues)
+              MSG="📋 New issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}"
+              PRIORITY="normal"
+              ;;
+            workflow_run)
+              STATUS="${{ github.event.workflow_run.conclusion }}"
+              MSG="🔄 Workflow '${{ github.event.workflow_run.name }}' completed: $STATUS"
+              PRIORITY=$([ "$STATUS" = "failure" ] && echo "high" || echo "normal")
+              ;;
+            workflow_dispatch)
+              MSG="${{ github.event.inputs.message }}"
+              PRIORITY="${{ github.event.inputs.priority }}"
+              ;;
+          esac
+          echo "message=$MSG" >> $GITHUB_OUTPUT
+          echo "priority=$PRIORITY" >> $GITHUB_OUTPUT
+
+      - name: Write to agent shared inbox
+        run: |
+          MSG='${{ steps.msg.outputs.message }}'
+          PRIORITY='${{ steps.msg.outputs.priority }}'
+          TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
+
+          # Write to local shared inbox
+          mkdir -p shared/inbox
+          cat > "shared/inbox/broadcast-$TIMESTAMP.json" <<EOF
+          {
+            "from": "BLACKROAD_COORDINATOR",
+            "to": "ALL_AGENTS",
+            "priority": "$PRIORITY",
+            "event": "${{ github.event_name }}",
+            "message": "$MSG",
+            "timestamp": "$TIMESTAMP",
+            "repo": "${{ github.repository }}",
+            "actor": "${{ github.actor }}"
+          }
+          EOF
+          echo "📡 Broadcast: $MSG"
+
+      - name: Notify via webhook
+        if: steps.msg.outputs.priority == 'high' || steps.msg.outputs.priority == 'critical'
+        run: |
+          WEBHOOK="${{ secrets.DISCORD_WEBHOOK_URL }}"
+          if [ -n "$WEBHOOK" ]; then
+            curl -s -X POST "$WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d "{\"content\": \"${{ steps.msg.outputs.message }}\"}" || true
+          fi
+          SLACK="${{ secrets.SLACK_WEBHOOK_URL }}"
+          if [ -n "$SLACK" ]; then
+            curl -s -X POST "$SLACK" \
+              -H "Content-Type: application/json" \
+              -d "{\"text\": \"${{ steps.msg.outputs.message }}\"}" || true
+          fi

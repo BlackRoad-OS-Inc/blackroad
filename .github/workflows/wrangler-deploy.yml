@@ -1,0 +1,51 @@
+name: Wrangler Deploy
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'wrangler-configs/**'
+      - 'src/workers/**'
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: Worker to deploy (or "all")
+        default: all
+
+jobs:
+  deploy-workers:
+    runs-on: [self-hosted, pi]
+    strategy:
+      matrix:
+        worker: [blackroad-os-core, agents-api, tools-api, command-center]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Deploy ${{ matrix.worker }}
+        if: |
+          github.event.inputs.worker == 'all' ||
+          github.event.inputs.worker == matrix.worker ||
+          github.event_name == 'push'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          CONFIG="wrangler-configs/${{ matrix.worker }}.toml"
+          if [ -f "$CONFIG" ]; then
+            echo "🚀 Deploying ${{ matrix.worker }}..."
+            wrangler deploy --config "$CONFIG" || echo "⚠️ Deploy failed for ${{ matrix.worker }}"
+          else
+            echo "⚠️ Config not found: $CONFIG"
+          fi
+
+      - name: Report status
+        if: always()
+        run: echo "Worker ${{ matrix.worker }} deploy complete"

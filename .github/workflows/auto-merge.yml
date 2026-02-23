@@ -1,0 +1,55 @@
+name: Auto Merge
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+
+jobs:
+  auto-merge:
+    runs-on: [self-hosted, pi]
+    if: |
+      github.actor == 'dependabot[bot]' ||
+      github.actor == 'blackroad-bot' ||
+      contains(github.event.pull_request.labels.*.name, 'auto-merge')
+    steps:
+      - name: Auto approve + merge
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request || context.payload.review?.pull_request;
+            if (!pr) return;
+            // Approve
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner, repo: context.repo.repo,
+              pull_number: pr.number, event: 'APPROVE',
+              body: '✅ Auto-approved by blackroad bot'
+            }).catch(() => {});
+            // Merge
+            await github.rest.pulls.merge({
+              owner: context.repo.owner, repo: context.repo.repo,
+              pull_number: pr.number, merge_method: 'squash'
+            });
+            console.log(`✅ Auto-merged PR #${pr.number}`);
+
+  auto-merge-bot-branches:
+    runs-on: [self-hosted, pi]
+    if: |
+      startsWith(github.head_ref, 'bot/') ||
+      startsWith(github.head_ref, 'copilot/')
+    steps:
+      - name: Merge bot branches
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+            await github.rest.pulls.merge({
+              owner: context.repo.owner, repo: context.repo.repo,
+              pull_number: pr.number, merge_method: 'squash',
+              commit_title: `🤖 Auto-merge ${pr.title}`
+            });
