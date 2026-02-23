@@ -195,11 +195,12 @@ scan_host() {
   # USB
   echo "$info" | grep "^DEVICES_USB=" | cut -d= -f2- | tr '|' '\n' | while IFS= read -r devline; do
     [[ -z "$devline" ]] && continue
-    local vid model
+    local vid model clean_model clean_dev
     vid=$(echo "$devline" | grep -oP 'ID \K[0-9a-f]{4}:[0-9a-f]{4}' | head -1)
     model=$(echo "$devline" | sed 's/.*: //')
-    db "INSERT INTO devices (node_ip, type, path, vendor, model, detail)
-        VALUES ('$ip','usb','','','$(echo $model | tr "'" " ")','$(echo $devline | tr "'" " "')"
+    clean_model="${model//\'/}"
+    clean_dev="${devline//\'/}"
+    db "INSERT INTO devices (node_ip, type, path, vendor, model, detail) VALUES ('$ip','usb','','','$clean_model','$clean_dev')"
   done 2>/dev/null
   # Serial
   echo "$info" | grep "^DEVICES_SERIAL=" | cut -d= -f2- | tr '|' '\n' | while IFS= read -r devline; do
