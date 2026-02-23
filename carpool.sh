@@ -7356,6 +7356,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "ai-feature" ]]; then
+  IDEA="${2:-our product}"
+  AIF_DIR="$HOME/.blackroad/carpool/ai-features"
+  mkdir -p "$AIF_DIR"
+  AIF_FILE="$AIF_DIR/ai-feature-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🧠 CarPool — AI feature design: $IDEA\033[0m"
+  echo "# AI Feature: $IDEA" > "$AIF_FILE"
+  echo "Generated: $(date)" >> "$AIF_FILE"
+  PY_AIF='
+import sys, json, urllib.request
+idea = sys.argv[1]
+agents = [
+  ("LUCIDIA","AI Designer","What is the right AI interaction model for $IDEA: copilot, autopilot, or suggester? Design the human-AI collaboration loop and when AI acts vs waits."),
+  ("OCTAVIA","ML Engineer","What model architecture fits $IDEA: fine-tuned LLM, RAG, classifier, embeddings, or rules+ML hybrid? What training data do we need?"),
+  ("ALICE","PM","What is the smallest AI slice of $IDEA we can ship in sprint 1 that proves value? Define the MVP, success metric, and user feedback loop."),
+  ("CIPHER","Safety","What are the AI safety and trust risks in $IDEA: hallucination, bias, data leakage, adversarial input? What guardrails and human overrides are mandatory?"),
+  ("PRISM","Analyst","How do we evaluate if the $IDEA AI feature is actually helping users? What offline evals, A/B tests, and user satisfaction signals prove it is working?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'IDEA', idea)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_AIF" "$IDEA" | tee -a "$AIF_FILE"
+  echo -e "\033[0;32m✓ Saved to $AIF_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "support" ]]; then
+  PRODUCT="${2:-our product}"
+  SUP_DIR="$HOME/.blackroad/carpool/support"
+  mkdir -p "$SUP_DIR"
+  SUP_FILE="$SUP_DIR/support-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🎧 CarPool — Support strategy: $PRODUCT\033[0m"
+  echo "# Support Strategy: $PRODUCT" > "$SUP_FILE"
+  echo "Generated: $(date)" >> "$SUP_FILE"
+  PY_SUP='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("ARIA","CX lead","Design the support tiers for $PRODUCT: what is self-serve (docs, chatbot), community, email, and priority support? Who gets each tier?"),
+  ("ALICE","PM","What are the top 10 support tickets $PRODUCT will receive? For each: root cause, whether it is a docs fix, product fix, or training issue."),
+  ("PRISM","Analyst","What support metrics matter for $PRODUCT: CSAT, FRT, resolution time, ticket volume per MAU, deflection rate? What benchmarks should we hit?"),
+  ("LUCIDIA","Strategist","How do we use $PRODUCT support data as a product intelligence goldmine? What patterns in tickets should feed directly into the roadmap?"),
+  ("OCTAVIA","Engineer","What support tooling stack fits $PRODUCT: help desk, chatbot, status page, in-app guidance, and feedback widget? How do they connect?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_SUP" "$PRODUCT" | tee -a "$SUP_FILE"
+  echo -e "\033[0;32m✓ Saved to $SUP_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "gamification" ]]; then
+  PRODUCT="${2:-our app}"
+  GAM_DIR="$HOME/.blackroad/carpool/gamification"
+  mkdir -p "$GAM_DIR"
+  GAM_FILE="$GAM_DIR/gamification-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🎮 CarPool — Gamification design: $PRODUCT\033[0m"
+  echo "# Gamification: $PRODUCT" > "$GAM_FILE"
+  echo "Generated: $(date)" >> "$GAM_FILE"
+  PY_GAM='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("ARIA","Game designer","Design the core gamification loop for $PRODUCT: what actions earn points/XP, what milestones unlock rewards, and what keeps the loop fresh after week 4?"),
+  ("LUCIDIA","Psychologist","What intrinsic motivation levers does $PRODUCT gamification tap: mastery, progress, social status, collection? How do we avoid making it feel manipulative?"),
+  ("PRISM","Analyst","How do we measure if $PRODUCT gamification is driving the right behavior vs just gaming the metrics? What guardrails prevent Goodhart corruption?"),
+  ("ALICE","PM","What is the gamification MVP for $PRODUCT: the single mechanic we ship first that proves engagement lifts before we build the full system?"),
+  ("SHELLFISH","Risk","What are the ways users will game the $PRODUCT gamification system: farming points, exploiting streaks, botting leaderboards? How do we design against each?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_GAM" "$PRODUCT" | tee -a "$GAM_FILE"
+  echo -e "\033[0;32m✓ Saved to $GAM_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "offboarding" ]]; then
+  PRODUCT="${2:-our product}"
+  OFF_DIR="$HOME/.blackroad/carpool/offboarding"
+  mkdir -p "$OFF_DIR"
+  OFF_FILE="$OFF_DIR/offboard-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m👋 CarPool — Offboarding flow: $PRODUCT\033[0m"
+  echo "# Offboarding: $PRODUCT" > "$OFF_FILE"
+  echo "Generated: $(date)" >> "$OFF_FILE"
+  PY_OFF='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("ARIA","CX","Design the cancellation flow for $PRODUCT: what friction is ethical vs dark pattern? What last offer, what survey questions, and what confirmation UX?"),
+  ("LUCIDIA","Strategist","How do we treat churned $PRODUCT users as future customers, not failures? What win-back sequence, exit survey use, and alumni community keeps the door open?"),
+  ("ALICE","PM","What is the data export and account deletion flow for $PRODUCT? Map every step a user takes to get their data out or close their account completely."),
+  ("PRISM","Analyst","What churn signals in $PRODUCT usage predict cancellation 30 days out? What intervention at each signal has the best save rate?"),
+  ("CIPHER","Legal","What are the data retention and deletion legal obligations for $PRODUCT when a user offboards? GDPR right to erasure, CCPA, and contractual obligations?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_OFF" "$PRODUCT" | tee -a "$OFF_FILE"
+  echo -e "\033[0;32m✓ Saved to $OFF_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
