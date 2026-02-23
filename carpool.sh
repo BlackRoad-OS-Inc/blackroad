@@ -7776,6 +7776,146 @@ print(json.loads(r.read())['response'].strip())
   exit 0
 fi
 
+if [[ "$1" == "pricing-strategy" ]]; then
+  PRODUCT="${2:-our product}"
+  AGENTS=("Pricing" "Sales" "Product" "Finance" "Competitor")
+  QUESTIONS=(
+    "What pricing model (usage, seat, flat, freemium) fits $PRODUCT best and why?"
+    "How should $PRODUCT price for enterprise vs self-serve customers?"
+    "What does the competitive pricing landscape look like for $PRODUCT?"
+    "How do we anchor pricing and communicate value for $PRODUCT?"
+    "When and how should $PRODUCT raise prices without losing customers?"
+  )
+  echo ""
+  echo "💲 CARPOOL: PRICING STRATEGY — $PRODUCT"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Pricing strategy roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "api-design" ]]; then
+  API="${2:-our API}"
+  AGENTS=("API Architect" "Backend" "DevEx" "Security" "Consumer")
+  QUESTIONS=(
+    "What are the core design principles $API should follow (REST, GraphQL, gRPC)?"
+    "How should $API handle versioning, deprecation, and backward compatibility?"
+    "What authentication and authorization patterns are right for $API?"
+    "Design the error response format and status code strategy for $API."
+    "What makes $API a joy to use — rate limiting, pagination, docs, SDKs?"
+  )
+  echo ""
+  echo "🔌 CARPOOL: API DESIGN — $API"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ API design roundtable complete."
+  exit 0
+fi
+
+if [[ "$1" == "content-marketing" ]]; then
+  BRAND="${2:-our brand}"
+  AGENTS=("Content" "SEO" "Social" "Brand" "Growth")
+  QUESTIONS=(
+    "What content formats (blog, video, docs, newsletters) work best for $BRAND?"
+    "How should $BRAND approach SEO content strategy for organic growth?"
+    "Design a social media content calendar for $BRAND — cadence, channels, tone."
+    "What thought leadership topics should $BRAND own in its space?"
+    "How do we measure whether content is driving pipeline for $BRAND?"
+  )
+  echo ""
+  echo "📝 CARPOOL: CONTENT MARKETING — $BRAND"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Content marketing strategy complete."
+  exit 0
+fi
+
+if [[ "$1" == "incident-response" ]]; then
+  SYSTEM="${2:-our system}"
+  AGENTS=("SRE" "Engineering" "Comms" "Security" "Leadership")
+  QUESTIONS=(
+    "What does a P0/P1 incident response playbook look like for $SYSTEM?"
+    "How should the on-call rotation and escalation ladder work for $SYSTEM?"
+    "What does good internal communication look like during a $SYSTEM outage?"
+    "How do we write a blameless postmortem after a $SYSTEM incident?"
+    "What preventive measures reduce incident frequency for $SYSTEM?"
+  )
+  echo ""
+  echo "🚨 CARPOOL: INCIDENT RESPONSE — $SYSTEM"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  for i in "${!QUESTIONS[@]}"; do
+    agent="${AGENTS[$i]}"
+    question="${QUESTIONS[$i]}"
+    color="\033[0;3$(( (i % 6) + 1 ))m"
+    echo ""
+    echo -e "${color}[$agent]:\033[0m $question"
+    python3 -c "
+import urllib.request, json, sys
+q = 'You are the ' + sys.argv[2] + ' expert. Answer concisely (3-5 sentences): ' + sys.argv[1]
+req = urllib.request.Request('http://localhost:11434/api/generate',
+  data=json.dumps({'model':'tinyllama','prompt':q,'stream':False}).encode(),
+  headers={'Content-Type':'application/json'})
+r = urllib.request.urlopen(req, timeout=30)
+print(json.loads(r.read())['response'].strip())
+" "$question" "$agent" 2>/dev/null || echo "  [tinyllama unavailable]"
+  done
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Incident response playbook complete."
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
