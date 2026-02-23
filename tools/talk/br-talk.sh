@@ -103,16 +103,24 @@ print(json.dumps({
 }))
 " "$model" "$user_p" "$system_p" 2>/dev/null)
 
+  # stream_py: prints tokens live to stdout, adds indent after newlines
   local stream_py='
 import sys, json
+sys.stdout.write("  ")
 for line in sys.stdin:
     line = line.strip()
     if not line: continue
     try:
         d = json.loads(line)
         tok = d.get("response", "")
-        if tok: print(tok, end="", flush=True)
-        if d.get("done"): print(); break
+        if tok:
+            tok = tok.replace("\n", "\n  ")
+            sys.stdout.write(tok)
+            sys.stdout.flush()
+        if d.get("done"):
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+            break
     except: pass
 '
 
@@ -178,12 +186,12 @@ cmd_talk() {
 
     printf "\n  ${color}${BOLD}%-10s${NC} ${DIM}(${role})${NC}\n" "$turn_agent"
 
-    response=$(infer "$transport" "$model" "$sys_p" "$user_p" 2>/dev/null)
-
-    # Print response indented
-    echo "$response" | while IFS= read -r line; do
-      printf "  %s\n" "$line"
-    done
+    # Stream live to terminal AND capture for history
+    local tmpfile
+    tmpfile=$(mktemp /tmp/brtalk.XXXX)
+    infer "$transport" "$model" "$sys_p" "$user_p" 2>/dev/null | tee "$tmpfile"
+    response=$(cat "$tmpfile")
+    rm -f "$tmpfile"
 
     # Append to history
     history+="${turn_agent}: ${response}\n\n"
@@ -212,11 +220,8 @@ cmd_solo() {
   local role="${AGENT_ROLE[$agent]:-Agent}"
 
   echo ""
-  printf "  ${color}${BOLD}%-10s${NC} ${DIM}(${role}) — ${model}${NC}\n\n" "$agent"
-
-  infer "$transport" "$model" "$sys_p" "$prompt" | while IFS= read -r line; do
-    printf "  %s\n" "$line"
-  done
+  printf "  ${color}${BOLD}%-10s${NC} ${DIM}(${role}) — ${model}${NC}\n" "$agent"
+  infer "$transport" "$model" "$sys_p" "$prompt" 2>/dev/null
   echo ""
 }
 

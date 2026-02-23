@@ -1,6 +1,9 @@
 #!/bin/zsh
 # BR Nodes — Fleet discovery, inventory, and topology
 # Usage: br nodes [scan|status|show|devices|topology|web|fix]
+AMBER='\033[38;5;214m'; PINK='\033[38;5;205m'; VIOLET='\033[38;5;135m'; BBLUE='\033[38;5;69m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
+CYAN="$AMBER"; YELLOW="$PINK"; BLUE="$BBLUE"; MAGENTA="$VIOLET"; PURPLE="$VIOLET"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -304,26 +307,23 @@ cmd_status() {
   db "SELECT ip, COALESCE(alias,hostname,'?'), COALESCE(role,'?'),
              ssh_ok, ollama_ok, reachable, uptime, disk_pct, cpu_temp
       FROM nodes ORDER BY ip" | while IFS=$'\t' read -r ip name role sshok olok reach uptime disk temp; do
-    local color nc_c="$NC"
+    color="" node_status="" extras="" ollama_sym=""
     if [[ "$reach" == "1" && "$sshok" == "1" ]]; then
-      color="$GREEN"
-      status="● online"
+      color="$GREEN"; node_status="● online"
     elif [[ "$reach" == "1" ]]; then
-      color="$YELLOW"
-      status="◑ ping-only"
+      color="$YELLOW"; node_status="◑ ping-only"
     else
-      color="$RED"
-      status="○ offline"
+      color="$RED";   node_status="○ offline"
     fi
-    local extras=""
     [[ -n "$temp" ]] && extras+=" ${temp}"
     [[ -n "$disk" ]] && extras+=" disk:${disk}"
-    local ollama_str="${DIM}-${NC}"
-    [[ "$olok" == "1" ]] && ollama_str="${GREEN}●${NC}"
-    printf "  ${color}%-18s${NC} %-14s %-22s ${color}%-8s${NC} %-8b %s%s\n" \
+    # %b width counts raw bytes incl. ANSI escapes — print symbol then pad manually
+    if [[ "$olok" == "1" ]]; then ollama_sym="${GREEN}●${NC}"; else ollama_sym="${DIM}-${NC}"; fi
+    printf "  ${color}%-18s${NC} %-14s %-22s ${color}%-8s${NC} " \
       "$ip" "$name" "${role:0:22}" \
-      "$([ "$sshok" = "1" ] && echo "✓" || echo "✗")" \
-      "$ollama_str" "${color}${status}${NC}" "$extras"
+      "$([ "$sshok" = "1" ] && echo "✓" || echo "✗")"
+    printf "%b%-7s" "$ollama_sym" ""
+    printf "%b%s%b%s\n" "$color" "$node_status" "$NC" "$extras"
   done
   echo ""
   echo "  Run ${CYAN}br nodes show <name>${NC}  or  ${CYAN}br nodes devices${NC}"
@@ -465,14 +465,32 @@ cmd_fix() {
 # ─── SSH into a node by alias ─────────────────────────────────────────────────
 cmd_ssh() {
   local target="${1:-}"
-  [[ -z "$target" ]] && { echo "Usage: br nodes ssh <name>"; exit 1; }
+  if [[ -z "$target" ]]; then
+    echo ""
+    echo "${BOLD}Fleet Nodes${NC}  ${DIM}(br ssh <name>)${NC}"
+    echo ""
+    for ip in "${(@k)KNOWN_HOSTS}"; do
+      local name="${KNOWN_HOSTS[$ip]}"
+      printf "  ${CYAN}%-14s${NC} %s\n" "$name" "$ip"
+    done
+    echo ""
+    return
+  fi
   init_db
+
+  # Try SSH config alias first (handles user/key automatically)
+  if ssh -o ConnectTimeout=2 -o BatchMode=yes -o StrictHostKeyChecking=no "$target" true 2>/dev/null; then
+    echo "${CYAN}→ ssh ${target}${NC}"
+    exec ssh "$target"
+  fi
+
+  # Fall back to IP + user from DB or NODE_USERS map
   local ip
   ip=$(db "SELECT ip FROM nodes WHERE alias='$target' OR hostname='$target' LIMIT 1")
   [[ -z "$ip" ]] && ip="$target"
-  local user
-  user=$(db "SELECT ssh_user FROM nodes WHERE ip='$ip' LIMIT 1")
-  [[ -z "$user" ]] && user="$SSH_USER"
+  local user="${NODE_USERS[$target]:-}"
+  [[ -z "$user" ]] && user=$(db "SELECT ssh_user FROM nodes WHERE ip='$ip' LIMIT 1")
+  [[ -z "$user" ]] && user="pi"
   echo "${CYAN}→ ssh ${user}@${ip}${NC}"
   exec ssh "${user}@${ip}"
 }
@@ -633,37 +651,29 @@ cmd_web() {
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 show_help() {
-  cat <<HELP
-${BOLD}br nodes${NC} — Fleet discovery and inventory
-
-${BOLD}COMMANDS${NC}
-  scan          Full fleet scan (ping + SSH + device inventory)
-  status        Quick status table of all known nodes
-  show <name>   Detailed view of one node (name or IP)
-  devices       All USB/serial/video devices across fleet
-  topology      ASCII topology diagram
-  fix           Apply known fixes (hostname, WAL mode, etc.)
-  ping          Quick ping health check
-  ssh <name>    SSH into a node by alias
-  web           JSON output (for gateway integration)
-
-${BOLD}EXAMPLES${NC}
-  br nodes scan
-  br nodes status
-  br nodes show cecilia
-  br nodes devices
-  br nodes topology
-  br nodes ssh octavia
-
-${BOLD}ENVIRONMENT${NC}
-  BLACKROAD_SCAN_SUBNET   LAN prefix (default: 192.168.4)
-  BLACKROAD_SSH_USER      Default SSH user (default: blackroad)
-
-${BOLD}DATABASE${NC}
-  $DB
-HELP
+  echo -e ""
+  echo -e "  ${AMBER}${BOLD}◆ BR NODES${NC}  ${DIM}Scan your fleet. Own your network.${NC}"
+  echo -e "  ${DIM}Zero blind spots. Every device, every node.${NC}"
+  echo -e "  ${DIM}────────────────────────────────────────────────${NC}"
+  echo -e "  ${BOLD}USAGE${NC}  br ${DIM}<command> [args]${NC}"
+  echo -e ""
+  echo -e "  ${BOLD}COMMANDS${NC}"
+  echo -e "  ${AMBER}  scan                            ${NC} Full fleet scan — ping + SSH + device inventory"
+  echo -e "  ${AMBER}  status                          ${NC} Quick status table of all known nodes"
+  echo -e "  ${AMBER}  show <name>                     ${NC} Detailed view of one node (name or IP)"
+  echo -e "  ${AMBER}  devices                         ${NC} All USB/serial/video devices across fleet"
+  echo -e "  ${AMBER}  topology                        ${NC} ASCII network topology diagram"
+  echo -e "  ${AMBER}  fix                             ${NC} Apply known fixes (hostname, WAL mode, etc.)"
+  echo -e "  ${AMBER}  ping                            ${NC} Quick ping health check"
+  echo -e "  ${AMBER}  ssh <name>                      ${NC} SSH into a node by alias"
+  echo -e ""
+  echo -e "  ${BOLD}EXAMPLES${NC}"
+  echo -e "  ${DIM}  br nodes scan${NC}"
+  echo -e "  ${DIM}  br nodes status${NC}"
+  echo -e "  ${DIM}  br nodes show cecilia${NC}"
+  echo -e "  ${DIM}  br nodes ssh octavia${NC}"
+  echo -e ""
 }
-
 # ─── Main ────────────────────────────────────────────────────────────────────
 case "${1:-help}" in
   mac|mac-devices|local) cmd_mac_devices ;;
