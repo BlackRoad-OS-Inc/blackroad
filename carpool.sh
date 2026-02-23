@@ -2968,6 +2968,200 @@ print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
   exit 0
 fi
 
+# ── DECISION — structured decision matrix across agents ───────
+if [[ "$1" == "decision" ]]; then
+  # Usage: br carpool decision "option A" vs "option B" [vs "option C"]
+  # Collect options: split on "vs"
+  shift
+  _raw="$*"
+  IFS='|' read -ra _opts <<< "$(echo "$_raw" | sed 's/ vs /|/g')"
+  if [[ ${#_opts[@]} -lt 2 ]]; then
+    echo -e "${RED}Usage: br carpool decision \"Option A\" vs \"Option B\" [vs \"Option C\"]${NC}"
+    exit 1
+  fi
+  echo -e "\n${WHITE}⚖️  Decision Matrix${NC}\n"
+  for o in "${_opts[@]}"; do echo -e "  ${CYAN}•${NC} ${o// /}"; done
+  echo ""
+
+  DC_AGENTS=(PRISM    CIPHER    OCTAVIA   LUCIDIA   ARIA)
+  DC_LENS=("data & risk" "security & downside" "engineering effort" "long-term strategy" "user impact")
+  for i in 0 1 2 3 4; do
+    _dca="${DC_AGENTS[$i]}"
+    _dcl="${DC_LENS[$i]}"
+    agent_meta "$_dca"
+    _dcc="\033[${COLOR_CODE}m"
+    _opts_str=$(printf '"%s" ' "${_opts[@]}")
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,opts=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Evaluate these options on: {lens}
+Options: {opts}
+For each option give ONE line: OPTION: score/10 — reason (10 words max)
+Then: PICK: <your choice> — <one sentence why>'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':120,'temperature':0.5,'stop':['---']}}))" \
+    "$_dca" "$ROLE" "$_dcl" "$_opts_str" 2>/dev/null)
+    echo -ne "${_dcc}${EMOJI} ${_dca}${NC}  ${DIM}${_dcl}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_dcc}${EMOJI} ${_dca}${NC}  ${DIM}${_dcl}${NC}"
+    echo -e "${_resp}\n"
+  done
+  # Tally picks
+  echo -e "${DIM}── Tally picks to find consensus ──${NC}"
+  agent_meta "PRISM"
+  _tally_payload=$(python3 -c "
+import json,sys
+opts=sys.argv[1]
+prompt=f'Given these options: {opts} — which one would most balanced analysis choose? Give: VERDICT: <option> — <10 word reason>'
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':50,'temperature':0.3}}))" "$_opts_str" 2>/dev/null)
+  _verdict=$(curl -s -m 30 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_tally_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  echo -e "${GREEN}${_verdict}${NC}\n"
+  exit 0
+fi
+
+# ── POSTMORTEM — incident postmortem doc ──────────────────────
+if [[ "$1" == "postmortem" || "$1" == "post" ]]; then
+  _incident="${*:2}"
+  [[ -z "$_incident" ]] && echo -e "${RED}Usage: br carpool postmortem <incident description>${NC}" && exit 1
+  PM_DIR="$HOME/.blackroad/carpool/postmortems"
+  mkdir -p "$PM_DIR"
+  _slug=$(echo "$_incident" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-' | cut -c1-30)
+  _out="${PM_DIR}/$(date '+%Y-%m-%d')-${_slug}.md"
+  echo -e "\n${WHITE}🔥 Postmortem${NC}  ${DIM}${_incident}${NC}\n"
+
+  PM_AGENTS=(CIPHER     OCTAVIA      PRISM         LUCIDIA)
+  PM_LENS=("root cause analysis" "timeline & detection" "impact & metrics" "prevention & process")
+  for i in 0 1 2 3; do
+    _pma="${PM_AGENTS[$i]}"
+    _pml="${PM_LENS[$i]}"
+    agent_meta "$_pma"
+    _pmc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,inc=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Write the \"{lens}\" section of a postmortem.
+Incident: \"{inc}\"
+Be specific. Use blameless language. Format as a postmortem section with 3-4 bullet points.'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':150,'temperature':0.4,'stop':['---']}}))" \
+    "$_pma" "$ROLE" "$_pml" "$_incident" 2>/dev/null)
+    echo -ne "${_pmc}${EMOJI} ${_pma}${NC}  ${DIM}${_pml}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_pmc}${EMOJI} ${_pma}${NC}  ${DIM}${_pml}${NC}"
+    echo -e "${_resp}\n"
+    { echo "### ${_pml^^}"; echo ""; echo "$_resp"; echo ""; } >> "$_out"
+  done
+  sed -i '' "1s/^/# Postmortem: ${_incident}\nDate: $(date '+%Y-%m-%d')\n\n/" "$_out" 2>/dev/null \
+    || sed -i "1s/^/# Postmortem: ${_incident}\nDate: $(date '+%Y-%m-%d')\n\n/" "$_out"
+  echo -e "${DIM}Saved → ${_out}${NC}"
+  exit 0
+fi
+
+# ── STACK — recommend a tech stack with rationale ─────────────
+if [[ "$1" == "stack" ]]; then
+  _problem="${*:2}"
+  [[ -z "$_problem" ]] && echo -e "${RED}Usage: br carpool stack <problem to solve>${NC}" && exit 1
+  echo -e "\n${WHITE}🥞 Stack Recommendation${NC}  ${DIM}${_problem}${NC}\n"
+
+  ST_AGENTS=(OCTAVIA    SHELLFISH    ARIA        ALICE)
+  ST_LENS=("backend & infra" "security & attack surface" "frontend & DX" "deployment & ops")
+  for i in 0 1 2 3; do
+    _sta="${ST_AGENTS[$i]}"
+    _stl="${ST_LENS[$i]}"
+    agent_meta "$_sta"
+    _stc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,role,lens,prob=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+prompt=f'''You are {agent}, {role}. Recommend the {lens} layer for this problem.
+Problem: \"{prob}\"
+Format:
+PICK: <specific technology>
+WHY: <one sentence rationale>
+AVOID: <one alternative to skip and why>'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':110,'temperature':0.6,'stop':['---']}}))" \
+    "$_sta" "$ROLE" "$_stl" "$_problem" 2>/dev/null)
+    echo -ne "${_stc}${EMOJI} ${_sta}${NC}  ${DIM}${_stl}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_stc}${EMOJI} ${_sta}${NC}  ${DIM}${_stl}${NC}"
+    echo -e "${_resp}\n"
+  done
+  # One-line summary
+  agent_meta "PRISM"
+  _sum_payload=$(python3 -c "
+import json,sys
+p=sys.argv[1]
+prompt=f'Given this problem: \"{p}\" — give a one-line complete stack recommendation (frontend + backend + DB + deploy). Format: STACK: ...'
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':60,'temperature':0.4}}))" "$_problem" 2>/dev/null)
+  _sum=$(curl -s -m 30 -X POST http://localhost:11434/api/generate \
+    -H "Content-Type: application/json" -d "$_sum_payload" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+  echo -e "${GREEN}${EMOJI} ${_sum}${NC}\n"
+  exit 0
+fi
+
+# ── MANIFESTO — team manifesto from theme + session history ───
+if [[ "$1" == "manifesto" ]]; then
+  THEME_FILE="$HOME/.blackroad/carpool/theme.txt"
+  MEMORY_FILE="$HOME/.blackroad/carpool/memory.txt"
+  MANIFESTO_FILE="$HOME/.blackroad/carpool/manifesto.md"
+  _ctx=""
+  [[ -f "$THEME_FILE" ]] && _ctx=$(cat "$THEME_FILE")
+  _history=""
+  [[ -f "$MEMORY_FILE" ]] && _history=$(tail -40 "$MEMORY_FILE" | grep -v "^---\|^DATE:\|^VERDICT:" | head -20)
+  [[ -z "$_ctx$_history" ]] && echo -e "${DIM}Tip: set a theme first: br carpool theme set \"...\"${NC}"
+  echo -e "\n${WHITE}📜 Team Manifesto${NC}\n"
+
+  MF_AGENTS=(LUCIDIA CECE CIPHER OCTAVIA ARIA)
+  MF_LENS=("core beliefs & philosophy" "human values & relationships" "what we protect & never compromise" "how we build & operate" "how we communicate & show up")
+  for i in 0 1 2 3 4; do
+    _mfa="${MF_AGENTS[$i]}"
+    _mfl="${MF_LENS[$i]}"
+    # CECE falls back to LUCIDIA for agent_meta
+    _meta_agent="$_mfa"
+    [[ "$_mfa" == "CECE" ]] && _meta_agent="LUCIDIA"
+    agent_meta "$_meta_agent"
+    [[ "$_mfa" == "CECE" ]] && EMOJI="💜" && COLOR_CODE="35"
+    _mfc="\033[${COLOR_CODE}m"
+    _payload=$(python3 -c "
+import json,sys
+agent,lens,ctx,hist=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+ctx_str=f'Project context: {ctx}\n' if ctx else ''
+hist_str=f'Team history: {hist}\n' if hist else ''
+prompt=f'''You are {agent} on the BlackRoad team. Write the \"{lens}\" section of our team manifesto.
+{ctx_str}{hist_str}3-4 short manifesto statements. Bold, direct, present tense. Start each with \"We \".'''
+print(json.dumps({'model':'tinyllama','prompt':prompt,'stream':False,
+  'options':{'num_predict':130,'temperature':0.75,'stop':['---']}}))" \
+    "$_mfa" "$_mfl" "$_ctx" "$_history" 2>/dev/null)
+    echo -ne "${_mfc}${EMOJI} ${_mfa}${NC}  ${DIM}${_mfl}...${NC}"
+    _resp=$(curl -s -m 45 -X POST http://localhost:11434/api/generate \
+      -H "Content-Type: application/json" -d "$_payload" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('response','').strip())" 2>/dev/null)
+    printf "\r\033[K"
+    echo -e "${_mfc}${EMOJI} ${_mfa}${NC}  ${DIM}${_mfl}${NC}"
+    echo -e "${_resp}\n"
+    { echo "### ${_mfl^^}"; echo ""; echo "$_resp"; echo ""; } >> "$MANIFESTO_FILE.tmp"
+  done
+  { echo "# BlackRoad Team Manifesto"; echo "Generated: $(date '+%Y-%m-%d')"; echo ""; cat "$MANIFESTO_FILE.tmp"; } > "$MANIFESTO_FILE"
+  rm -f "$MANIFESTO_FILE.tmp"
+  echo -e "${DIM}Saved → ${MANIFESTO_FILE}${NC}"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
