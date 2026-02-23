@@ -260,140 +260,129 @@ cmd_deploy() {
 }
 
 #──────────────────────────────────────────────────────────────────────────────
-# Setup — auto-configure Cloudflare Email Routing via API
+# Setup — POST to the email-setup worker (it does everything)
 #──────────────────────────────────────────────────────────────────────────────
+SETUP_WORKER="https://blackroad-email-setup.amundsonalexa.workers.dev"
+
 cmd_setup() {
-  local TOKEN="${CLOUDFLARE_API_TOKEN:-}"
-  local ACCOUNT="848cf0b18d51e0170e0d1537aec3505a"
-  local DOMAIN="blackroad.io"
-  local WORKER="blackroad-email"
-  local DEST="alexa@blackroad.io"
-  local BASE="https://api.cloudflare.com/client/v4"
+  echo -e "\n  ${AMBER}${BOLD}◆ BR MAIL${NC}  ${DIM}Running full Email Routing setup…${NC}\n"
+  echo -e "  ${DIM}  POST ${SETUP_WORKER}/setup${NC}\n"
 
-  echo -e "\n  ${AMBER}${BOLD}◆ BR MAIL${NC}  ${DIM}Auto-configure Email Routing${NC}\n"
+  local out
+  out=$(curl -sf -X POST "${SETUP_WORKER}/setup" \
+    -H "Content-Type: application/json" 2>&1)
+  local exit_code=$?
 
-  if [[ -z "$TOKEN" ]]; then
-    echo -e "  ${RED}✗ CLOUDFLARE_API_TOKEN not set${NC}"
-    echo -e "  ${DIM}  export CLOUDFLARE_API_TOKEN=your_token${NC}\n"
+  if [[ $exit_code -ne 0 || -z "$out" ]]; then
+    echo -e "  ${RED}✗ Worker unreachable — deploy it first:${NC}"
+    echo -e "  ${DIM}  br mail deploy-setup${NC}\n"
     exit 1
   fi
 
-  _cf() { curl -sf -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" "$@"; }
-  _ok() { python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('success') else str(d.get('errors',d)))" 2>/dev/null; }
+  echo "$out" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+G='\033[0;32m'; Y='\033[1;33m'; R='\033[0;31m'; D='\033[2m'; NC='\033[0m'; B='\033[1m'
 
-  # Validate token first
-  local whoami; whoami=$(_cf "${BASE}/user/tokens/verify" 2>/dev/null)
-  if ! echo "$whoami" | python3 -c "import sys,json; sys.exit(0 if json.load(sys.stdin).get('success') else 1)" 2>/dev/null; then
-    echo -e "  ${RED}✗ Invalid API token${NC}"
-    echo -e "  ${DIM}  Get one at: https://dash.cloudflare.com/profile/api-tokens${NC}"
-    echo -e "  ${DIM}  Needs: Zone:Email Routing:Edit + Account:Email Routing Addresses:Edit${NC}\n"
-    exit 1
-  fi
-  echo -e "  ${GREEN}✓${NC} Token valid"
+if 'error' in d:
+    print(f'  {R}✗ {d[\"error\"]}{NC}')
+    sys.exit(1)
 
-  # 1. Get zone ID — search by name only (no account filter)
-  echo -e "  ${BOLD}→ Zone lookup${NC}"
-  local zone_raw; zone_raw=$(_cf "${BASE}/zones?name=${DOMAIN}&per_page=5")
-  local zone_id
-  zone_id=$(echo "$zone_raw" | python3 -c "import sys,json; z=json.load(sys.stdin).get('result',[]); print(z[0]['id'] if z else '')" 2>/dev/null)
-  if [[ -z "$zone_id" ]]; then
-    echo -e "  ${RED}✗ Zone not found for ${DOMAIN}${NC}"
-    echo -e "  ${DIM}  Make sure blackroad.io is active in your Cloudflare account${NC}"
-    echo -e "  ${DIM}  Raw: $(echo "$zone_raw" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('errors', d.get('result','')))" 2>/dev/null)${NC}\n"
-    exit 1
-  fi
-  echo -e "  ${GREEN}✓${NC} zone: ${DIM}${zone_id}${NC}"
+for step in d.get('results', []):
+    sym = G+'✓' if step.get('success', True) else Y+'◌'
+    name = step.get('step','?')
+    errs = step.get('errors', [])
+    err_str = f' {D}({errs[0].get(\"message\",\"\") if errs else \"\"}){NC}' if errs else ''
+    # substeps (e.g. switch_mx)
+    subs = step.get('substeps')
+    if subs:
+        ok_count = sum(1 for s in subs if s.get('success'))
+        print(f'  {sym} {name}{NC}  {D}{ok_count}/{len(subs)} records{NC}')
+    else:
+        print(f'  {sym} {name}{NC}{err_str}')
 
-  # 2. Enable email routing
-  echo -e "  ${BOLD}→ Enabling Email Routing${NC}"
-  local r; r=$(_cf -X POST "${BASE}/zones/${zone_id}/email/routing/enable" | _ok)
-  [[ "$r" == "ok" ]] && echo -e "  ${GREEN}✓${NC} Email Routing enabled" \
-    || echo -e "  ${YELLOW}◌${NC} ${DIM}${r} (may already be on)${NC}"
-
-  # 3. Add destination address
-  echo -e "  ${BOLD}→ Adding destination: ${DEST}${NC}"
-  r=$(_cf -X POST "${BASE}/accounts/${ACCOUNT}/email/routing/addresses" \
-    -d "{\"email\":\"${DEST}\"}" | _ok)
-  [[ "$r" == "ok" ]] && echo -e "  ${GREEN}✓${NC} Destination added ${DIM}(check email to verify)${NC}" \
-    || echo -e "  ${YELLOW}◌${NC} ${DIM}${r} (may already be verified)${NC}"
-
-  # 4. Create catch-all → worker
-  echo -e "  ${BOLD}→ Creating catch-all rule → ${WORKER}${NC}"
-  local payload; payload=$(python3 -c "
-import json; print(json.dumps({
-  'actions': [{'type': 'worker', 'value': ['${WORKER}']}],
-  'enabled': True,
-  'matchers': [{'field': 'to', 'type': 'all'}],
-  'name': 'BlackRoad catch-all',
-  'priority': 0
-}))")
-  r=$(_cf -X POST "${BASE}/zones/${zone_id}/email/routing/rules/catch_all" \
-    -d "$payload" | _ok)
-  [[ "$r" == "ok" ]] && echo -e "  ${GREEN}✓${NC} Catch-all rule created" \
-    || echo -e "  ${YELLOW}◌${NC} ${DIM}${r}${NC}"
-
-  echo -e "\n  ${GREEN}${BOLD}✓ Done${NC}  all *@${DOMAIN} → ${WORKER} → forwarded to ${DEST}"
-  echo -e "  ${DIM}  Test: br mail status · then send to lucidia@blackroad.io${NC}\n"
+status = d.get('status', {})
+ready  = status.get('ready', False)
+mx     = status.get('mx', {}).get('provider', '?')
+print()
+if ready:
+    print(f'  {G}{B}✓ Ready{NC}  MX: {mx} · routing enabled · catch-all active')
+else:
+    print(f'  {Y}◌ Not fully ready{NC}  MX: {mx}')
+msg = d.get('message','')
+if msg: print(f'  {D}  {msg}{NC}')
+print()
+" 2>/dev/null || echo "$out"
 }
 
 #──────────────────────────────────────────────────────────────────────────────
-# Status — show Cloudflare Email Routing state
+# Status — GET /status from the setup worker
 #──────────────────────────────────────────────────────────────────────────────
 cmd_status() {
-  local TOKEN="${CLOUDFLARE_API_TOKEN:-}"
-  local ACCOUNT="848cf0b18d51e0170e0d1537aec3505a"
-  local DOMAIN="blackroad.io"
-  local BASE="https://api.cloudflare.com/client/v4"
+  echo -e "\n  ${AMBER}${BOLD}◆ BR MAIL${NC}  ${DIM}Email Routing Status · blackroad.io${NC}\n"
 
-  echo -e "\n  ${AMBER}${BOLD}◆ BR MAIL${NC}  ${DIM}Email Routing Status · ${DOMAIN}${NC}\n"
-
-  if [[ -z "$TOKEN" ]]; then
-    echo -e "  ${RED}✗ CLOUDFLARE_API_TOKEN not set${NC}\n"; exit 1
+  local out
+  out=$(curl -sf "${SETUP_WORKER}/status" 2>&1)
+  if [[ $? -ne 0 || -z "$out" ]]; then
+    echo -e "  ${RED}✗ Worker unreachable — deploy it first:${NC}"
+    echo -e "  ${DIM}  br mail deploy-setup${NC}\n"
+    exit 1
   fi
 
-  _cf() { curl -sf -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" "$@"; }
+  echo "$out" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+G='\033[0;32m'; Y='\033[1;33m'; R='\033[0;31m'; D='\033[2m'; NC='\033[0m'
 
-  # Token check
-  if ! _cf "${BASE}/user/tokens/verify" 2>/dev/null | python3 -c "import sys,json; sys.exit(0 if json.load(sys.stdin).get('success') else 1)" 2>/dev/null; then
-    echo -e "  ${RED}✗ Invalid API token — set CLOUDFLARE_API_TOKEN${NC}\n"; exit 1
-  fi
+if 'error' in d:
+    print(f'  {R}✗ {d[\"error\"]}{NC}\n'); sys.exit(1)
 
-  local zone_id
-  zone_id=$(_cf "${BASE}/zones?name=${DOMAIN}&per_page=5" | \
-    python3 -c "import sys,json; z=json.load(sys.stdin).get('result',[]); print(z[0]['id'] if z else '')" 2>/dev/null)
-  [[ -z "$zone_id" ]] && { echo -e "  ${RED}✗ Zone ${DOMAIN} not found in this CF account${NC}\n"; exit 1; }
+routing = d.get('routing', {})
+catch_all = d.get('catch_all', {})
+mx = d.get('mx', {})
+ready = d.get('ready', False)
 
-  # Routing enabled?
-  _cf "${BASE}/zones/${zone_id}/email/routing" 2>/dev/null | python3 -c "
-import sys,json
-d=json.load(sys.stdin).get('result',{})
-G='\033[0;32m'; Y='\033[1;33m'; R='\033[0;31m'; D='\033[2m'; NC='\033[0m'; B='\033[1m'
-en=d.get('enabled',False); st=d.get('status','unknown')
-sym = G+'✓' if en else R+'✗'
-print(f'  {sym} Email Routing:{NC} {st}')
-" 2>/dev/null
+en = routing.get('enabled', False)
+print(f'  {G+\"✓\" if en else R+\"✗\"} Email Routing: {routing.get(\"status\",\"unknown\")}{NC}')
 
-  # Catch-all rule
-  _cf "${BASE}/zones/${zone_id}/email/routing/rules/catch_all" 2>/dev/null | python3 -c "
-import sys,json
-d=json.load(sys.stdin).get('result',{})
-G='\033[0;32m'; Y='\033[1;33m'; D='\033[2m'; NC='\033[0m'
-actions=d.get('actions',[])
-if actions:
-    a=actions[0]; vals=', '.join(a.get('value',[]))
+ca = catch_all.get('configured', False)
+actions = catch_all.get('actions', [])
+if ca and actions:
+    a = actions[0]
+    vals = ', '.join(a.get('value', []))
     print(f'  {G}✓{NC} Catch-all: {a[\"type\"]} → {D}{vals}{NC}')
 else:
     print(f'  {Y}◌{NC} No catch-all rule  {D}(run: br mail setup){NC}')
-" 2>/dev/null
 
-  # DNS check
-  echo ""
-  local mx; mx=$(dig +short MX blackroad.io 2>/dev/null)
-  [[ -n "$mx" ]] \
-    && echo -e "  ${GREEN}✓${NC} MX  ${DIM}${mx}${NC}" \
-    || echo -e "  ${YELLOW}◌${NC} No MX records  ${DIM}(run: br mail dns)${NC}"
+provider = mx.get('provider', 'unknown')
+sym = G+'✓' if provider == 'cloudflare' else Y+'◌'
+note = '' if provider == 'cloudflare' else '  (needs switch — br mail setup handles this)'
+print(f'  {sym} MX provider: {provider}{NC}{D}{note}{NC}')
 
-  echo ""
+print()
+if ready:
+    print(f'  {G}✓ All systems go — send mail to any agent@blackroad.io{NC}')
+else:
+    print(f'  {Y}◌ Not ready  run: br mail setup{NC}')
+print()
+" 2>/dev/null || echo "$out"
+}
+
+#──────────────────────────────────────────────────────────────────────────────
+# Deploy the email-setup worker
+#──────────────────────────────────────────────────────────────────────────────
+cmd_deploy_setup() {
+  local worker_dir
+  worker_dir="$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)/workers/email-setup"
+  if [[ ! -d "$worker_dir" ]]; then
+    echo -e "  ${RED}✗ Not found: $worker_dir${NC}"; exit 1
+  fi
+  echo -e "\n  ${AMBER}${BOLD}◆ BR MAIL${NC}  ${DIM}Deploying email-setup worker…${NC}\n"
+  cd "$worker_dir" && wrangler deploy
+  echo -e "\n  ${DIM}Next: set your API token as a secret:${NC}"
+  echo -e "  ${CYAN}  wrangler secret put CF_API_TOKEN${NC}"
+  echo -e "  ${DIM}  (paste your Cloudflare API token)${NC}"
+  echo -e "\n  ${DIM}Then: br mail setup${NC}\n"
 }
 
 
@@ -443,6 +432,7 @@ case "${1:-list}" in
   setup)                cmd_setup ;;
   status)               cmd_status ;;
   deploy|instructions)  cmd_deploy ;;
+  deploy-setup)         cmd_deploy_setup ;;
   help|-h|--help)       show_help ;;
   *)
     # br mail <agent> → show inbox for that agent
