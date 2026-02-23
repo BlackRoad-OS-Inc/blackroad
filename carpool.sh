@@ -6796,6 +6796,146 @@ for name, role, question in agents:
   exit 0
 fi
 
+if [[ "$1" == "auth" ]]; then
+  SYSTEM="${2:-our app}"
+  AUTH_DIR="$HOME/.blackroad/carpool/auth"
+  mkdir -p "$AUTH_DIR"
+  AUTH_FILE="$AUTH_DIR/auth-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🔐 CarPool — Auth design for: $SYSTEM\033[0m"
+  echo "# Auth Design: $SYSTEM" > "$AUTH_FILE"
+  echo "Generated: $(date)" >> "$AUTH_FILE"
+  PY_AUTH='
+import sys, json, urllib.request
+system = sys.argv[1]
+agents = [
+  ("CIPHER","Security","Design the complete auth architecture for $SYSTEM: which flows (password, OAuth, SSO, magic link, passkey)? Token strategy — JWT vs opaque, refresh rotation, revocation."),
+  ("OCTAVIA","Architect","How should $SYSTEM handle auth at the infrastructure layer: API gateway auth, service-to-service tokens, and secret rotation?"),
+  ("ALICE","PM","What auth options should $SYSTEM offer at each plan tier? What are the enterprise SSO requirements and how do we scope that work?"),
+  ("SHELLFISH","Attacker","What are the top 5 ways an attacker would try to break auth in $SYSTEM: session fixation, token theft, brute force, OAuth misconfig, privilege escalation?"),
+  ("ARIA","UX","Design the sign-in and sign-up experience for $SYSTEM. What friction is acceptable vs where do we lose users? How do we handle MFA without annoying everyone?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SYSTEM', system)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_AUTH" "$SYSTEM" | tee -a "$AUTH_FILE"
+  echo -e "\033[0;32m✓ Saved to $AUTH_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "webhook" ]]; then
+  SERVICE="${2:-our platform}"
+  WH_DIR="$HOME/.blackroad/carpool/webhooks"
+  mkdir -p "$WH_DIR"
+  WH_FILE="$WH_DIR/webhook-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🔗 CarPool — Webhook system for: $SERVICE\033[0m"
+  echo "# Webhook Design: $SERVICE" > "$WH_FILE"
+  echo "Generated: $(date)" >> "$WH_FILE"
+  PY_WH='
+import sys, json, urllib.request
+service = sys.argv[1]
+agents = [
+  ("OCTAVIA","Architect","Design the webhook delivery system for $SERVICE: event catalog, payload schema, delivery guarantees, retry policy with backoff, and ordering semantics."),
+  ("CIPHER","Security","How do we secure webhooks in $SERVICE: HMAC signature verification, IP allowlisting, TLS enforcement, replay attack prevention, and secret rotation?"),
+  ("ALICE","PM","What webhook management UX does $SERVICE need: endpoint registration, event filtering, delivery logs, retry UI, and testing tools?"),
+  ("SHELLFISH","Chaos","What failure modes does the $SERVICE webhook system need to handle: slow receivers, bad SSL certs, 5xx loops, DNS failures, and thundering herd on large events?"),
+  ("PRISM","Analyst","What webhook delivery metrics should $SERVICE track: success rate, p99 latency, retry rate, DLQ depth? What SLOs make sense?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'SERVICE', service)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_WH" "$SERVICE" | tee -a "$WH_FILE"
+  echo -e "\033[0;32m✓ Saved to $WH_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "product-hunt" ]]; then
+  PRODUCT="${2:-our product}"
+  PH_DIR="$HOME/.blackroad/carpool/product-hunt"
+  mkdir -p "$PH_DIR"
+  PH_FILE="$PH_DIR/ph-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🐱 CarPool — Product Hunt launch: $PRODUCT\033[0m"
+  echo "# Product Hunt Launch: $PRODUCT" > "$PH_FILE"
+  echo "Generated: $(date)" >> "$PH_FILE"
+  PY_PH='
+import sys, json, urllib.request
+product = sys.argv[1]
+agents = [
+  ("ARIA","Marketer","Write the Product Hunt tagline (under 60 chars) and description (under 260 chars) for $PRODUCT. Make it punchy and benefit-led."),
+  ("LUCIDIA","Storyteller","Write the maker comment for $PRODUCT PH launch — the personal story of why we built it. Under 200 words, warm and authentic."),
+  ("ALICE","PM","What is the pre-launch checklist for $PRODUCT on Product Hunt? Timeline, hunter outreach, asset prep, community warm-up, and day-of schedule."),
+  ("PRISM","Analyst","What makes a PH launch succeed for a product like $PRODUCT? What vote count, comment engagement, and traffic targets should we aim for?"),
+  ("SHELLFISH","Hacker","What are the launch day tactics for $PRODUCT that push votes without violating PH rules: timing, communities to notify, follow-up comment strategy?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PRODUCT', product)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_PH" "$PRODUCT" | tee -a "$PH_FILE"
+  echo -e "\033[0;32m✓ Saved to $PH_FILE\033[0m"
+  exit 0
+fi
+
+if [[ "$1" == "oss" ]]; then
+  PROJECT="${2:-our project}"
+  OSS_DIR="$HOME/.blackroad/carpool/oss"
+  mkdir -p "$OSS_DIR"
+  OSS_FILE="$OSS_DIR/oss-$(date +%Y%m%d-%H%M%S).md"
+  echo -e "\033[0;36m🌍 CarPool — Open source strategy: $PROJECT\033[0m"
+  echo "# Open Source Strategy: $PROJECT" > "$OSS_FILE"
+  echo "Generated: $(date)" >> "$OSS_FILE"
+  PY_OSS='
+import sys, json, urllib.request
+project = sys.argv[1]
+agents = [
+  ("LUCIDIA","Strategist","Should $PROJECT be open-sourced, open-core, or stay closed? Lay out the business case for each and make a recommendation."),
+  ("ALICE","PM","If we open-source $PROJECT, what is the contributor experience? Write the CONTRIBUTING.md outline, issue templates, and first-good-issue strategy."),
+  ("CIPHER","Legal","What license fits $PROJECT best: MIT, Apache 2, AGPL, BSL? What are the tradeoffs for each in terms of commercial protection and community adoption?"),
+  ("PRISM","Growth","How does open-sourcing $PROJECT drive business growth? What community metrics — stars, contributors, forks, Discord members — matter and how do we grow them?"),
+  ("OCTAVIA","Maintainer","What is the maintenance burden of open-sourcing $PROJECT? Triage load, CI costs, security disclosure process, and how to avoid maintainer burnout?")
+]
+for name, role, question in agents:
+  prompt = f"{name} ({role}): {question.replace(chr(36)+'PROJECT', project)}"
+  data = json.dumps({"model":"tinyllama","prompt":prompt,"stream":False}).encode()
+  req = urllib.request.Request("http://localhost:11434/api/generate",data=data,headers={"Content-Type":"application/json"})
+  try:
+    resp = json.loads(urllib.request.urlopen(req,timeout=30).read())
+    print(f"### {name} ({role})")
+    print(resp.get("response","").strip())
+    print()
+  except:
+    print(f"### {name}: [offline]\n")
+'
+  python3 -c "$PY_OSS" "$PROJECT" | tee -a "$OSS_FILE"
+  echo -e "\033[0;32m✓ Saved to $OSS_FILE\033[0m"
+  exit 0
+fi
+
 if [[ "$1" == "last" ]]; then
   f=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
   [[ -z "$f" ]] && echo "No saved sessions yet." && exit 1
