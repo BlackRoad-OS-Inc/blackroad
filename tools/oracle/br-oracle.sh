@@ -24,17 +24,25 @@ NC=$'\033[0m'
 OLLAMA_URL="${BLACKROAD_OLLAMA_URL:-http://localhost:11434}"
 DB="$HOME/.blackroad/fleet-nodes.db"
 
-# ─── Pick best available model ────────────────────────────────────────────────
+# ─── Pick best available model (never cloud — data stays local) ───────────────
 pick_model() {
-  local preferred=("cece3b:latest" "cece2:latest" "cece:latest" "qwen3:8b" "qwen2.5:3b" "llama3.2:3b")
+  local preferred=("cece3b:latest" "cece2:latest" "cece:latest" "qwen3:8b" "qwen2.5:3b" "llama3.2:3b" "qwen2.5:1.5b" "llama3.2:1b" "tinyllama:latest")
   local available
+  # Explicitly exclude :cloud models — they route prompts to external servers
   available=$(curl -s "${OLLAMA_URL}/api/tags" 2>/dev/null \
-    | python3 -c "import sys,json; [print(m['name']) for m in json.load(sys.stdin).get('models',[])]" 2>/dev/null)
+    | python3 -c "
+import sys,json
+for m in json.load(sys.stdin).get('models',[]):
+    name = m['name']
+    if ':cloud' not in name and 'embed' not in name:
+        print(name)
+" 2>/dev/null)
   for m in "${preferred[@]}"; do
     if echo "$available" | grep -qF "$m"; then
       echo "$m"; return
     fi
   done
+  # Fallback: first non-cloud, non-embed model
   echo "$available" | head -1
 }
 
@@ -174,8 +182,23 @@ import sys, json
 models = json.load(sys.stdin).get('models', [])
 for m in models:
     size = m.get('size', 0) / 1e9
-    print(f\"  {'●':2} {m['name']:<35} {size:.1f}GB\")
+    name = m['name']
+    if ':cloud' in name:
+        tag = '  ⚠ CLOUD — routes to external API (skipped by oracle)'
+        marker = '\033[1;33m'
+        reset = '\033[0m'
+    elif 'embed' in name:
+        tag = '  (embedding model)'
+        marker = '\033[2m'
+        reset = '\033[0m'
+    else:
+        tag = ''
+        marker = '\033[0;32m'
+        reset = '\033[0m'
+    print(f'  {marker}● {name:<35} {size:.1f}GB{reset}{tag}')
 " 2>/dev/null || echo "${RED}  ✗ Ollama not reachable at ${OLLAMA_URL}${NC}"
+  echo ""
+  echo "  ${DIM}⚠ cloud models send prompts to external servers — oracle never picks them${NC}"
   echo ""
 }
 
