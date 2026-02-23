@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadDNS - Managed DNS Service</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000000;
+            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 3rem;
+            position: relative;
+        }
+        h1 {
+            font-size: 7rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #F5A623, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+        .tagline {
+            font-size: 2.5rem;
+            margin: 2rem 0;
+            opacity: 0.9;
+        }
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C, #9C27B0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 2rem 0;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 2px solid rgba(245, 166, 35, 0.3);
+            transition: all 0.3s;
+        }
+        .feature:hover {
+            transform: translateY(-10px);
+            border-color: #F5A623;
+            box-shadow: 0 20px 50px rgba(245, 166, 35, 0.4);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .feature h3 {
+            color: #F5A623;
+            margin-bottom: 1rem;
+        }
+        .cta {
+            padding: 1.5rem 4rem;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-top: 2rem;
+        }
+        .dns-visual {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 900px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+        .dns-box {
+            background: rgba(41, 121, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 2px solid rgba(41, 121, 255, 0.3);
+        }
+        .dns-type {
+            font-size: 1.3rem;
+            color: #2979FF;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .metrics {
+            display: flex;
+            gap: 4rem;
+            justify-content: center;
+            margin: 3rem 0;
+        }
+        .metric {
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #F5A623;
+        }
+        .metric-label {
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+        .code-block {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #2979FF;
+            font-family: 'Monaco', monospace;
+            font-size: 0.9rem;
+            margin: 2rem auto;
+            max-width: 800px;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>RoadDNS</h1>
+        <p class="tagline">DNS that just works. Everywhere.</p>
+        <p class="price">$5/month · 50M queries included</p>
+
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-value">&lt;5ms</div>
+                <div class="metric-label">Average Latency</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">100%</div>
+                <div class="metric-label">Uptime SLA</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">200+</div>
+                <div class="metric-label">Global PoPs</div>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Lightning Fast</h3>
+                <p>Anycast network with 200+ global points of presence. Sub-5ms query time.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🛡️</div>
+                <h3>DDoS Protection</h3>
+                <p>Built-in protection against DNS amplification and flood attacks.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔄</div>
+                <h3>Instant Propagation</h3>
+                <p>Changes propagate globally in seconds, not hours.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Real-time Analytics</h3>
+                <p>Query logs, geographic distribution, response time metrics.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔐</div>
+                <h3>DNSSEC Built-in</h3>
+                <p>Automatic DNSSEC signing for all zones. Maximum security.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🌐</div>
+                <h3>GeoDNS</h3>
+                <p>Route users to the nearest server based on location.</p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 4rem; font-size: 2.5rem;">Supported Record Types</h2>
+        <div class="dns-visual">
+            <div class="dns-box">
+                <div class="dns-type">A / AAAA</div>
+                <p style="opacity: 0.8;">IPv4 and IPv6 address records</p>
+            </div>
+            <div class="dns-box">
+                <div class="dns-type">CNAME</div>
+                <p style="opacity: 0.8;">Canonical name aliases</p>
+            </div>
+            <div class="dns-box">
+                <div class="dns-type">MX</div>
+                <p style="opacity: 0.8;">Mail exchange records</p>
+            </div>
+            <div class="dns-box">
+                <div class="dns-type">TXT</div>
+                <p style="opacity: 0.8;">SPF, DKIM, verification</p>
+            </div>
+            <div class="dns-box">
+                <div class="dns-type">SRV</div>
+                <p style="opacity: 0.8;">Service location records</p>
+            </div>
+            <div class="dns-box">
+                <div class="dns-type">CAA</div>
+                <p style="opacity: 0.8;">Certificate authority authorization</p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 3rem; font-size: 2.5rem;">API Example</h2>
+        <div class="code-block">
+curl -X POST https://api.blackroad.io/v1/dns/zones/example.com/records \<br>
+&nbsp;&nbsp;-H "Authorization: Bearer YOUR_API_KEY" \<br>
+&nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+&nbsp;&nbsp;-d '{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"type": "A",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"name": "www",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"value": "192.0.2.1",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"ttl": 300<br>
+&nbsp;&nbsp;}'
+        </div>
+
+        <button class="cta">Start Free Trial - First 10M queries free</button>
+    </div>
+</body>
+</html>

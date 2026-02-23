@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadAnalytics Pro - Enhanced Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000000;
+            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .header {
+            background: linear-gradient(135deg, rgba(245, 166, 35, 0.1), rgba(255, 29, 108, 0.1));
+            padding: 2rem;
+            border-bottom: 2px solid #F5A623;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+        }
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(245, 166, 35, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            border-color: #F5A623;
+            box-shadow: 0 10px 40px rgba(245, 166, 35, 0.3);
+        }
+        .metric-value {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .metric-label {
+            font-size: 1rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .metric-change {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .metric-change.up { color: #4CAF50; }
+        .metric-change.down { color: #f44336; }
+        .chart-area {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(41, 121, 255, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            min-height: 300px;
+        }
+        .chart-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #2979FF;
+        }
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            margin-right: 0.5rem;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span class="live-indicator"></span>RoadAnalytics Pro - Live Dashboard</h1>
+        <p style="margin-top: 1rem; opacity: 0.9;">Real-time privacy-first analytics</p>
+    </div>
+    
+    <div class="dashboard">
+        <div class="metric-card">
+            <div class="metric-value">24,891</div>
+            <div class="metric-label">Page Views Today</div>
+            <div class="metric-change up">↑ 12.5% vs yesterday</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-value">3,247</div>
+            <div class="metric-label">Unique Visitors</div>
+            <div class="metric-change up">↑ 8.3% vs yesterday</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-value">2m 34s</div>
+            <div class="metric-label">Avg Session Duration</div>
+            <div class="metric-change up">↑ 15.2% vs yesterday</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-value">42.3%</div>
+            <div class="metric-label">Bounce Rate</div>
+            <div class="metric-change down">↓ 5.1% vs yesterday</div>
+        </div>
+        
+        <div class="chart-area">
+            <div class="chart-title">Traffic Over Time</div>
+            <svg width="100%" height="200" style="margin-top: 1rem;">
+                <defs>
+                    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#F5A623;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#FF1D6C;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <polyline
+                    fill="none"
+                    stroke="url(#grad)"
+                    stroke-width="3"
+                    points="0,150 100,120 200,100 300,130 400,80 500,90 600,60 700,70 800,50"
+                />
+            </svg>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-value">127</div>
+            <div class="metric-label">Active Users Now</div>
+            <div class="metric-change up">Real-time</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-value">94.2%</div>
+            <div class="metric-label">User Retention (7d)</div>
+            <div class="metric-change up">↑ 3.1% vs last week</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-value">$2,847</div>
+            <div class="metric-label">Revenue Today</div>
+            <div class="metric-change up">↑ 18.7% vs yesterday</div>
+        </div>
+    </div>
+</body>
+</html>

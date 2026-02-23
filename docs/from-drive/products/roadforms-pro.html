@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadForms Pro - Advanced Form Builder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000000;
+            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: grid;
+            grid-template-columns: 250px 1fr 350px;
+            height: 100vh;
+        }
+        .palette {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem 1rem;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+        .palette h3 {
+            color: #9C27B0;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+        .field-type {
+            background: rgba(156, 39, 176, 0.1);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 10px;
+            border: 2px dashed rgba(156, 39, 176, 0.3);
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        .field-type:hover {
+            border-color: #9C27B0;
+            transform: translateX(5px);
+        }
+        .canvas {
+            padding: 3rem;
+            overflow-y: auto;
+        }
+        .canvas h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #9C27B0, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+        .form-preview {
+            max-width: 700px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 3rem;
+            border-radius: 20px;
+            border: 2px solid #9C27B0;
+        }
+        .form-field {
+            margin-bottom: 1.5rem;
+        }
+        .form-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2979FF;
+            font-weight: 600;
+        }
+        .form-field input, 
+        .form-field textarea,
+        .form-field select {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+        }
+        .form-field input:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: #9C27B0;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 1.25rem;
+            background: linear-gradient(135deg, #9C27B0, #2979FF);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .properties {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+        .properties h3 {
+            color: #F5A623;
+            margin-bottom: 1.5rem;
+        }
+        .property-group {
+            margin-bottom: 1.5rem;
+        }
+        .property-label {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+        .property-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            border-radius: 15px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="palette">
+        <h3>🎨 Form Elements</h3>
+        <div class="field-type">
+            📝 Text Input
+        </div>
+        <div class="field-type">
+            📧 Email Input
+        </div>
+        <div class="field-type">
+            🔢 Number Input
+        </div>
+        <div class="field-type">
+            📅 Date Picker
+        </div>
+        <div class="field-type">
+            ⬇️ Dropdown
+        </div>
+        <div class="field-type">
+            ☑️ Checkboxes
+        </div>
+        <div class="field-type">
+            ⚪ Radio Buttons
+        </div>
+        <div class="field-type">
+            📎 File Upload
+        </div>
+        <div class="field-type">
+            💬 Text Area
+        </div>
+        <div class="field-type">
+            ⭐ Rating
+        </div>
+    </div>
+    
+    <div class="canvas">
+        <h1>RoadForms Pro <span class="badge">DRAG & DROP</span></h1>
+        <div class="form-preview">
+            <div class="form-field">
+                <label>Full Name *</label>
+                <input type="text" placeholder="John Doe">
+            </div>
+            <div class="form-field">
+                <label>Email Address *</label>
+                <input type="email" placeholder="john@example.com">
+            </div>
+            <div class="form-field">
+                <label>Phone Number</label>
+                <input type="tel" placeholder="+1 (555) 000-0000">
+            </div>
+            <div class="form-field">
+                <label>Message *</label>
+                <textarea rows="5" placeholder="Tell us what you need..."></textarea>
+            </div>
+            <button class="submit-btn">Submit Form</button>
+        </div>
+    </div>
+    
+    <div class="properties">
+        <h3>⚙️ Field Properties</h3>
+        <div class="property-group">
+            <div class="property-label">Field Label</div>
+            <input type="text" class="property-input" value="Full Name">
+        </div>
+        <div class="property-group">
+            <div class="property-label">Placeholder</div>
+            <input type="text" class="property-input" value="John Doe">
+        </div>
+        <div class="property-group">
+            <div class="property-label">Required</div>
+            <select class="property-input">
+                <option>Yes</option>
+                <option>No</option>
+            </select>
+        </div>
+        <div class="property-group">
+            <div class="property-label">Validation</div>
+            <select class="property-input">
+                <option>None</option>
+                <option>Email</option>
+                <option>Phone</option>
+                <option>URL</option>
+                <option>Custom Regex</option>
+            </select>
+        </div>
+        <div class="property-group">
+            <div class="property-label">Conditional Logic</div>
+            <select class="property-input">
+                <option>Always Show</option>
+                <option>Show if...</option>
+                <option>Hide if...</option>
+            </select>
+        </div>
+    </div>
+</body>
+</html>

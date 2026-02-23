@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadSSL - SSL Certificate Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000000;
+            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 3rem;
+            position: relative;
+        }
+        h1 {
+            font-size: 7rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #4CAF50, #F5A623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+        .tagline {
+            font-size: 2.5rem;
+            margin: 2rem 0;
+            opacity: 0.9;
+        }
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 2rem 0;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 2px solid rgba(76, 175, 80, 0.3);
+            transition: all 0.3s;
+        }
+        .feature:hover {
+            transform: translateY(-10px);
+            border-color: #4CAF50;
+            box-shadow: 0 20px 50px rgba(76, 175, 80, 0.4);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .feature h3 {
+            color: #4CAF50;
+            margin-bottom: 1rem;
+        }
+        .cta {
+            padding: 1.5rem 4rem;
+            background: linear-gradient(135deg, #4CAF50, #2979FF);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-top: 2rem;
+        }
+        .cert-types {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+        .cert-card {
+            background: rgba(76, 175, 80, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 2px solid rgba(76, 175, 80, 0.3);
+        }
+        .cert-name {
+            font-size: 1.5rem;
+            color: #4CAF50;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .cert-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #F5A623;
+            margin-bottom: 0.5rem;
+        }
+        .shield {
+            width: 150px;
+            height: 150px;
+            margin: 2rem auto;
+            position: relative;
+        }
+        .shield::before {
+            content: "🔒";
+            font-size: 5rem;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        .trust-badges {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin: 3rem 0;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background: rgba(245, 166, 35, 0.1);
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            border: 1px solid rgba(245, 166, 35, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="shield"></div>
+
+        <h1>RoadSSL</h1>
+        <p class="tagline">SSL certificates in 60 seconds. Automated. Reliable.</p>
+        <p class="price">$13/month · Unlimited certificates</p>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Instant Issuance</h3>
+                <p>Certificates issued in under 60 seconds. Automated DNS validation.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔄</div>
+                <h3>Auto-Renewal</h3>
+                <p>Never worry about expiring certificates. Automatic renewal 30 days before expiry.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🌐</div>
+                <h3>Wildcard Support</h3>
+                <p>*.example.com certificates. Secure unlimited subdomains.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔐</div>
+                <h3>Multi-Domain</h3>
+                <p>SAN certificates for multiple domains. Up to 100 domains per cert.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📱</div>
+                <h3>99.9% Browser Trust</h3>
+                <p>Trusted by all major browsers. No security warnings.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🛡️</div>
+                <h3>Let's Encrypt</h3>
+                <p>Powered by Let's Encrypt and ZeroSSL. Industry standard.</p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 4rem; font-size: 2.5rem;">Certificate Types</h2>
+        <div class="cert-types">
+            <div class="cert-card">
+                <div class="cert-name">Domain Validated</div>
+                <div class="cert-price">FREE</div>
+                <p style="opacity: 0.8;">Basic SSL encryption</p>
+                <p style="opacity: 0.8; margin-top: 0.5rem;">✓ Single domain</p>
+                <p style="opacity: 0.8;">✓ 90-day validity</p>
+                <p style="opacity: 0.8;">✓ Auto-renewal</p>
+            </div>
+            <div class="cert-card">
+                <div class="cert-name">Wildcard</div>
+                <div class="cert-price">$49/year</div>
+                <p style="opacity: 0.8;">Secure all subdomains</p>
+                <p style="opacity: 0.8; margin-top: 0.5rem;">✓ *.example.com</p>
+                <p style="opacity: 0.8;">✓ Unlimited subdomains</p>
+                <p style="opacity: 0.8;">✓ Auto-renewal</p>
+            </div>
+            <div class="cert-card">
+                <div class="cert-name">Organization</div>
+                <div class="cert-price">$199/year</div>
+                <p style="opacity: 0.8;">Business validation</p>
+                <p style="opacity: 0.8; margin-top: 0.5rem;">✓ Company name in cert</p>
+                <p style="opacity: 0.8;">✓ Green address bar</p>
+                <p style="opacity: 0.8;">✓ Higher trust</p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 4rem; font-size: 2.5rem;">Trusted By</h2>
+        <div class="trust-badges">
+            <div class="badge">🔒 256-bit Encryption</div>
+            <div class="badge">✓ SHA-256 Signature</div>
+            <div class="badge">🌐 99.9% Browser Trust</div>
+            <div class="badge">⚡ OCSP Stapling</div>
+            <div class="badge">🛡️ Perfect Forward Secrecy</div>
+        </div>
+
+        <button class="cta">Get Started - First certificate free</button>
+    </div>
+</body>
+</html>

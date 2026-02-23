@@ -1,0 +1,8 @@
+BLACKROAD SOVEREIGN LEDGER | REVENUE_TRACKER_V1
+HASH_ROOT: sha256:000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+CURRENCY: BRS (BlackRoad Sovereign Units)
+DESTINATION: /artifacts/blackroad/public/data/treasury
+Date,Session_Hash,Cell_Source,Reasoning_Proof_Hash,Compliance_Tier,Value_BRS 2026-01-10T02:45:00Z,00803d08,Alice,sha256:8f2b7c1a...,I - The Fork,100.00 2026-01-10T02:50:00Z,00803d08,Aria,sha256:d7a8fbb3...,II - Handshake,500.00 2026-01-10T02:55:00Z,00803d08,Lucidia,sha256:f2e3d4c5...,III - Safe House,2500.00 2026-01-10T03:00:00Z,8a2b3c4d,Metronome,sha256:1a2b3c4d...,GENESIS_BOND,10000.00
+[FINANCIAL_INTEGRITY_ANCHOR]
+Total_Sovereign_Value: 13100.00 BRS
+Ledger_Hash: sha256:f2e3d4c5b6a79887766554433221100ffeeddccbbaa99887766554433221100

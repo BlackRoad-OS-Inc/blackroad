@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadAI - AI Inference API</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000000;
+            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 7rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #2979FF, #9C27B0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            z-index: 10;
+        }
+        .tagline {
+            font-size: 2.5rem;
+            margin: 2rem 0;
+            opacity: 0.9;
+            z-index: 10;
+        }
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 2rem 0;
+            z-index: 10;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+            z-index: 10;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 2px solid rgba(41, 121, 255, 0.3);
+            transition: all 0.3s;
+        }
+        .feature:hover {
+            transform: translateY(-10px);
+            border-color: #2979FF;
+            box-shadow: 0 20px 50px rgba(41, 121, 255, 0.4);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .feature h3 {
+            color: #2979FF;
+            margin-bottom: 1rem;
+        }
+        .cta {
+            padding: 1.5rem 4rem;
+            background: linear-gradient(135deg, #2979FF, #9C27B0);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-top: 2rem;
+            z-index: 10;
+        }
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+        .model-card {
+            background: rgba(156, 39, 176, 0.1);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 2px solid rgba(156, 39, 176, 0.3);
+        }
+        .model-name {
+            font-size: 1.3rem;
+            color: #9C27B0;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .code-example {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #F5A623;
+            font-family: 'Monaco', monospace;
+            font-size: 0.9rem;
+            margin: 3rem auto;
+            max-width: 800px;
+            overflow-x: auto;
+        }
+        .neural-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            z-index: 1;
+        }
+        .node {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #2979FF;
+            border-radius: 50%;
+            animation: pulse 3s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="neural-bg">
+            <div class="node" style="top: 20%; left: 15%;"></div>
+            <div class="node" style="top: 40%; left: 30%;"></div>
+            <div class="node" style="top: 60%; left: 20%;"></div>
+            <div class="node" style="top: 30%; right: 25%;"></div>
+            <div class="node" style="top: 70%; right: 35%;"></div>
+            <div class="node" style="bottom: 20%; left: 40%;"></div>
+            <div class="node" style="bottom: 40%; right: 20%;"></div>
+        </div>
+
+        <h1>RoadAI</h1>
+        <p class="tagline">AI inference at the speed of thought</p>
+        <p class="price">$22/month · 1M tokens included</p>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h3>Multiple Models</h3>
+                <p>GPT-4, Claude, Llama 3, Mistral, and more. Switch models with one API call.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Lightning Fast</h3>
+                <p>Average response time under 200ms. Optimized for production workloads.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔐</div>
+                <h3>Secure & Private</h3>
+                <p>Your data never leaves your control. SOC2 Type II certified.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Real-time Analytics</h3>
+                <p>Track usage, costs, and performance with detailed dashboards.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎯</div>
+                <h3>Fine-tuning</h3>
+                <p>Custom models trained on your data. Deploy in minutes.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🌍</div>
+                <h3>Global Edge</h3>
+                <p>Models deployed across 50+ regions for lowest latency.</p>
+            </div>
+        </div>
+
+        <div class="code-example">
+curl https://api.blackroad.io/v1/ai/completions \<br>
+&nbsp;&nbsp;-H "Authorization: Bearer YOUR_API_KEY" \<br>
+&nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+&nbsp;&nbsp;-d '{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"model": "gpt-4",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"messages": [{"role": "user", "content": "Explain quantum computing"}],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"temperature": 0.7<br>
+&nbsp;&nbsp;}'
+        </div>
+
+        <h2 style="margin-top: 4rem; font-size: 2.5rem;">Supported Models</h2>
+        <div class="models-grid">
+            <div class="model-card">
+                <div class="model-name">GPT-4 Turbo</div>
+                <p>128K context · $0.01/1K tokens</p>
+            </div>
+            <div class="model-card">
+                <div class="model-name">Claude 3 Opus</div>
+                <p>200K context · $0.015/1K tokens</p>
+            </div>
+            <div class="model-card">
+                <div class="model-name">Llama 3 70B</div>
+                <p>32K context · $0.005/1K tokens</p>
+            </div>
+            <div class="model-card">
+                <div class="model-name">Mistral Large</div>
+                <p>32K context · $0.008/1K tokens</p>
+            </div>
+            <div class="model-card">
+                <div class="model-name">Gemini Pro</div>
+                <p>100K context · $0.0005/1K tokens</p>
+            </div>
+            <div class="model-card">
+                <div class="model-name">Custom Models</div>
+                <p>Fine-tuned on your data</p>
+            </div>
+        </div>
+
+        <button class="cta">Start Free Trial - 100K tokens free</button>
+    </div>
+</body>
+</html>

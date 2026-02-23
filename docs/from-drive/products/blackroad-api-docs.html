@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad API Documentation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000000;
+            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+        }
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .sidebar h2 {
+            color: #F5A623;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        .api-section {
+            margin-bottom: 2rem;
+        }
+        .api-section h3 {
+            color: #2979FF;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .endpoint {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Monaco', monospace;
+            font-size: 0.9rem;
+        }
+        .endpoint:hover {
+            background: rgba(245, 166, 35, 0.1);
+            transform: translateX(5px);
+        }
+        .method {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        .get { background: #4CAF50; color: white; }
+        .post { background: #2979FF; color: white; }
+        .put { background: #FF9800; color: white; }
+        .delete { background: #f44336; color: white; }
+        .content {
+            flex: 1;
+            padding: 3rem;
+            overflow-y: auto;
+            height: 100vh;
+        }
+        h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+        .code-block {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #F5A623;
+            margin: 1rem 0;
+            font-family: 'Monaco', monospace;
+            overflow-x: auto;
+        }
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        .param-table th,
+        .param-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+        .param-table th {
+            color: #2979FF;
+            font-weight: 600;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(156, 39, 176, 0.2);
+            border: 1px solid #9C27B0;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>API Reference</h2>
+        
+        <div class="api-section">
+            <h3>Authentication</h3>
+            <div class="endpoint">
+                <span class="method post">POST</span> /auth/login
+            </div>
+            <div class="endpoint">
+                <span class="method post">POST</span> /auth/register
+            </div>
+        </div>
+        
+        <div class="api-section">
+            <h3>Analytics</h3>
+            <div class="endpoint">
+                <span class="method get">GET</span> /analytics/stats
+            </div>
+            <div class="endpoint">
+                <span class="method get">GET</span> /analytics/events
+            </div>
+            <div class="endpoint">
+                <span class="method post">POST</span> /analytics/track
+            </div>
+        </div>
+        
+        <div class="api-section">
+            <h3>Forms</h3>
+            <div class="endpoint">
+                <span class="method get">GET</span> /forms
+            </div>
+            <div class="endpoint">
+                <span class="method post">POST</span> /forms
+            </div>
+            <div class="endpoint">
+                <span class="method post">POST</span> /forms/:id/submit
+            </div>
+        </div>
+        
+        <div class="api-section">
+            <h3>Email</h3>
+            <div class="endpoint">
+                <span class="method post">POST</span> /email/send
+            </div>
+            <div class="endpoint">
+                <span class="method get">GET</span> /email/campaigns
+            </div>
+        </div>
+    </div>
+    
+    <div class="content">
+        <h1>API Documentation <span class="badge">v1.0</span></h1>
+        
+        <h2>Getting Started</h2>
+        <p>Welcome to the BlackRoad API! All API requests require authentication via API key.</p>
+        
+        <h3>Base URL</h3>
+        <div class="code-block">https://api.blackroad.io/v1</div>
+        
+        <h3>Authentication</h3>
+        <p>Include your API key in the Authorization header:</p>
+        <div class="code-block">
+Authorization: Bearer YOUR_API_KEY<br>
+Content-Type: application/json
+        </div>
+        
+        <h3>Example Request</h3>
+        <div class="code-block">
+curl -X POST https://api.blackroad.io/v1/analytics/track \<br>
+  -H "Authorization: Bearer YOUR_API_KEY" \<br>
+  -H "Content-Type: application/json" \<br>
+  -d '{<br>
+    "event": "page_view",<br>
+    "properties": {<br>
+      "page": "/home",<br>
+      "referrer": "google.com"<br>
+    }<br>
+  }'
+        </div>
+        
+        <h3>Response Format</h3>
+        <div class="code-block">
+{<br>
+  "success": true,<br>
+  "data": { ... },<br>
+  "timestamp": "2026-01-09T23:00:00Z"<br>
+}
+        </div>
+        
+        <h3>Rate Limits</h3>
+        <table class="param-table">
+            <tr>
+                <th>Plan</th>
+                <th>Requests/Hour</th>
+                <th>Burst</th>
+            </tr>
+            <tr>
+                <td>Free</td>
+                <td>1,000</td>
+                <td>100/min</td>
+            </tr>
+            <tr>
+                <td>Pro</td>
+                <td>10,000</td>
+                <td>500/min</td>
+            </tr>
+            <tr>
+                <td>Enterprise</td>
+                <td>Unlimited</td>
+                <td>Unlimited</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>
