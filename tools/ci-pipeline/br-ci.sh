@@ -476,9 +476,10 @@ case "${1:-help}" in
     run|r) cmd_run "${@:2}" ;;
     list|ls|l) cmd_list ;;
     status|stat|s) cmd_status "${@:2}" ;;
-    watch|w) cmd_watch "${@:2}" ;;
+    watch|w|live) cmd_watch "${@:2}" ;;
     add-stage|add) cmd_add_stage "${@:2}" ;;
     remove-stage|rm) cmd_remove_stage "${@:2}" ;;
+    history|hist) cmd_history "${@:2}" ;;
     help|--help|-h) cmd_help ;;
     *)
         echo -e "${RED}❌ Unknown command: $1${NC}"

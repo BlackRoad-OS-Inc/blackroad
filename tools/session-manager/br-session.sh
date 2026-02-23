@@ -57,24 +57,23 @@ cmd_list() {
   echo ""
   local count=0
   for file in "$SESSION_HOME"/*.session(N); do
-    ((count++))
-    local n; n=$(basename "$file" .session)
-    local info; info=$(python3 -c "
-import json, time
-d = json.load(open('$file'))
-age = int(time.time()) - d.get('timestamp',0)
-days = age // 86400; hours = (age % 86400) // 3600
-ago = f'{days}d ago' if days else f'{hours}h ago'
-print(d.get('dir','?'), d.get('branch','?'), str(d.get('changed',0)), ago)
-" 2>/dev/null)
-    local dir br ch ago
-    dir=$(echo "$info" | awk '{print $1}')
-    br=$(echo "$info" | awk '{print $2}')
-    ch=$(echo "$info" | awk '{print $3}')
-    ago=$(echo "$info" | awk '{print $4}')
-    echo -e "  ${AMBER}${BOLD}$n${NC}  ${DIM}$ago${NC}"
-    echo -e "  ${DIM}$dir  [$br]  $ch changed${NC}"
-    echo ""
+    count=$((count+1))
+    python3 - "$file" <<'PYEOF'
+import json, sys, time
+f = sys.argv[1]
+d = json.load(open(f))
+n = d.get("name", "?")
+di = d.get("dir", "?")
+br = d.get("branch", "?")
+ch = d.get("changed", 0)
+age = int(time.time()) - d.get("timestamp", 0)
+h, m = age // 3600, (age % 3600) // 60
+ago = f"{h}h ago" if h else f"{m}m ago"
+A = '\033[38;5;214m'; B = '\033[1m'; D = '\033[2m'; NC = '\033[0m'
+print(f"  {A}{B}{n}{NC}  {D}{ago}{NC}")
+print(f"  {D}{di}  [{br}]  {ch} changed{NC}")
+print()
+PYEOF
   done
   [[ $count -eq 0 ]] && echo -e "  ${DIM}No sessions yet.  br session save <name>${NC}\n" \
                       || echo -e "  ${DIM}total: $count${NC}\n"
