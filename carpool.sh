@@ -409,6 +409,11 @@ if [[ "$1" == "--convo" ]]; then
   [[ $STAGGER -gt 0 ]] && sleep "$STAGGER"
 
   TOPIC=$(cat "$WORK_DIR/topic.txt" 2>/dev/null)
+  CONTEXT=$(cat "$WORK_DIR/context.txt" 2>/dev/null | head -c 2000)
+
+  # Per-agent model override (from --split or --models)
+  _agent_model=$(cat "$WORK_DIR/${NAME}.model" 2>/dev/null)
+  [[ -n "$_agent_model" ]] && MODEL="$_agent_model"
 
   for (( turn=0; turn<TURNS; turn++ )); do
     # Wait for round gate — all agents must finish prev round before next starts
@@ -450,7 +455,16 @@ if [[ "$1" == "--convo" ]]; then
     followup_line=""
     [[ -n "$followup" ]] && followup_line="NEW QUESTION from user: ${followup}"
 
-    prompt="[BlackRoad team on: ${TOPIC}]
+    context_block=""
+    if [[ -n "$CONTEXT" ]]; then
+      ctx_label=$(cat "$WORK_DIR/context.label" 2>/dev/null || echo "Reference material")
+      context_block="[${ctx_label}]
+${CONTEXT}
+---
+"
+    fi
+
+    prompt="${context_block}[BlackRoad team on: ${TOPIC}]
 ${recent}
 ${followup_line}
 ${NAME} is ${PERSONA}.
@@ -838,6 +852,159 @@ print(json.dumps({
   while true; do sleep 60; done
 fi
 
+# ── DIFF TWO SESSIONS ─────────────────────────────────────────
+if [[ "$1" == "diff" ]]; then
+  f1="${2:-}"; f2="${3:-}"
+  if [[ -z "$f1" || -z "$f2" ]]; then
+    # Default: last two sessions
+    files=($(ls -1t "$SAVE_DIR" 2>/dev/null | head -2))
+    f1="${SAVE_DIR}/${files[0]}"; f2="${SAVE_DIR}/${files[1]}"
+    [[ ! -f "$f1" || ! -f "$f2" ]] && echo -e "${RED}Need two saved sessions. Usage: br carpool diff <s1> <s2>${NC}" && exit 1
+  fi
+  [[ ! -f "$f1" ]] && f1="$SAVE_DIR/$f1"
+  [[ ! -f "$f2" ]] && f2="$SAVE_DIR/$f2"
+  [[ ! -f "$f1" ]] && echo "Not found: $f1" && exit 1
+  [[ ! -f "$f2" ]] && echo "Not found: $f2" && exit 1
+
+  _topic1=$(grep "^Topic:" "$f1" | sed 's/^Topic: //'); _topic2=$(grep "^Topic:" "$f2" | sed 's/^Topic: //')
+  _model1=$(grep "^Model:" "$f1" | sed 's/^Model: //');  _model2=$(grep "^Model:" "$f2" | sed 's/^Model: //')
+  _date1=$(grep "^Date:" "$f1" | sed 's/^Date:  //');   _date2=$(grep "^Date:" "$f2" | sed 's/^Date:  //')
+  _verdict1=$(grep "^VERDICT:" "$f1" | sed 's/^VERDICT: //'); _verdict2=$(grep "^VERDICT:" "$f2" | sed 's/^VERDICT: //')
+
+  W=38
+  _pad() { printf "%-${W}s" "${1:0:$W}"; }
+
+  echo -e "\n${WHITE}🚗 CarPool — Session Diff${NC}\n"
+  printf "${DIM}%-${W}s  %-${W}s${NC}\n" "$(basename "$f1")" "$(basename "$f2")"
+  printf "%-${W}s  %-${W}s\n" "$(printf '─%.0s' {1..38})" "$(printf '─%.0s' {1..38})"
+  printf "${CYAN}%-${W}s${NC}  ${CYAN}%-${W}s${NC}\n" "$(_pad "$_topic1")" "$(_pad "$_topic2")"
+  printf "${DIM}%-${W}s  %-${W}s${NC}\n" "$(_pad "$_model1")" "$(_pad "$_model2")"
+  printf "${DIM}%-${W}s  %-${W}s${NC}\n" "$(_pad "$_date1")" "$(_pad "$_date2")"
+
+  # Verdict coloring
+  _vcolor1="\033[1;32m"; echo "$_verdict1" | grep -qi "reject\|split" && _vcolor1="\033[1;31m"
+  _vcolor2="\033[1;32m"; echo "$_verdict2" | grep -qi "reject\|split" && _vcolor2="\033[1;31m"
+  printf "${_vcolor1}%-${W}s${NC}  ${_vcolor2}%-${W}s${NC}\n\n" "$(_pad "$_verdict1")" "$(_pad "$_verdict2")"
+
+  # Per-agent last statement
+  echo -e "${DIM}Agent statements:${NC}"
+  for entry in "${AGENT_LIST[@]}"; do
+    IFS='|' read -r n _e _r _ <<< "$entry"
+    agent_meta "$n"; C="\033[${COLOR_CODE}m"
+    _s1=$(grep "^${n}:" "$f1" | tail -1 | sed "s/^${n}: //" | cut -c1-36)
+    _s2=$(grep "^${n}:" "$f2" | tail -1 | sed "s/^${n}: //" | cut -c1-36)
+    printf "${C}${EMOJI} %-10s${NC}  %-${W}s  %-${W}s\n" "$n" "${_s1:---}" "${_s2:---}"
+  done
+
+  # Synthesis snippets
+  echo -e "\n${DIM}Synthesis snippets:${NC}"
+  _syn1=$(awk '/^SYNTHESIS/,/^DISPATCHES/' "$f1" 2>/dev/null | grep -v "^SYNTHESIS\|^DISPATCHES\|^[═─]" | head -3 | tr '\n' ' ')
+  _syn2=$(awk '/^SYNTHESIS/,/^DISPATCHES/' "$f2" 2>/dev/null | grep -v "^SYNTHESIS\|^DISPATCHES\|^[═─]" | head -3 | tr '\n' ' ')
+  printf "${YELLOW}%-${W}s${NC}\n${YELLOW}%-${W}s${NC}\n" "${_syn1:0:$W}" "${_syn2:0:$W}"
+  echo ""
+  exit 0
+fi
+
+# ── WEB EXPORT ────────────────────────────────────────────────
+if [[ "$1" == "web" ]]; then
+  file="$2"
+  if [[ -z "$file" ]]; then
+    file=$(ls -1t "$SAVE_DIR" 2>/dev/null | head -1)
+    [[ -z "$file" ]] && echo "No sessions found." && exit 1
+    file="$SAVE_DIR/$file"
+  elif [[ ! -f "$file" ]]; then
+    file="$SAVE_DIR/$file"
+  fi
+  [[ ! -f "$file" ]] && echo "Not found: $2" && exit 1
+
+  topic=$(grep "^Topic:" "$file" | sed 's/^Topic: //')
+  meta=$(grep "^Model:" "$file" | sed 's/^Model: //')
+  date_str=$(grep "^Date:" "$file" | sed 's/^Date:  //')
+  verdict=$(grep "^VERDICT:" "$file" | sed 's/^VERDICT: //')
+  out="${file%.txt}.html"
+
+  _vclass="approved"; echo "$verdict" | grep -qi "reject" && _vclass="rejected"
+  echo "$verdict" | grep -qi "split" && _vclass="split"
+
+  {
+cat <<'HTMLEOF'
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+HTMLEOF
+    echo "<title>🚗 CarPool: ${topic}</title>"
+cat <<'HTMLEOF'
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;font-size:14px;line-height:1.6;padding:24px}
+.header{border-bottom:1px solid #222;padding-bottom:16px;margin-bottom:24px}
+h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:6px}
+.meta{color:#555;font-size:12px}
+.verdict{display:inline-block;padding:4px 14px;border-radius:20px;font-weight:700;font-size:13px;margin:12px 0}
+.approved{background:#0d2e0d;color:#4caf50;border:1px solid #4caf50}
+.rejected{background:#2e0d0d;color:#f44336;border:1px solid #f44336}
+.split{background:#2e2a0d;color:#ffc107;border:1px solid #ffc107}
+.section{margin:24px 0}
+.section h2{font-size:13px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.agent-card{background:#111;border:1px solid #1e1e1e;border-radius:8px;padding:14px 16px;margin:10px 0}
+.agent-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.agent-name{font-weight:700;font-size:13px}
+.agent-role{color:#555;font-size:11px}
+.agent-text{color:#ccc;font-size:13px;line-height:1.55}
+.synthesis{background:#111820;border:1px solid #1a2a3a;border-radius:8px;padding:16px;color:#9ec5e8;font-size:13px;line-height:1.6}
+.vote-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.vote-card{background:#111;border:1px solid #1e1e1e;border-radius:6px;padding:10px;display:flex;align-items:center;gap:8px}
+.vote-yes{color:#4caf50;font-weight:700}.vote-no{color:#f44336;font-weight:700}
+.dispatch-list{list-style:none}
+.dispatch-list li{padding:4px 0;border-bottom:1px solid #111;color:#888;font-size:12px}
+footer{margin-top:32px;text-align:center;color:#333;font-size:11px}
+</style></head><body>
+HTMLEOF
+
+    echo "<div class='header'><h1>🚗 ${topic}</h1>"
+    echo "<div class='meta'>${date_str} · ${meta}</div>"
+    echo "<div class='verdict ${_vclass}'>${verdict}</div></div>"
+
+    # Conversation section
+    echo "<div class='section'><h2>Discussion</h2>"
+    while IFS= read -r line; do
+      speaker="${line%%:*}"; text="${line#*: }"
+      agent_meta "$speaker" 2>/dev/null
+      [[ -z "$ROLE" || "$ROLE" == "" ]] && continue
+      echo "<div class='agent-card'><div class='agent-header'>"
+      echo "<span class='agent-name'>${EMOJI} ${speaker}</span>"
+      echo "<span class='agent-role'>${ROLE}</span></div>"
+      echo "<div class='agent-text'>$(echo "$text" | sed 's/&/\&amp;/g;s/</\&lt;/g;s/>/\&gt;/g')</div></div>"
+    done < <(grep -E "^[A-Z]+: " "$file" | grep -v "^Topic:\|^Model:\|^Date:\|^VERDICT:")
+
+    echo "</div>"
+
+    # Synthesis
+    _syn=$(awk '/^SYNTHESIS/,/^(DISPATCHES|VOTE:)/' "$file" | grep -v "^SYNTHESIS\|^DISPATCHES\|^[═─]" | grep -v "^$" | head -20)
+    if [[ -n "$_syn" ]]; then
+      echo "<div class='section'><h2>Synthesis</h2><div class='synthesis'>"
+      echo "$_syn" | sed 's/&/\&amp;/g;s/</\&lt;/g;s/>/\&gt;/g;s/$/<br>/'
+      echo "</div></div>"
+    fi
+
+    # Votes
+    echo "<div class='section'><h2>Vote</h2><div class='vote-grid'>"
+    for entry in "${AGENT_LIST[@]}"; do
+      IFS='|' read -r n _e _r _ <<< "$entry"; agent_meta "$n"
+      _v=$(grep "^  ${n}: " "$file" | grep -oE "YES|NO" | head -1)
+      [[ -z "$_v" ]] && continue
+      _vc="vote-yes"; [[ "$_v" == "NO" ]] && _vc="vote-no"
+      echo "<div class='vote-card'><span>${EMOJI}</span><span>${n}</span><span class='${_vc}'>${_v}</span></div>"
+    done
+    echo "</div></div>"
+
+    echo "<footer>Generated by 🚗 CarPool · BlackRoad OS</footer></body></html>"
+  } > "$out"
+
+  echo -e "${GREEN}✓${NC} Web export → ${CYAN}${out}${NC}"
+  open "$out" 2>/dev/null || xdg-open "$out" 2>/dev/null || echo "Open in browser: file://${out}"
+  exit 0
+fi
+
 # ── LAUNCHER ──────────────────────────────────────────────────
 # br carpool last → open most recent saved session
 if [[ "$1" == "last" ]]; then
@@ -850,15 +1017,23 @@ fi
 # ── PARSE SPEED FLAGS ──────────────────────────────────────────
 SESSION_NAME=""
 BRIEF=0
+CONTEXT_FILE=""
+CONTEXT_URL=""
+SPLIT_MODELS=0
+MODELS_MAP=""
 while [[ "${1:0:2}" == "--" ]]; do
   case "$1" in
-    --fast)    MODEL="tinyllama"; TURNS=2; shift ;;
-    --smart)   MODEL="llama3.2:1b"; TURNS=3; shift ;;
-    --turbo)   MODEL="llama3.2:1b"; TURNS=2; shift ;;
-    --brief)   TURNS=1; BRIEF=1; shift ;;
-    --model|-m) MODEL="$2"; shift 2 ;;
-    --turns|-t) TURNS="$2"; shift 2 ;;
-    --name|-n)  SESSION_NAME="$2"; shift 2 ;;
+    --fast)      MODEL="tinyllama"; TURNS=2; shift ;;
+    --smart)     MODEL="llama3.2:1b"; TURNS=3; shift ;;
+    --turbo)     MODEL="llama3.2:1b"; TURNS=2; shift ;;
+    --brief)     TURNS=1; BRIEF=1; shift ;;
+    --model|-m)  MODEL="$2"; shift 2 ;;
+    --turns|-t)  TURNS="$2"; shift 2 ;;
+    --name|-n)   SESSION_NAME="$2"; shift 2 ;;
+    --context|-c) CONTEXT_FILE="$2"; shift 2 ;;
+    --url)       CONTEXT_URL="$2"; shift 2 ;;
+    --split)     SPLIT_MODELS=1; shift ;;
+    --models)    MODELS_MAP="$2"; shift 2 ;;
     *) break ;;
   esac
 done
@@ -916,6 +1091,46 @@ fi
 rm -rf "$WORK_DIR" && mkdir -p "$WORK_DIR"
 echo "$TOPIC" > "$WORK_DIR/topic.txt"
 > "$WORK_DIR/convo.txt"
+
+# ── CONTEXT INJECTION ─────────────────────────────────────────
+if [[ -n "$CONTEXT_FILE" ]]; then
+  if [[ -f "$CONTEXT_FILE" ]]; then
+    cp "$CONTEXT_FILE" "$WORK_DIR/context.txt"
+    echo "📎 $(basename "$CONTEXT_FILE")" > "$WORK_DIR/context.label"
+    echo -e "${CYAN}📎 context:${NC} ${CONTEXT_FILE}"
+  else
+    echo -e "${RED}Context file not found: ${CONTEXT_FILE}${NC}"; exit 1
+  fi
+elif [[ -n "$CONTEXT_URL" ]]; then
+  echo -e "${DIM}fetching context from ${CONTEXT_URL}...${NC}"
+  curl -sL -m 10 "$CONTEXT_URL" | sed 's/<[^>]*>//g' | head -c 3000 > "$WORK_DIR/context.txt"
+  echo "🌐 ${CONTEXT_URL}" > "$WORK_DIR/context.label"
+  echo -e "${CYAN}🌐 context:${NC} ${CONTEXT_URL}"
+elif [[ ! -t 0 ]]; then
+  # stdin pipe: cat file.md | br carpool "topic"
+  cat > "$WORK_DIR/context.txt"
+  echo "📋 stdin" > "$WORK_DIR/context.label"
+  echo -e "${CYAN}📋 context:${NC} piped from stdin"
+fi
+
+# ── PER-AGENT MODEL ASSIGNMENT ────────────────────────────────
+if [[ $SPLIT_MODELS -eq 1 ]]; then
+  THINKER_MODEL="${MODEL}"
+  WORKER_MODEL="tinyllama"
+  # If main model IS tinyllama, thinkers get llama3.2:1b
+  [[ "$MODEL" == "tinyllama" ]] && THINKER_MODEL="llama3.2:1b"
+  for n in LUCIDIA PRISM OCTAVIA; do echo "$THINKER_MODEL" > "$WORK_DIR/${n}.model"; done
+  for n in ALICE ECHO CIPHER ARIA SHELLFISH; do echo "$WORKER_MODEL" > "$WORK_DIR/${n}.model"; done
+  echo -e "${CYAN}🔀 split:${NC} thinkers→${THINKER_MODEL}  workers→${WORKER_MODEL}"
+fi
+if [[ -n "$MODELS_MAP" ]]; then
+  IFS=',' read -ra _entries <<< "$MODELS_MAP"
+  for _entry in "${_entries[@]}"; do
+    _n="${_entry%%:*}"; _m="${_entry#*:}"
+    echo "$_m" > "$WORK_DIR/${_n}.model"
+    echo -e "${CYAN}🎯${NC} ${_n} → ${_m}"
+  done
+fi
 # Round 0 gate always open (agents start immediately)
 echo "go" > "$WORK_DIR/round.0.go"
 
@@ -931,6 +1146,8 @@ SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 tmux kill-session -t "$SESSION" 2>/dev/null
 
 echo -e "${WHITE}🚗 CarPool${NC}  ${DIM}model:${NC} ${MODEL}  ${DIM}turns:${NC} ${TURNS}  ${DIM}agents:${NC} ${TOTAL}"
+[[ -f "$WORK_DIR/context.txt" ]] && echo -e "${CYAN}📎 with context${NC}"
+[[ $SPLIT_MODELS -eq 1 ]] && echo -e "${CYAN}🔀 split-model mode${NC}"
 echo -e "${DIM}${TOPIC}${NC}\n"
 
 # Tab 0: group panes — all agents with staggered start (1s each)
