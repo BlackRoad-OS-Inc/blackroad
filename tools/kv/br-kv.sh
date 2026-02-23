@@ -1,5 +1,6 @@
 #!/bin/zsh
 # BR KV — Cloudflare KV Namespace Manager
+export PATH="/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
 
 GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'
 BLUE='\033[0;34m'; GRAY='\033[0;37m'; BOLD='\033[1m'; NC='\033[0m'
@@ -9,7 +10,7 @@ CF_ACCOUNT_ID="848cf0b18d51e0170e0d1537aec3505a"
 
 init_db() {
   mkdir -p "$(dirname "$DB_FILE")"
-  sqlite3 "$DB_FILE" <<'EOF'
+  /usr/bin/sqlite3 "$DB_FILE" <<'EOF'
 CREATE TABLE IF NOT EXISTS namespaces (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -25,11 +26,11 @@ EOF
 
 get_token() {
   local tok
-  tok=$(sqlite3 "$DB_FILE" "SELECT value FROM config WHERE key='cf_token';" 2>/dev/null)
-  if [[ -z "$tok" ]]; then
-    tok=$CLOUDFLARE_API_TOKEN
-  fi
-  echo "$tok"
+  # Read from token file (avoids quoting issues with sqlite)
+  local tf="$HOME/.blackroad/kv_token"
+  [[ -f "$tf" ]] && IFS= read -r tok < "$tf"
+  [[ -z "$tok" ]] && tok="${CLOUDFLARE_API_TOKEN:-}"
+  printf '%s' "$tok"
 }
 
 cf_api() {
@@ -39,7 +40,7 @@ cf_api() {
     echo -e "${RED}✗${NC} No Cloudflare API token. Run: br kv auth <token>" >&2
     return 1
   fi
-  curl -s -H "Authorization: Bearer $token" -H "Content-Type: application/json" "$@" \
+  /usr/bin/curl -s -H "Authorization: Bearer $token" -H "Content-Type: application/json" "$@" \
     "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID$path"
 }
 
@@ -50,7 +51,8 @@ cmd_auth() {
     exit 1
   fi
   init_db
-  sqlite3 "$DB_FILE" "INSERT OR REPLACE INTO config (key,value) VALUES ('cf_token','$token');"
+  printf '%s' "$token" > "$HOME/.blackroad/kv_token"
+  chmod 600 "$HOME/.blackroad/kv_token"
   echo -e "${GREEN}✓${NC} Token saved."
 }
 
@@ -58,8 +60,8 @@ cmd_namespaces() {
   init_db
   echo -e "${CYAN}${BOLD}  ◆ KV NAMESPACES${NC}\n"
   local result; result=$(cf_api "/storage/kv/namespaces?per_page=100") || return 1
-  local count; count=$(echo "$result" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('result',[])), d.get('result_info',{}).get('total_count','?'))" 2>/dev/null)
-  echo "$result" | python3 -c "
+  local count; count=$(echo "$result" | /usr/bin/python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('result',[])), d.get('result_info',{}).get('total_count','?'))" 2>/dev/null)
+  echo "$result" | /usr/bin/python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 rows = d.get('result', [])
@@ -85,7 +87,7 @@ cmd_list() {
   fi
   echo -e "${CYAN}${BOLD}  ◆ KV KEYS  ${GRAY}$ns${NC}\n"
   local result; result=$(cf_api "/storage/kv/namespaces/$ns_id/keys?limit=100") || return 1
-  echo "$result" | python3 -c "
+  echo "$result" | /usr/bin/python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 keys = d.get('result', [])
@@ -108,7 +110,7 @@ cmd_get() {
   local ns_id; ns_id=$(resolve_ns "$ns")
   if [[ -z "$ns_id" ]]; then echo -e "${RED}✗${NC} Namespace not found: $ns"; exit 1; fi
   local token; token=$(get_token)
-  local val; val=$(curl -s -H "Authorization: Bearer $token" \
+  local val; val=$(/usr/bin/curl -s -H "Authorization: Bearer $token" \
     "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/storage/kv/namespaces/$ns_id/values/$key")
   echo "$val"
 }
@@ -121,14 +123,14 @@ cmd_set() {
   local ns_id; ns_id=$(resolve_ns "$ns")
   if [[ -z "$ns_id" ]]; then echo -e "${RED}✗${NC} Namespace not found: $ns"; exit 1; fi
   local token; token=$(get_token)
-  local result; result=$(curl -s -X PUT -H "Authorization: Bearer $token" \
+  local result; result=$(/usr/bin/curl -s -X PUT -H "Authorization: Bearer $token" \
     -H "Content-Type: text/plain" \
     --data "$value" \
     "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/storage/kv/namespaces/$ns_id/values/$key")
   if echo "$result" | grep -q '"success":true'; then
     echo -e "${GREEN}✓${NC} Set $key in $ns"
   else
-    echo -e "${RED}✗${NC} Failed: $(echo "$result" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("errors",[{}])[0].get("message","unknown"))' 2>/dev/null)"
+    echo -e "${RED}✗${NC} Failed: $(echo "$result" | /usr/bin/python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("errors",[{}])[0].get("message","unknown"))' 2>/dev/null)"
   fi
 }
 
@@ -140,7 +142,7 @@ cmd_del() {
   local ns_id; ns_id=$(resolve_ns "$ns")
   if [[ -z "$ns_id" ]]; then echo -e "${RED}✗${NC} Namespace not found: $ns"; exit 1; fi
   local token; token=$(get_token)
-  local result; result=$(curl -s -X DELETE -H "Authorization: Bearer $token" \
+  local result; result=$(/usr/bin/curl -s -X DELETE -H "Authorization: Bearer $token" \
     "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/storage/kv/namespaces/$ns_id/values/$key")
   if echo "$result" | grep -q '"success":true'; then
     echo -e "${GREEN}✓${NC} Deleted $key from $ns"
@@ -155,12 +157,12 @@ cmd_create() {
     echo -e "${RED}✗${NC} Usage: br kv create <name>"; exit 1
   fi
   local result; result=$(cf_api "/storage/kv/namespaces" -X POST --data "{\"title\":\"$name\"}") || return 1
-  local id; id=$(echo "$result" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('result',{}).get('id',''))" 2>/dev/null)
+  local id; id=$(echo "$result" | /usr/bin/python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('result',{}).get('id',''))" 2>/dev/null)
   if [[ -n "$id" ]]; then
-    sqlite3 "$DB_FILE" "INSERT OR REPLACE INTO namespaces (id,name) VALUES ('$id','$name');"
+    /usr/bin/sqlite3 "$DB_FILE" "INSERT OR REPLACE INTO namespaces (id,name) VALUES ('$id','$name');"
     echo -e "${GREEN}✓${NC} Created: ${BOLD}$name${NC}  ${GRAY}$id${NC}"
   else
-    echo -e "${RED}✗${NC} Failed: $(echo "$result" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("errors",[{}])[0].get("message","unknown"))' 2>/dev/null)"
+    echo -e "${RED}✗${NC} Failed: $(echo "$result" | /usr/bin/python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("errors",[{}])[0].get("message","unknown"))' 2>/dev/null)"
   fi
 }
 
@@ -170,7 +172,7 @@ resolve_ns() {
   if [[ ${#query} -ge 32 ]]; then echo "$query"; return; fi
   # Search by name via API
   local result; result=$(cf_api "/storage/kv/namespaces?per_page=100") 2>/dev/null || return 1
-  echo "$result" | python3 -c "
+  echo "$result" | /usr/bin/python3 -c "
 import sys, json
 q = sys.argv[1].lower()
 d = json.load(sys.stdin)
