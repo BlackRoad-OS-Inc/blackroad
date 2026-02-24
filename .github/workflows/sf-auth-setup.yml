@@ -1,0 +1,43 @@
+name: Salesforce Auth Setup
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action'
+        default: 'auth'
+        type: choice
+        options: [auth, test, list-orgs]
+
+jobs:
+  sf-auth:
+    name: SF JWT Auth on cecilia
+    runs-on: [self-hosted, cecilia]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Write JWT key
+        run: |
+          echo "${{ secrets.SALESFORCE_JWT_KEY }}" > /tmp/sf-jwt.key
+          chmod 600 /tmp/sf-jwt.key
+
+      - name: Salesforce JWT Auth
+        run: |
+          export PATH="$HOME/.local/node_modules/.bin:$PATH"
+          sf org login jwt \
+            --username "${{ secrets.SALESFORCE_USERNAME }}" \
+            --client-id "${{ secrets.SALESFORCE_CLIENT_ID }}" \
+            --jwt-key-file /tmp/sf-jwt.key \
+            --instance-url "${{ secrets.SALESFORCE_INSTANCE_URL }}" \
+            --set-default || {
+              echo "⚠️ JWT auth failed, trying SFDX auth URL"
+              echo "${{ secrets.SF_AUTH_URL_PRODUCTION }}" | sf org login sfdx-url --sfdx-url-stdin 2>/dev/null || echo "SF auth needs review"
+            }
+          rm -f /tmp/sf-jwt.key
+
+      - name: List Salesforce Orgs
+        run: |
+          export PATH="$HOME/.local/node_modules/.bin:$PATH"
+          sf org list 2>&1 || echo "No orgs yet"
+          sf org display 2>&1 | head -10 || echo "No default org"
