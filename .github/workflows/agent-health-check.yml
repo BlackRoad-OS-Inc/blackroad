@@ -8,6 +8,8 @@ jobs:
     runs-on: [self-hosted, pi]
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Check Pi tunnel
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.blackroad.io/health 2>/dev/null || echo "000")
