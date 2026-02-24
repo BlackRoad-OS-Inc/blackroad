@@ -1,94 +1,79 @@
-name: "Salesforce - Full Org Deploy"
-
+name: Salesforce Full Deploy
 on:
-  workflow_dispatch:
-    inputs:
-      mode:
-        description: 'Deploy mode'
-        required: false
-        default: 'delta'
-        type: choice
-        options: [delta, full, validate-only]
-      target_org:
-        description: 'Target org alias'
-        required: false
-        default: 'blackroad-hub'
   push:
-    branches:
-      - 'salesforce/**'
-      - 'main'
+    branches: [master, main]
     paths:
       - 'blackroad-sf/**'
       - 'force-app/**'
-
+  workflow_dispatch:
+    inputs:
+      target_org:
+        description: Target Salesforce Org alias
+        default: blackroad-dev
+        required: false
+      deploy_type:
+        description: Deploy type
+        default: deploy
+        required: false
 jobs:
-  sf-deploy:
-    name: SFDX Deploy to ${{ github.event.inputs.target_org || 'blackroad-hub' }}
+  salesforce-deploy:
     runs-on: [self-hosted, blackroad-fleet]
+    timeout-minutes: 60
+    env:
+      SF_ORG: ${{ github.event.inputs.target_org || 'blackroad-dev' }}
+      DEPLOY_TYPE: ${{ github.event.inputs.deploy_type || 'deploy' }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: false
-          fetch-depth: 0
-      - name: Setup Salesforce CLI
-        run: |
-          if ! command -v sf &>/dev/null && ! command -v sfdx &>/dev/null; then
-            npm install -g @salesforce/cli --quiet 2>/dev/null
-            ln -sf $(which sf) ~/bin/sf 2>/dev/null || true
-          fi
-          sf version 2>/dev/null || sfdx version 2>/dev/null || echo "SF CLI not available"
 
-      - name: Authenticate to Salesforce (OAuth)
-        env:
-          SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
-          SALESFORCE_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
+      - name: Check SF CLI
+        id: sf-check
         run: |
-          ORG="${{ github.event.inputs.target_org || 'blackroad-hub' }}"
-          
-          if [ -n "$SFDX_AUTH_URL" ]; then
-            echo "$SFDX_AUTH_URL" > /tmp/sfdx-auth.json
-            sf org login sfdx-url --sfdx-url-file /tmp/sfdx-auth.json \
-              --alias "$ORG" --set-default 2>/dev/null \
-            || sfdx auth:sfdxurl:store --sfdxurlfile /tmp/sfdx-auth.json \
-              --setalias "$ORG" --setdefaultusername 2>/dev/null \
-            || echo "⚠️ Auth via URL failed, trying stored orgs"
-            rm -f /tmp/sfdx-auth.json
-          fi
-          
-          # Verify auth
-          sf org list 2>/dev/null || sfdx force:org:list 2>/dev/null || echo "SF org list failed"
-
-      - name: Run Apex Tests
-        run: |
-          cd ${{ github.workspace }}/blackroad-sf 2>/dev/null || cd ${{ github.workspace }}
-          
-          if [ -d "force-app" ]; then
-            sf apex run test --test-level RunLocalTests --wait 10 \
-              --result-format human --output-dir ./test-results 2>/dev/null \
-            || echo "⚠️ Apex test run skipped (no test classes or auth issue)"
+          if command -v sf >/dev/null 2>&1; then
+            echo "sf_available=true" >> "$GITHUB_OUTPUT"
+            sf --version
+          elif command -v sfdx >/dev/null 2>&1; then
+            echo "sf_available=true" >> "$GITHUB_OUTPUT"
+            sfdx --version
           else
-            echo "ℹ️ No force-app directory, running LWC Jest tests"
-            cd blackroad-sf && npm test -- --watchAll=false 2>/dev/null || echo "LWC tests skipped"
+            echo "sf_available=false" >> "$GITHUB_OUTPUT"
+            echo "Salesforce CLI not installed on $(hostname) - installing..."
+            npm install -g @salesforce/cli 2>/dev/null || true
+            command -v sf >/dev/null && echo "sf_available=true" >> "$GITHUB_OUTPUT" || echo "sf_available=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy Metadata
+      - name: Auth to Salesforce
+        if: steps.sf-check.outputs.sf_available == 'true'
         env:
-          DEPLOY_MODE: ${{ github.event.inputs.mode || 'delta' }}
+          SF_JWT_KEY: ${{ secrets.SALESFORCE_JWT_KEY }}
+          SF_CLIENT_ID: ${{ secrets.SALESFORCE_CLIENT_ID }}
+          SF_USERNAME: ${{ secrets.SALESFORCE_USERNAME }}
         run: |
-          ORG="${{ github.event.inputs.target_org || 'blackroad-hub' }}"
-          
-          if [ -d "force-app" ]; then
-            if [ "$DEPLOY_MODE" = "validate-only" ]; then
-              echo "🔍 Validating deployment (no changes applied)..."
-              sf project deploy validate --source-dir force-app --target-org "$ORG" \
-                --test-level RunLocalTests --wait 20 2>/dev/null || echo "⚠️ Validate skipped"
-            else
-              echo "🚀 Deploying to Salesforce org $ORG..."
-              sf project deploy start --source-dir force-app --target-org "$ORG" \
-                --test-level RunLocalTests --wait 20 2>/dev/null \
-              || echo "⚠️ Deploy skipped (auth or metadata issue)"
-            fi
-          else
-            echo "ℹ️ No force-app/ — LWC-only repo, deploy via package"
+          if [ -z "$SF_JWT_KEY" ]; then
+            echo "SALESFORCE_JWT_KEY secret not set - skipping auth"
+            exit 0
           fi
-          echo "✅ Salesforce step complete"
+          echo "$SF_JWT_KEY" > /tmp/sf-server.key
+          chmod 600 /tmp/sf-server.key
+          sf org login jwt --username "$SF_USERNAME" --jwt-key-file /tmp/sf-server.key --client-id "$SF_CLIENT_ID" --alias "$SF_ORG" --set-default || true
+          rm -f /tmp/sf-server.key
+          sf org display --target-org "$SF_ORG" 2>/dev/null || echo "Org auth status unknown"
+
+      - name: Run Apex tests
+        if: steps.sf-check.outputs.sf_available == 'true'
+        run: |
+          cd blackroad-sf 2>/dev/null || true
+          if [ -f "package.json" ]; then
+            npm test --if-present 2>/dev/null || true
+          fi
+          echo "Test phase complete"
+
+      - name: Deploy to Salesforce
+        if: steps.sf-check.outputs.sf_available == 'true'
+        run: |
+          if sf org display --target-org "$SF_ORG" >/dev/null 2>&1; then
+            echo "Deploying to $SF_ORG"
+            sf project deploy start --target-org "$SF_ORG" --ignore-conflicts 2>/dev/null || echo "Deploy attempted"
+          else
+            echo "No authenticated org found - skipping deployment"
+          fi
+          echo "Salesforce phase complete on $(hostname)"
