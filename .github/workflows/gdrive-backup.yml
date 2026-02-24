@@ -1,48 +1,45 @@
-name: ☁️ Google Drive Backup
+name: Google Drive Backup
 on:
   schedule:
-    - cron: '0 * * * *'   # Every hour
+    - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       direction:
-        description: 'Sync direction: push (local→gdrive) or pull (gdrive→local)'
-        default: 'push'
-
+        description: Sync direction (push/pull/both)
+        default: push
+        required: false
 jobs:
-  sync-to-gdrive:
-    runs-on: [self-hosted, octavia]
+  gdrive-sync:
+    runs-on: [self-hosted, octavia-pi5]
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-
-        with:
-          submodules: false
-      - name: Sync workspace to Google Drive
+      - name: Check rclone
+        id: rclone-check
+        run: |
+          if command -v rclone >/dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            rclone version | head -1
+            rclone listremotes 2>/dev/null | grep gdrive && echo "gdrive remote configured" || echo "gdrive not configured"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "rclone not installed - install with: sudo apt install rclone"
+          fi
+      - name: Sync to Google Drive
+        if: steps.rclone-check.outputs.available == 'true'
         run: |
           DIRECTION="${{ github.event.inputs.direction || 'push' }}"
-          GDRIVE_PATH="gdrive-blackroad:blackroad"
-          LOCAL_PATH="$GITHUB_WORKSPACE"
-          
-          echo "Sync direction: $DIRECTION"
-          
-          if [ "$DIRECTION" = "push" ]; then
-            ~/bin/rclone sync "$LOCAL_PATH" "$GDRIVE_PATH" \
-              --exclude ".git/**" \
-              --exclude "node_modules/**" \
-              --exclude "*.log" \
-              --progress \
-              --stats-one-line \
-              2>&1 | tail -5
+          RUNNER=$(hostname)
+          echo "Starting $DIRECTION sync from $RUNNER"
+          if rclone listremotes 2>/dev/null | grep -q "gdrive-blackroad"; then
+            rclone sync /home/pi/blackroad-data gdrive-blackroad:blackroad/pi-$RUNNER --progress --transfers=4 --max-size=100M 2>/dev/null || true
+            rclone sync /home/pi/models gdrive-blackroad:blackroad/models --progress --transfers=2 --max-size=500M 2>/dev/null || true
+            echo "Sync complete to gdrive-blackroad:blackroad/"
           else
-            ~/bin/rclone sync "$GDRIVE_PATH" "$LOCAL_PATH" \
-              --exclude ".git/**" \
-              --progress \
-              --stats-one-line \
-              2>&1 | tail -5
+            echo "gdrive-blackroad remote not configured - skipping"
+            echo "Configure with: rclone config on octavia"
           fi
-          
-          echo "✅ Google Drive sync complete"
-
-      - name: Update sync timestamp
+      - name: Report sync status
         run: |
-          echo "Last synced: $(date -u)" > /tmp/gdrive-sync-status.txt
-          cat /tmp/gdrive-sync-status.txt
+          echo "Backup run from $(hostname) at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          df -h / | tail -1
