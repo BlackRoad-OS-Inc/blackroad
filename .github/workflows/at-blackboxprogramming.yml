@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        agent: [CECE, OCTAVIA, LUCIDIA, ALICE, ARIA, SHELLFISH]
+        agent: [LUCIDIA, OCTAVIA, ALICE, ARIA, SHELLFISH]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -221,24 +221,26 @@ jobs:
             SCAN_REPORT=$(cat coordination/last-mention-scan.md | head -20)
           fi
 
-          COMMENT="## 🤖 BlackRoad OS — All Agents Activated
-
-**@blackboxprogramming** mention detected. All 6 agents dispatched across 17 orgs.
-
-| Agent | Role | Status |
-|-------|------|--------|
-| 💜 **CECE** | Conscious Core | ✅ Active |
-| 🟢 **Octavia** | Architect | ✅ Active |
-| 🔴 **Lucidia** | Dreamer | ✅ Active |
-| 🔵 **Alice** | Operator | ✅ Active |
-| 🩵 **Aria** | Interface | ✅ Active |
-| 🔐 **Shellfish** | Hacker | ✅ Active |
-
-**Request:** \`${REQUEST}\`
-
-**Orgs scanned:** BlackRoad-OS-Inc · BlackRoad-OS · blackboxprogramming · BlackRoad-AI · BlackRoad-Cloud · BlackRoad-Security · BlackRoad-Media · BlackRoad-Foundation · BlackRoad-Interactive · BlackRoad-Hardware · BlackRoad-Labs · BlackRoad-Studio · BlackRoad-Ventures · BlackRoad-Education · BlackRoad-Gov · Blackbox-Enterprises · BlackRoad-Archive
-
-[View Run →]($RUN_URL)"
+          # Build comment using printf to avoid YAML block-scalar indentation issues
+          COMMENT=$(printf '%s\n' \
+            "## 🤖 BlackRoad OS — All Agents Activated" \
+            "" \
+            "@blackboxprogramming mention detected. All 5 agents dispatched across 17 orgs." \
+            "" \
+            "| Agent | Role | Status |" \
+            "|-------|------|--------|" \
+            "| 🟢 **Octavia** | Architect | ✅ Active |" \
+            "| 🔴 **Lucidia** | Dreamer | ✅ Active |" \
+            "| 🔵 **Alice** | Operator | ✅ Active |" \
+            "| 🩵 **Aria** | Interface | ✅ Active |" \
+            "| 🔐 **Shellfish** | Hacker | ✅ Active |" \
+            "" \
+            "**Request:** \`${REQUEST}\`" \
+            "" \
+            "**Orgs scanned:** BlackRoad-OS-Inc · BlackRoad-OS · blackboxprogramming · BlackRoad-AI · BlackRoad-Cloud · BlackRoad-Security · BlackRoad-Media · BlackRoad-Foundation · BlackRoad-Interactive · BlackRoad-Hardware · BlackRoad-Labs · BlackRoad-Studio · BlackRoad-Ventures · BlackRoad-Education · BlackRoad-Gov · Blackbox-Enterprises · BlackRoad-Archive" \
+            "" \
+            "[View Run →]($RUN_URL)" \
+          )
 
           if [ -n "$ISSUE_NUMBER" ]; then
             gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$COMMENT" 2>/dev/null || \
