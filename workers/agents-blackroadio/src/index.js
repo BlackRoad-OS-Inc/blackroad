@@ -1,7 +1,7 @@
 // agents.blackroad.io — Live Agent Roster Worker
 // BlackRoad OS, Inc. — All Rights Reserved
 
-const AGENTS_API = 'https://blackroad-live-data.blackroad.workers.dev';
+const AGENTS_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
 const GH_ORG = 'BlackRoad-OS-Inc';
 const CACHE_TTL = 60; // seconds
 

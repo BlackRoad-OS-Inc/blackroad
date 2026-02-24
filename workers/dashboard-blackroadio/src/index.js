@@ -2,7 +2,7 @@
 // BlackRoad OS, Inc. © 2025 — All Rights Reserved
 
 const GH_ORG = 'BlackRoad-OS-Inc';
-const AGENTS_API = 'https://blackroad-live-data.blackroad.workers.dev';
+const AGENTS_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
 
 function gradientText(text) {
   return `<span style="background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800">${text}</span>`;

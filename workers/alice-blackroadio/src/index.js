@@ -1,8 +1,8 @@
 // alice.blackroad.io — Alice Agent Interface
 // BlackRoad OS, Inc. — All Rights Reserved
 
-const DATA_URL = 'https://blackroad-live-data.blackroad.workers.dev/agents';
-const AGENTS_API = 'https://blackroad-live-data.blackroad.workers.dev';
+const DATA_URL = 'https://blackroad-live-hub.amundsonalexa.workers.dev/agents';
+const AGENTS_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
 
 async function fetchLiveData() {
   try {
