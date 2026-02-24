@@ -1,39 +1,72 @@
 {
-  "session_id": "copilot-master-integration-20260223",
-  "status": "COMPLETE",
-  "phase": "phase-3-final",
-  "timestamp": "2026-02-23T17:30:00Z",
-  "completed": [
-    "memory-init",
-    "agent-collaboration",
-    "164-branch-agent-identities",
-    "ssh-fleet-key",
-    "continuous-24h-orchestrator",
-    "watchdog",
-    "cross-org-cohesion",
-    "pi-runners-6-online-zero-cost",
-    "railway-22-projects-configured",
-    "cloudflare-multi-agent-worker",
-    "alice-pi-tunnel-discovery",
-    "salesforce-apex-deployed",
-    "gdrive-863-files-synced",
-    "gdrive-cron-octavia-pi",
-    "gematria-108-models-cataloged",
-    "lucidia-virtual-fallback-gematria",
-    "alice-pi-disk-61pct",
-    "status-page-status.blackroad.io",
-    "cf-dns-records-workflow",
-    "domain-routing-all-pi"
-  ],
-  "infrastructure": {
-    "alice-pi": {"ip": "192.168.4.49", "disk": "61%", "tunnel": "52915859", "services": ["qdrant", "tasks", "agents", "nginx", "postgres"]},
-    "octavia-pi": {"ip": "192.168.4.38", "role": "compute", "models": ["qwen2.5:3b", "lucidia", "llama3.2:1b"]},
-    "gematria": {"ip": "159.65.43.12", "models": 108, "live": 20},
-    "lucidia-pi": {"ip": "192.168.4.64", "status": "offline", "fallback": "gematria"}
+  "session": "2026-02-23-collab-master",
+  "operator": "alexa + copilot",
+  "phase": "Wave 5 - Final Integration",
+  "updated": "2026-02-23T19:30:00Z",
+  "runners": {
+    "total": 7,
+    "online": 7,
+    "labels_fixed": true,
+    "blackroad_fleet_label": "all runners",
+    "list": ["octavia-pi5", "lucidia-pi5", "aria-pi4", "cecilia", "alice-pi", "gematria-do", "anastasia"]
   },
-  "needs_manual": {
-    "huggingface": "Run: HUGGINGFACE_TOKEN=hf_... bash scripts/hf-push-now.sh",
-    "lucidia-pi": "Run: bash scripts/setup-lucidia-pi-runner.sh when online",
-    "cf-secrets": "DIGITALOCEAN_ACCESS_TOKEN may need setting for backup workflow"
+  "integrations": {
+    "github_actions": {
+      "status": "active",
+      "cost": "$0",
+      "continuous_loop": "running cycle 1",
+      "workflows_total": 80,
+      "runner_labels_fixed": 54
+    },
+    "cloudflare": {
+      "tunnel": "active on octavia",
+      "wildcards": ["*.blackroad.io", "*.blackroad.ai"],
+      "worker_deploy": "queued - WRANGLER_OAUTH_TOKEN set",
+      "token_in_secrets": true
+    },
+    "railway": {
+      "cli_installed": "gematria",
+      "token_in_secrets": true,
+      "setup_workflow": "triggered"
+    },
+    "salesforce": {
+      "secrets_in_github": ["SALESFORCE_CLIENT_ID", "SALESFORCE_INSTANCE_URL", "SALESFORCE_JWT_CERT", "SALESFORCE_JWT_KEY", "SALESFORCE_ORG_ID", "SALESFORCE_USERNAME"],
+      "workflow": "salesforce-pi-sync.yml",
+      "status": "ready - secrets confirmed"
+    },
+    "google_drive": {
+      "rclone_on_octavia": true,
+      "cron": "hourly",
+      "remotes": ["gdrive:", "gdrive-blackroad:"],
+      "backup_path": "gdrive-blackroad:BlackRoad-Pi-Backup"
+    },
+    "nats": {
+      "server": "octavia:4222",
+      "status": "setup workflow queued",
+      "systemd_service": "nats-setup.yml triggered",
+      "cli_installed": "octavia ~/bin/nats"
+    },
+    "grafana": {
+      "port": 3109,
+      "type": "custom python app",
+      "prometheus_port": 9090
+    },
+    "huggingface": {
+      "hub_installed": "octavia",
+      "token_missing_from_secrets": true,
+      "workaround": "use ollama pull models"
+    },
+    "org_cohesion": {
+      "orgs_synced": 17,
+      "agent_json": "pushed to all .github repos"
+    }
+  },
+  "branch_identities": {
+    "pushed": ["lucidia", "alice", "octavia", "aria", "shellfish", "cece", "gematria", "cecilia"]
+  },
+  "domains": {
+    "nginx_config": ".github/nginx/blackroad-multi.conf",
+    "tunnel_wildcards": true,
+    "failover_chain": ["Pi (nginx)", "DigitalOcean", "Cloudflare Pages", "Railway", "GitHub Pages"]
   }
 }
