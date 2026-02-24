@@ -24,6 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+        with:
+          submodules: false
       - name: Build static site
         run: |
           mkdir -p _site
@@ -91,7 +93,7 @@ jobs:
 
   deploy:
     needs: build-docs
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
