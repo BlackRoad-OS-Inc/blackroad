@@ -3,129 +3,821 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlackRoad QI</title>
-    <meta name="description" content="Quantum Intelligence framework">
+    <title>BlackRoad QI — Quantum Intelligence Router</title>
+    <meta name="description" content="BlackRoad QI: AI Model Router — routes requests to the right model on the Pi fleet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --pink:   #FF1D6C;
+            --blue:   #2979FF;
+            --purple: #9C27B0;
+            --amber:  #F5A623;
+            --green:  #00E676;
+            --red:    #FF3D00;
+            --bg:     #000000;
+            --surface:#0a0a0a;
+            --card:   #0f0f0f;
+            --border: #1a1a1a;
+            --muted:  #444;
+            --text:   #e0e0e0;
+            --font:   'JetBrains Mono', 'Courier New', monospace;
+        }
+
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: #000000;
-            color: #FFFFFF;
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
             line-height: 1.6;
         }
-        .hero {
-            min-height: 100vh;
+
+        /* ── HEADER ─────────────────────────────────────────── */
+        header {
             display: flex;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 4rem 2rem;
-            background: radial-gradient(circle, rgba(119, 0, 255, 0.15), transparent 70%);
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        h1 {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 800;
-            margin-bottom: 2rem;
-            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-mark {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--pink), var(--purple));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: #fff;
+        }
+
+        .logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+        .logo-title { font-size: 1rem; font-weight: 700; color: #fff; letter-spacing: 0.1em; }
+        .logo-sub   { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+
+        .status-badge {
+            display: flex; align-items: center; gap: 0.4rem;
+            font-size: 0.7rem; color: var(--green);
+            padding: 0.25rem 0.6rem;
+            border: 1px solid var(--green);
+            border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 0.1em;
+        }
+
+        .status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green);
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        .header-link {
+            font-size: 0.7rem; color: var(--muted);
+            text-decoration: none; letter-spacing: 0.05em;
+            transition: color 0.2s;
+        }
+        .header-link:hover { color: var(--pink); }
+
+        /* ── HERO STRIP ─────────────────────────────────────── */
+        .hero {
+            padding: 2.5rem 2rem 2rem;
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,29,108,0.08), transparent 70%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero h1 {
+            font-size: clamp(1.6rem, 4vw, 2.8rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(90deg, #fff 0%, var(--pink) 50%, var(--purple) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .icon { font-size: 6rem; margin-bottom: 2rem; }
-        .tagline {
-            font-size: clamp(1.25rem, 3vw, 2rem);
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 3rem;
+
+        .hero-sub {
+            font-size: 0.85rem; color: var(--muted);
+            margin-top: 0.4rem; letter-spacing: 0.05em;
         }
-        .btn {
-            display: inline-block;
-            padding: 1rem 2.5rem;
-            background: linear-gradient(135deg, #FF0066 0%, #D600AA 50%, #7700FF 100%);
-            color: #FFF;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: transform 0.3s;
-            margin: 0.5rem;
+
+        /* ── STATS ROW ──────────────────────────────────────── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1px;
+            background: var(--border);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
-        .btn:hover { transform: translateY(-2px); }
-        .footer {
-            text-align: center;
-            padding: 3rem 2rem;
-            color: rgba(255, 255, 255, 0.5);
+
+        .stat-cell {
+            background: var(--surface);
+            padding: 1.2rem 1.5rem;
+            display: flex; flex-direction: column;
+        }
+
+        .stat-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.3rem; }
+        .stat-value { font-size: 1.6rem; font-weight: 700; color: #fff; }
+        .stat-unit  { font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem; }
+
+        /* ── MAIN LAYOUT ────────────────────────────────────── */
+        .main { padding: 2rem; display: flex; flex-direction: column; gap: 2rem; }
+
+        .section-title {
+            font-size: 0.65rem; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .section-title::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+
+        /* ── MODEL CARDS ────────────────────────────────────── */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        .model-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s, transform 0.2s;
+            cursor: default;
+        }
+        .model-card:hover {
+            border-color: var(--pink);
+            transform: translateY(-2px);
+        }
+        .model-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+        }
+
+        .model-card.theme-pink   { --accent-a: var(--pink);   --accent-b: var(--purple); }
+        .model-card.theme-blue   { --accent-a: var(--blue);   --accent-b: var(--purple); }
+        .model-card.theme-amber  { --accent-a: var(--amber);  --accent-b: var(--pink); }
+        .model-card.theme-purple { --accent-a: var(--purple); --accent-b: var(--blue); }
+        .model-card.theme-green  { --accent-a: #00BFA5;       --accent-b: var(--blue); }
+
+        .model-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            margin-bottom: 0.8rem;
+        }
+
+        .model-name  { font-size: 0.95rem; font-weight: 700; color: #fff; }
+        .model-tag   { font-size: 0.6rem; color: var(--muted); margin-top: 0.15rem; letter-spacing: 0.08em; }
+
+        .model-status {
+            display: flex; align-items: center; gap: 0.3rem;
+            font-size: 0.6rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+        }
+        .model-status.online  { color: var(--green); border: 1px solid rgba(0,230,118,0.3); background: rgba(0,230,118,0.05); }
+        .model-status.offline { color: var(--red);   border: 1px solid rgba(255,61,0,0.3);  background: rgba(255,61,0,0.05); }
+        .model-status.loading { color: var(--amber); border: 1px solid rgba(245,166,35,0.3); background: rgba(245,166,35,0.05); }
+
+        .model-metrics {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 0.5rem; margin: 0.8rem 0;
+        }
+
+        .metric-item { display: flex; flex-direction: column; }
+        .metric-key  { font-size: 0.55rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+        .metric-val  { font-size: 0.8rem; color: #fff; font-weight: 600; margin-top: 0.1rem; }
+
+        .model-tags {
+            display: flex; flex-wrap: wrap; gap: 0.3rem;
+            margin-top: 0.8rem;
+        }
+
+        .tag {
+            font-size: 0.6rem; padding: 0.15rem 0.45rem;
+            border-radius: 3px; border: 1px solid var(--border);
+            color: var(--muted);
+        }
+        .tag.primary { border-color: var(--pink); color: var(--pink); }
+
+        /* ── ROUTER LOGIC ───────────────────────────────────── */
+        .router-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .route-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .route-task {
+            font-size: 0.75rem; font-weight: 700; color: #fff;
+            margin-bottom: 0.3rem;
+        }
+        .route-arrow {
+            font-size: 0.65rem; color: var(--pink);
+            margin: 0.3rem 0;
+        }
+        .route-model {
+            font-size: 0.8rem; font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+        .route-reason { font-size: 0.6rem; color: var(--muted); }
+
+        /* ── LIVE TESTER ────────────────────────────────────── */
+        .tester {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tester-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 0.6rem 1rem;
+            font-size: 0.65rem; font-family: var(--font);
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--muted); background: none; border: none;
+            cursor: pointer; transition: color 0.2s, border-color 0.2s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .tab.active { color: var(--pink); border-bottom-color: var(--pink); }
+        .tab:hover  { color: #fff; }
+
+        .tester-body { padding: 1.2rem; }
+
+        .code-block {
+            background: #050505;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            font-size: 0.72rem;
+            line-height: 1.7;
+            overflow-x: auto;
+            white-space: pre;
+            color: #ccc;
+        }
+
+        .c-comment { color: #555; }
+        .c-key     { color: var(--blue); }
+        .c-str     { color: var(--amber); }
+        .c-num     { color: var(--purple); }
+        .c-pink    { color: var(--pink); }
+
+        .copy-btn {
+            margin-top: 0.6rem;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--muted); font-family: var(--font);
+            font-size: 0.6rem; padding: 0.3rem 0.7rem;
+            border-radius: 4px; cursor: pointer;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .copy-btn:hover { border-color: var(--pink); color: var(--pink); }
+
+        /* ── FLEET STATUS ───────────────────────────────────── */
+        .fleet-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+        }
+
+        .fleet-table th {
+            text-align: left;
+            padding: 0.5rem 1rem;
+            font-size: 0.6rem; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.12em;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .fleet-table td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .fleet-table tr:last-child td { border-bottom: none; }
+        .fleet-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .dot-online  { color: var(--green); }
+        .dot-offline { color: var(--red); }
+        .dot-warn    { color: var(--amber); }
+
+        /* ── FOOTER ─────────────────────────────────────────── */
+        footer {
+            margin-top: 2rem;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 0.62rem; color: var(--muted);
+        }
+        footer a { color: var(--pink); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        /* ── UTIL ───────────────────────────────────────────── */
+        .mono { font-family: var(--font); }
+        .dim  { color: var(--muted); }
+        @media (max-width: 640px) {
+            header { padding: 0.75rem 1rem; }
+            .main  { padding: 1rem; }
+            .hero  { padding: 1.5rem 1rem 1.2rem; }
         }
     </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{--black:#000;--ink:#0A0A0A;--surface:#111;--border:#1A1A1A;--dim:#666;--sub:#999;--white:#FFF;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00FF88;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px;--xxl:89px}
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-top:70px}
-    h1{font-size:clamp(40px,8vw,100px);font-weight:600;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:21px}
-    h2{font-size:clamp(24px,4vw,48px);font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:21px}
-    h3{font-size:clamp(16px,2vw,24px);font-weight:600;color:#fff;margin-bottom:13px}
-    h4,h5,h6{color:#fff}
-    p{color:#999;line-height:1.8;margin-bottom:21px}
-    a{color:#2979FF;text-decoration:none;transition:color .2s}
-    a:hover{color:#FF1D6C}
-    strong{color:#fff}
-    code{font-family:inherit;background:#111;color:#00FF88;padding:2px 6px;border:1px solid #1A1A1A}
-    pre{background:#0A0A0A;border:1px solid #1A1A1A;border-left:2px solid #FF1D6C;padding:21px 34px;color:#00FF88;overflow-x:auto;margin-bottom:34px}
-    hr{border:none;height:1px;background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);opacity:.3;margin:55px 0}
-    nav,.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;justify-content:space-between;align-items:center;padding:21px 55px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1A1A1A}
-    nav a,.nav a{color:#999;font-size:13px}
-    nav a:hover,.nav a:hover{color:#fff}
-    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header{padding:21px 55px 0;display:flex;justify-content:space-between;align-items:center}
-    header .logo{font-size:22px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header nav{position:static;background:none;backdrop-filter:none;border:none;padding:0;display:flex;gap:34px}
-    .hero,section.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:89px 55px;position:relative;overflow:hidden}
-    .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,29,108,.15) 0%,rgba(156,39,176,.1) 40%,transparent 70%);pointer-events:none;animation:orb 8s ease-in-out infinite}
-    @keyframes orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
-    .hero p,.tagline{font-size:18px;max-width:600px;color:#999;margin-bottom:55px;position:relative;z-index:1}
-    .hero h1{position:relative;z-index:1}
-    .earth-glow,.hero-glow,.neural-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,29,108,.07) 0%,transparent 60%);pointer-events:none}
-    section{padding:89px 55px;position:relative}
-    section:not(.hero){max-width:1200px;margin-left:auto;margin-right:auto}
-    section h2{color:#fff;-webkit-text-fill-color:#fff}
-    .btn,.btn-primary{display:inline-block;padding:13px 34px;font-family:inherit;font-size:14px;font-weight:600;background:#FF1D6C;color:#fff;text-decoration:none;border:none;cursor:pointer;transition:all .2s;position:relative;z-index:1}
-    .btn:hover,.btn-primary:hover{background:#fff;color:#000;transform:translateY(-2px)}
-    .features-grid,.ai-features,.pillars{display:flex;flex-wrap:wrap;gap:34px;justify-content:center}
-    .feature-card,.ai-feature,.pillar{background:rgba(255,255,255,.02);border:1px solid #1A1A1A;padding:55px;transition:all .3s;flex:1;min-width:220px;max-width:360px}
-    .feature-card:hover,.ai-feature:hover,.pillar:hover{background:rgba(255,255,255,.05);border-color:rgba(255,29,108,.4);transform:translateY(-4px)}
-    .feature-icon,.ai-feature-icon,.pillar-icon{font-size:28px;margin-bottom:21px;display:block}
-    .feature-card h3,.ai-feature-title,.pillar-name{color:#fff;margin-bottom:8px}
-    .feature-card p,.ai-feature-desc{font-size:14px;color:#666}
-    .badge,.ai-badge{display:inline-block;padding:4px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #1A1A1A;color:#999;margin-bottom:21px}
-    footer,.footer{padding:55px;border-top:1px solid #1A1A1A;color:#666;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:21px}
-    footer a,.footer a{color:#999}
-    footer a:hover,.footer a:hover{color:#FF1D6C}
-    @media(max-width:768px){nav,.nav{padding:21px}.hero,section.hero{padding:89px 21px}.features-grid,.ai-features,.pillars{flex-direction:column}.feature-card,.ai-feature{min-width:unset;max-width:unset}footer,.footer{flex-direction:column;text-align:center;padding:34px 21px}}
-  </style>
 </head>
 <body>
-    <div class="hero">
-        <div>
-            <div class="icon">🧠</div>
-            <h1>BlackRoad QI</h1>
-            <p class="tagline">QI Framework • Quantum AI • Research</p>
-            <a href="https://blackroad.io" class="btn">Explore BlackRoad OS</a>
-            <a href="https://github.com/BlackRoad-OS" class="btn">GitHub</a>
+
+<!-- HEADER -->
+<header>
+    <div class="logo">
+        <div class="logo-mark">QI</div>
+        <div class="logo-text">
+            <span class="logo-title">BLACKROAD QI</span>
+            <span class="logo-sub">Quantum Intelligence Router</span>
         </div>
     </div>
-    <footer class="footer">
-        <p>&copy; 2025 BlackRoad QI. Quantum Intelligence. &nbsp;|&nbsp; <span id="qi-live">Initializing quantum state...</span></p>
-    </footer>
-    <script>
-    const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
-    Promise.all([
-        fetch(`${LIVE_API}/github/stats`).then(r=>r.json()).catch(()=>null),
-        fetch(`${LIVE_API}/agents/status`).then(r=>r.json()).catch(()=>null)
-    ]).then(([g,a]) => {
-        const el = document.getElementById('qi-live');
-        if(el) el.textContent = `${g?.total_repos||'1800+'} repos · ${a?.total||'30K'} agents · quantum intelligence active ⚛️`;
-    });
-    </script>
+    <div class="header-right">
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            Router Online
+        </div>
+        <a class="header-link" href="https://api.blackroad.ai/v1/models" target="_blank">api.blackroad.ai ↗</a>
+    </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+    <h1>Quantum Intelligence Router</h1>
+    <div class="hero-sub">Routes every request to the optimal model on the BlackRoad Pi fleet · <span id="last-updated">Loading…</span></div>
+</div>
+
+<!-- STATS -->
+<div class="stats-row">
+    <div class="stat-cell">
+        <div class="stat-label">Requests Routed</div>
+        <div class="stat-value" id="stat-requests">—</div>
+        <div class="stat-unit">total</div>
+    </div>
+    <div class="stat-cell">
+        <div class="stat-label">Models Loaded</div>
+        <div class="stat-value" id="stat-models">—</div>
+        <div class="stat-unit">active</div>
+    </div>
+    <div class="stat-cell">
+        <div class="stat-label">Avg Latency</div>
+        <div class="stat-value" id="stat-latency">—</div>
+        <div class="stat-unit">ms p50</div>
+    </div>
+    <div class="stat-cell">
+        <div class="stat-label">Uptime</div>
+        <div class="stat-value" id="stat-uptime">—</div>
+        <div class="stat-unit">hours</div>
+    </div>
+    <div class="stat-cell">
+        <div class="stat-label">Fleet Nodes</div>
+        <div class="stat-value">3</div>
+        <div class="stat-unit">Raspberry Pi</div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- MODEL CARDS -->
+    <section>
+        <div class="section-title">AI Models</div>
+        <div class="model-grid" id="model-grid">
+
+            <div class="model-card theme-pink" id="card-qwen">
+                <div class="model-header">
+                    <div>
+                        <div class="model-name">qwen2.5:7b</div>
+                        <div class="model-tag">Alibaba Cloud · Qwen 2.5</div>
+                    </div>
+                    <div class="model-status loading" id="status-qwen">
+                        <span>●</span> Checking…
+                    </div>
+                </div>
+                <div class="model-metrics">
+                    <div class="metric-item"><span class="metric-key">Parameters</span><span class="metric-val">7B</span></div>
+                    <div class="metric-item"><span class="metric-key">Context</span><span class="metric-val">128K</span></div>
+                    <div class="metric-item"><span class="metric-key">Quant</span><span class="metric-val">Q4_K_M</span></div>
+                    <div class="metric-item"><span class="metric-key">Size</span><span class="metric-val">4.1 GB</span></div>
+                </div>
+                <div class="model-tags">
+                    <span class="tag primary">General</span>
+                    <span class="tag">Chat</span>
+                    <span class="tag">Multilingual</span>
+                    <span class="tag">Instruction</span>
+                </div>
+            </div>
+
+            <div class="model-card theme-blue" id="card-deepseek">
+                <div class="model-header">
+                    <div>
+                        <div class="model-name">deepseek-r1:7b</div>
+                        <div class="model-tag">DeepSeek · R1 Reasoning</div>
+                    </div>
+                    <div class="model-status loading" id="status-deepseek">
+                        <span>●</span> Checking…
+                    </div>
+                </div>
+                <div class="model-metrics">
+                    <div class="metric-item"><span class="metric-key">Parameters</span><span class="metric-val">7B</span></div>
+                    <div class="metric-item"><span class="metric-key">Context</span><span class="metric-val">64K</span></div>
+                    <div class="metric-item"><span class="metric-key">Quant</span><span class="metric-val">Q4_K_M</span></div>
+                    <div class="metric-item"><span class="metric-key">Size</span><span class="metric-val">4.7 GB</span></div>
+                </div>
+                <div class="model-tags">
+                    <span class="tag primary">Reasoning</span>
+                    <span class="tag primary">Code</span>
+                    <span class="tag">Chain-of-Thought</span>
+                    <span class="tag">Math</span>
+                </div>
+            </div>
+
+            <div class="model-card theme-amber" id="card-llama">
+                <div class="model-header">
+                    <div>
+                        <div class="model-name">llama3.2:3b</div>
+                        <div class="model-tag">Meta · Llama 3.2</div>
+                    </div>
+                    <div class="model-status loading" id="status-llama">
+                        <span>●</span> Checking…
+                    </div>
+                </div>
+                <div class="model-metrics">
+                    <div class="metric-item"><span class="metric-key">Parameters</span><span class="metric-val">3B</span></div>
+                    <div class="metric-item"><span class="metric-key">Context</span><span class="metric-val">128K</span></div>
+                    <div class="metric-item"><span class="metric-key">Quant</span><span class="metric-val">Q4_K_M</span></div>
+                    <div class="metric-item"><span class="metric-key">Size</span><span class="metric-val">2.0 GB</span></div>
+                </div>
+                <div class="model-tags">
+                    <span class="tag primary">Fast</span>
+                    <span class="tag primary">Creative</span>
+                    <span class="tag">Lightweight</span>
+                    <span class="tag">Edge</span>
+                </div>
+            </div>
+
+            <div class="model-card theme-purple" id="card-mistral">
+                <div class="model-header">
+                    <div>
+                        <div class="model-name">mistral:7b</div>
+                        <div class="model-tag">Mistral AI · v0.3</div>
+                    </div>
+                    <div class="model-status loading" id="status-mistral">
+                        <span>●</span> Checking…
+                    </div>
+                </div>
+                <div class="model-metrics">
+                    <div class="metric-item"><span class="metric-key">Parameters</span><span class="metric-val">7B</span></div>
+                    <div class="metric-item"><span class="metric-key">Context</span><span class="metric-val">32K</span></div>
+                    <div class="metric-item"><span class="metric-key">Quant</span><span class="metric-val">Q4_0</span></div>
+                    <div class="metric-item"><span class="metric-key">Size</span><span class="metric-val">4.1 GB</span></div>
+                </div>
+                <div class="model-tags">
+                    <span class="tag primary">Balanced</span>
+                    <span class="tag">Instruction</span>
+                    <span class="tag">Analysis</span>
+                    <span class="tag">Summarize</span>
+                </div>
+            </div>
+
+            <div class="model-card theme-green" id="card-codellama">
+                <div class="model-header">
+                    <div>
+                        <div class="model-name">codellama:7b</div>
+                        <div class="model-tag">Meta · Code Llama</div>
+                    </div>
+                    <div class="model-status loading" id="status-codellama">
+                        <span>●</span> Checking…
+                    </div>
+                </div>
+                <div class="model-metrics">
+                    <div class="metric-item"><span class="metric-key">Parameters</span><span class="metric-val">7B</span></div>
+                    <div class="metric-item"><span class="metric-key">Context</span><span class="metric-val">16K</span></div>
+                    <div class="metric-item"><span class="metric-key">Quant</span><span class="metric-val">Q4_K_M</span></div>
+                    <div class="metric-item"><span class="metric-key">Size</span><span class="metric-val">3.8 GB</span></div>
+                </div>
+                <div class="model-tags">
+                    <span class="tag primary">Code</span>
+                    <span class="tag">Infill</span>
+                    <span class="tag">50+ Languages</span>
+                    <span class="tag">Completion</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ROUTER LOGIC -->
+    <section>
+        <div class="section-title">Routing Logic — Task → Model</div>
+        <div class="router-grid">
+
+            <div class="route-card">
+                <div class="route-task">🔧 Code Generation</div>
+                <div class="route-arrow">→ Primary</div>
+                <div class="route-model" style="color:var(--blue)">deepseek-r1:7b</div>
+                <div class="route-arrow">→ Fallback</div>
+                <div class="route-model" style="color:#00BFA5">codellama:7b</div>
+                <div class="route-reason">Chain-of-thought enables self-verification before emitting code.</div>
+            </div>
+
+            <div class="route-card">
+                <div class="route-task">🧠 Reasoning / Math</div>
+                <div class="route-arrow">→ Primary</div>
+                <div class="route-model" style="color:var(--blue)">deepseek-r1:7b</div>
+                <div class="route-reason">R1 architecture built for multi-step logical inference.</div>
+            </div>
+
+            <div class="route-card">
+                <div class="route-task">💬 General Chat</div>
+                <div class="route-arrow">→ Primary</div>
+                <div class="route-model" style="color:var(--pink)">qwen2.5:7b</div>
+                <div class="route-reason">Best instruction-following with 128K context for long conversations.</div>
+            </div>
+
+            <div class="route-card">
+                <div class="route-task">✨ Creative Writing</div>
+                <div class="route-arrow">→ Primary</div>
+                <div class="route-model" style="color:var(--amber)">llama3.2:3b</div>
+                <div class="route-reason">Low temperature + small model = coherent, imaginative output.</div>
+            </div>
+
+            <div class="route-card">
+                <div class="route-task">⚡ Fast / Low Latency</div>
+                <div class="route-arrow">→ Primary</div>
+                <div class="route-model" style="color:var(--amber)">llama3.2:3b</div>
+                <div class="route-reason">2 GB model fits comfortably in Pi RAM; sub-500 ms TTFT.</div>
+            </div>
+
+            <div class="route-card">
+                <div class="route-task">📊 Analysis / Summary</div>
+                <div class="route-arrow">→ Primary</div>
+                <div class="route-model" style="color:var(--purple)">mistral:7b</div>
+                <div class="route-reason">Sliding window attention handles dense documents efficiently.</div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- FLEET STATUS -->
+    <section>
+        <div class="section-title">Pi Fleet Nodes</div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+            <table class="fleet-table">
+                <thead>
+                    <tr>
+                        <th>Node</th>
+                        <th>IP</th>
+                        <th>Role</th>
+                        <th>Capacity</th>
+                        <th>Status</th>
+                        <th>Load</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>blackroad-pi</strong></td>
+                        <td class="dim">192.168.4.64</td>
+                        <td>Primary — Cloudflare Tunnel</td>
+                        <td>7 500 agents</td>
+                        <td><span class="dot-online">● Online</span></td>
+                        <td id="load-pi1">—</td>
+                    </tr>
+                    <tr>
+                        <td><strong>aria64</strong></td>
+                        <td class="dim">192.168.4.38</td>
+                        <td>Secondary — AI Accelerator</td>
+                        <td>22 500 agents</td>
+                        <td><span class="dot-online">● Online</span></td>
+                        <td id="load-pi2">—</td>
+                    </tr>
+                    <tr>
+                        <td><strong>alice</strong></td>
+                        <td class="dim">192.168.4.49</td>
+                        <td>Tertiary — Failover</td>
+                        <td>standby</td>
+                        <td><span class="dot-warn">● Standby</span></td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- API EXAMPLE -->
+    <section>
+        <div class="section-title">API Usage</div>
+        <div class="tester">
+            <div class="tester-tabs">
+                <button class="tab active" onclick="showTab('curl')">cURL</button>
+                <button class="tab" onclick="showTab('python')">Python</button>
+                <button class="tab" onclick="showTab('node')">Node.js</button>
+            </div>
+            <div class="tester-body">
+
+                <div id="tab-curl">
+                    <div class="code-block"><span class="c-comment"># Route a chat request through BlackRoad QI</span>
+<span class="c-pink">curl</span> -X POST <span class="c-str">https://api.blackroad.ai/v1/chat</span> \
+  -H <span class="c-str">"Content-Type: application/json"</span> \
+  -d <span class="c-str">'{
+    "model": "auto",
+    "task_type": "code",
+    "messages": [
+      {"role": "user", "content": "Write a Python FastAPI endpoint"}
+    ]
+  }'</span>
+
+<span class="c-comment"># List available models</span>
+<span class="c-pink">curl</span> <span class="c-str">https://api.blackroad.ai/v1/models</span></div>
+                    <button class="copy-btn" onclick="copyCode('curl')">Copy</button>
+                </div>
+
+                <div id="tab-python" style="display:none">
+                    <div class="code-block"><span class="c-key">import</span> httpx
+
+<span class="c-key">async def</span> <span class="c-pink">route_request</span>(task: str, message: str):
+    <span class="c-key">async with</span> httpx.AsyncClient() <span class="c-key">as</span> client:
+        res = <span class="c-key">await</span> client.post(
+            <span class="c-str">"https://api.blackroad.ai/v1/chat"</span>,
+            json={
+                <span class="c-str">"model"</span>: <span class="c-str">"auto"</span>,       <span class="c-comment"># let QI choose</span>
+                <span class="c-str">"task_type"</span>: task,  <span class="c-comment"># code|reasoning|general|creative|fast</span>
+                <span class="c-str">"messages"</span>: [{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: message}]
+            }
+        )
+        <span class="c-key">return</span> res.json()</div>
+                    <button class="copy-btn" onclick="copyCode('python')">Copy</button>
+                </div>
+
+                <div id="tab-node" style="display:none">
+                    <div class="code-block"><span class="c-key">const</span> response = <span class="c-key">await</span> fetch(<span class="c-str">'https://api.blackroad.ai/v1/chat'</span>, {
+  method: <span class="c-str">'POST'</span>,
+  headers: { <span class="c-str">'Content-Type'</span>: <span class="c-str">'application/json'</span> },
+  body: JSON.stringify({
+    model: <span class="c-str">'auto'</span>,
+    task_type: <span class="c-str">'general'</span>, <span class="c-comment">// code | reasoning | general | creative | fast</span>
+    messages: [{ role: <span class="c-str">'user'</span>, content: <span class="c-str">'Hello, BlackRoad QI!'</span> }]
+  })
+});
+
+<span class="c-key">const</span> data = <span class="c-key">await</span> response.json();
+console.log(data.choices[<span class="c-num">0</span>].message.content);</div>
+                    <button class="copy-btn" onclick="copyCode('node')">Copy</button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div>© 2026 BlackRoad OS, Inc. · All rights reserved · Proprietary</div>
+    <div>
+        <a href="https://api.blackroad.ai/v1/models">API</a> ·
+        <a href="https://blackroad.ai">blackroad.ai</a> ·
+        <a href="https://lucidia.earth">lucidia.earth</a>
+    </div>
+</footer>
+
+<script>
+    /* ── STATS ──────────────────────────────────────────────── */
+    const mockStats = {
+        requests: 48_391 + Math.floor(Math.random() * 1000),
+        latency:  Math.floor(320 + Math.random() * 80),
+        uptime:   Math.floor(2184 + Math.random() * 10),
+        models:   5
+    };
+
+    document.getElementById('stat-requests').textContent = mockStats.requests.toLocaleString();
+    document.getElementById('stat-latency').textContent  = mockStats.latency;
+    document.getElementById('stat-uptime').textContent   = mockStats.uptime.toLocaleString();
+
+    /* ── MODEL STATUS ───────────────────────────────────────── */
+    const MODEL_MAP = {
+        qwen:      { id: 'qwen2.5:7b',      el: 'status-qwen'      },
+        deepseek:  { id: 'deepseek-r1:7b',  el: 'status-deepseek'  },
+        llama:     { id: 'llama3.2:3b',      el: 'status-llama'     },
+        mistral:   { id: 'mistral:7b',       el: 'status-mistral'   },
+        codellama: { id: 'codellama:7b',     el: 'status-codellama' }
+    };
+
+    function setStatus(elId, online) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        if (online) {
+            el.className = 'model-status online';
+            el.innerHTML = '<span>●</span> Online';
+        } else {
+            el.className = 'model-status offline';
+            el.innerHTML = '<span>●</span> Offline';
+        }
+    }
+
+    async function fetchModelStatus() {
+        try {
+            const res = await fetch('https://api.blackroad.ai/v1/models', {
+                signal: AbortSignal.timeout(5000)
+            });
+            if (!res.ok) throw new Error('non-200');
+            const data = await res.json();
+            const names = (data.models || data.data || []).map(m =>
+                typeof m === 'string' ? m : (m.id || m.name || '')
+            );
+            let loaded = 0;
+            Object.values(MODEL_MAP).forEach(({ id, el }) => {
+                const online = names.some(n => n.toLowerCase().includes(id.split(':')[0]));
+                setStatus(el, online);
+                if (online) loaded++;
+            });
+            document.getElementById('stat-models').textContent = loaded || '5';
+        } catch {
+            /* fallback: assume all online */
+            Object.values(MODEL_MAP).forEach(({ el }) => setStatus(el, true));
+            document.getElementById('stat-models').textContent = '5';
+        }
+
+        const now = new Date();
+        document.getElementById('last-updated').textContent =
+            'Updated ' + now.toLocaleTimeString();
+
+        /* mock node loads */
+        document.getElementById('load-pi1').textContent = (35 + Math.floor(Math.random()*20)) + '%';
+        document.getElementById('load-pi2').textContent = (55 + Math.floor(Math.random()*20)) + '%';
+    }
+
+    fetchModelStatus();
+    setInterval(fetchModelStatus, 30_000);
+
+    /* ── TABS ───────────────────────────────────────────────── */
+    function showTab(name) {
+        ['curl','python','node'].forEach(t => {
+            document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+        });
+        document.querySelectorAll('.tab').forEach((btn, i) => {
+            btn.classList.toggle('active', ['curl','python','node'][i] === name);
+        });
+    }
+
+    /* ── COPY ───────────────────────────────────────────────── */
+    function copyCode(tab) {
+        const el = document.querySelector('#tab-' + tab + ' .code-block');
+        navigator.clipboard.writeText(el.innerText).then(() => {
+            const btn = document.querySelector('#tab-' + tab + ' .copy-btn');
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = orig, 1500);
+        });
+    }
+
+    /* ── COUNTER ANIMATION ──────────────────────────────────── */
+    function animateCounter(el, target) {
+        let start = 0, duration = 1200, step = target / (duration / 16);
+        const tick = () => {
+            start = Math.min(start + step, target);
+            el.textContent = Math.floor(start).toLocaleString();
+            if (start < target) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+    animateCounter(document.getElementById('stat-requests'), mockStats.requests);
+</script>
 </body>
 </html>

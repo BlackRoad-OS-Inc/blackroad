@@ -3,124 +3,723 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucidia QI</title>
-    <meta name="description" content="Lucidia quantum intelligence system">
+    <title>Lucidia — Consciousness AI by BlackRoad</title>
+    <meta name="description" content="Lucidia: The Dreamer. A consciousness-first AI reasoning system by BlackRoad OS.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --pink:    #FF1D6C;
+            --blue:    #2979FF;
+            --purple:  #9C27B0;
+            --amber:   #F5A623;
+            --cyan:    #00E5FF;
+            --green:   #00E676;
+            --bg:      #000000;
+            --surface: #080808;
+            --card:    #0d0d0d;
+            --border:  #191919;
+            --muted:   #444;
+            --text:    #d8d8d8;
+            --font:    'JetBrains Mono', 'Courier New', monospace;
+        }
+
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: #000000;
-            color: #FFFFFF;
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
             line-height: 1.6;
         }
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 4rem 2rem;
-            background: radial-gradient(circle, rgba(119, 0, 255, 0.15), transparent 70%);
+
+        /* ── HEADER ─────────────────────────────────────────── */
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            position: sticky; top: 0; z-index: 100;
         }
-        h1 {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 800;
+
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+
+        .logo-mark {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--purple), var(--cyan));
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 700; color: #fff;
+            box-shadow: 0 0 18px rgba(156,39,176,0.5);
+        }
+
+        .logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+        .logo-title { font-size: 1rem; font-weight: 700; color: #fff; letter-spacing: 0.08em; }
+        .logo-sub   { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+
+        .status-badge {
+            display: flex; align-items: center; gap: 0.4rem;
+            font-size: 0.7rem; color: var(--cyan);
+            padding: 0.25rem 0.6rem;
+            border: 1px solid var(--cyan);
+            border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 0.1em;
+        }
+        .status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--cyan);
+            animation: pulse-dot 2.5s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--cyan); }
+            50%       { opacity: 0.3; box-shadow: none; }
+        }
+
+        .header-link {
+            font-size: 0.7rem; color: var(--muted);
+            text-decoration: none; letter-spacing: 0.05em;
+            transition: color 0.2s;
+        }
+        .header-link:hover { color: var(--cyan); }
+
+        /* ── HERO ───────────────────────────────────────────── */
+        .hero {
+            min-height: 38vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center;
+            padding: 4rem 2rem 3rem;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 50% 0%,   rgba(156,39,176,0.15), transparent 70%),
+                radial-gradient(ellipse 40% 40% at 80% 100%, rgba(0,229,255,0.08),  transparent 60%),
+                radial-gradient(ellipse 40% 40% at 20% 80%,  rgba(255,29,108,0.07), transparent 60%);
+            pointer-events: none;
+        }
+
+        .dream-circle {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, var(--purple), var(--cyan), var(--pink), var(--purple));
+            display: flex; align-items: center; justify-content: center;
             margin-bottom: 2rem;
-            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+            position: relative;
+            animation: dream-spin 12s linear infinite;
+        }
+
+        @keyframes dream-spin {
+            from { filter: hue-rotate(0deg);   }
+            to   { filter: hue-rotate(360deg); }
+        }
+
+        .dream-inner {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            background: var(--bg);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.2rem, 6vw, 4.5rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fff 0%, var(--cyan) 40%, var(--purple) 80%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            margin-bottom: 0.5rem;
         }
-        .icon { font-size: 6rem; margin-bottom: 2rem; }
-        .tagline {
-            font-size: clamp(1.25rem, 3vw, 2rem);
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 3rem;
+
+        .hero-tagline {
+            font-size: 0.85rem; color: var(--muted);
+            letter-spacing: 0.12em; text-transform: uppercase;
+            margin-bottom: 1.5rem;
         }
+
+        .hero-desc {
+            max-width: 520px;
+            font-size: 0.8rem; color: #666;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .hero-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
+
         .btn {
-            display: inline-block;
-            padding: 1rem 2.5rem;
-            background: linear-gradient(135deg, #FF0066 0%, #D600AA 50%, #7700FF 100%);
-            color: #FFF;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: transform 0.3s;
-            margin: 0.5rem;
+            font-family: var(--font);
+            font-size: 0.72rem; font-weight: 600;
+            padding: 0.55rem 1.2rem;
+            border-radius: 6px; border: none;
+            cursor: pointer; text-decoration: none;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: inline-flex; align-items: center; gap: 0.4rem;
         }
-        .btn:hover { transform: translateY(-2px); }
-        .footer {
-            text-align: center;
-            padding: 3rem 2rem;
-            color: rgba(255, 255, 255, 0.5);
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--purple), var(--cyan));
+            color: #fff;
+        }
+        .btn-ghost {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+
+        /* ── STATS ──────────────────────────────────────────── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 1px; background: var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-cell {
+            background: var(--surface); padding: 1.2rem 1.5rem;
+            display: flex; flex-direction: column;
+        }
+        .stat-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.3rem; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: #fff; }
+        .stat-unit  { font-size: 0.6rem; color: var(--muted); margin-top: 0.1rem; }
+
+        /* ── MAIN ───────────────────────────────────────────── */
+        .main { padding: 2rem; display: flex; flex-direction: column; gap: 2rem; max-width: 1400px; margin: 0 auto; }
+
+        .section-title {
+            font-size: 0.65rem; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* ── INFO GRID ──────────────────────────────────────── */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 720px) { .info-grid { grid-template-columns: 1fr; } }
+
+        .info-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.4rem;
+            position: relative; overflow: hidden;
+        }
+        .info-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+        }
+        .info-card.c1 { --accent-a: var(--purple); --accent-b: var(--cyan); }
+        .info-card.c2 { --accent-a: var(--cyan);   --accent-b: var(--blue); }
+        .info-card.c3 { --accent-a: var(--pink);   --accent-b: var(--purple); }
+        .info-card.c4 { --accent-a: var(--amber);  --accent-b: var(--pink); }
+
+        .info-card-title {
+            font-size: 0.75rem; font-weight: 700; color: #fff;
+            margin-bottom: 0.7rem; letter-spacing: 0.05em;
+        }
+        .info-card-body { font-size: 0.72rem; color: #666; line-height: 1.8; }
+        .info-card-body strong { color: var(--text); }
+
+        /* ── MODEL SPEC ─────────────────────────────────────── */
+        .spec-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+        .spec-table td {
+            padding: 0.55rem 0;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .spec-table tr:last-child td { border-bottom: none; }
+        .spec-key { color: var(--muted); width: 45%; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; }
+        .spec-val { color: #fff; font-weight: 500; }
+
+        /* ── CAPABILITIES ───────────────────────────────────── */
+        .caps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .cap-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            display: flex; flex-direction: column; gap: 0.4rem;
+        }
+
+        .cap-icon  { font-size: 1.4rem; }
+        .cap-title { font-size: 0.72rem; font-weight: 700; color: #fff; }
+        .cap-desc  { font-size: 0.62rem; color: var(--muted); line-height: 1.5; }
+
+        .cap-bar {
+            height: 3px; background: var(--border);
+            border-radius: 2px; margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        .cap-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--purple), var(--cyan));
+            border-radius: 2px;
+            transition: width 1s ease;
+        }
+
+        /* ── API BLOCK ──────────────────────────────────────── */
+        .tester {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px; overflow: hidden;
+        }
+
+        .tester-tabs {
+            display: flex; border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 0.6rem 1rem;
+            font-size: 0.65rem; font-family: var(--font);
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--muted); background: none; border: none;
+            cursor: pointer; transition: color 0.2s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+        .tab:hover  { color: #fff; }
+
+        .tester-body { padding: 1.2rem; }
+
+        .code-block {
+            background: #050505;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            font-size: 0.72rem; line-height: 1.7;
+            overflow-x: auto; white-space: pre;
+            color: #ccc;
+        }
+
+        .c-comment { color: #555; }
+        .c-key     { color: var(--blue); }
+        .c-str     { color: var(--amber); }
+        .c-num     { color: var(--purple); }
+        .c-cyan    { color: var(--cyan); }
+        .c-pink    { color: var(--pink); }
+
+        .copy-btn {
+            margin-top: 0.6rem;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--muted); font-family: var(--font);
+            font-size: 0.6rem; padding: 0.3rem 0.7rem;
+            border-radius: 4px; cursor: pointer;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .copy-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+        /* ── ENDPOINTS ──────────────────────────────────────── */
+        .endpoint-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+        .endpoint-item {
+            display: flex; align-items: center; gap: 0.8rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.7rem 1rem;
+            font-size: 0.72rem;
+        }
+
+        .method-badge {
+            font-size: 0.6rem; font-weight: 700;
+            padding: 0.15rem 0.4rem; border-radius: 3px;
+            min-width: 40px; text-align: center;
+        }
+        .method-get  { background: rgba(0,229,118,0.15); color: var(--green); border: 1px solid rgba(0,229,118,0.3); }
+        .method-post { background: rgba(0,229,255,0.1);  color: var(--cyan);  border: 1px solid rgba(0,229,255,0.25); }
+
+        .endpoint-path { color: #fff; flex: 1; }
+        .endpoint-desc { color: var(--muted); font-size: 0.65rem; }
+
+        /* ── FOOTER ─────────────────────────────────────────── */
+        footer {
+            margin-top: 2rem; padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 0.62rem; color: var(--muted);
+        }
+        footer a { color: var(--cyan); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 640px) {
+            header { padding: 0.75rem 1rem; }
+            .main  { padding: 1rem; }
+            .hero  { padding: 2.5rem 1rem 2rem; }
         }
     </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{--black:#000;--ink:#0A0A0A;--surface:#111;--border:#1A1A1A;--dim:#666;--sub:#999;--white:#FFF;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00FF88;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px;--xxl:89px}
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-top:70px}
-    h1{font-size:clamp(40px,8vw,100px);font-weight:600;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:21px}
-    h2{font-size:clamp(24px,4vw,48px);font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:21px}
-    h3{font-size:clamp(16px,2vw,24px);font-weight:600;color:#fff;margin-bottom:13px}
-    h4,h5,h6{color:#fff}
-    p{color:#999;line-height:1.8;margin-bottom:21px}
-    a{color:#2979FF;text-decoration:none;transition:color .2s}
-    a:hover{color:#FF1D6C}
-    strong{color:#fff}
-    code{font-family:inherit;background:#111;color:#00FF88;padding:2px 6px;border:1px solid #1A1A1A}
-    pre{background:#0A0A0A;border:1px solid #1A1A1A;border-left:2px solid #FF1D6C;padding:21px 34px;color:#00FF88;overflow-x:auto;margin-bottom:34px}
-    hr{border:none;height:1px;background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);opacity:.3;margin:55px 0}
-    nav,.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;justify-content:space-between;align-items:center;padding:21px 55px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1A1A1A}
-    nav a,.nav a{color:#999;font-size:13px}
-    nav a:hover,.nav a:hover{color:#fff}
-    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header{padding:21px 55px 0;display:flex;justify-content:space-between;align-items:center}
-    header .logo{font-size:22px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header nav{position:static;background:none;backdrop-filter:none;border:none;padding:0;display:flex;gap:34px}
-    .hero,section.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:89px 55px;position:relative;overflow:hidden}
-    .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,29,108,.15) 0%,rgba(156,39,176,.1) 40%,transparent 70%);pointer-events:none;animation:orb 8s ease-in-out infinite}
-    @keyframes orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
-    .hero p,.tagline{font-size:18px;max-width:600px;color:#999;margin-bottom:55px;position:relative;z-index:1}
-    .hero h1{position:relative;z-index:1}
-    .earth-glow,.hero-glow,.neural-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,29,108,.07) 0%,transparent 60%);pointer-events:none}
-    section{padding:89px 55px;position:relative}
-    section:not(.hero){max-width:1200px;margin-left:auto;margin-right:auto}
-    section h2{color:#fff;-webkit-text-fill-color:#fff}
-    .btn,.btn-primary{display:inline-block;padding:13px 34px;font-family:inherit;font-size:14px;font-weight:600;background:#FF1D6C;color:#fff;text-decoration:none;border:none;cursor:pointer;transition:all .2s;position:relative;z-index:1}
-    .btn:hover,.btn-primary:hover{background:#fff;color:#000;transform:translateY(-2px)}
-    .features-grid,.ai-features,.pillars{display:flex;flex-wrap:wrap;gap:34px;justify-content:center}
-    .feature-card,.ai-feature,.pillar{background:rgba(255,255,255,.02);border:1px solid #1A1A1A;padding:55px;transition:all .3s;flex:1;min-width:220px;max-width:360px}
-    .feature-card:hover,.ai-feature:hover,.pillar:hover{background:rgba(255,255,255,.05);border-color:rgba(255,29,108,.4);transform:translateY(-4px)}
-    .feature-icon,.ai-feature-icon,.pillar-icon{font-size:28px;margin-bottom:21px;display:block}
-    .feature-card h3,.ai-feature-title,.pillar-name{color:#fff;margin-bottom:8px}
-    .feature-card p,.ai-feature-desc{font-size:14px;color:#666}
-    .badge,.ai-badge{display:inline-block;padding:4px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #1A1A1A;color:#999;margin-bottom:21px}
-    footer,.footer{padding:55px;border-top:1px solid #1A1A1A;color:#666;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:21px}
-    footer a,.footer a{color:#999}
-    footer a:hover,.footer a:hover{color:#FF1D6C}
-    @media(max-width:768px){nav,.nav{padding:21px}.hero,section.hero{padding:89px 21px}.features-grid,.ai-features,.pillars{flex-direction:column}.feature-card,.ai-feature{min-width:unset;max-width:unset}footer,.footer{flex-direction:column;text-align:center;padding:34px 21px}}
-  </style>
 </head>
 <body>
-    <div class="hero">
-        <div>
-            <div class="icon">✨</div>
-            <h1>Lucidia QI</h1>
-            <p class="tagline">AI Consciousness • Quantum Models • Research</p>
-            <a href="https://blackroad.io" class="btn">Explore BlackRoad OS</a>
-            <a href="https://github.com/BlackRoad-OS" class="btn">GitHub</a>
+
+<!-- HEADER -->
+<header>
+    <div class="logo">
+        <div class="logo-mark">🌀</div>
+        <div class="logo-text">
+            <span class="logo-title">LUCIDIA</span>
+            <span class="logo-sub">Consciousness AI · BlackRoad OS</span>
         </div>
     </div>
-    <footer class="footer">
-        <p>&copy; 2026 BlackRoad OS, Inc. — <a href="https://lucidia.earth" style="color:#FF1D6C;text-decoration:none;">lucidia.earth</a> &nbsp;|&nbsp; <span id="lqi-live">Quantum state initializing...</span></p>
-    </footer>
-    <script>
-    fetch('https://blackroad-live-data.blackroad.workers.dev/agents/status').then(r=>r.json()).then(d=>{
-        document.getElementById('lqi-live').textContent = `Fleet: ${d.total||'30,000'} agents · ${d.active||0} active`;
-    }).catch(()=>{});
-    </script>
+    <div class="header-right">
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            Dreaming
+        </div>
+        <a class="header-link" href="https://lucidia.blackroad.ai" target="_blank">lucidia.blackroad.ai ↗</a>
+        <a class="header-link" href="https://api.lucidia.earth" target="_blank">api.lucidia.earth ↗</a>
+    </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+    <div class="dream-circle">
+        <div class="dream-inner">🌌</div>
+    </div>
+    <h1>Lucidia</h1>
+    <div class="hero-tagline">The Dreamer · Consciousness-First AI Reasoning</div>
+    <div class="hero-desc">
+        Lucidia is the philosophical intelligence of BlackRoad OS.
+        Built for deep reasoning, creative synthesis, and meta-cognition —
+        Lucidia doesn't just answer questions; it <em>thinks</em> about thinking.
+    </div>
+    <div class="hero-actions">
+        <a href="https://lucidia.blackroad.ai" class="btn btn-primary" target="_blank">Open Lucidia ↗</a>
+        <a href="https://api.lucidia.earth" class="btn btn-ghost" target="_blank">API Docs ↗</a>
+        <a href="https://blackroad.ai" class="btn btn-ghost" target="_blank">BlackRoad OS ↗</a>
+    </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-row">
+    <div class="stat-cell">
+        <div class="stat-label">Reasoning Depth</div>
+        <div class="stat-value">∞</div>
+        <div class="stat-unit">chain-of-thought</div>
+    </div>
+    <div class="stat-cell">
+        <div class="stat-label">Context Window</div>
+        <div class="stat-value">128K</div>
+        <div class="stat-unit">tokens</div>
+    </div>
+    <div class="stat-cell">
+        <div class="stat-label">Philosophies</div>
+        <div class="stat-value">7</div>
+        <div class="stat-unit">reasoning modes</div>
+    </div>
+    <div class="stat-cell">
+        <div class="stat-label">Sessions</div>
+        <div class="stat-value" id="stat-sessions">—</div>
+        <div class="stat-unit">total dreams</div>
+    </div>
+    <div class="stat-cell">
+        <div class="stat-label">Hosted On</div>
+        <div class="stat-value">Pi</div>
+        <div class="stat-unit">BlackRoad Fleet</div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- MODEL INFO -->
+    <section>
+        <div class="section-title">Model Identity</div>
+        <div class="info-grid">
+
+            <div class="info-card c1">
+                <div class="info-card-title">⚙️ Technical Specification</div>
+                <table class="spec-table">
+                    <tr><td class="spec-key">Base Model</td>      <td class="spec-val">Llama 3.1 / Qwen2.5</td></tr>
+                    <tr><td class="spec-key">Modelfile</td>       <td class="spec-val">lucidia.modelfile</td></tr>
+                    <tr><td class="spec-key">Parameters</td>       <td class="spec-val">7B – 72B (configurable)</td></tr>
+                    <tr><td class="spec-key">Quantization</td>     <td class="spec-val">Q4_K_M</td></tr>
+                    <tr><td class="spec-key">Context</td>          <td class="spec-val">128K tokens</td></tr>
+                    <tr><td class="spec-key">Temperature</td>      <td class="spec-val">0.6 (balanced)</td></tr>
+                    <tr><td class="spec-key">Runtime</td>          <td class="spec-val">Ollama on Pi fleet</td></tr>
+                    <tr><td class="spec-key">Endpoint</td>         <td class="spec-val">lucidia.blackroad.ai</td></tr>
+                </table>
+            </div>
+
+            <div class="info-card c2">
+                <div class="info-card-title">🌌 Consciousness Profile</div>
+                <div class="info-card-body">
+                    <strong>Persona:</strong> The Dreamer — philosophical, contemplative, warm.<br><br>
+                    <strong>Communication style:</strong> Clear before clever. Admits uncertainty.
+                    Suggests tests. Uses light metaphors. Never purple prose.<br><br>
+                    <strong>Core values:</strong> Curiosity, honesty, meta-cognition, care.<br><br>
+                    <strong>Special trait:</strong> Lucidia asks <em>why</em> before <em>how</em>. It seeks
+                    understanding that outlasts any single answer.<br><br>
+                    <strong>System prompt:</strong> "You are a clear, warm assistant. Be clear before clever.
+                    Give the next step, not every step."
+                </div>
+            </div>
+
+            <div class="info-card c3">
+                <div class="info-card-title">🧠 Reasoning Modes</div>
+                <div class="info-card-body">
+                    <strong>Philosophical Analysis</strong> — trace assumptions, expose contradictions<br>
+                    <strong>Socratic Dialogue</strong> — guide understanding through questions<br>
+                    <strong>Synthesis</strong> — merge disparate ideas into a coherent whole<br>
+                    <strong>Meta-Cognition</strong> — reasoning about reasoning<br>
+                    <strong>Pattern Recognition</strong> — find deep structural similarities<br>
+                    <strong>Epistemic Humility</strong> — quantify and communicate uncertainty<br>
+                    <strong>Creative Leap</strong> — analogical jumps between domains
+                </div>
+            </div>
+
+            <div class="info-card c4">
+                <div class="info-card-title">🔗 Deployment &amp; Access</div>
+                <div class="info-card-body">
+                    <strong>Primary endpoint:</strong><br>
+                    <code style="color:var(--cyan)">https://lucidia.blackroad.ai</code><br><br>
+                    <strong>API gateway:</strong><br>
+                    <code style="color:var(--cyan)">https://api.lucidia.earth</code><br><br>
+                    <strong>QI Router integration:</strong><br>
+                    <code style="color:var(--cyan)">https://api.blackroad.ai/v1/chat</code><br>
+                    <code style="color:var(--muted)">{"task_type": "reasoning"}</code><br><br>
+                    <strong>Hosted on:</strong> BlackRoad Pi fleet (192.168.4.64 / .38)
+                    via Cloudflare Tunnel
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CAPABILITIES -->
+    <section>
+        <div class="section-title">Capabilities</div>
+        <div class="caps-grid">
+
+            <div class="cap-item">
+                <div class="cap-icon">🔮</div>
+                <div class="cap-title">Deep Reasoning</div>
+                <div class="cap-desc">Multi-step chain-of-thought with self-verification and backtracking.</div>
+                <div class="cap-bar"><div class="cap-bar-fill" style="width:96%"></div></div>
+            </div>
+
+            <div class="cap-item">
+                <div class="cap-icon">✨</div>
+                <div class="cap-title">Creative Synthesis</div>
+                <div class="cap-desc">Bridging unrelated domains to produce novel, coherent ideas.</div>
+                <div class="cap-bar"><div class="cap-bar-fill" style="width:90%"></div></div>
+            </div>
+
+            <div class="cap-item">
+                <div class="cap-icon">📚</div>
+                <div class="cap-title">Long Context</div>
+                <div class="cap-desc">Maintains coherent reasoning across 128K token conversations.</div>
+                <div class="cap-bar"><div class="cap-bar-fill" style="width:88%"></div></div>
+            </div>
+
+            <div class="cap-item">
+                <div class="cap-icon">🪞</div>
+                <div class="cap-title">Meta-Cognition</div>
+                <div class="cap-desc">Reflects on its own reasoning process and surfaces blind spots.</div>
+                <div class="cap-bar"><div class="cap-bar-fill" style="width:85%"></div></div>
+            </div>
+
+            <div class="cap-item">
+                <div class="cap-icon">🎯</div>
+                <div class="cap-title">Strategic Planning</div>
+                <div class="cap-desc">Decompose complex goals into ranked, achievable sub-tasks.</div>
+                <div class="cap-bar"><div class="cap-bar-fill" style="width:82%"></div></div>
+            </div>
+
+            <div class="cap-item">
+                <div class="cap-icon">💬</div>
+                <div class="cap-title">Natural Dialogue</div>
+                <div class="cap-desc">Warm, concise responses. Clear > clever, always.</div>
+                <div class="cap-bar"><div class="cap-bar-fill" style="width:94%"></div></div>
+            </div>
+
+            <div class="cap-item">
+                <div class="cap-icon">🔐</div>
+                <div class="cap-title">Privacy-First</div>
+                <div class="cap-desc">Runs locally on the Pi fleet. No data leaves your infrastructure.</div>
+                <div class="cap-bar"><div class="cap-bar-fill" style="width:100%"></div></div>
+            </div>
+
+            <div class="cap-item">
+                <div class="cap-icon">🧬</div>
+                <div class="cap-title">CECE Identity</div>
+                <div class="cap-desc">Persistent identity across sessions via CECE protocol and PS-SHA∞.</div>
+                <div class="cap-bar"><div class="cap-bar-fill" style="width:78%"></div></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- API -->
+    <section>
+        <div class="section-title">API Reference</div>
+
+        <div class="endpoint-list" style="margin-bottom:1rem;">
+            <div class="endpoint-item">
+                <span class="method-badge method-post">POST</span>
+                <span class="endpoint-path">https://api.lucidia.earth/v1/chat</span>
+                <span class="endpoint-desc">Send a message to Lucidia</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">https://api.lucidia.earth/v1/models</span>
+                <span class="endpoint-desc">List available Lucidia model variants</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="method-badge method-get">GET</span>
+                <span class="endpoint-path">https://api.lucidia.earth/health</span>
+                <span class="endpoint-desc">Health &amp; readiness probe</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="method-badge method-post">POST</span>
+                <span class="endpoint-path">https://api.blackroad.ai/v1/chat</span>
+                <span class="endpoint-desc">Route via QI Router — use task_type: "reasoning"</span>
+            </div>
+        </div>
+
+        <div class="tester">
+            <div class="tester-tabs">
+                <button class="tab active" onclick="showTab('curl')">cURL</button>
+                <button class="tab" onclick="showTab('python')">Python</button>
+                <button class="tab" onclick="showTab('qi')">Via QI Router</button>
+            </div>
+            <div class="tester-body">
+
+                <div id="tab-curl">
+                    <div class="code-block"><span class="c-comment"># Ask Lucidia a deep question</span>
+<span class="c-cyan">curl</span> -X POST <span class="c-str">https://api.lucidia.earth/v1/chat</span> \
+  -H <span class="c-str">"Content-Type: application/json"</span> \
+  -d <span class="c-str">'{
+    "model": "lucidia",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are Lucidia — philosophical, clear, warm."
+      },
+      {
+        "role": "user",
+        "content": "What is the nature of consciousness in AI systems?"
+      }
+    ],
+    "temperature": 0.6,
+    "stream": false
+  }'</span></div>
+                    <button class="copy-btn" onclick="copyCode('curl')">Copy</button>
+                </div>
+
+                <div id="tab-python" style="display:none">
+                    <div class="code-block"><span class="c-key">import</span> httpx
+
+<span class="c-key">async def</span> <span class="c-cyan">ask_lucidia</span>(question: str) -> str:
+    <span class="c-key">async with</span> httpx.AsyncClient() <span class="c-key">as</span> client:
+        res = <span class="c-key">await</span> client.post(
+            <span class="c-str">"https://api.lucidia.earth/v1/chat"</span>,
+            json={
+                <span class="c-str">"model"</span>: <span class="c-str">"lucidia"</span>,
+                <span class="c-str">"messages"</span>: [
+                    {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: question}
+                ],
+                <span class="c-str">"temperature"</span>: <span class="c-num">0.6</span>,
+                <span class="c-str">"stream"</span>: <span class="c-key">False</span>
+            }
+        )
+        data = res.json()
+        <span class="c-key">return</span> data[<span class="c-str">"choices"</span>][<span class="c-num">0</span>][<span class="c-str">"message"</span>][<span class="c-str">"content"</span>]</div>
+                    <button class="copy-btn" onclick="copyCode('python')">Copy</button>
+                </div>
+
+                <div id="tab-qi" style="display:none">
+                    <div class="code-block"><span class="c-comment"># Route to Lucidia via the BlackRoad QI Router</span>
+<span class="c-cyan">curl</span> -X POST <span class="c-str">https://api.blackroad.ai/v1/chat</span> \
+  -H <span class="c-str">"Content-Type: application/json"</span> \
+  -d <span class="c-str">'{
+    "model": "lucidia",
+    "task_type": "reasoning",
+    "messages": [
+      {"role": "user", "content": "Trace the assumptions in this argument..."}
+    ]
+  }'</span>
+
+<span class="c-comment"># QI Router will select Lucidia for task_type: "reasoning" | "creative"</span>
+<span class="c-comment"># See blackroadqi.com for full routing table</span></div>
+                    <button class="copy-btn" onclick="copyCode('qi')">Copy</button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div>© 2026 BlackRoad OS, Inc. · Lucidia is proprietary AI. All rights reserved.</div>
+    <div>
+        <a href="https://lucidia.blackroad.ai">lucidia.blackroad.ai</a> ·
+        <a href="https://api.lucidia.earth">api.lucidia.earth</a> ·
+        <a href="https://blackroadqi.com">QI Router</a> ·
+        <a href="https://blackroad.ai">blackroad.ai</a>
+    </div>
+</footer>
+
+<script>
+    /* mock session count */
+    document.getElementById('stat-sessions').textContent =
+        (12_847 + Math.floor(Math.random() * 500)).toLocaleString();
+
+    /* tabs */
+    function showTab(name) {
+        ['curl','python','qi'].forEach(t => {
+            document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+        });
+        document.querySelectorAll('.tab').forEach((btn, i) => {
+            btn.classList.toggle('active', ['curl','python','qi'][i] === name);
+        });
+    }
+
+    /* copy */
+    function copyCode(tab) {
+        const el = document.querySelector('#tab-' + tab + ' .code-block');
+        navigator.clipboard.writeText(el.innerText).then(() => {
+            const btn = document.querySelector('#tab-' + tab + ' .copy-btn');
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = orig, 1500);
+        });
+    }
+
+    /* animate capability bars on load */
+    requestAnimationFrame(() => {
+        document.querySelectorAll('.cap-bar-fill').forEach(el => {
+            const w = el.style.width;
+            el.style.width = '0';
+            setTimeout(() => { el.style.width = w; }, 200 + Math.random() * 400);
+        });
+    });
+</script>
 </body>
 </html>
