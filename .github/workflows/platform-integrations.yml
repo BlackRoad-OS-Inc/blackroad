@@ -29,6 +29,8 @@ jobs:
     if: ${{ inputs.platform == 'all' || inputs.platform == 'salesforce' || github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Validate SF metadata
         working-directory: blackroad-sf
         run: |
@@ -45,6 +47,8 @@ jobs:
     if: ${{ inputs.platform == 'all' || inputs.platform == 'railway' || github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Verify Pi gateway accessibility
         run: |
           curl -sf http://localhost:4010/ && echo "✅ Pi gateway up"
@@ -65,6 +69,8 @@ jobs:
     if: ${{ inputs.platform == 'all' || inputs.platform == 'cloudflare' || github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Check Cloudflare tunnels
         run: |
           echo "Active tunnels on gematria:"
@@ -83,6 +89,8 @@ jobs:
     if: ${{ inputs.platform == 'all' || inputs.platform == 'huggingface' || github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Sync model catalog to HF
         env:
           HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
