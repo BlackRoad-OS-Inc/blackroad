@@ -1,117 +1,149 @@
-// status.blackroad.io — System Status Page
-// BlackRoad OS, Inc. — All Rights Reserved
+// status.blackroad.io — System Status Page Worker
+// BlackRoad OS, Inc. © 2025 — All Rights Reserved
 
-const DATA_URL = 'https://blackroad-os-api.amundsonalexa.workers.dev/health';
-const AGENTS_API = 'https://blackroad-os-api.amundsonalexa.workers.dev';
+const MONITORED_SERVICES = [
+  { name: 'BlackRoad.io',          url: 'https://blackroad.io',                    category: 'Frontend' },
+  { name: 'Agents API',            url: 'https://agents.blackroad.io',             category: 'Agents' },
+  { name: 'API Reference',         url: 'https://api.blackroad.io',                category: 'API' },
+  { name: 'Dashboard',             url: 'https://dashboard.blackroad.io',          category: 'Frontend' },
+  { name: 'Documentation',         url: 'https://docs.blackroad.io',               category: 'Docs' },
+  { name: 'Console',               url: 'https://console.blackroad.io',            category: 'Admin' },
+  { name: 'AI Platform',           url: 'https://ai.blackroad.io',                 category: 'AI' },
+  { name: 'Analytics',             url: 'https://analytics.blackroad.io',          category: 'Analytics' },
+  { name: 'BlackRoad.ai',          url: 'https://blackroad.ai',                    category: 'Frontend' },
+  { name: 'GitHub API',            url: 'https://api.github.com/orgs/BlackRoad-OS-Inc', category: 'External' },
+  { name: 'Cloudflare Workers',    url: 'https://blackroad-os-api.amundsonalexa.workers.dev/health', category: 'Infrastructure' },
+];
 
-async function fetchLiveData() {
+async function checkService(svc) {
+  const start = Date.now();
   try {
-    const r = await fetch(DATA_URL, {
-      headers: { 'User-Agent': 'BlackRoad-OS/2.0', 'Accept': 'application/json' },
-      cf: { cacheTtl: 60 },
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const r = await fetch(svc.url, {
+      method: 'HEAD',
+      headers: { 'User-Agent': 'BlackRoad-Status/2.0' },
+      signal: controller.signal,
+      cf: { cacheTtl: 0 },
     });
-    if (r.ok) return await r.json();
-  } catch (_) {}
-  return {};
+    clearTimeout(timeout);
+    const latency = Date.now() - start;
+    return {
+      ...svc,
+      status: r.ok || r.status < 500 ? 'operational' : 'degraded',
+      statusCode: r.status,
+      latency,
+    };
+  } catch (e) {
+    return { ...svc, status: e.name === 'AbortError' ? 'timeout' : 'down', statusCode: 0, latency: Date.now() - start };
+  }
 }
 
-async function getHealth() {
-  try {
-    const r = await fetch(`${AGENTS_API}/health`, {
-      headers: { 'User-Agent': 'BlackRoad-OS/2.0' },
-      cf: { cacheTtl: 30 },
-    });
-    if (r.ok) return await r.json();
-  } catch (_) {}
-  return { status: 'ok', agents: 6 };
-}
-
-function renderHTML(data, health, now) {
-  const repoCount = data.public_repos || data.total_count || '—';
-  const agentCount = health.agents || 6;
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="30">
-  <title>System Status Page — BlackRoad OS</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: #000; color: #fff; min-height: 100vh; }
-    nav { display: flex; align-items: center; gap: 2rem; padding: 1rem 2rem; border-bottom: 1px solid #111; position: sticky; top: 0; background: #000; z-index: 100; }
-    .logo { font-weight: 700; font-size: 1.1rem; background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    nav a { color: #888; text-decoration: none; font-size: 0.85rem; }
-    nav a:hover { color: #fff; }
-    .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 4rem 2rem; }
-    .live-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: #0f2010; color: #4ade80; font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 20px; margin-bottom: 1.5rem; }
-    .live-badge::before { content: ''; width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    h1 { font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 800; background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
-    .subtitle { color: #888; font-size: 1.2rem; margin-bottom: 3rem; max-width: 600px; line-height: 1.618; }
-    .subdomain { font-family: 'Courier New', monospace; font-size: 1rem; color: #4ade80; margin-bottom: 2rem; }
-    .stats { display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap; }
-    .stat { text-align: center; }
-    .stat .val { font-size: 2.5rem; font-weight: 800; color: #4ade80; }
-    .stat .lbl { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.1em; }
-    .data-section { max-width: 800px; margin: 3rem auto; padding: 0 2rem; }
-    .data-card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
-    .data-card h3 { color: #4ade80; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
-    pre { color: #888; font-size: 0.85rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
-    .footer { text-align: center; padding: 2rem; color: #333; font-size: 0.8rem; border-top: 1px solid #111; margin-top: 4rem; }
-    .cta { display: inline-flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; justify-content: center; }
-    .btn { padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s; }
-    .btn-primary { background: #4ade80; color: #000; }
-    .btn-secondary { border: 1px solid #333; color: #fff; }
-    .btn:hover { opacity: 0.8; }
-  </style>
-</head>
-<body>
-  <nav>
-    <span class="logo">◆ BlackRoad OS</span>
-    <a href="https://blackroad.io">Home</a>
-    <a href="https://dashboard.blackroad.io">Dashboard</a>
-    <a href="https://agents.blackroad.io">Agents</a>
-    <a href="https://docs.blackroad.io">Docs</a>
-    <a href="https://status.blackroad.io">Status</a>
-  </nav>
-  <div class="hero">
-    <div class="live-badge">LIVE</div>
-    <div class="subdomain">status.blackroad.io</div>
-    <h1>System Status Page</h1>
-    <p class="subtitle">Part of the BlackRoad OS platform — AI-native, edge-deployed, production-ready.</p>
-    <div class="stats">
-      <div class="stat"><div class="val">${agentCount}</div><div class="lbl">Agents Online</div></div>
-      <div class="stat"><div class="val">30K</div><div class="lbl">Agent Capacity</div></div>
-      <div class="stat"><div class="val">1,825+</div><div class="lbl">Repositories</div></div>
-      <div class="stat"><div class="val">17</div><div class="lbl">Orgs</div></div>
-    </div>
-    <div class="cta">
-      <a href="https://github.com/BlackRoad-OS-Inc" class="btn btn-primary">GitHub</a>
-      <a href="https://blackroad.io" class="btn btn-secondary">Platform</a>
-    </div>
-  </div>
-  <div class="data-section">
-    <div class="data-card">
-      <h3>Live Data — ${new Date().toLocaleTimeString()}</h3>
-      <pre>${JSON.stringify({ subdomain: 'status.blackroad.io', description: 'System Status Page', health: health.status || 'ok', agents_online: agentCount, timestamp: now }, null, 2)}</pre>
-    </div>
-  </div>
-  <div class="footer">BlackRoad OS, Inc. © ${new Date().getFullYear()} — ${now} — Auto-refreshes every 30s</div>
-</body>
-</html>`;
-}
+const STATUS_CONFIG = {
+  operational: { color: '#4ade80', bg: '#0f2010', icon: '●', label: 'Operational' },
+  degraded:    { color: '#fbbf24', bg: '#1a1000', icon: '●', label: 'Degraded' },
+  down:        { color: '#f87171', bg: '#1a0505', icon: '●', label: 'Down' },
+  timeout:     { color: '#f87171', bg: '#1a0505', icon: '◌', label: 'Timeout' },
+};
 
 export default {
   async fetch(request, env, ctx) {
     const now = new Date().toUTCString();
-    const [data, health] = await Promise.all([fetchLiveData(), getHealth()]);
-    const html = renderHTML(data, health, now);
+
+    // Check all services in parallel
+    const results = await Promise.all(MONITORED_SERVICES.map(checkService));
+
+    const operational = results.filter(r => r.status === 'operational').length;
+    const total = results.length;
+    const allOk = operational === total;
+    const majorOutage = operational < total * 0.5;
+    const overallStatus = allOk ? 'All Systems Operational' : majorOutage ? 'Major Outage' : 'Partial Outage';
+    const overallColor = allOk ? '#4ade80' : majorOutage ? '#f87171' : '#fbbf24';
+    const uptimePct = ((operational / total) * 100).toFixed(1);
+
+    const categories = [...new Set(results.map(r => r.category))];
+
+    const servicesByCategory = categories.map(cat => {
+      const catServices = results.filter(r => r.category === cat);
+      const rows = catServices.map(s => {
+        const cfg = STATUS_CONFIG[s.status] || STATUS_CONFIG.down;
+        return `<div class="svc-row">
+          <span class="svc-indicator" style="color:${cfg.color}">${cfg.icon}</span>
+          <span class="svc-name">${s.name}</span>
+          <span class="svc-latency">${s.latency < 9999 ? s.latency + 'ms' : '—'}</span>
+          <span class="svc-status" style="background:${cfg.bg};color:${cfg.color}">${cfg.label}</span>
+        </div>`;
+      }).join('');
+      return `<div class="category-group">
+        <div class="cat-title">${cat}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>System Status — BlackRoad OS</title>
+  <meta http-equiv="refresh" content="60">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--hot-pink:#FF1D6C;--electric-blue:#2979FF;--amber:#F5A623;--violet:#9C27B0;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
+    body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#000;color:#fff;min-height:100vh}
+    nav{display:flex;align-items:center;gap:1.5rem;padding:1rem 2rem;border-bottom:1px solid #111;background:#000;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+    nav .logo{font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    nav a{color:#666;text-decoration:none;font-size:.82rem}nav a:hover{color:#fff}
+    .hero{padding:3.5rem 2rem 2rem;text-align:center}
+    .overall-badge{display:inline-flex;align-items:center;gap:.6rem;padding:.75rem 2rem;border-radius:30px;font-size:1.1rem;font-weight:700;border:1px solid ${overallColor}44;color:${overallColor};background:${overallColor}0f;margin-bottom:1rem}
+    .overall-badge::before{content:'';width:10px;height:10px;background:${overallColor};border-radius:50%;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .last-check{color:#444;font-size:.82rem;margin-top:.5rem}
+    .kpis{display:flex;justify-content:center;gap:3rem;padding:1.5rem;background:#0a0a0a;border-top:1px solid #111;border-bottom:1px solid #111;margin-bottom:2.5rem;flex-wrap:wrap}
+    .kpi{text-align:center}.kpi .v{font-size:1.8rem;font-weight:700;color:var(--hot-pink)}.kpi .l{font-size:.72rem;color:#555;text-transform:uppercase;letter-spacing:.08em}
+    .main{max-width:800px;margin:0 auto;padding:0 2rem 4rem}
+    .category-group{margin-bottom:2rem}
+    .cat-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:#555;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid #111}
+    .svc-row{display:flex;align-items:center;gap:1rem;padding:.75rem 1rem;background:#0a0a0a;border:1px solid #111;border-radius:8px;margin-bottom:.4rem}
+    .svc-row:hover{border-color:#222}
+    .svc-indicator{font-size:1rem;width:16px;flex-shrink:0}
+    .svc-name{flex:1;font-size:.92rem;color:#ccc}
+    .svc-latency{font-size:.8rem;color:#444;width:60px;text-align:right}
+    .svc-status{padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+    .footer{text-align:center;padding:2rem;color:#333;font-size:.8rem;border-top:1px solid #111}
+  </style>
+</head>
+<body>
+<nav>
+  <span class="logo">◆ BlackRoad OS</span>
+  <a href="https://blackroad.io">Home</a>
+  <a href="https://agents.blackroad.io">Agents</a>
+  <a href="https://dashboard.blackroad.io">Dashboard</a>
+  <a href="https://api.blackroad.io">API</a>
+  <a href="https://docs.blackroad.io">Docs</a>
+  <a href="https://console.blackroad.io">Console</a>
+  <a href="https://ai.blackroad.io">AI</a>
+</nav>
+<div class="hero">
+  <div class="overall-badge">${overallStatus}</div>
+  <div class="last-check">Last checked: ${now}</div>
+</div>
+<div class="kpis">
+  <div class="kpi"><div class="v">${uptimePct}%</div><div class="l">Uptime</div></div>
+  <div class="kpi"><div class="v">${operational}/${total}</div><div class="l">Services Up</div></div>
+  <div class="kpi"><div class="v">${results.filter(r => r.status === 'operational' && r.latency < 500).length}</div><div class="l">Fast (&lt;500ms)</div></div>
+  <div class="kpi"><div class="v">${Math.round(results.filter(r => r.latency).reduce((s, r) => s + r.latency, 0) / results.length)}ms</div><div class="l">Avg Latency</div></div>
+</div>
+<div class="main">
+  ${servicesByCategory}
+</div>
+<div class="footer">BlackRoad OS, Inc. © ${new Date().getFullYear()} — Auto-refreshes every 60s — <a href="https://dashboard.blackroad.io" style="color:#2979FF">Dashboard</a></div>
+</body>
+</html>`;
+
     return new Response(html, {
       headers: {
         'Content-Type': 'text/html;charset=UTF-8',
-        'Cache-Control': 'public, max-age=30',
+        'Cache-Control': 'no-store',
         'X-BlackRoad-Worker': 'status-blackroadio',
         'X-BlackRoad-Version': '2.0.0',
       },
