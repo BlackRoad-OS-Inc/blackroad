@@ -9,7 +9,7 @@ interface LiveStats {
   updated_at?: string;
 }
 
-const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
+const LIVE_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
 
 export function LiveStatsBar() {
   const [stats, setStats] = useState<LiveStats>({});

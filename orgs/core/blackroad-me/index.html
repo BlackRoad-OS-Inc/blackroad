@@ -588,7 +588,7 @@
     set('ls-updated',  new Date().toLocaleTimeString());
   }
 
-  fetch('https://blackroad-live-data.blackroad.workers.dev/all', {signal: AbortSignal.timeout(5000)})
+  fetch('https://blackroad-live-hub.amundsonalexa.workers.dev/all', {signal: AbortSignal.timeout(5000)})
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(updateStats)
     .catch(() => updateStats(MOCK_LIVE));
@@ -637,7 +637,7 @@
 
   /* ── Periodic refresh (60s) ────────────────────────────────────────── */
   setInterval(() => {
-    fetch('https://blackroad-live-data.blackroad.workers.dev/all', {signal: AbortSignal.timeout(5000)})
+    fetch('https://blackroad-live-hub.amundsonalexa.workers.dev/all', {signal: AbortSignal.timeout(5000)})
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(updateStats).catch(() => {});
   }, 60000);

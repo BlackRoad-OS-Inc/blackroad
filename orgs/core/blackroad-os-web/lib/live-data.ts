@@ -1,7 +1,7 @@
 // Shared real-time data client for all BlackRoad sites
 // Fetches from the blackroad-live-data Cloudflare Worker
 
-const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
+const LIVE_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
 
 export interface GitHubStats {
   total_repos: number;

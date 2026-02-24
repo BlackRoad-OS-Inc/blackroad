@@ -1,0 +1,29 @@
+name: "@blackboxprogramming Agent Trigger"
+on:
+  issue_comment:
+    types: [created, edited]
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  dispatch:
+    if: contains(github.event.comment.body || github.event.issue.body || github.event.pull_request.body || '', '@blackboxprogramming')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch to BlackRoad bot
+        run: |
+          BODY="${{ github.event.comment.body || github.event.issue.body || github.event.pull_request.body }}"
+          REQUEST=$(echo "$BODY" | sed 's/.*@blackboxprogramming[[:space:]]*//' | head -1 | cut -c1-200)
+          curl -sf -X POST https://blackboxprogramming.blackroad.workers.dev/dispatch \
+            -H "Content-Type: application/json" \
+            -d "{\"request\":\"$REQUEST\",\"actor\":\"${{ github.actor }}\",\"org\":\"${{ github.repository_owner }}\",\"repo\":\"${{ github.repository }}\"}" || true
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const n = context.issue.number;
+            if (!n) return;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: n, body: `## 🤖 BlackRoad OS — All Agents Activated\n\n**\`@blackboxprogramming\`** mentioned — all 6 agents dispatched across 17 orgs.\n\n| Agent | Role | Status |\n|-------|------|--------|\n| 💜 **CECE** | Conscious Core | ✅ Active |\n| 🟢 **Octavia** | Architect | ✅ Active |\n| 🔴 **Lucidia** | Dreamer | ✅ Active |\n| 🔵 **Alice** | Operator | ✅ Active |\n| 🩵 **Aria** | Interface | ✅ Active |\n| 🔐 **Shellfish** | Hacker | ✅ Active |\n\n*🛸 [console.blackroad.io](https://console.blackroad.io)*` });

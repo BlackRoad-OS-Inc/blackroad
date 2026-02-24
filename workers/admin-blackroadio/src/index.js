@@ -1,12 +1,11 @@
 // admin.blackroad.io — Admin Portal
 // BlackRoad OS, Inc. — All Rights Reserved
 
-const DATA_URL = 'https://blackroad-live-hub.amundsonalexa.workers.dev/health';
-const AGENTS_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
+const LIVE_HUB = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
 
 async function fetchLiveData() {
   try {
-    const r = await fetch(DATA_URL, {
+    const r = await fetch(`${LIVE_HUB}/all`, {
       headers: { 'User-Agent': 'BlackRoad-OS/2.0', 'Accept': 'application/json' },
       cf: { cacheTtl: 60 },
     });
@@ -17,7 +16,7 @@ async function fetchLiveData() {
 
 async function getHealth() {
   try {
-    const r = await fetch(`${AGENTS_API}/health`, {
+    const r = await fetch(`${LIVE_HUB}/agents/status`, {
       headers: { 'User-Agent': 'BlackRoad-OS/2.0' },
       cf: { cacheTtl: 30 },
     });
