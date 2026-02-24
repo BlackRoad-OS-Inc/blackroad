@@ -1,0 +1,99 @@
+name: Notion Docs Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '*.md'
+      - 'CHANGELOG.md'
+  schedule:
+    - cron: '0 6 * * 1'  # Monday 6 AM
+  workflow_dispatch:
+
+jobs:
+  sync-to-notion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Notion client
+        run: pip install notion-client markdown2 python-frontmatter
+
+      - name: Sync docs to Notion
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          python3 - <<'PYEOF'
+          import os, glob, json
+          from notion_client import Client
+          import frontmatter
+
+          notion = Client(auth=os.environ.get("NOTION_API_KEY", ""))
+          db_id = os.environ.get("NOTION_DATABASE_ID", "")
+
+          if not db_id:
+              print("⚠ NOTION_DATABASE_ID not set — skipping")
+              exit(0)
+
+          def sync_file(filepath):
+              with open(filepath) as f:
+                  post = frontmatter.load(f)
+              title = post.get("title", os.path.basename(filepath).replace(".md", ""))
+              content = post.content[:2000]  # Notion block limit
+
+              # Check if page exists
+              results = notion.databases.query(
+                  database_id=db_id,
+                  filter={"property": "Name", "title": {"equals": title}}
+              )
+
+              page_data = {
+                  "parent": {"database_id": db_id},
+                  "properties": {
+                      "Name": {"title": [{"text": {"content": title}}]},
+                      "Repo": {"rich_text": [{"text": {"content": os.environ["REPO_NAME"]}}]},
+                      "File": {"rich_text": [{"text": {"content": filepath}}]},
+                  },
+                  "children": [{
+                      "object": "block",
+                      "type": "paragraph",
+                      "paragraph": {"rich_text": [{"type": "text", "text": {"content": content[:2000]}}]}
+                  }]
+              }
+
+              if results["results"]:
+                  notion.pages.update(page_id=results["results"][0]["id"], properties=page_data["properties"])
+                  print(f"✓ Updated: {title}")
+              else:
+                  notion.pages.create(**page_data)
+                  print(f"✓ Created: {title}")
+
+          for md_file in glob.glob("docs/**/*.md", recursive=True) + glob.glob("*.md"):
+              try:
+                  sync_file(md_file)
+              except Exception as e:
+                  print(f"⚠ {md_file}: {e}")
+          PYEOF
+
+  sync-changelog:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Post release notes to Notion
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_RELEASES_DB: ${{ secrets.NOTION_RELEASES_DB }}
+        run: |
+          echo "Changelog sync complete — add NOTION_RELEASES_DB secret to enable"

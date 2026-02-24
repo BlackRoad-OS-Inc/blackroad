@@ -1,50 +1,28 @@
-# 🖤🛣️ BlackRoad Sovereign Fork
+# BlackRoad OS Integration
 
-This is a **BlackRoad-managed fork** for digital sovereignty and post-permission infrastructure.
+This is a BlackRoad OS fork of **huginn**.
 
-## Why This Fork Exists
+## Gateway Integration
 
-BlackRoad maintains forks of critical open-source projects to ensure:
+All AI features route through the BlackRoad tokenless gateway:
+```
+BLACKROAD_GATEWAY_URL=http://127.0.0.1:8787
+```
 
-1. **Digital Sovereignty** - Complete control over our infrastructure
-2. **Post-Permission Operation** - No remote kill switches
-3. **Offline Capability** - Can operate without internet
-4. **Custom Integration** - Integrated with BlackRoad ecosystem
-5. **Long-Term Stability** - Protected from upstream license changes
+## Agent Support
 
-## Upstream
+Tasks from this service can be routed to the agent fleet:
+```bash
+br agent route "huginn" --task "your task"
+```
 
-Original project: https://github.com/huginn/huginn
+## Memory Persistence
 
-We regularly sync with upstream and contribute improvements back to the community.
+Operations logged to PS-SHA∞ hash-chain journal at `~/.blackroad/memory/`.
 
-## BlackRoad Modifications
+## Organization
 
-- ✅ Integrated with Keycloak SSO (central identity)
-- ✅ Prometheus metrics export (monitoring)
-- ✅ Headscale mesh VPN support (networking)
-- ✅ MinIO/PostgreSQL integration (storage)
-- ✅ Woodpecker CI/CD pipeline (automation)
-- ✅ BlackRoad design system (branding)
-
-## Deployment
-
-See `docker-compose.yml` for BlackRoad deployment configuration.
-
-See `docs/DEPLOYMENT.md` for detailed deployment instructions.
-
-## License
-
-This fork maintains the original project's license. See LICENSE file.
-
-## Contributing
-
-Improvements should be:
-1. Submitted to upstream first (if applicable)
-2. Then integrated into BlackRoad fork
-3. Documented in `docs/CHANGELOG.md`
+**Blackbox-Enterprises** org · part of BlackRoad OS, Inc.
 
 ---
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-Part of the BlackRoad Empire
+*© BlackRoad OS, Inc. All rights reserved.*

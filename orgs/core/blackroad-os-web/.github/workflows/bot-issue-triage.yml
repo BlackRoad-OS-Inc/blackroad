@@ -1,0 +1,69 @@
+name: 🤖 Bot — Issue Triage
+
+on:
+  issues:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  triage:
+    name: Auto Triage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-label issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if (context.eventName !== 'issues') return;
+            const issue = context.payload.issue;
+            const text = (issue.title + ' ' + (issue.body || '')).toLowerCase();
+            const labels = [];
+
+            // Type detection
+            if (text.match(/bug|error|crash|fail|broken|fix/)) labels.push('bug');
+            if (text.match(/feature|request|add|support|implement/)) labels.push('enhancement');
+            if (text.match(/question|how|help|unclear/)) labels.push('question');
+            if (text.match(/doc|readme|guide|tutorial/)) labels.push('documentation');
+            if (text.match(/security|cve|vuln|exploit/)) labels.push('security');
+            if (text.match(/performance|slow|memory|cpu/)) labels.push('performance');
+            if (text.match(/agent|lucidia|alice|octavia|prism|echo|cipher/)) labels.push('agents');
+            if (text.match(/deploy|ci|cd|workflow|action/)) labels.push('devops');
+            if (text.match(/api|endpoint|gateway|route/)) labels.push('api');
+
+            // Priority
+            if (text.match(/urgent|critical|blocker|production|outage/)) labels.push('priority:high');
+            else if (text.match(/soon|important|needed/)) labels.push('priority:medium');
+            else labels.push('priority:low');
+
+            for (const label of labels) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  name: label, color: label === 'bug' ? 'd73a4a' : label.startsWith('priority:high') ? 'ef4444' : 'FF1D6C',
+                });
+              } catch {}
+            }
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, labels,
+              });
+            }
+
+      - name: Auto-assign to project
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if (context.eventName !== 'issues') return;
+            const issue = context.payload.issue;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `Thanks for opening this issue! 🙏\n\nThis has been automatically triaged and labeled. A team member will review it shortly.\n\n_BlackRoad OS Bot_ 🤖`,
+            });

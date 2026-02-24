@@ -1,0 +1,105 @@
+name: Google Drive Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # Daily 3 AM
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: 'What to backup'
+        required: false
+        default: 'full'
+        type: choice
+        options: [full, code-only, docs-only]
+
+jobs:
+  backup-to-drive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Google Drive dependencies
+        run: pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+      - name: Create backup archive
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          REPO_SLUG=$(echo "${{ github.repository }}" | tr '/' '-')
+          tar czf /tmp/backup-${REPO_SLUG}-${TIMESTAMP}.tar.gz \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='__pycache__' \
+            --exclude='.next' \
+            --exclude='dist' \
+            .
+          echo "BACKUP_FILE=/tmp/backup-${REPO_SLUG}-${TIMESTAMP}.tar.gz" >> $GITHUB_ENV
+          echo "BACKUP_NAME=backup-${REPO_SLUG}-${TIMESTAMP}.tar.gz" >> $GITHUB_ENV
+
+      - name: Upload to Google Drive
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          python3 - <<'PYEOF'
+          import os, json, sys
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          from google.oauth2 import service_account
+
+          sa_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+          folder_id = os.environ.get("GDRIVE_FOLDER_ID", "")
+
+          if not sa_json or not folder_id:
+              print("⚠ GOOGLE_SERVICE_ACCOUNT_JSON or GDRIVE_FOLDER_ID not set")
+              print("Add these GitHub secrets to enable Google Drive backup")
+              sys.exit(0)
+
+          creds_data = json.loads(sa_json)
+          creds = service_account.Credentials.from_service_account_info(
+              creds_data,
+              scopes=["https://www.googleapis.com/auth/drive.file"]
+          )
+          service = build("drive", "v3", credentials=creds)
+
+          backup_file = os.environ["BACKUP_FILE"]
+          backup_name = os.environ["BACKUP_NAME"]
+
+          file_metadata = {
+              "name": backup_name,
+              "parents": [folder_id]
+          }
+          media = MediaFileUpload(backup_file, mimetype="application/gzip")
+          file = service.files().create(body=file_metadata, media_body=media, fields="id").execute()
+          print(f"✓ Uploaded: {backup_name} (ID: {file['id']})")
+
+          # Clean up backups older than 30 days
+          query = f"'{folder_id}' in parents and name contains 'backup-' and trashed=false"
+          results = service.files().list(q=query, fields="files(id,name,createdTime)", orderBy="createdTime").execute()
+          files = results.get("files", [])
+          if len(files) > 30:
+              for old_file in files[:-30]:
+                  service.files().delete(fileId=old_file["id"]).execute()
+                  print(f"🗑 Deleted old backup: {old_file['name']}")
+          PYEOF
+
+  backup-summary:
+    runs-on: ubuntu-latest
+    needs: backup-to-drive
+    if: always()
+    steps:
+      - name: Post backup summary
+        run: |
+          echo "## Backup Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Repo: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Time: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ needs.backup-to-drive.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**To enable Google Drive backup:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Create a Google Service Account" >> $GITHUB_STEP_SUMMARY
+          echo "2. Add \`GOOGLE_SERVICE_ACCOUNT_JSON\` org secret" >> $GITHUB_STEP_SUMMARY
+          echo "3. Add \`GDRIVE_FOLDER_ID\` org secret" >> $GITHUB_STEP_SUMMARY

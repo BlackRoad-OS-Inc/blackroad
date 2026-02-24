@@ -1,0 +1,84 @@
+name: 🔧 Self-Healing
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["🚀 Auto Deploy"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  monitor:
+    name: Monitor Deployments
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Check Health
+        id: health
+        run: |
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "::notice::DEPLOY_URL not set. Skipping."
+            echo "status=skip" >> $GITHUB_OUTPUT
+          else
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_URL/api/health" --max-time 30 || echo "000")
+            echo "status=$STATUS" >> $GITHUB_OUTPUT
+            [ "$STATUS" = "200" ] && echo "::notice::Health OK" || echo "::warning::Health returned $STATUS"
+          fi
+        env:
+          DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
+      - name: Create Issue on Failure
+        if: failure()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Self-Healing: Health Check Failed',
+              body: `Health check failed.\nWorkflow: ${context.workflow}\nRun: ${context.runId}`,
+              labels: ['bug', 'deployment', 'auto-generated']
+            })
+
+  dependency-updates:
+    name: Auto Update Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af
+        with:
+          node-version: '20'
+      - name: Update dependencies
+        if: hashFiles('package.json') != ''
+        run: |
+          npm update
+          if [ -n "$(git status --porcelain)" ]; then
+            BRANCH="chore/auto-update-deps-$(date +%Y%m%d)"
+            git config user.name "BlackRoad Bot"
+            git config user.email "bot@blackroad.io"
+            git push origin --delete "$BRANCH" 2>/dev/null || true
+            git checkout -b "$BRANCH"
+            git add package*.json
+            git commit -m "chore: auto-update npm dependencies $(date +%Y-%m-%d)"
+            git push origin "$BRANCH"
+            gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' | grep -q '^[0-9]' && \
+              echo "::notice::PR already exists" || \
+              gh pr create --title "chore: auto-update npm deps $(date +%Y-%m-%d)" \
+                --body "Automated dependency update." \
+                --base main --head "$BRANCH" --label "dependencies" || true
+          else
+            echo "::notice::Dependencies up to date."
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
