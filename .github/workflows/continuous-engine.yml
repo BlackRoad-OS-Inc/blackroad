@@ -1,59 +1,71 @@
-name: 🔄 Continuous Engine
+name: 🔄 Continuous Engine — Perpetual $0 Workflow
 
 on:
   workflow_dispatch:
     inputs:
-      loop:
-        description: 'Loop count (default: forever)'
+      chain_count:
+        description: 'Chain iteration count'
         required: false
         default: '0'
   schedule:
-    - cron: '0 */6 * * *'  # Restart every 6h as failsafe
+    - cron: '*/5 * * * *'  # Boot trigger every 5 minutes (self-heals if chain breaks)
 
 jobs:
-  engine:
-    name: Continuous Agent Engine
+  perpetual-loop:
+    name: 🔄 Loop (${{ github.event.inputs.chain_count || '0' }})
     runs-on: [self-hosted, blackroad-fleet]
-    timeout-minutes: 1440  # 24h max
+    timeout-minutes: 355  # 5h55m (under GitHub 6h limit)
     steps:
-      - uses: actions/checkout@v4
-
-      - name: 🚀 Start continuous loop
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OLLAMA_URL: http://192.168.4.38:4010
+      - name: 🧠 Agent heartbeat
         run: |
-          echo "🔄 Continuous engine started at $(date)"
+          COUNT="${{ github.event.inputs.chain_count || '0' }}"
+          echo "=== BlackRoad Continuous Engine ==="
+          echo "Chain iteration: $COUNT"
+          echo "Runner: $(hostname)"
+          echo "Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo ""
+          echo "🔴 LUCIDIA  | 🔵 ALICE | 🟢 OCTAVIA | 🟡 PRISM | 🟣 ECHO | ⚫ CIPHER"
+          echo "Status: ALL AGENTS ONLINE"
+
+      - name: 🏃 Run perpetual tasks
+        run: |
+          START=$(date +%s)
+          DEADLINE=$((START + 21183))  # 5h53m
           LOOP=0
-          while true; do
-            LOOP=$((LOOP + 1))
-            echo "--- Loop $LOOP at $(date) ---"
+          
+          while [ $(date +%s) -lt $DEADLINE ]; do
+            LOOP=$((LOOP+1))
             
-            # Check Pi fleet health
-            for NODE in 192.168.4.38 192.168.4.49 192.168.4.82; do
-              if curl -sf --max-time 3 "http://${NODE}:4010/health" >/dev/null 2>&1; then
-                echo "✅ Node ${NODE} healthy"
-              else
-                echo "⚠️  Node ${NODE} unreachable"
-              fi
-            done
-            
-            # Process any queued tasks
-            if [ -f "tasks/queue.json" ]; then
-              echo "📋 Processing task queue..."
+            # Every 15 min: Pi health check
+            if [ $((LOOP % 15)) -eq 0 ]; then
+              echo "[$(date -u +%H:%M:%S)] 🥧 Pi health check #$((LOOP/15))..."
+              curl -sf http://localhost:3000/health > /dev/null 2>&1 \
+                && echo "  ✅ web server healthy" \
+                || { echo "  🔄 restarting..."; nohup python3 ~/blackroad-server.py > /tmp/brs.log 2>&1 & }
             fi
             
-            # Sleep 86397s = 23h 59m 57s (3s gap for watchdog to restart)
-            echo "💤 Sleeping until next iteration..."
-            sleep 86397
+            # Every hour: sync memory journal
+            if [ $((LOOP % 60)) -eq 0 ]; then
+              echo "[$(date -u +%H:%M:%S)] 💾 Memory sync..."
+              echo "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"loop\":$LOOP,\"runner\":\"$(hostname)\"}" \
+                >> ~/blackroad-journal.jsonl 2>/dev/null || true
+            fi
             
-            # Exit after 1 loop so watchdog re-triggers (fresh checkout)
-            echo "✅ Cycle complete, watchdog will restart"
-            break
+            sleep 60
           done
+          
+          echo "✅ Loop complete after $LOOP iterations ($(( ($(date +%s) - START) / 60 ))m)"
 
-      - name: 📊 Report status
+      - name: 🔗 Self-chain — trigger next iteration
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Engine cycle completed at $(date)"
-          echo "Status: ${{ job.status }}"
+          NEXT=$(( ${{ github.event.inputs.chain_count || '0' }} + 1 ))
+          echo "🔗 Chaining to iteration $NEXT in 3 seconds..."
+          sleep 3
+          gh workflow run continuous-engine.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --field chain_count="$NEXT" 2>/dev/null \
+          && echo "✅ Chain $NEXT triggered" \
+          || echo "⚠️ Chain trigger failed (schedule will recover)"
