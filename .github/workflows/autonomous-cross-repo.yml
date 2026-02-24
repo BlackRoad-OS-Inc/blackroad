@@ -53,6 +53,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          submodules: false
+        with:
           fetch-depth: 2
 
       - name: Get Changed Files
@@ -107,10 +109,14 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
         with:
+          submodules: false
+        with:
           path: source
 
       - name: Checkout Target
         uses: actions/checkout@v4
+        with:
+          submodules: false
         with:
           repository: ${{ matrix.repo }}
           path: target
@@ -197,10 +203,14 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
         with:
+          submodules: false
+        with:
           path: source
 
       - name: Checkout Target
         uses: actions/checkout@v4
+        with:
+          submodules: false
         with:
           repository: ${{ matrix.repo }}
           path: target
@@ -268,6 +278,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+        with:
+          submodules: false
       - name: Analyze Dependencies
         id: deps
         run: |
