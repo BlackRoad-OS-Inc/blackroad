@@ -1,0 +1,25 @@
+name: Fleet Health Dashboard
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+jobs:
+  health-check:
+    runs-on: [self-hosted, blackroad-fleet]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run fleet health check
+        run: |
+          mkdir -p agents/platform-registry
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          RUNNER=$(hostname)
+          MODELS=$(curl -sf http://localhost:11434/api/tags 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('models',[])))" 2>/dev/null || echo 0)
+          BRIDGE=$(curl -sf http://localhost:4010/health 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('ok','false'))" 2>/dev/null || echo false)
+          DISK=$(df -h / | tail -1 | awk '"'"'{print $3"/"$2" "$5}'"'"')
+          printf '{"timestamp":"%s","runner":"%s","ollama_models":%s,"bridge_ok":%s,"disk":"%s"}\n' "$TIMESTAMP" "$RUNNER" "$MODELS" "$BRIDGE" "$DISK" > agents/platform-registry/fleet-health-$RUNNER.json
+          cat agents/platform-registry/fleet-health-$RUNNER.json
+          git config user.email "actions@blackroad.io"
+          git config user.name "BlackRoad Actions"
+          git add agents/platform-registry/
+          git diff --staged --quiet || git commit -m "chore: fleet health $RUNNER $TIMESTAMP [skip ci]" && git push origin HEAD || true
