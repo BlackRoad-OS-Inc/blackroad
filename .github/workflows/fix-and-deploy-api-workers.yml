@@ -26,7 +26,7 @@ jobs:
     name: 🌐 Fix blackroad.ai DNS records
     runs-on: [self-hosted, blackroad-fleet]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Restore wrangler auth
         run: |
           if [ -n "$WRANGLER_CONFIG_B64" ]; then
@@ -75,7 +75,7 @@ jobs:
     name: 🌐 Ensure blackroad.io API DNS records
     runs-on: [self-hosted, blackroad-fleet]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Get blackroad.io Zone ID and create missing CNAME records
         run: |
@@ -113,8 +113,8 @@ jobs:
     runs-on: [self-hosted, blackroad-fleet]
     needs: [fix-dns-blackroad-ai, fix-dns-blackroad-io]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with: { node-version: '20' }
       - run: npm install -g wrangler@latest
 

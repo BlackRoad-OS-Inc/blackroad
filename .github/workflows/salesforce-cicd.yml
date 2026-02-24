@@ -30,12 +30,12 @@ jobs:
         working-directory: blackroad-sf
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
         with:
           submodules: false
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -61,7 +61,7 @@ jobs:
     env:
       SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
         with:
           submodules: false
@@ -98,7 +98,7 @@ jobs:
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
     environment: sandbox
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: false
       - name: Install Salesforce CLI
@@ -122,7 +122,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: false
       - name: Install Salesforce CLI
