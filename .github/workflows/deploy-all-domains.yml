@@ -17,6 +17,11 @@ env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+# Auth helper used by all wrangler jobs
+defaults:
+  run:
+    shell: bash
+
 jobs:
   # ── Step 1: Deploy the live-data aggregator Worker ──────────────────────────
   deploy-live-data-worker:
@@ -25,6 +30,15 @@ jobs:
     if: ${{ github.event.inputs.scope == 'all' || github.event.inputs.scope == 'live-data-worker' || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Restore wrangler auth
+        run: |
+          if [ -n "$WRANGLER_CONFIG_B64" ]; then
+            mkdir -p ~/.wrangler/config
+            echo "$WRANGLER_CONFIG_B64" | base64 -d > ~/.wrangler/config/default.toml
+            echo "✅ wrangler auth restored"
+          fi
+        env:
+          WRANGLER_CONFIG_B64: ${{ secrets.WRANGLER_CONFIG_B64 }}
       - name: Deploy blackroad-live-data worker
         run: |
           export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
@@ -43,6 +57,15 @@ jobs:
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'blackroad-io' || github.event_name == 'push') }}
     steps:
       - uses: actions/checkout@v4
+      - name: Restore wrangler auth
+        run: |
+          if [ -n "$WRANGLER_CONFIG_B64" ]; then
+            mkdir -p ~/.wrangler/config
+            echo "$WRANGLER_CONFIG_B64" | base64 -d > ~/.wrangler/config/default.toml
+            echo "✅ wrangler auth restored"
+          fi
+        env:
+          WRANGLER_CONFIG_B64: ${{ secrets.WRANGLER_CONFIG_B64 }}
       - name: Deploy to CF Pages — blackroad-io
         run: |
           export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
@@ -61,6 +84,15 @@ jobs:
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'blackroad-os-web' || github.event_name == 'push') }}
     steps:
       - uses: actions/checkout@v4
+      - name: Restore wrangler auth
+        run: |
+          if [ -n "$WRANGLER_CONFIG_B64" ]; then
+            mkdir -p ~/.wrangler/config
+            echo "$WRANGLER_CONFIG_B64" | base64 -d > ~/.wrangler/config/default.toml
+            echo "✅ wrangler auth restored"
+          fi
+        env:
+          WRANGLER_CONFIG_B64: ${{ secrets.WRANGLER_CONFIG_B64 }}
       - name: Install & Build Next.js
         working-directory: orgs/core/blackroad-os-web
         run: |
@@ -84,6 +116,15 @@ jobs:
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'agents-dashboard' || github.event_name == 'push') }}
     steps:
       - uses: actions/checkout@v4
+      - name: Restore wrangler auth
+        run: |
+          if [ -n "$WRANGLER_CONFIG_B64" ]; then
+            mkdir -p ~/.wrangler/config
+            echo "$WRANGLER_CONFIG_B64" | base64 -d > ~/.wrangler/config/default.toml
+            echo "✅ wrangler auth restored"
+          fi
+        env:
+          WRANGLER_CONFIG_B64: ${{ secrets.WRANGLER_CONFIG_B64 }}
       - name: Deploy to CF Pages — blackroad-agents
         run: |
           export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
@@ -100,6 +141,15 @@ jobs:
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'lucidia-earth' || github.event_name == 'push') }}
     steps:
       - uses: actions/checkout@v4
+      - name: Restore wrangler auth
+        run: |
+          if [ -n "$WRANGLER_CONFIG_B64" ]; then
+            mkdir -p ~/.wrangler/config
+            echo "$WRANGLER_CONFIG_B64" | base64 -d > ~/.wrangler/config/default.toml
+            echo "✅ wrangler auth restored"
+          fi
+        env:
+          WRANGLER_CONFIG_B64: ${{ secrets.WRANGLER_CONFIG_B64 }}
       - name: Deploy to CF Pages — lucidia-earth
         run: |
           export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
@@ -116,6 +166,15 @@ jobs:
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'subdomain-workers' || github.event_name == 'push') }}
     steps:
       - uses: actions/checkout@v4
+      - name: Restore wrangler auth
+        run: |
+          if [ -n "$WRANGLER_CONFIG_B64" ]; then
+            mkdir -p ~/.wrangler/config
+            echo "$WRANGLER_CONFIG_B64" | base64 -d > ~/.wrangler/config/default.toml
+            echo "✅ wrangler auth restored"
+          fi
+        env:
+          WRANGLER_CONFIG_B64: ${{ secrets.WRANGLER_CONFIG_B64 }}
       - name: Deploy all wrangler-config workers
         run: |
           export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
@@ -136,6 +195,15 @@ jobs:
     if: always()
     steps:
       - uses: actions/checkout@v4
+      - name: Restore wrangler auth
+        run: |
+          if [ -n "$WRANGLER_CONFIG_B64" ]; then
+            mkdir -p ~/.wrangler/config
+            echo "$WRANGLER_CONFIG_B64" | base64 -d > ~/.wrangler/config/default.toml
+            echo "✅ wrangler auth restored"
+          fi
+        env:
+          WRANGLER_CONFIG_B64: ${{ secrets.WRANGLER_CONFIG_B64 }}
         with: { fetch-depth: 1 }
       - name: Log to memory journal
         run: |

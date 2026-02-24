@@ -20,6 +20,14 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: Restore wrangler auth
+        run: |
+          if [ -n "$WRANGLER_CONFIG_B64" ]; then
+            mkdir -p ~/.wrangler/config
+            echo "$WRANGLER_CONFIG_B64" | base64 -d > ~/.wrangler/config/default.toml
+          fi
+        env:
+          WRANGLER_CONFIG_B64: ${{ secrets.WRANGLER_CONFIG_B64 }}
 
         with:
           submodules: false
