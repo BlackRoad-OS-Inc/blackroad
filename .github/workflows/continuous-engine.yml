@@ -1,0 +1,59 @@
+name: 🔄 Continuous Engine
+
+on:
+  workflow_dispatch:
+    inputs:
+      loop:
+        description: 'Loop count (default: forever)'
+        required: false
+        default: '0'
+  schedule:
+    - cron: '0 */6 * * *'  # Restart every 6h as failsafe
+
+jobs:
+  engine:
+    name: Continuous Agent Engine
+    runs-on: [self-hosted, blackroad-fleet]
+    timeout-minutes: 1440  # 24h max
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🚀 Start continuous loop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OLLAMA_URL: http://192.168.4.38:4010
+        run: |
+          echo "🔄 Continuous engine started at $(date)"
+          LOOP=0
+          while true; do
+            LOOP=$((LOOP + 1))
+            echo "--- Loop $LOOP at $(date) ---"
+            
+            # Check Pi fleet health
+            for NODE in 192.168.4.38 192.168.4.49 192.168.4.82; do
+              if curl -sf --max-time 3 "http://${NODE}:4010/health" >/dev/null 2>&1; then
+                echo "✅ Node ${NODE} healthy"
+              else
+                echo "⚠️  Node ${NODE} unreachable"
+              fi
+            done
+            
+            # Process any queued tasks
+            if [ -f "tasks/queue.json" ]; then
+              echo "📋 Processing task queue..."
+            fi
+            
+            # Sleep 86397s = 23h 59m 57s (3s gap for watchdog to restart)
+            echo "💤 Sleeping until next iteration..."
+            sleep 86397
+            
+            # Exit after 1 loop so watchdog re-triggers (fresh checkout)
+            echo "✅ Cycle complete, watchdog will restart"
+            break
+          done
+
+      - name: 📊 Report status
+        if: always()
+        run: |
+          echo "Engine cycle completed at $(date)"
+          echo "Status: ${{ job.status }}"
