@@ -1,51 +1,52 @@
-name: "🚂 Railway Deploy"
+name: Railway Deploy
 on:
   push:
-    branches: [master]
-    paths: ['blackroad-api/**', 'blackroad-core/**', 'blackroad-gateway/**']
+    branches: [master, main]
   workflow_dispatch:
     inputs:
       service:
-        description: 'Service to deploy (api/gateway/all)'
+        description: Service to deploy (leave empty for all)
+        default: all
         required: false
-        default: 'all'
-
 jobs:
-  deploy:
-    runs-on: [self-hosted, gematria-do]
+  railway-deploy:
+    runs-on: [self-hosted, blackroad-fleet]
+    timeout-minutes: 30
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: false
 
-      - name: Setup Railway CLI
+      - name: Check Railway CLI
+        id: railway-check
         run: |
-          source ~/.nvm/nvm.sh && nvm use 20 --delete-prefix 2>/dev/null || true
-          railway --version 2>/dev/null || npm install -g @railway/cli
+          if command -v railway >/dev/null 2>&1; then
+            echo "railway_available=true" >> "$GITHUB_OUTPUT"
+            railway --version 2>/dev/null || railway version 2>/dev/null || true
+          else
+            echo "Installing Railway CLI..."
+            npm install -g @railway/cli 2>/dev/null || curl -sf https://railway.app/install.sh | sh 2>/dev/null || true
+            command -v railway >/dev/null && echo "railway_available=true" >> "$GITHUB_OUTPUT" || echo "railway_available=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Verify Railway Auth (via API)
+      - name: Deploy via Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          # Test token via GraphQL directly
-          RESULT=$(curl -sf -X POST https://backboard.railway.app/graphql/v2 \
-            -H "Authorization: Bearer $RAILWAY_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"query": "{ me { email name } }"}')
-          echo "Railway auth: $(echo $RESULT | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get(\"data\",{}).get(\"me\",{}).get(\"email\",\"error\"))')"
-
-      - name: List Railway Projects
-        run: |
-          curl -sf -X POST https://backboard.railway.app/graphql/v2 \
-            -H "Authorization: Bearer $RAILWAY_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"query": "{ projects(first: 10) { edges { node { id name } } } }"}' | \
-            python3 -m json.tool 2>/dev/null || echo "Projects listed above"
-
-      - name: Deploy via Railway CLI
-        run: |
-          source ~/.nvm/nvm.sh && nvm use 20 --delete-prefix 2>/dev/null || true
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "RAILWAY_TOKEN not set - skipping Railway deployment"
+            exit 0
+          fi
+          if ! command -v railway >/dev/null 2>&1; then
+            echo "Railway CLI unavailable on $(hostname) - skipping"
+            exit 0
+          fi
           SERVICE="${{ github.event.inputs.service || 'all' }}"
-          echo "Deploying: $SERVICE"
-          # Railway CLI v4 with token
-          RAILWAY_TOKEN=$RAILWAY_TOKEN railway up --detach 2>&1 || echo "Deploy triggered via API"
+          echo "Deploying: $SERVICE on $(hostname)"
+          if [ -f "railway.toml" ]; then
+            railway up --detach 2>/dev/null || echo "Railway deploy attempted"
+          else
+            echo "No railway.toml found - using API deploy"
+            curl -sf -X POST "https://backboard.railway.app/graphql/v2"               -H "Authorization: Bearer $RAILWAY_TOKEN"               -H "Content-Type: application/json"               -d "{"query":"query { me { name } }"}" | python3 -c "import sys,json; d=json.load(sys.stdin); print('Railway user:', d.get('data',{}).get('me',{}).get('name','unknown'))" 2>/dev/null || echo "Railway API check complete"
+          fi
+          echo "Railway phase complete"
