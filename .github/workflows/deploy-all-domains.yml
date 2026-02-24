@@ -29,7 +29,7 @@ jobs:
     runs-on: [self-hosted, blackroad-fleet]
     if: ${{ github.event.inputs.scope == 'all' || github.event.inputs.scope == 'live-data-worker' || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Restore wrangler auth
         run: |
           if [ -n "$WRANGLER_CONFIG_B64" ]; then
@@ -56,7 +56,7 @@ jobs:
     needs: [deploy-live-data-worker]
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'blackroad-io' || github.event_name == 'push') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Restore wrangler auth
         run: |
           if [ -n "$WRANGLER_CONFIG_B64" ]; then
@@ -83,7 +83,7 @@ jobs:
     needs: [deploy-live-data-worker]
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'blackroad-os-web' || github.event_name == 'push') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Restore wrangler auth
         run: |
           if [ -n "$WRANGLER_CONFIG_B64" ]; then
@@ -115,7 +115,7 @@ jobs:
     needs: [deploy-live-data-worker]
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'agents-dashboard' || github.event_name == 'push') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Restore wrangler auth
         run: |
           if [ -n "$WRANGLER_CONFIG_B64" ]; then
@@ -140,7 +140,7 @@ jobs:
     needs: [deploy-live-data-worker]
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'lucidia-earth' || github.event_name == 'push') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Restore wrangler auth
         run: |
           if [ -n "$WRANGLER_CONFIG_B64" ]; then
@@ -165,7 +165,7 @@ jobs:
     needs: [deploy-live-data-worker]
     if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'subdomain-workers' || github.event_name == 'push') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Restore wrangler auth
         run: |
           if [ -n "$WRANGLER_CONFIG_B64" ]; then
@@ -194,7 +194,7 @@ jobs:
     needs: [deploy-blackroad-io, deploy-blackroad-os-web, deploy-agents-dashboard]
     if: always()
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Restore wrangler auth
         run: |
           if [ -n "$WRANGLER_CONFIG_B64" ]; then
