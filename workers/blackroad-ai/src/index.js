@@ -1,8 +1,8 @@
 // blackroad.ai — AI Platform Portal
 // BlackRoad OS, Inc. — All Rights Reserved
 
-const DATA_URL = 'https://blackroad-os-api.amundsonalexa.workers.dev/agents';
-const AGENTS_API = 'https://blackroad-os-api.amundsonalexa.workers.dev';
+const DATA_URL = 'https://blackroad-live-data.blackroad.workers.dev/agents';
+const AGENTS_API = 'https://blackroad-live-data.blackroad.workers.dev';
 
 async function fetchLiveData() {
   try {

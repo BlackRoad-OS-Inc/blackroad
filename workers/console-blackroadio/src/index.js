@@ -2,7 +2,7 @@
 // BlackRoad OS, Inc. © 2025 — All Rights Reserved
 
 const GH_ORG = 'BlackRoad-OS-Inc';
-const AGENTS_API = 'https://blackroad-os-api.amundsonalexa.workers.dev';
+const AGENTS_API = 'https://blackroad-live-data.blackroad.workers.dev';
 
 async function fetchJSON(url, ttl = 30) {
   try {

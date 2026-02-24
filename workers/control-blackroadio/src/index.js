@@ -1,8 +1,8 @@
 // control.blackroad.io — Control Plane
 // BlackRoad OS, Inc. — All Rights Reserved
 
-const DATA_URL = 'https://blackroad-os-api.amundsonalexa.workers.dev/health';
-const AGENTS_API = 'https://blackroad-os-api.amundsonalexa.workers.dev';
+const DATA_URL = 'https://blackroad-live-data.blackroad.workers.dev/health';
+const AGENTS_API = 'https://blackroad-live-data.blackroad.workers.dev';
 
 async function fetchLiveData() {
   try {

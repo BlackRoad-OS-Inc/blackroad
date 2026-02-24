@@ -2,7 +2,7 @@
 // BlackRoad OS, Inc. — All Rights Reserved
 
 const DATA_URL = 'https://api.github.com/repos/BlackRoad-OS-Inc/blackroad-hardware';
-const AGENTS_API = 'https://blackroad-os-api.amundsonalexa.workers.dev';
+const AGENTS_API = 'https://blackroad-live-data.blackroad.workers.dev';
 
 async function fetchLiveData() {
   try {
