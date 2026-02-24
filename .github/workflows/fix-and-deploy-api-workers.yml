@@ -175,21 +175,8 @@ jobs:
       - name: Write summary
         if: always()
         run: |
-          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-## 🔧 API Worker Fix Summary
-
-### Fixed
-- `api.blackroad.ai` — DNS CNAME added + api-edge worker deployed
-- `agents.blackroad.ai` — DNS CNAME added + agents-api worker deployed  
-- `status.blackroad.io` — Updated with full Pi fleet + all 7 services
-
-### Architecture
-```
-api.blackroad.ai → blackroad-api-edge (Worker) → blackroad.systems (tunnel → Pi :8788)
-agents.blackroad.ai → agents-api (Worker) → api.blackroad.io (tunnel → Pi :8787)
-```
-
-### Related Repos
-- `BlackRoad-OS-Inc/blackroad-infra` — wrangler configs, DNS docs
-- `BlackRoad-OS-Inc/blackroad-core` — gateway + worker source
-EOF
+          echo "## 🔧 API Worker Fix Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Fixed" >> $GITHUB_STEP_SUMMARY
+          echo "- api.blackroad.ai — DNS CNAME + api-edge worker deployed" >> $GITHUB_STEP_SUMMARY
+          echo "- agents.blackroad.ai — DNS CNAME + agents-api worker deployed" >> $GITHUB_STEP_SUMMARY
+          echo "- status.blackroad.io — Updated with full Pi fleet" >> $GITHUB_STEP_SUMMARY
