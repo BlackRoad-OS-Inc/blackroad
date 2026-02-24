@@ -1,55 +1,21 @@
-name: HuggingFace Model Registry Sync
-
+name: HuggingFace Model Registry
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 4 * * *'
-  workflow_dispatch:
-    inputs:
-      model:
-        description: 'Pull specific model (e.g., Qwen/Qwen2.5-7B-Instruct)'
-        required: false
-        default: 'none'
-
 jobs:
-  sync-registry:
+  sync:
     runs-on: [self-hosted, blackroad-fleet]
-    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install HF Hub
-        run: pip3 install -q --upgrade huggingface_hub 2>/dev/null || true
-
-      - name: List Ollama models
-        run: |
-          ollama list 2>/dev/null || true
-          curl -sf http://localhost:11434/api/tags 2>/dev/null || echo "Ollama offline on $(hostname)"
-
-      - name: Pull model if specified
+      - name: Sync models
         env:
           HF_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
-          INPUT_MODEL: ${{ github.event.inputs.model }}
         run: |
-          if [ -n "$INPUT_MODEL" ] && [ "$INPUT_MODEL" != "none" ]; then
-            echo "Pulling: $INPUT_MODEL"
-            MODEL_SHORT=$(echo "$INPUT_MODEL" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
-            curl -X POST http://localhost:11434/api/pull \
-              -H 'Content-Type: application/json' \
-              -d "{\"name\":\"${MODEL_SHORT}\"}" \
-              --no-buffer 2>/dev/null | tail -2 || true
-            echo "Model pull requested"
-          else
-            echo "No specific model requested, skipping pull"
-          fi
-
-      - name: Update model registry
-        run: |
+          pip3 install -q huggingface_hub 2>/dev/null || true
           mkdir -p agents/platform-registry
-          curl -sf http://localhost:11434/api/tags 2>/dev/null \
-            > agents/platform-registry/ollama-models.json || echo '{"models":[]}' > agents/platform-registry/ollama-models.json
+          curl -sf http://localhost:11434/api/tags > agents/platform-registry/ollama-models.json 2>/dev/null || echo '{}' > agents/platform-registry/ollama-models.json
           git config user.email "actions@blackroad.io"
           git config user.name "BlackRoad Actions"
-          git add agents/platform-registry/ollama-models.json
-          git diff --staged --quiet || git commit -m "chore: update ollama model registry [skip ci]"
-          git push origin HEAD || true
-          echo "Registry sync complete"
+          git add agents/platform-registry/ && git diff --staged --quiet || git commit -m "chore: sync model registry [skip ci]" && git push origin HEAD || true
+          echo "done"
