@@ -48,7 +48,7 @@ jobs:
       fix_strategy: ${{ steps.strategy.outputs.approach }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
         with:
           submodules: false
@@ -139,13 +139,13 @@ jobs:
     runs-on: [self-hosted, blackroad-fleet]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: false
           ref: ${{ github.event.workflow_run.head_branch || github.ref }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -187,7 +187,7 @@ jobs:
     runs-on: [self-hosted, blackroad-fleet]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: false
           ref: ${{ github.event.workflow_run.head_branch || github.ref }}
@@ -234,7 +234,7 @@ jobs:
     runs-on: [self-hosted, blackroad-fleet]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: false
           ref: ${{ github.event.workflow_run.head_branch || github.ref }}
@@ -297,7 +297,7 @@ jobs:
     runs-on: [self-hosted, blackroad-fleet]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: false
           ref: ${{ github.event.workflow_run.head_branch || github.ref }}
@@ -320,7 +320,7 @@ jobs:
 
       - name: Create Issue for Manual Review
         if: needs.diagnose.outputs.fixable == 'maybe'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const failureType = '${{ needs.diagnose.outputs.failure_type }}';

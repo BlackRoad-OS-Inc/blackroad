@@ -9,7 +9,7 @@ jobs:
     runs-on: [self-hosted, blackroad-fleet]
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
         with:
           submodules: false
@@ -64,7 +64,7 @@ jobs:
 
       - name: Alert on critical issues
         if: steps.fleet.outputs.offline > 2
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

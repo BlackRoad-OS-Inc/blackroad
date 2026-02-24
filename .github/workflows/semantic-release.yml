@@ -9,7 +9,7 @@ jobs:
     runs-on: [self-hosted, blackroad-fleet]
     if: "!contains(github.event.head_commit.message, '[skip release]') && !contains(github.event.head_commit.message, 'chore: bump')"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: false
           fetch-depth: 0
@@ -58,7 +58,7 @@ jobs:
 
       - name: Generate changelog + create release
         if: steps.analyze.outputs.should_release == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

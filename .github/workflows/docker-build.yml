@@ -37,7 +37,7 @@ jobs:
             dockerfile: blackroad-core/Dockerfile
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
         with:
           submodules: false
@@ -61,7 +61,7 @@ jobs:
 
       - name: Build and push ${{ matrix.name }}
         if: steps.check.outputs.exists == 'true'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}

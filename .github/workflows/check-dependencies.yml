@@ -14,7 +14,7 @@ jobs:
     runs-on: [self-hosted, blackroad-fleet]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check if index exists
         id: check_index
@@ -29,7 +29,7 @@ jobs:
       - name: Parse dependencies
         if: steps.check_index.outputs.exists == 'true'
         id: parse
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
@@ -166,7 +166,7 @@ jobs:
 
       - name: Create or update alert issue
         if: steps.check_local.outputs.blocked == 'true' || steps.check_cross.outputs.blocked == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const localDeps = JSON.parse('${{ steps.parse.outputs.local_deps }}');
@@ -231,7 +231,7 @@ jobs:
 
       - name: Close alert if all clear
         if: steps.check_local.outputs.blocked == 'false' && steps.check_cross.outputs.blocked == 'false'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             // Find open alert issues

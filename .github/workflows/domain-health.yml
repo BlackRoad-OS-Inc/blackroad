@@ -8,7 +8,7 @@ jobs:
   check-domains:
     runs-on: [self-hosted, blackroad-fleet]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
         with:
           submodules: false
@@ -54,7 +54,7 @@ jobs:
 
       - name: Create issue if domains down
         if: steps.health.outputs.failed_count > 3
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
