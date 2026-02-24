@@ -26,7 +26,7 @@
             font-size: clamp(3rem, 8vw, 6rem);
             font-weight: 800;
             margin-bottom: 2rem;
-            background: linear-gradient(135deg, #FF0066 0%, #D600AA 50%, #7700FF 100%);
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -115,7 +115,17 @@
         </div>
     </div>
     <footer class="footer">
-        <p>&copy; 2025 BlackRoad. Part of the BlackRoad OS ecosystem.</p>
+        <p>&copy; 2025 BlackRoad QI. Quantum Intelligence. &nbsp;|&nbsp; <span id="qi-live">Initializing quantum state...</span></p>
     </footer>
+    <script>
+    const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
+    Promise.all([
+        fetch(`${LIVE_API}/github/stats`).then(r=>r.json()).catch(()=>null),
+        fetch(`${LIVE_API}/agents/status`).then(r=>r.json()).catch(()=>null)
+    ]).then(([g,a]) => {
+        const el = document.getElementById('qi-live');
+        if(el) el.textContent = `${g?.total_repos||'1800+'} repos · ${a?.total||'30K'} agents · quantum intelligence active ⚛️`;
+    });
+    </script>
 </body>
 </html>

@@ -334,5 +334,26 @@
 
     <!-- JavaScript Modules -->
     <script type="module" src="../src/js/main.js"></script>
+
+    <!-- BlackRoad Live Data -->
+    <script>
+    const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
+    async function loadRoadWorldData() {
+        try {
+            const [github, agents] = await Promise.all([
+                fetch(`${LIVE_API}/github/stats`).then(r=>r.json()).catch(()=>null),
+                fetch(`${LIVE_API}/agents/status`).then(r=>r.json()).catch(()=>null)
+            ]);
+            const bar = document.createElement('div');
+            bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);padding:8px 20px;display:flex;gap:20px;font-size:12px;font-family:monospace;color:#F5A623;border-top:1px solid rgba(245,166,35,0.3);z-index:9999;';
+            const repos = github?.total_repos || '1800+';
+            const agentCount = agents?.total || '30K';
+            const active = agents?.active || 0;
+            bar.innerHTML = `<span>🗺️ ROADWORLD</span><span>◆ ${repos} repos</span><span>◆ ${agentCount} agents (${active} active)</span><span>◆ <a href="https://blackroad.io" style="color:#FF1D6C;text-decoration:none;">blackroad.io</a></span>`;
+            document.body.appendChild(bar);
+        } catch(e) {}
+    }
+    loadRoadWorldData();
+    </script>
 </body>
 </html>

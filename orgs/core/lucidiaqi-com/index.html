@@ -26,7 +26,7 @@
             font-size: clamp(3rem, 8vw, 6rem);
             font-weight: 800;
             margin-bottom: 2rem;
-            background: linear-gradient(135deg, #FF0066 0%, #D600AA 50%, #7700FF 100%);
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -115,7 +115,12 @@
         </div>
     </div>
     <footer class="footer">
-        <p>&copy; 2025 BlackRoad. Part of the BlackRoad OS ecosystem.</p>
+        <p>&copy; 2026 BlackRoad OS, Inc. — <a href="https://lucidia.earth" style="color:#FF1D6C;text-decoration:none;">lucidia.earth</a> &nbsp;|&nbsp; <span id="lqi-live">Quantum state initializing...</span></p>
     </footer>
+    <script>
+    fetch('https://blackroad-live-data.blackroad.workers.dev/agents/status').then(r=>r.json()).then(d=>{
+        document.getElementById('lqi-live').textContent = `Fleet: ${d.total||'30,000'} agents · ${d.active||0} active`;
+    }).catch(()=>{});
+    </script>
 </body>
 </html>

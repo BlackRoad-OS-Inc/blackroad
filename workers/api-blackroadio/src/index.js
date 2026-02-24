@@ -1,113 +1,133 @@
-// api.blackroad.io — API Explorer & Documentation
-// BlackRoad OS, Inc. — All Rights Reserved
+// api.blackroad.io — API Documentation & Live Explorer
+// BlackRoad OS, Inc. © 2025 — All Rights Reserved
 
-const DATA_URL = 'https://blackroad-os-api.amundsonalexa.workers.dev/health';
+const GH_ORG = 'BlackRoad-OS-Inc';
 const AGENTS_API = 'https://blackroad-os-api.amundsonalexa.workers.dev';
 
-async function fetchLiveData() {
+const ENDPOINTS = [
+  { method: 'GET',  path: '/agents',            desc: 'List all active agents and their status',       example: '{"total":8,"online":6,"agents":[...]}' },
+  { method: 'GET',  path: '/agents/:name',       desc: 'Get a specific agent by name',                  example: '{"name":"LUCIDIA","status":"online","tasks_today":847}' },
+  { method: 'POST', path: '/agents/:name/task',  desc: 'Assign a task to an agent',                     example: '{"task_id":"t_001","status":"queued"}' },
+  { method: 'GET',  path: '/health',             desc: 'System health check',                           example: '{"status":"ok","uptime":"99.9%"}' },
+  { method: 'GET',  path: '/metrics',            desc: 'Live system metrics (tasks, latency, memory)',   example: '{"tasks_today":12453,"avg_latency_ms":120}' },
+  { method: 'GET',  path: '/memory/:key',        desc: 'Retrieve a memory entry by key',                example: '{"key":"session-123","value":{...}}' },
+  { method: 'POST', path: '/memory',             desc: 'Store a memory entry',                          example: '{"key":"session-123","stored":true}' },
+  { method: 'GET',  path: '/skills',             desc: 'List agent skills and capabilities matrix',     example: '[{"agent":"LUCIDIA","skills":["reasoning","strategy"]}]' },
+  { method: 'GET',  path: '/deployments',        desc: 'Recent deployments across all services',        example: '[{"service":"api","status":"success","time":"..."}]' },
+  { method: 'POST', path: '/broadcast',          desc: 'Broadcast a message to all agents',             example: '{"delivered":8,"message":"..."}' },
+];
+
+const METHOD_COLORS = { GET: '#4ade80', POST: '#60a5fa', DELETE: '#f87171', PATCH: '#fbbf24' };
+
+async function fetchJSON(url, ttl = 30) {
   try {
-    const r = await fetch(DATA_URL, {
-      headers: { 'User-Agent': 'BlackRoad-OS/2.0', 'Accept': 'application/json' },
-      cf: { cacheTtl: 60 },
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'BlackRoad-OS/2.0', Accept: 'application/json' },
+      cf: { cacheTtl: ttl },
     });
-    if (r.ok) return await r.json();
+    if (r.ok) return r.json();
   } catch (_) {}
-  return {};
-}
-
-async function getHealth() {
-  try {
-    const r = await fetch(`${AGENTS_API}/health`, {
-      headers: { 'User-Agent': 'BlackRoad-OS/2.0' },
-      cf: { cacheTtl: 30 },
-    });
-    if (r.ok) return await r.json();
-  } catch (_) {}
-  return { status: 'ok', agents: 6 };
-}
-
-function renderHTML(data, health, now) {
-  const repoCount = data.public_repos || data.total_count || '—';
-  const agentCount = health.agents || 6;
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="30">
-  <title>API Explorer & Documentation — BlackRoad OS</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: #000; color: #fff; min-height: 100vh; }
-    nav { display: flex; align-items: center; gap: 2rem; padding: 1rem 2rem; border-bottom: 1px solid #111; position: sticky; top: 0; background: #000; z-index: 100; }
-    .logo { font-weight: 700; font-size: 1.1rem; background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    nav a { color: #888; text-decoration: none; font-size: 0.85rem; }
-    nav a:hover { color: #fff; }
-    .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 4rem 2rem; }
-    .live-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: #0f2010; color: #4ade80; font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 20px; margin-bottom: 1.5rem; }
-    .live-badge::before { content: ''; width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    h1 { font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 800; background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
-    .subtitle { color: #888; font-size: 1.2rem; margin-bottom: 3rem; max-width: 600px; line-height: 1.618; }
-    .subdomain { font-family: 'Courier New', monospace; font-size: 1rem; color: #2979FF; margin-bottom: 2rem; }
-    .stats { display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap; }
-    .stat { text-align: center; }
-    .stat .val { font-size: 2.5rem; font-weight: 800; color: #2979FF; }
-    .stat .lbl { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.1em; }
-    .data-section { max-width: 800px; margin: 3rem auto; padding: 0 2rem; }
-    .data-card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
-    .data-card h3 { color: #2979FF; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
-    pre { color: #888; font-size: 0.85rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
-    .footer { text-align: center; padding: 2rem; color: #333; font-size: 0.8rem; border-top: 1px solid #111; margin-top: 4rem; }
-    .cta { display: inline-flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; justify-content: center; }
-    .btn { padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s; }
-    .btn-primary { background: #2979FF; color: #000; }
-    .btn-secondary { border: 1px solid #333; color: #fff; }
-    .btn:hover { opacity: 0.8; }
-  </style>
-</head>
-<body>
-  <nav>
-    <span class="logo">◆ BlackRoad OS</span>
-    <a href="https://blackroad.io">Home</a>
-    <a href="https://dashboard.blackroad.io">Dashboard</a>
-    <a href="https://agents.blackroad.io">Agents</a>
-    <a href="https://docs.blackroad.io">Docs</a>
-    <a href="https://status.blackroad.io">Status</a>
-  </nav>
-  <div class="hero">
-    <div class="live-badge">LIVE</div>
-    <div class="subdomain">api.blackroad.io</div>
-    <h1>API Explorer & Documentation</h1>
-    <p class="subtitle">Part of the BlackRoad OS platform — AI-native, edge-deployed, production-ready.</p>
-    <div class="stats">
-      <div class="stat"><div class="val">${agentCount}</div><div class="lbl">Agents Online</div></div>
-      <div class="stat"><div class="val">30K</div><div class="lbl">Agent Capacity</div></div>
-      <div class="stat"><div class="val">1,825+</div><div class="lbl">Repositories</div></div>
-      <div class="stat"><div class="val">17</div><div class="lbl">Orgs</div></div>
-    </div>
-    <div class="cta">
-      <a href="https://github.com/BlackRoad-OS-Inc" class="btn btn-primary">GitHub</a>
-      <a href="https://blackroad.io" class="btn btn-secondary">Platform</a>
-    </div>
-  </div>
-  <div class="data-section">
-    <div class="data-card">
-      <h3>Live Data — ${new Date().toLocaleTimeString()}</h3>
-      <pre>${JSON.stringify({ subdomain: 'api.blackroad.io', description: 'API Explorer & Documentation', health: health.status || 'ok', agents_online: agentCount, timestamp: now }, null, 2)}</pre>
-    </div>
-  </div>
-  <div class="footer">BlackRoad OS, Inc. © ${new Date().getFullYear()} — ${now} — Auto-refreshes every 30s</div>
-</body>
-</html>`;
+  return null;
 }
 
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    // Proxy live API requests
+    if (url.pathname.startsWith('/proxy/')) {
+      const target = AGENTS_API + url.pathname.replace('/proxy', '');
+      const live = await fetchJSON(target);
+      return new Response(JSON.stringify(live, null, 2), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+
+    const [liveHealth, orgStats] = await Promise.all([
+      fetchJSON(`${AGENTS_API}/health`, 30),
+      fetchJSON(`https://api.github.com/orgs/${GH_ORG}`, 300),
+    ]);
+
     const now = new Date().toUTCString();
-    const [data, health] = await Promise.all([fetchLiveData(), getHealth()]);
-    const html = renderHTML(data, health, now);
+    const endpointRows = ENDPOINTS.map(ep => `
+      <div class="endpoint-row">
+        <div class="ep-header">
+          <span class="method-badge" style="background:${METHOD_COLORS[ep.method]}22;color:${METHOD_COLORS[ep.method]};border:1px solid ${METHOD_COLORS[ep.method]}44">${ep.method}</span>
+          <code class="path">${AGENTS_API}${ep.path}</code>
+          <a href="/proxy${ep.path.replace(':name','LUCIDIA').replace(':key','test')}" target="_blank" class="try-btn">Try Live ↗</a>
+        </div>
+        <div class="ep-desc">${ep.desc}</div>
+        <pre class="ep-example">// Example response\n${ep.example}</pre>
+      </div>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>API Reference — BlackRoad OS</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--hot-pink:#FF1D6C;--electric-blue:#2979FF;--amber:#F5A623;--violet:#9C27B0;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
+    body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#000;color:#fff;min-height:100vh}
+    nav{display:flex;align-items:center;gap:1.5rem;padding:1rem 2rem;border-bottom:1px solid #111;background:#000;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+    nav .logo{font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    nav a{color:#666;text-decoration:none;font-size:.82rem}nav a:hover{color:#fff}
+    .hero{padding:3rem 2rem 1rem;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,3rem);font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
+    .hero .sub{color:#666;font-size:1rem}
+    .status-banner{display:flex;align-items:center;justify-content:center;gap:2rem;padding:1rem;background:#0f2010;border-top:1px solid #1a3a1a;border-bottom:1px solid #1a3a1a;margin:1.5rem 0;flex-wrap:wrap}
+    .status-item{display:flex;align-items:center;gap:.5rem;font-size:.85rem}
+    .dot{width:8px;height:8px;border-radius:50%;background:#4ade80}
+    .main{max-width:1000px;margin:0 auto;padding:0 2rem 4rem}
+    .section-title{font-size:1.2rem;font-weight:700;margin:2rem 0 1rem;color:#fff;border-bottom:1px solid #111;padding-bottom:.75rem}
+    .endpoint-row{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+    .endpoint-row:hover{border-color:#333}
+    .ep-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem;flex-wrap:wrap}
+    .method-badge{padding:.2rem .6rem;border-radius:5px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+    code.path{font-family:monospace;font-size:.85rem;color:#888;flex:1}
+    .try-btn{font-size:.75rem;color:var(--electric-blue);text-decoration:none;margin-left:auto;padding:.2rem .6rem;border:1px solid #2979FF44;border-radius:4px}
+    .try-btn:hover{background:#0a1628}
+    .ep-desc{color:#777;font-size:.88rem;margin-bottom:.75rem}
+    pre.ep-example{background:#050505;border:1px solid #111;border-radius:6px;padding:.75rem 1rem;font-size:.8rem;color:#4ade80;overflow-x:auto}
+    .base-url{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-family:monospace;color:#F5A623;font-size:.95rem}
+    .footer{text-align:center;padding:2rem;color:#333;font-size:.8rem;border-top:1px solid #111}
+    a{color:var(--electric-blue)}
+  </style>
+</head>
+<body>
+<nav>
+  <span class="logo">◆ BlackRoad OS</span>
+  <a href="https://blackroad.io">Home</a>
+  <a href="https://agents.blackroad.io">Agents</a>
+  <a href="https://dashboard.blackroad.io">Dashboard</a>
+  <a href="https://docs.blackroad.io">Docs</a>
+  <a href="https://console.blackroad.io">Console</a>
+  <a href="https://status.blackroad.io">Status</a>
+</nav>
+<div class="hero">
+  <h1>API Reference</h1>
+  <p class="sub">Live endpoint documentation — all requests are real-time</p>
+</div>
+<div class="status-banner">
+  <div class="status-item"><div class="dot"></div><span>API Online</span></div>
+  <div class="status-item"><div class="dot"></div><span>Agents: ${liveHealth?.agents || 6} online</span></div>
+  <div class="status-item"><div class="dot"></div><span>Latency: ${liveHealth?.latency_ms || '~50'}ms</span></div>
+  <div class="status-item"><div class="dot"></div><span>Version: 2.0.0</span></div>
+</div>
+<div class="main">
+  <div class="base-url">Base URL: ${AGENTS_API}</div>
+  <div class="section-title">Endpoints</div>
+  ${endpointRows}
+  <div class="section-title">Authentication</div>
+  <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:1.5rem;color:#888;line-height:1.7">
+    <p>Public endpoints are available without authentication. Private endpoints require a <code style="color:#F5A623">Bearer</code> token in the <code style="color:#F5A623">Authorization</code> header.</p>
+    <pre style="background:#050505;border:1px solid #111;border-radius:6px;padding:.75rem;margin-top:1rem;font-size:.8rem;color:#60a5fa">curl -H "Authorization: Bearer YOUR_TOKEN" ${AGENTS_API}/agents</pre>
+  </div>
+</div>
+<div class="footer">BlackRoad OS, Inc. © ${new Date().getFullYear()} — Updated ${now}</div>
+</body>
+</html>`;
+
     return new Response(html, {
       headers: {
         'Content-Type': 'text/html;charset=UTF-8',

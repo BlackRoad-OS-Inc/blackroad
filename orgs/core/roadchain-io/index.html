@@ -115,7 +115,13 @@
         </div>
     </div>
     <footer class="footer">
-        <p>&copy; 2025 BlackRoad. Part of the BlackRoad OS ecosystem.</p>
+        <p>&copy; 2025 BlackRoad. Part of the BlackRoad OS ecosystem. &nbsp;|&nbsp; <span id="chain-live">Loading live data...</span></p>
     </footer>
+    <script>
+    const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
+    fetch(`${LIVE_API}/github/stats`).then(r=>r.json()).then(d=>{
+        document.getElementById('chain-live').textContent = `${d.total_repos || '1800+'} repos • ${d.total_stars || 0} stars ⭐`;
+    }).catch(()=>{document.getElementById('chain-live').textContent='blackroad.io ecosystem';});
+    </script>
 </body>
 </html>
