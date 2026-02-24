@@ -3,8 +3,20 @@ main = "workers/blackroad-live-data/src/index.js"
 compatibility_date = "2025-01-01"
 account_id = "848cf0b18d51e0170e0d1537aec3505a"
 
+routes = [
+  { pattern = "live.blackroad.io/*", zone_name = "blackroad.io" },
+  { pattern = "live.blackroad.ai/*", zone_name = "blackroad.ai" },
+  { pattern = "blackroad-live-data.blackroad.workers.dev/*", zone_name = "blackroad.workers.dev" }
+]
+
 [vars]
 ENVIRONMENT = "production"
+PI_PRIMARY = "192.168.4.38"
+PI_ALICE = "192.168.4.49"
+PI_LUCIDIA = "192.168.4.64"
+DO_DROPLET = "159.65.43.12"
+TUNNEL_ID = "52915859-da18-4aa6-add5-7bd9fcac2e0b"
 
-# GitHub token stored as secret: wrangler secret put GITHUB_TOKEN
+# Secrets (set via wrangler secret put):
+# GITHUB_TOKEN — GitHub API token for org stats
 # wrangler deploy --config wrangler-configs/blackroad-live-data.toml

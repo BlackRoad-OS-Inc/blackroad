@@ -167,17 +167,17 @@ cmd_hipaa() {
     echo -e "${BLUE}Scanning for Health Insurance Portability and Accountability Act...${NC}\n"
     
     # Administrative Safeguards
-    check_hipaa_policies()
-    check_hipaa_training()
+    check_hipaa_policies
+    check_hipaa_training
     
     # Physical Safeguards
-    check_hipaa_physical()
+    check_hipaa_physical
     
     # Technical Safeguards
-    check_hipaa_access_control()
-    check_hipaa_audit()
-    check_hipaa_integrity()
-    check_hipaa_transmission()
+    check_hipaa_access_control
+    check_hipaa_audit
+    check_hipaa_integrity
+    check_hipaa_transmission
     
     generate_report "HIPAA"
 }
@@ -314,10 +314,10 @@ cmd_gdpr() {
     
     echo -e "${BLUE}Scanning for General Data Protection Regulation...${NC}\n"
     
-    check_gdpr_encryption()
-    check_gdpr_access()
-    check_gdpr_retention()
-    check_gdpr_breach()
+    check_gdpr_encryption
+    check_gdpr_access
+    check_gdpr_retention
+    check_gdpr_breach
     
     generate_report "GDPR"
 }

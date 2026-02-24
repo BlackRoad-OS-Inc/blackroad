@@ -1,128 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - blackroad.io</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: #000;
-            color: #0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 2rem;
-            text-align: center;
-        }
-        .container {
-            max-width: 600px;
-        }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #FF9D00, #FF0066, #7700FF, #0066FF);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .subdomain {
-            font-family: 'Courier New', monospace;
-            font-size: 1.5rem;
-            margin-bottom: 2rem;
-            color: #0af;
-        }
-        p {
-            font-size: 1.1rem;
-            line-height: 1.8;
-            margin-bottom: 2rem;
-            opacity: 0.8;
-        }
-        .btn {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: linear-gradient(135deg, #FF9D00, #FF0066);
-            color: #fff;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            margin: 0.5rem;
-            transition: transform 0.3s;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        .status {
-            margin-top: 3rem;
-            padding: 1rem;
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid #0f0;
-            border-radius: 8px;
-        }
-    </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{--black:#000;--ink:#0A0A0A;--surface:#111;--border:#1A1A1A;--dim:#666;--sub:#999;--white:#FFF;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00FF88;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px;--xxl:89px}
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-top:70px}
-    h1{font-size:clamp(40px,8vw,100px);font-weight:600;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:21px}
-    h2{font-size:clamp(24px,4vw,48px);font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:21px}
-    h3{font-size:clamp(16px,2vw,24px);font-weight:600;color:#fff;margin-bottom:13px}
-    h4,h5,h6{color:#fff}
-    p{color:#999;line-height:1.8;margin-bottom:21px}
-    a{color:#2979FF;text-decoration:none;transition:color .2s}
-    a:hover{color:#FF1D6C}
-    strong{color:#fff}
-    code{font-family:inherit;background:#111;color:#00FF88;padding:2px 6px;border:1px solid #1A1A1A}
-    pre{background:#0A0A0A;border:1px solid #1A1A1A;border-left:2px solid #FF1D6C;padding:21px 34px;color:#00FF88;overflow-x:auto;margin-bottom:34px}
-    hr{border:none;height:1px;background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);opacity:.3;margin:55px 0}
-    nav,.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;justify-content:space-between;align-items:center;padding:21px 55px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1A1A1A}
-    nav a,.nav a{color:#999;font-size:13px}
-    nav a:hover,.nav a:hover{color:#fff}
-    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header{padding:21px 55px 0;display:flex;justify-content:space-between;align-items:center}
-    header .logo{font-size:22px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header nav{position:static;background:none;backdrop-filter:none;border:none;padding:0;display:flex;gap:34px}
-    .hero,section.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:89px 55px;position:relative;overflow:hidden}
-    .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,29,108,.15) 0%,rgba(156,39,176,.1) 40%,transparent 70%);pointer-events:none;animation:orb 8s ease-in-out infinite}
-    @keyframes orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
-    .hero p,.tagline{font-size:18px;max-width:600px;color:#999;margin-bottom:55px;position:relative;z-index:1}
-    .hero h1{position:relative;z-index:1}
-    .earth-glow,.hero-glow,.neural-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,29,108,.07) 0%,transparent 60%);pointer-events:none}
-    section{padding:89px 55px;position:relative}
-    section:not(.hero){max-width:1200px;margin-left:auto;margin-right:auto}
-    section h2{color:#fff;-webkit-text-fill-color:#fff}
-    .btn,.btn-primary{display:inline-block;padding:13px 34px;font-family:inherit;font-size:14px;font-weight:600;background:#FF1D6C;color:#fff;text-decoration:none;border:none;cursor:pointer;transition:all .2s;position:relative;z-index:1}
-    .btn:hover,.btn-primary:hover{background:#fff;color:#000;transform:translateY(-2px)}
-    .features-grid,.ai-features,.pillars{display:flex;flex-wrap:wrap;gap:34px;justify-content:center}
-    .feature-card,.ai-feature,.pillar{background:rgba(255,255,255,.02);border:1px solid #1A1A1A;padding:55px;transition:all .3s;flex:1;min-width:220px;max-width:360px}
-    .feature-card:hover,.ai-feature:hover,.pillar:hover{background:rgba(255,255,255,.05);border-color:rgba(255,29,108,.4);transform:translateY(-4px)}
-    .feature-icon,.ai-feature-icon,.pillar-icon{font-size:28px;margin-bottom:21px;display:block}
-    .feature-card h3,.ai-feature-title,.pillar-name{color:#fff;margin-bottom:8px}
-    .feature-card p,.ai-feature-desc{font-size:14px;color:#666}
-    .badge,.ai-badge{display:inline-block;padding:4px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #1A1A1A;color:#999;margin-bottom:21px}
-    footer,.footer{padding:55px;border-top:1px solid #1A1A1A;color:#666;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:21px}
-    footer a,.footer a{color:#999}
-    footer a:hover,.footer a:hover{color:#FF1D6C}
-    @media(max-width:768px){nav,.nav{padding:21px}.hero,section.hero{padding:89px 21px}.features-grid,.ai-features,.pillars{flex-direction:column}.feature-card,.ai-feature{min-width:unset;max-width:unset}footer,.footer{flex-direction:column;text-align:center;padding:34px 21px}}
-  </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — BlackRoad OS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
+body{background:#000;color:#fff;font-family:-apple-system,sans-serif;padding:1.5rem}
+h1{font-size:1.75rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.25rem}
+.subtitle{color:#444;font-size:.85rem;margin-bottom:1.5rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;margin-bottom:1.5rem}
+.card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:1.25rem}
+.card h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#444;margin-bottom:.75rem}
+.big{font-size:2.25rem;font-weight:800;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{font-size:.75rem;color:#333;margin-top:.25rem}
+.services{background:#050505;border:1px solid #111;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.services h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#444;margin-bottom:1rem}
+.svc{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #0f0f0f}
+.svc:last-child{border-bottom:none}
+.svc-name{font-size:.85rem;color:#888}
+.up{color:#4ade80}.down{color:#f87171}.deg{color:#fbbf24}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px}
+.dot.up{background:#4ade80;animation:p 2s infinite}.dot.down{background:#f87171}.dot.deg{background:#fbbf24}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+#last-update{color:#222;font-size:.7rem;text-align:right;margin-top:1rem}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>Dashboard</h1>
-        <div class="subdomain">dashboard.blackroad.io</div>
-        <p>Part of the BlackRoad ecosystem. This subdomain provides specialized services and functionality.</p>
-        <div>
-            <a href="https://blackroad.io" class="btn">Main Site</a>
-            <a href="https://blackroad.io" class="btn">BlackRoad OS</a>
-        </div>
-        <div class="status">
-            <strong>Status:</strong> 🟢 Operational<br>
-            <small>Auto-deployed from GitHub</small>
-        </div>
-    </div>
+<h1>BlackRoad OS Dashboard</h1>
+<p class="subtitle">Live system status · auto-refreshes every 30s</p>
+<div class="grid">
+<div class="card"><h3>Agents</h3><div class="big" id="agents">30,000</div><div class="sub">fleet-wide</div></div>
+<div class="card"><h3>Repositories</h3><div class="big" id="repos">1,825+</div><div class="sub">across 17 orgs</div></div>
+<div class="card"><h3>Workers</h3><div class="big" id="workers">75+</div><div class="sub">Cloudflare edge</div></div>
+<div class="card"><h3>CLI Tools</h3><div class="big">162</div><div class="sub">br tools</div></div>
+<div class="card"><h3>Pi Fleet</h3><div class="big" id="pis">3</div><div class="sub">nodes</div></div>
+<div class="card"><h3>Domains</h3><div class="big">20+</div><div class="sub">live</div></div>
+</div>
+<div class="services">
+<h3>Services</h3>
+<div id="services-list">Loading...</div>
+</div>
+<div id="last-update">Fetching live data...</div>
+<script>
+const SERVICES = [
+  {name:'Agents API',url:'https://agents-api.blackroad.workers.dev/health'},
+  {name:'Tools API',url:'https://tools-api.blackroad.workers.dev/health'},
+  {name:'Command Center',url:'https://command-center.blackroad.workers.dev/health'},
+  {name:'Pi Fleet API',url:'https://api.blackroad.io/health'},
+  {name:'AI Hub',url:'https://ai.blackroad.io/health'},
+];
+async function refresh(){
+  const list = document.getElementById('services-list');
+  list.innerHTML = '';
+  for(const s of SERVICES){
+    try{
+      const r = await fetch(s.url,{signal:AbortSignal.timeout(3000)});
+      const cls = r.ok?'up':'deg';
+      list.innerHTML += `<div class="svc"><span class="svc-name"><span class="dot ${cls}"></span>${s.name}</span><span class="${cls}">${r.ok?'operational':'degraded'}</span></div>`;
+    }catch{
+      list.innerHTML += `<div class="svc"><span class="svc-name"><span class="dot down"></span>${s.name}</span><span class="down">offline</span></div>`;
+    }
+  }
+  // Fetch command center stats
+  try{
+    const r = await fetch('https://command-center.blackroad.workers.dev/');
+    const d = await r.json();
+    if(d.system){
+      document.getElementById('agents').textContent=d.system.agents?.toLocaleString()||'30,000';
+      document.getElementById('workers').textContent=d.system.domains||'75+';
+    }
+  }catch{}
+  document.getElementById('last-update').textContent = 'Last updated: '+new Date().toUTCString();
+}
+refresh();
+setInterval(refresh,30000);
+</script>
 </body>
 </html>
