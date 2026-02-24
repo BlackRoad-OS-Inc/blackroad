@@ -1,0 +1,95 @@
+name: 🌐 Fix All Domain DNS → CF Tunnel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/fix-all-dns.yml'
+
+env:
+  CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  TUNNEL_CNAME: "52915859-da18-4aa6-add5-7bd9fcac2e0b.cfargotunnel.com"
+
+jobs:
+  fix-dns:
+    name: Fix DNS for all domains
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        domain: [blackroad.network, blackroad.systems, blackroad.me, blackroadai.com, blackroad.company, lucidia.studio, aliceqi.com, lucidiaqi.com, roadchain.io]
+      fail-fast: false
+    steps:
+      - name: Fix CNAME for ${{ matrix.domain }}
+        run: |
+          TUNNEL="${{ env.TUNNEL_CNAME }}"
+          DOMAIN="${{ matrix.domain }}"
+          
+          ZONE=$(curl -sf "https://api.cloudflare.com/client/v4/zones?name=${DOMAIN}" \
+            -H "Authorization: Bearer ${{ env.CF_TOKEN }}" | \
+            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+          
+          if [ -z "$ZONE" ]; then
+            echo "⚠️  Zone not found for $DOMAIN — skipping"
+            exit 0
+          fi
+          echo "Zone: $ZONE for $DOMAIN"
+
+          fix_cname() {
+            local NAME="$1" PROXIED="${2:-true}"
+            EXISTING=$(curl -sf "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records?name=${NAME}" \
+              -H "Authorization: Bearer ${{ env.CF_TOKEN }}" | \
+              python3 -c "import sys,json; d=json.load(sys.stdin); recs=d.get('result',[]); print(recs[0]['id'] if recs else '')" 2>/dev/null)
+
+            if [ -n "$EXISTING" ]; then
+              # Update existing record
+              RES=$(curl -sf -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records/$EXISTING" \
+                -H "Authorization: Bearer ${{ env.CF_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                -d "{\"type\":\"CNAME\",\"name\":\"${NAME}\",\"content\":\"${TUNNEL}\",\"proxied\":${PROXIED},\"ttl\":1}" 2>/dev/null)
+              echo "✅ Updated CNAME: $NAME → tunnel"
+            else
+              # Create new
+              RES=$(curl -sf -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records" \
+                -H "Authorization: Bearer ${{ env.CF_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                -d "{\"type\":\"CNAME\",\"name\":\"${NAME}\",\"content\":\"${TUNNEL}\",\"proxied\":${PROXIED},\"ttl\":1}" 2>/dev/null)
+              echo "✅ Created CNAME: $NAME → tunnel"
+            fi
+          }
+
+          fix_cname "$DOMAIN"
+          fix_cname "www.$DOMAIN"
+
+  deploy-workers:
+    name: Deploy workers via wrangler
+    runs-on: ubuntu-latest
+    needs: fix-dns
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: "848cf0b18d51e0170e0d1537aec3505a"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Deploy blackroad.io worker
+        working-directory: workers/blackroad-io
+        run: |
+          npm install --prefer-offline 2>/dev/null || true
+          wrangler deploy --compatibility-date 2024-12-01 || echo "Deploy failed for blackroad-io"
+
+      - name: Deploy agents worker
+        working-directory: workers/agents-blackroadio
+        run: |
+          npm install --prefer-offline 2>/dev/null || true
+          wrangler deploy --compatibility-date 2024-12-01 || echo "Deploy failed for agents"
+
+      - name: Deploy dashboard worker
+        working-directory: workers/dashboard-blackroadio
+        run: |
+          npm install --prefer-offline 2>/dev/null || true
+          wrangler deploy --compatibility-date 2024-12-01 || echo "Deploy failed for dashboard"
