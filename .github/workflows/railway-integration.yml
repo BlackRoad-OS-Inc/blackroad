@@ -30,13 +30,6 @@ jobs:
           
           echo "📋 Projects:"
           echo $RESULT | python3 -m json.tool 2>/dev/null | head -20 || true
-import json, sys
-d = json.load(sys.stdin)
-projects = d['data']['projects']['edges']
-for p in projects:
-    print(f'  - {p[\"node\"][\"name\"]} ({p[\"node\"][\"id\"]})')
-print(f'Total: {len(projects)}')
-"
 
       - name: Deploy blackroad-api to Railway
         if: github.event.inputs.action == 'deploy'
