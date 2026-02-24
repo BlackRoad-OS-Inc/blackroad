@@ -3,121 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlackRoad OS</title>
+    <title>BlackRoad OS — Hello</title>
+    <meta name="description" content="BlackRoad OS — AI platform, 30K agents, 1800+ repos. Explore the ecosystem.">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: #fff;
+        :root {
+            --amber:#F5A623; --hot-pink:#FF1D6C; --blue:#2979FF; --violet:#9C27B0;
+            --gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);
         }
-        .container {
-            text-align: center;
-            padding: 2rem;
-        }
-        .logo {
-            font-size: 4rem;
-            font-weight: 800;
-            background: linear-gradient(90deg, #FF9D00, #FF6B00, #FF0066, #FF006B, #D600AA, #7700FF, #0066FF);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 1rem;
-            animation: glow 3s ease-in-out infinite;
-        }
-        @keyframes glow {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(1.2); }
-        }
-        .tagline {
-            font-size: 1.25rem;
-            color: #888;
-            margin-bottom: 2rem;
-        }
-        .status {
-            display: inline-block;
-            padding: 0.5rem 1.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 2rem;
-            font-size: 0.875rem;
-            color: #FF9D00;
-        }
-        .pulse {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #FF9D00;
-            border-radius: 50%;
-            margin-right: 0.5rem;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh}
+        nav{padding:20px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.06)}
+        .logo{font-size:1.4rem;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .hero{padding:100px 40px 60px;text-align:center}
+        h1{font-size:clamp(3rem,8vw,6rem);font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px}
+        .sub{font-size:1.25rem;color:rgba(255,255,255,0.6);margin-bottom:48px;max-width:600px;margin-left:auto;margin-right:auto}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;max-width:1100px;margin:0 auto;padding:0 40px 80px}
+        .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;text-decoration:none;color:#fff;display:block;transition:all 0.25s}
+        .card:hover{border-color:rgba(255,29,108,0.4);background:rgba(255,29,108,0.06);transform:translateY(-3px)}
+        .card-icon{font-size:2rem;margin-bottom:12px}
+        .card-name{font-size:1rem;font-weight:700;margin-bottom:6px}
+        .card-desc{font-size:0.85rem;color:rgba(255,255,255,0.45);line-height:1.5}
+        .stats-bar{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;padding:40px;background:rgba(255,255,255,0.02);border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:60px}
+        .stat{text-align:center}
+        .stat-val{font-size:2rem;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .stat-lbl{font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:4px}
+        footer{padding:40px;text-align:center;color:rgba(255,255,255,0.3);font-size:0.85rem;border-top:1px solid rgba(255,255,255,0.06)}
+        footer a{color:var(--hot-pink);text-decoration:none}
     </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{--black:#000;--ink:#0A0A0A;--surface:#111;--border:#1A1A1A;--dim:#666;--sub:#999;--white:#FFF;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00FF88;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px;--xxl:89px}
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-top:70px}
-    h1{font-size:clamp(40px,8vw,100px);font-weight:600;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:21px}
-    h2{font-size:clamp(24px,4vw,48px);font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:21px}
-    h3{font-size:clamp(16px,2vw,24px);font-weight:600;color:#fff;margin-bottom:13px}
-    h4,h5,h6{color:#fff}
-    p{color:#999;line-height:1.8;margin-bottom:21px}
-    a{color:#2979FF;text-decoration:none;transition:color .2s}
-    a:hover{color:#FF1D6C}
-    strong{color:#fff}
-    code{font-family:inherit;background:#111;color:#00FF88;padding:2px 6px;border:1px solid #1A1A1A}
-    pre{background:#0A0A0A;border:1px solid #1A1A1A;border-left:2px solid #FF1D6C;padding:21px 34px;color:#00FF88;overflow-x:auto;margin-bottom:34px}
-    hr{border:none;height:1px;background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);opacity:.3;margin:55px 0}
-    nav,.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;justify-content:space-between;align-items:center;padding:21px 55px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1A1A1A}
-    nav a,.nav a{color:#999;font-size:13px}
-    nav a:hover,.nav a:hover{color:#fff}
-    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header{padding:21px 55px 0;display:flex;justify-content:space-between;align-items:center}
-    header .logo{font-size:22px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header nav{position:static;background:none;backdrop-filter:none;border:none;padding:0;display:flex;gap:34px}
-    .hero,section.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:89px 55px;position:relative;overflow:hidden}
-    .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,29,108,.15) 0%,rgba(156,39,176,.1) 40%,transparent 70%);pointer-events:none;animation:orb 8s ease-in-out infinite}
-    @keyframes orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
-    .hero p,.tagline{font-size:18px;max-width:600px;color:#999;margin-bottom:55px;position:relative;z-index:1}
-    .hero h1{position:relative;z-index:1}
-    .earth-glow,.hero-glow,.neural-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,29,108,.07) 0%,transparent 60%);pointer-events:none}
-    section{padding:89px 55px;position:relative}
-    section:not(.hero){max-width:1200px;margin-left:auto;margin-right:auto}
-    section h2{color:#fff;-webkit-text-fill-color:#fff}
-    .btn,.btn-primary{display:inline-block;padding:13px 34px;font-family:inherit;font-size:14px;font-weight:600;background:#FF1D6C;color:#fff;text-decoration:none;border:none;cursor:pointer;transition:all .2s;position:relative;z-index:1}
-    .btn:hover,.btn-primary:hover{background:#fff;color:#000;transform:translateY(-2px)}
-    .features-grid,.ai-features,.pillars{display:flex;flex-wrap:wrap;gap:34px;justify-content:center}
-    .feature-card,.ai-feature,.pillar{background:rgba(255,255,255,.02);border:1px solid #1A1A1A;padding:55px;transition:all .3s;flex:1;min-width:220px;max-width:360px}
-    .feature-card:hover,.ai-feature:hover,.pillar:hover{background:rgba(255,255,255,.05);border-color:rgba(255,29,108,.4);transform:translateY(-4px)}
-    .feature-icon,.ai-feature-icon,.pillar-icon{font-size:28px;margin-bottom:21px;display:block}
-    .feature-card h3,.ai-feature-title,.pillar-name{color:#fff;margin-bottom:8px}
-    .feature-card p,.ai-feature-desc{font-size:14px;color:#666}
-    .badge,.ai-badge{display:inline-block;padding:4px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #1A1A1A;color:#999;margin-bottom:21px}
-    footer,.footer{padding:55px;border-top:1px solid #1A1A1A;color:#666;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:21px}
-    footer a,.footer a{color:#999}
-    footer a:hover,.footer a:hover{color:#FF1D6C}
-    @media(max-width:768px){nav,.nav{padding:21px}.hero,section.hero{padding:89px 21px}.features-grid,.ai-features,.pillars{flex-direction:column}.feature-card,.ai-feature{min-width:unset;max-width:unset}footer,.footer{flex-direction:column;text-align:center;padding:34px 21px}}
-  </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="logo">BlackRoad OS</h1>
-        <p class="tagline">Infrastructure is loading...</p>
-        <div class="status">
-            <span class="pulse"></span>
-            Coming Soon
-        </div>
-    </div>
+<nav>
+    <div class="logo">BlackRoad OS</div>
+    <span style="font-size:0.85rem;color:rgba(255,255,255,0.4)" id="nav-live">Loading fleet...</span>
+</nav>
+
+<div class="hero">
+    <h1>Hello, World.</h1>
+    <p class="sub">BlackRoad OS — Your AI. Your Hardware. Your Rules. Explore the full ecosystem.</p>
+</div>
+
+<div class="stats-bar">
+    <div class="stat"><div class="stat-val" id="s-repos">1,800+</div><div class="stat-lbl">Repositories</div></div>
+    <div class="stat"><div class="stat-val" id="s-agents">30,000</div><div class="stat-lbl">AI Agents</div></div>
+    <div class="stat"><div class="stat-val" id="s-models">108</div><div class="stat-lbl">Models</div></div>
+    <div class="stat"><div class="stat-val" id="s-active">—</div><div class="stat-lbl">Active Now</div></div>
+</div>
+
+<div class="grid">
+    <a href="https://blackroad.io" class="card"><div class="card-icon">🏠</div><div class="card-name">blackroad.io</div><div class="card-desc">Home base. Corporate site, docs, and the full OS overview.</div></a>
+    <a href="https://lucidia.earth" class="card"><div class="card-icon">🌌</div><div class="card-name">lucidia.earth</div><div class="card-desc">Lucidia — AI with a heart. Your empathetic, portable AI companion.</div></a>
+    <a href="https://agents.blackroad.io" class="card"><div class="card-icon">🤖</div><div class="card-name">agents.blackroad.io</div><div class="card-desc">Live agent fleet dashboard. 30,000 agents across Raspberry Pi, Railway, and Cloudflare.</div></a>
+    <a href="https://roadworld.blackroad.io" class="card"><div class="card-icon">🗺️</div><div class="card-name">roadworld</div><div class="card-desc">Street-level exploration and map intelligence built on BlackRoad infrastructure.</div></a>
+    <a href="https://roadchain.blackroad.io" class="card"><div class="card-icon">⛓️</div><div class="card-name">roadchain</div><div class="card-desc">On-chain infrastructure for the BlackRoad ecosystem.</div></a>
+    <a href="https://roadcoin.blackroad.io" class="card"><div class="card-icon">🪙</div><div class="card-name">roadcoin</div><div class="card-desc">The currency of the BlackRoad ecosystem.</div></a>
+    <a href="https://blackroadqi.com" class="card"><div class="card-icon">⚛️</div><div class="card-name">BlackRoad QI</div><div class="card-desc">Quantum Intelligence framework powering next-gen AI reasoning.</div></a>
+    <a href="https://pitstop.blackroad.io" class="card"><div class="card-icon">🏎️</div><div class="card-name">PitStop</div><div class="card-desc">Visual DevOps dashboard. Manage Docker, K8s, databases — no terminal needed.</div></a>
+    <a href="https://docs.blackroad.io" class="card"><div class="card-icon">📚</div><div class="card-name">Docs</div><div class="card-desc">Complete documentation for BlackRoad OS, agents, infrastructure, and APIs.</div></a>
+    <a href="https://github.com/BlackRoad-OS" class="card"><div class="card-icon">⚙️</div><div class="card-name">GitHub</div><div class="card-desc">All 1,800+ repos under BlackRoad-OS and BlackRoad-OS-Inc organizations.</div></a>
+</div>
+
+<footer>
+    <p>© 2026 BlackRoad OS, Inc. — <a href="https://blackroad.io">blackroad.io</a> · <a href="https://lucidia.earth">lucidia.earth</a></p>
+</footer>
+
+<script>
+const API = 'https://blackroad-live-data.blackroad.workers.dev';
+Promise.all([
+    fetch(`${API}/github/stats`).then(r=>r.json()).catch(()=>null),
+    fetch(`${API}/agents/status`).then(r=>r.json()).catch(()=>null),
+    fetch(`${API}/models`).then(r=>r.json()).catch(()=>null)
+]).then(([g,a,m])=>{
+    if(g) document.getElementById('s-repos').textContent=(g.total_repos||1800).toLocaleString();
+    if(a){
+        document.getElementById('s-agents').textContent=(a.total||30000).toLocaleString();
+        document.getElementById('s-active').textContent=(a.active||0).toLocaleString();
+        document.getElementById('nav-live').textContent=`${a.active||0} agents active`;
+    }
+    if(m) document.getElementById('s-models').textContent=(m.total||m.models?.length||108);
+}).catch(()=>{});
+</script>
 </body>
 </html>
