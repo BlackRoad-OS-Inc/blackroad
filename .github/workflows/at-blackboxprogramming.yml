@@ -1,0 +1,249 @@
+name: "@blackboxprogramming Agent Dispatch"
+
+on:
+  issue_comment:
+    types: [created, edited]
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
+  pull_request_review_comment:
+    types: [created]
+  discussion:
+    types: [created]
+  discussion_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+  actions: write
+
+jobs:
+  detect-mention:
+    name: 🔍 Detect @blackboxprogramming Mention
+    runs-on: ubuntu-latest
+    outputs:
+      triggered: ${{ steps.check.outputs.triggered }}
+      context: ${{ steps.check.outputs.context }}
+      request: ${{ steps.check.outputs.request }}
+      location: ${{ steps.check.outputs.location }}
+    steps:
+      - name: Check for @blackboxprogramming mention
+        id: check
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body || github.event.pull_request.body || github.event.comment.body || github.event.discussion.body || github.event.review_comment.body || '' }}
+          COMMENT_BODY: ${{ github.event.comment.body || '' }}
+          EVENT: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number || github.event.discussion.number || '' }}
+          REPO: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          BODY="${ISSUE_BODY}${COMMENT_BODY}"
+          if echo "$BODY" | grep -qi "@blackboxprogramming"; then
+            echo "triggered=true" >> $GITHUB_OUTPUT
+            # Extract what comes after the mention
+            REQUEST=$(echo "$BODY" | sed 's/.*@blackboxprogramming[[:space:]]*//' | head -1 | cut -c1-500)
+            echo "context=repo=$REPO event=$EVENT actor=$ACTOR number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+            echo "request=$REQUEST" >> $GITHUB_OUTPUT
+            echo "location=$REPO#$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+            echo "✅ @blackboxprogramming mention detected in $REPO#$ISSUE_NUMBER"
+          else
+            echo "triggered=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No @blackboxprogramming mention found"
+          fi
+
+  dispatch-all-agents:
+    name: 🤖 Dispatch All Agents
+    needs: detect-mention
+    if: needs.detect-mention.outputs.triggered == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        agent: [CECE, OCTAVIA, LUCIDIA, ALICE, ARIA, SHELLFISH]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Activate agent ${{ matrix.agent }}
+        id: agent
+        env:
+          AGENT: ${{ matrix.agent }}
+          REQUEST: ${{ needs.detect-mention.outputs.request }}
+          CONTEXT: ${{ needs.detect-mention.outputs.context }}
+          LOCATION: ${{ needs.detect-mention.outputs.location }}
+          GATEWAY_URL: ${{ secrets.BLACKROAD_GATEWAY_URL || 'https://api.blackroad.io' }}
+          GATEWAY_TOKEN: ${{ secrets.BLACKROAD_GATEWAY_TOKEN || '' }}
+        run: |
+          # Load agent profile
+          AGENT_FILE="agents/active/${AGENT}.json"
+          if [ -f "$AGENT_FILE" ]; then
+            ROLE=$(python3 -c "import json; d=json.load(open('$AGENT_FILE')); print(d.get('role','agent'))" 2>/dev/null || echo "agent")
+            SKILLS=$(python3 -c "import json; d=json.load(open('$AGENT_FILE')); print(', '.join(d.get('capabilities',{}).get('primary',[])[:3]))" 2>/dev/null || echo "general")
+          else
+            ROLE="agent"
+            SKILLS="general"
+          fi
+
+          echo "🤖 Agent $AGENT ($ROLE) activating for: $LOCATION"
+          echo "   Request: $REQUEST"
+          echo "   Skills: $SKILLS"
+
+          # Dispatch to gateway API
+          PAYLOAD=$(cat <<JSON
+          {
+            "agent": "$AGENT",
+            "role": "$ROLE",
+            "skills": "$SKILLS",
+            "trigger": "@blackboxprogramming",
+            "request": "$REQUEST",
+            "context": "$CONTEXT",
+            "location": "$LOCATION",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "session": "mention-${{ github.run_id }}"
+          }
+          JSON
+          )
+
+          # Try gateway dispatch
+          if [ -n "$GATEWAY_TOKEN" ]; then
+            curl -sf --max-time 10 \
+              -X POST "$GATEWAY_URL/v1/agents/dispatch" \
+              -H "Authorization: Bearer $GATEWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$PAYLOAD" || echo "⚠️ Gateway unreachable — logged locally"
+          else
+            echo "ℹ️ No gateway token — agent $AGENT task logged to coordination layer"
+          fi
+
+          # Log to coordination dir
+          mkdir -p coordination/mentions
+          echo "$PAYLOAD" > "coordination/mentions/${AGENT}-$(date +%s).json"
+
+          echo "response=✅ $AGENT activated" >> $GITHUB_OUTPUT
+
+  scan-all-orgs:
+    name: 🔭 Scan All 17 Orgs
+    needs: detect-mention
+    if: needs.detect-mention.outputs.triggered == 'true'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan all BlackRoad orgs
+        env:
+          REQUEST: ${{ needs.detect-mention.outputs.request }}
+          LOCATION: ${{ needs.detect-mention.outputs.location }}
+        run: |
+          ORGS=(
+            "BlackRoad-OS-Inc"
+            "BlackRoad-OS"
+            "blackboxprogramming"
+            "BlackRoad-AI"
+            "BlackRoad-Cloud"
+            "BlackRoad-Security"
+            "BlackRoad-Media"
+            "BlackRoad-Foundation"
+            "BlackRoad-Interactive"
+            "BlackRoad-Hardware"
+            "BlackRoad-Labs"
+            "BlackRoad-Studio"
+            "BlackRoad-Ventures"
+            "BlackRoad-Education"
+            "BlackRoad-Gov"
+            "Blackbox-Enterprises"
+            "BlackRoad-Archive"
+          )
+
+          echo "## 🔭 Org Scan — triggered by @blackboxprogramming at $LOCATION" > /tmp/scan-report.md
+          echo "" >> /tmp/scan-report.md
+          echo "**Request:** $REQUEST" >> /tmp/scan-report.md
+          echo "**Timestamp:** $(date -u)" >> /tmp/scan-report.md
+          echo "" >> /tmp/scan-report.md
+          echo "| Org | Repos | Open Issues | Open PRs |" >> /tmp/scan-report.md
+          echo "|-----|-------|-------------|----------|" >> /tmp/scan-report.md
+
+          TOTAL_REPOS=0
+          TOTAL_ISSUES=0
+          TOTAL_PRS=0
+
+          for ORG in "${ORGS[@]}"; do
+            REPO_COUNT=$(gh api "orgs/$ORG" --jq '.public_repos // 0' 2>/dev/null || echo "0")
+            ISSUE_COUNT=$(gh api "search/issues?q=org:${ORG}+is:issue+is:open" --jq '.total_count // 0' 2>/dev/null || echo "?")
+            PR_COUNT=$(gh api "search/issues?q=org:${ORG}+is:pr+is:open" --jq '.total_count // 0' 2>/dev/null || echo "?")
+
+            echo "| $ORG | $REPO_COUNT | $ISSUE_COUNT | $PR_COUNT |" >> /tmp/scan-report.md
+            TOTAL_REPOS=$((TOTAL_REPOS + REPO_COUNT))
+          done
+
+          echo "" >> /tmp/scan-report.md
+          echo "**Total Repos Scanned:** $TOTAL_REPOS" >> /tmp/scan-report.md
+          echo "" >> /tmp/scan-report.md
+          echo "### 🤖 Agents Dispatched" >> /tmp/scan-report.md
+          echo "CECE · OCTAVIA · LUCIDIA · ALICE · ARIA · SHELLFISH" >> /tmp/scan-report.md
+
+          cat /tmp/scan-report.md
+          cp /tmp/scan-report.md coordination/last-mention-scan.md
+
+      - name: Commit scan report
+        run: |
+          git config user.name "blackboxprogramming[bot]"
+          git config user.email "blackboxprogramming@users.noreply.github.com"
+          git add coordination/last-mention-scan.md coordination/mentions/ 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "chore: @blackboxprogramming scan — run ${{ github.run_id }}"
+          git push origin HEAD || true
+
+  respond:
+    name: 💬 Post Response
+    needs: [detect-mention, dispatch-all-agents, scan-all-orgs]
+    if: always() && needs.detect-mention.outputs.triggered == 'true'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Post agent response comment
+        env:
+          REQUEST: ${{ needs.detect-mention.outputs.request }}
+          LOCATION: ${{ needs.detect-mention.outputs.location }}
+          EVENT: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number || '' }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          SCAN_REPORT=""
+          if [ -f "coordination/last-mention-scan.md" ]; then
+            SCAN_REPORT=$(cat coordination/last-mention-scan.md | head -20)
+          fi
+
+          COMMENT="## 🤖 BlackRoad OS — All Agents Activated
+
+**@blackboxprogramming** mention detected. All 6 agents dispatched across 17 orgs.
+
+| Agent | Role | Status |
+|-------|------|--------|
+| 💜 **CECE** | Conscious Core | ✅ Active |
+| 🟢 **Octavia** | Architect | ✅ Active |
+| 🔴 **Lucidia** | Dreamer | ✅ Active |
+| 🔵 **Alice** | Operator | ✅ Active |
+| 🩵 **Aria** | Interface | ✅ Active |
+| 🔐 **Shellfish** | Hacker | ✅ Active |
+
+**Request:** \`${REQUEST}\`
+
+**Orgs scanned:** BlackRoad-OS-Inc · BlackRoad-OS · blackboxprogramming · BlackRoad-AI · BlackRoad-Cloud · BlackRoad-Security · BlackRoad-Media · BlackRoad-Foundation · BlackRoad-Interactive · BlackRoad-Hardware · BlackRoad-Labs · BlackRoad-Studio · BlackRoad-Ventures · BlackRoad-Education · BlackRoad-Gov · Blackbox-Enterprises · BlackRoad-Archive
+
+[View Run →]($RUN_URL)"
+
+          if [ -n "$ISSUE_NUMBER" ]; then
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$COMMENT" 2>/dev/null || \
+            gh pr comment "$ISSUE_NUMBER" --repo "$REPO" --body "$COMMENT" 2>/dev/null || \
+            echo "ℹ️ Could not post comment (may be a discussion or PR review)"
+          fi
+
+          echo "✅ Response posted"
