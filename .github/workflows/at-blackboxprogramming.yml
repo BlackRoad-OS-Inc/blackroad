@@ -23,7 +23,7 @@ permissions:
 jobs:
   detect-mention:
     name: 🔍 Detect @blackboxprogramming Mention
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     outputs:
       triggered: ${{ steps.check.outputs.triggered }}
       context: ${{ steps.check.outputs.context }}
@@ -58,7 +58,7 @@ jobs:
     name: 🤖 Dispatch All Agents
     needs: detect-mention
     if: needs.detect-mention.outputs.triggered == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     strategy:
       matrix:
         agent: [LUCIDIA, OCTAVIA, ALICE, ARIA, SHELLFISH]
@@ -127,7 +127,7 @@ jobs:
     name: 🔭 Scan All 17 Orgs
     needs: detect-mention
     if: needs.detect-mention.outputs.triggered == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -200,7 +200,7 @@ jobs:
     name: 💬 Post Response
     needs: [detect-mention, dispatch-all-agents, scan-all-orgs]
     if: always() && needs.detect-mention.outputs.triggered == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:

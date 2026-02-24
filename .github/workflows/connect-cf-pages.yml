@@ -1,0 +1,258 @@
+name: Connect Cloudflare Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Project to deploy (name or 'all')"
+        required: false
+        default: "all"
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy-group-1:
+    name: "Deploy Group 1 (4 projects)"
+    runs-on: [self-hosted, blackroad-fleet]
+    outputs:
+      blackroad-network: ${{ steps.blackroad-network.outcome }}
+      blackroad-me: ${{ steps.blackroad-me.outcome }}
+      blackroad-status: ${{ steps.blackroad-status.outcome }}
+      blackroad-io: ${{ steps.blackroad-io.outcome }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Deploy blackroad-network
+        id: blackroad-network
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'blackroad-network' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/blackroad-network/ --project-name=blackroad-network --branch=main
+
+      - name: Deploy blackroad-me
+        id: blackroad-me
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'blackroad-me' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/blackroad-me/ --project-name=blackroad-me --branch=main
+
+      - name: Deploy blackroad-status
+        id: blackroad-status
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'blackroad-status' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/blackroad-status/ --project-name=blackroad-status --branch=main
+
+      - name: Deploy blackroad-io
+        id: blackroad-io
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'blackroad-io' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/blackroad-io/ --project-name=blackroad-io --branch=main
+
+  deploy-group-2:
+    name: "Deploy Group 2 (4 projects)"
+    runs-on: [self-hosted, blackroad-fleet]
+    outputs:
+      blackroad-os-metrics: ${{ steps.blackroad-os-metrics.outcome }}
+      blackroad-os-roadchain: ${{ steps.blackroad-os-roadchain.outcome }}
+      agents-blackroadio: ${{ steps.agents-blackroadio.outcome }}
+      dashboard-blackroadio: ${{ steps.dashboard-blackroadio.outcome }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Deploy blackroad-os-metrics
+        id: blackroad-os-metrics
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'blackroad-os-metrics' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/blackroad-os-metrics/ --project-name=blackroad-os-metrics --branch=main
+
+      - name: Deploy blackroad-os-roadchain
+        id: blackroad-os-roadchain
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'blackroad-os-roadchain' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/blackroad-os-roadchain/ --project-name=blackroad-os-roadchain --branch=main
+
+      - name: Deploy agents-blackroadio
+        id: agents-blackroadio
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'agents-blackroadio' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/agents-blackroadio/ --project-name=agents-blackroadio --branch=main
+
+      - name: Deploy dashboard-blackroadio
+        id: dashboard-blackroadio
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'dashboard-blackroadio' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/dashboard-blackroadio/ --project-name=dashboard-blackroadio --branch=main
+
+  deploy-group-3:
+    name: "Deploy Group 3 (4 projects)"
+    runs-on: [self-hosted, blackroad-fleet]
+    outputs:
+      ai-blackroadio: ${{ steps.ai-blackroadio.outcome }}
+      api-blackroadio: ${{ steps.api-blackroadio.outcome }}
+      cli-blackroadio: ${{ steps.cli-blackroadio.outcome }}
+      console-blackroadio: ${{ steps.console-blackroadio.outcome }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Deploy ai-blackroadio
+        id: ai-blackroadio
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'ai-blackroadio' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/ai-blackroadio/ --project-name=ai-blackroadio --branch=main
+
+      - name: Deploy api-blackroadio
+        id: api-blackroadio
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'api-blackroadio' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/api-blackroadio/ --project-name=api-blackroadio --branch=main
+
+      - name: Deploy cli-blackroadio
+        id: cli-blackroadio
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'cli-blackroadio' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/cli-blackroadio/ --project-name=cli-blackroadio --branch=main
+
+      - name: Deploy console-blackroadio
+        id: console-blackroadio
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'console-blackroadio' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/console-blackroadio/ --project-name=console-blackroadio --branch=main
+
+  deploy-group-4:
+    name: "Deploy Group 4 (4 projects)"
+    runs-on: [self-hosted, blackroad-fleet]
+    outputs:
+      docs-blackroadio: ${{ steps.docs-blackroadio.outcome }}
+      blackroadqi-com: ${{ steps.blackroadqi-com.outcome }}
+      lucidiaqi-com: ${{ steps.lucidiaqi-com.outcome }}
+      blackroad-hello: ${{ steps.blackroad-hello.outcome }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Deploy docs-blackroadio
+        id: docs-blackroadio
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'docs-blackroadio' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/docs-blackroadio/ --project-name=docs-blackroadio --branch=main
+
+      - name: Deploy blackroadqi-com
+        id: blackroadqi-com
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'blackroadqi-com' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/blackroadqi-com/ --project-name=blackroadqi-com --branch=main
+
+      - name: Deploy lucidiaqi-com
+        id: lucidiaqi-com
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'lucidiaqi-com' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/lucidiaqi-com/ --project-name=lucidiaqi-com --branch=main
+
+      - name: Deploy blackroad-hello
+        id: blackroad-hello
+        if: github.event.inputs.project == 'all' || github.event.inputs.project == 'blackroad-hello' || github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy orgs/core/blackroad-hello/ --project-name=blackroad-hello --branch=main
+
+  summary:
+    name: "Deployment Summary"
+    runs-on: [self-hosted, blackroad-fleet]
+    needs: [deploy-group-1, deploy-group-2, deploy-group-3, deploy-group-4]
+    if: always()
+    steps:
+      - name: Post summary table
+        run: |
+          echo "## 🚀 Cloudflare Pages Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Project | Directory | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          status_icon() {
+            if [ "$1" = "success" ]; then echo "✅ success"
+            elif [ "$1" = "failure" ]; then echo "❌ failure"
+            elif [ "$1" = "skipped" ]; then echo "⏭️ skipped"
+            else echo "⚠️ $1"
+            fi
+          }
+
+          echo "| blackroad-network    | orgs/core/blackroad-network/    | $(status_icon '${{ needs.deploy-group-1.outputs.blackroad-network }}') |"    >> $GITHUB_STEP_SUMMARY
+          echo "| blackroad-me         | orgs/core/blackroad-me/         | $(status_icon '${{ needs.deploy-group-1.outputs.blackroad-me }}') |"         >> $GITHUB_STEP_SUMMARY
+          echo "| blackroad-status     | orgs/core/blackroad-status/     | $(status_icon '${{ needs.deploy-group-1.outputs.blackroad-status }}') |"     >> $GITHUB_STEP_SUMMARY
+          echo "| blackroad-io         | orgs/core/blackroad-io/         | $(status_icon '${{ needs.deploy-group-1.outputs.blackroad-io }}') |"         >> $GITHUB_STEP_SUMMARY
+          echo "| blackroad-os-metrics | orgs/core/blackroad-os-metrics/ | $(status_icon '${{ needs.deploy-group-2.outputs.blackroad-os-metrics }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| blackroad-os-roadchain | orgs/core/blackroad-os-roadchain/ | $(status_icon '${{ needs.deploy-group-2.outputs.blackroad-os-roadchain }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| agents-blackroadio   | orgs/core/agents-blackroadio/   | $(status_icon '${{ needs.deploy-group-2.outputs.agents-blackroadio }}') |"   >> $GITHUB_STEP_SUMMARY
+          echo "| dashboard-blackroadio | orgs/core/dashboard-blackroadio/ | $(status_icon '${{ needs.deploy-group-2.outputs.dashboard-blackroadio }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| ai-blackroadio       | orgs/core/ai-blackroadio/       | $(status_icon '${{ needs.deploy-group-3.outputs.ai-blackroadio }}') |"       >> $GITHUB_STEP_SUMMARY
+          echo "| api-blackroadio      | orgs/core/api-blackroadio/      | $(status_icon '${{ needs.deploy-group-3.outputs.api-blackroadio }}') |"      >> $GITHUB_STEP_SUMMARY
+          echo "| cli-blackroadio      | orgs/core/cli-blackroadio/      | $(status_icon '${{ needs.deploy-group-3.outputs.cli-blackroadio }}') |"      >> $GITHUB_STEP_SUMMARY
+          echo "| console-blackroadio  | orgs/core/console-blackroadio/  | $(status_icon '${{ needs.deploy-group-3.outputs.console-blackroadio }}') |"  >> $GITHUB_STEP_SUMMARY
+          echo "| docs-blackroadio     | orgs/core/docs-blackroadio/     | $(status_icon '${{ needs.deploy-group-4.outputs.docs-blackroadio }}') |"     >> $GITHUB_STEP_SUMMARY
+          echo "| blackroadqi-com      | orgs/core/blackroadqi-com/      | $(status_icon '${{ needs.deploy-group-4.outputs.blackroadqi-com }}') |"      >> $GITHUB_STEP_SUMMARY
+          echo "| lucidiaqi-com        | orgs/core/lucidiaqi-com/        | $(status_icon '${{ needs.deploy-group-4.outputs.lucidiaqi-com }}') |"        >> $GITHUB_STEP_SUMMARY
+          echo "| blackroad-hello      | orgs/core/blackroad-hello/      | $(status_icon '${{ needs.deploy-group-4.outputs.blackroad-hello }}') |"      >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Triggered by: \`${{ github.event_name }}\` — project filter: \`${{ github.event.inputs.project || 'all (push)' }}\`_" >> $GITHUB_STEP_SUMMARY

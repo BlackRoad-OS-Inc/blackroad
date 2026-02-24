@@ -1,0 +1,228 @@
+name: Pi Fleet Services Check
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check-pis:
+    name: "Check Pi Fleet Health"
+    runs-on: [self-hosted, blackroad-fleet]
+    outputs:
+      blackroad-pi-ok: ${{ steps.blackroad-pi.outputs.ok }}
+      aria64-ok: ${{ steps.aria64.outputs.ok }}
+      lucidia-pi-ok: ${{ steps.lucidia-pi.outputs.ok }}
+      any-down: ${{ steps.evaluate.outputs.any_down }}
+    steps:
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY }}" > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          cat >> ~/.ssh/config <<'EOF'
+          Host blackroad-pi
+            HostName 192.168.4.64
+            User pi
+            IdentityFile ~/.ssh/pi_key
+            StrictHostKeyChecking no
+            ConnectTimeout 15
+
+          Host aria64
+            HostName 192.168.4.38
+            User pi
+            IdentityFile ~/.ssh/pi_key
+            StrictHostKeyChecking no
+            ConnectTimeout 15
+
+          Host lucidia-pi
+            HostName 192.168.4.99
+            User lucidia
+            IdentityFile ~/.ssh/pi_key
+            StrictHostKeyChecking no
+            ConnectTimeout 15
+          EOF
+
+      # ── blackroad-pi (192.168.4.64) ────────────────────────────────────────
+      - name: Check blackroad-pi
+        id: blackroad-pi
+        continue-on-error: true
+        run: |
+          set +e
+          PI="blackroad-pi"
+
+          CLOUDFLARED=$(ssh $PI "systemctl is-active cloudflared 2>/dev/null || echo inactive" 2>&1)
+          HEALTH_8788=$(ssh $PI "curl -s --max-time 5 localhost:8788/health 2>/dev/null || echo unreachable" 2>&1)
+          HEALTH_8787=$(ssh $PI "curl -s --max-time 5 localhost:8787/health 2>/dev/null || echo unreachable" 2>&1)
+
+          echo "cloudflared=${CLOUDFLARED}"   >> $GITHUB_OUTPUT
+          echo "health_8788=${HEALTH_8788}"   >> $GITHUB_OUTPUT
+          echo "health_8787=${HEALTH_8787}"   >> $GITHUB_OUTPUT
+
+          if [ "$CLOUDFLARED" = "active" ]; then
+            echo "ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "ok=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "### 🥧 blackroad-pi (192.168.4.64)" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          if [ "$CLOUDFLARED" = "active" ]; then
+            echo "| \`systemctl status cloudflared\` | ✅ active |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| \`systemctl status cloudflared\` | ❌ ${CLOUDFLARED} |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "| \`curl localhost:8788/health\`    | \`${HEALTH_8788}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`curl localhost:8787/health\`    | \`${HEALTH_8787}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      # ── aria64 (192.168.4.38) ──────────────────────────────────────────────
+      - name: Check aria64
+        id: aria64
+        continue-on-error: true
+        run: |
+          set +e
+          PI="aria64"
+
+          CLOUDFLARED=$(ssh $PI "systemctl is-active cloudflared 2>/dev/null || echo inactive" 2>&1)
+          HEALTH_8788=$(ssh $PI "curl -s --max-time 5 localhost:8788/health 2>/dev/null || echo unreachable" 2>&1)
+          HEALTH_8787=$(ssh $PI "curl -s --max-time 5 localhost:8787/health 2>/dev/null || echo unreachable" 2>&1)
+
+          echo "cloudflared=${CLOUDFLARED}"   >> $GITHUB_OUTPUT
+          echo "health_8788=${HEALTH_8788}"   >> $GITHUB_OUTPUT
+          echo "health_8787=${HEALTH_8787}"   >> $GITHUB_OUTPUT
+
+          if [ "$CLOUDFLARED" = "active" ]; then
+            echo "ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "ok=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "### 🥧 aria64 (192.168.4.38)" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          if [ "$CLOUDFLARED" = "active" ]; then
+            echo "| \`systemctl status cloudflared\` | ✅ active |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| \`systemctl status cloudflared\` | ❌ ${CLOUDFLARED} |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "| \`curl localhost:8788/health\`    | \`${HEALTH_8788}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`curl localhost:8787/health\`    | \`${HEALTH_8787}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      # ── lucidia-pi (192.168.4.99) — also checks ollama ────────────────────
+      - name: Check lucidia-pi
+        id: lucidia-pi
+        continue-on-error: true
+        run: |
+          set +e
+          PI="lucidia-pi"
+
+          CLOUDFLARED=$(ssh $PI "systemctl is-active cloudflared 2>/dev/null || echo inactive" 2>&1)
+          HEALTH_8788=$(ssh $PI "curl -s --max-time 5 localhost:8788/health 2>/dev/null || echo unreachable" 2>&1)
+          HEALTH_8787=$(ssh $PI "curl -s --max-time 5 localhost:8787/health 2>/dev/null || echo unreachable" 2>&1)
+          OLLAMA=$(ssh $PI "ollama list 2>/dev/null || echo 'ollama not available'" 2>&1)
+
+          echo "cloudflared=${CLOUDFLARED}"   >> $GITHUB_OUTPUT
+          echo "health_8788=${HEALTH_8788}"   >> $GITHUB_OUTPUT
+          echo "health_8787=${HEALTH_8787}"   >> $GITHUB_OUTPUT
+
+          if [ "$CLOUDFLARED" = "active" ]; then
+            echo "ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "ok=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "### 🥧 lucidia-pi (192.168.4.99)" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          if [ "$CLOUDFLARED" = "active" ]; then
+            echo "| \`systemctl status cloudflared\` | ✅ active |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| \`systemctl status cloudflared\` | ❌ ${CLOUDFLARED} |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "| \`curl localhost:8788/health\`    | \`${HEALTH_8788}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`curl localhost:8787/health\`    | \`${HEALTH_8787}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Ollama models:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${OLLAMA}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Evaluate fleet status
+        id: evaluate
+        run: |
+          BP="${{ steps.blackroad-pi.outputs.ok }}"
+          AR="${{ steps.aria64.outputs.ok }}"
+          LP="${{ steps.lucidia-pi.outputs.ok }}"
+
+          if [ "$BP" = "false" ] || [ "$AR" = "false" ] || [ "$LP" = "false" ] || \
+             [ "$BP" = "" ]     || [ "$AR" = "" ]     || [ "$LP" = "" ]; then
+            echo "any_down=true" >> $GITHUB_OUTPUT
+            echo "⚠️ **Fleet alert: one or more Pis are unreachable or degraded.**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "any_down=false" >> $GITHUB_OUTPUT
+            echo "✅ **All Pis healthy.**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  open-alert-issue:
+    name: "Open Pi Fleet Alert Issue"
+    runs-on: [self-hosted, blackroad-fleet]
+    needs: check-pis
+    if: needs.check-pis.outputs.any-down == 'true'
+    steps:
+      - name: Create alert issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = "🚨 Pi Fleet Alert";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const now = new Date().toISOString();
+
+            // Avoid duplicate open issues with the same title
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "pi-fleet,alert",
+            });
+            const dupe = existing.data.find(i => i.title === title);
+            if (dupe) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: dupe.number,
+                body: `🔁 **Still down** as of ${now}\n\n[View run](${runUrl})`,
+              });
+              core.info(`Updated existing issue #${dupe.number}`);
+              return;
+            }
+
+            const body = [
+              `## 🚨 Pi Fleet Health Alert`,
+              ``,
+              `One or more Raspberry Pis in the BlackRoad fleet failed their health check.`,
+              ``,
+              `| Pi | IP | cloudflared | :8788 | :8787 |`,
+              `|----|-----|-------------|-------|-------|`,
+              `| blackroad-pi | 192.168.4.64 | ${ '${{ needs.check-pis.outputs.blackroad-pi-ok }}' === 'true' ? '✅' : '❌' } | — | — |`,
+              `| aria64       | 192.168.4.38 | ${ '${{ needs.check-pis.outputs.aria64-ok }}'       === 'true' ? '✅' : '❌' } | — | — |`,
+              `| lucidia-pi   | 192.168.4.99 | ${ '${{ needs.check-pis.outputs.lucidia-pi-ok }}'   === 'true' ? '✅' : '❌' } | — | — |`,
+              ``,
+              `**Detected at:** ${now}`,
+              `**Workflow run:** [${context.runId}](${runUrl})`,
+              ``,
+              `> Close this issue once the fleet is back online.`,
+            ].join("\n");
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ["pi-fleet", "alert"],
+            });
+            core.info("Created Pi Fleet Alert issue.");

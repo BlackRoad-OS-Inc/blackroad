@@ -24,7 +24,7 @@ env:
 jobs:
   fix-dns-blackroad-ai:
     name: 🌐 Fix blackroad.ai DNS records
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     steps:
       - uses: actions/checkout@v4
 
@@ -65,7 +65,7 @@ jobs:
 
   fix-dns-blackroad-io:
     name: 🌐 Ensure blackroad.io API DNS records
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     steps:
       - uses: actions/checkout@v4
 
@@ -102,7 +102,7 @@ jobs:
 
   deploy-workers:
     name: ⚡ Deploy Fixed Workers
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     needs: [fix-dns-blackroad-ai, fix-dns-blackroad-io]
     steps:
       - uses: actions/checkout@v4
@@ -142,7 +142,7 @@ jobs:
 
   verify:
     name: ✅ Verify All Endpoints
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     needs: deploy-workers
     if: always()
     steps:

@@ -11,7 +11,7 @@ on:
 jobs:
   fix-dns:
     name: Add missing DNS records for blackroad.ai
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     env:
       CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
@@ -90,7 +90,7 @@ jobs:
 
   deploy-fixed-workers:
     name: Deploy api-edge + agents-api workers
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     needs: fix-dns
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
