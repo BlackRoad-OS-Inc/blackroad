@@ -101,7 +101,7 @@ export default {
           body: JSON.stringify(body),
           signal: AbortSignal.timeout(30000),
         });
-        const data = await resp.json().catch(() => ({ raw: await resp.text() }));
+        const data = await resp.json().catch(async () => ({ raw: await resp.text() }));
         return jsonResp({ agent: name, response: data, routed_to: target });
       } catch (e) {
         return jsonResp({ error: "Fleet unavailable", detail: e.message, agent: name }, 503);
