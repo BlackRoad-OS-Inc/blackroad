@@ -1,0 +1,63 @@
+name: Pi Fleet Coordination
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      command:
+        description: Command to run on fleet (status/restart-bridge/list-models)
+        default: status
+        required: false
+jobs:
+  coordinate:
+    runs-on: [self-hosted, blackroad-fleet]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fleet coordination
+        run: |
+          CMD="${{ github.event.inputs.command || 'status' }}"
+          RUNNER=$(hostname)
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          echo "=== Fleet Coordination: $CMD on $RUNNER at $TIMESTAMP ==="
+
+          case "$CMD" in
+            status)
+              echo "--- System ---"
+              uname -a
+              echo "--- Ollama ---"
+              curl -sf http://localhost:11434/api/tags 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); [print('  -', m['name']) for m in d.get('models',[])]" 2>/dev/null || echo "  Ollama offline"
+              echo "--- Bridge ---"
+              curl -sf http://localhost:4010/health 2>/dev/null || echo "  Bridge offline"
+              echo "--- Disk ---"
+              df -h / | tail -1
+              echo "--- Runner ---"
+              systemctl is-active actions.runner.* 2>/dev/null | head -3 || echo "  Runner systemd status unknown"
+              ;;
+            restart-bridge)
+              echo "Restarting ollama-bridge..."
+              systemctl restart ollama-bridge 2>/dev/null || true
+              sleep 3
+              curl -sf http://localhost:4010/health && echo "Bridge restarted OK" || echo "Bridge restart failed"
+              ;;
+            list-models)
+              echo "Models on $RUNNER:"
+              curl -sf http://localhost:11434/api/tags 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); [print(' ', m['name'], m.get('size',0)//1024//1024, 'MB') for m in d.get('models',[])]" 2>/dev/null || echo "No Ollama models found"
+              ;;
+            *)
+              echo "Unknown command: $CMD"
+              ;;
+          esac
+
+      - name: Update coordination log
+        run: |
+          mkdir -p coordination/logs
+          CMD="${{ github.event.inputs.command || 'status' }}"
+          RUNNER=$(hostname)
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          printf '{"ts":"%s","runner":"%s","cmd":"%s","ok":true}\n' "$TIMESTAMP" "$RUNNER" "$CMD" >> coordination/logs/fleet-coordination.jsonl
+          tail -100 coordination/logs/fleet-coordination.jsonl > /tmp/fleet-coord.jsonl && mv /tmp/fleet-coord.jsonl coordination/logs/fleet-coordination.jsonl
+          git config user.email "actions@blackroad.io"
+          git config user.name "BlackRoad Actions"
+          git add coordination/logs/fleet-coordination.jsonl
+          git diff --staged --quiet || git commit -m "chore: fleet coord $RUNNER $TIMESTAMP [skip ci]" && git push origin HEAD || true
