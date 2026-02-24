@@ -1,0 +1,41 @@
+name: 🤖 Agent Account Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to run'
+        required: true
+        default: 'status'
+        type: choice
+        options:
+          - status
+          - invite
+          - protect
+          - codeowners
+          - all
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup gh CLI
+        run: |
+          echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
+
+      - name: Run agent account setup
+        run: |
+          chmod +x scripts/agent-accounts/setup-agent-github-accounts.sh
+          scripts/agent-accounts/setup-agent-github-accounts.sh --${{ inputs.action }}
+
+      - name: Deploy email router worker
+        if: inputs.action == 'all'
+        working-directory: workers/email-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npm install -g wrangler
+          wrangler deploy
