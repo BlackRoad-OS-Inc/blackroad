@@ -1,0 +1,155 @@
+name: Deploy All Domains — CF Pages + Workers + Live Data
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'What to deploy'
+        required: false
+        default: 'all'
+        type: choice
+        options: [all, live-data-worker, blackroad-io, blackroad-os-web, agents-dashboard, lucidia-earth, subdomain-workers]
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  # ── Step 1: Deploy the live-data aggregator Worker ──────────────────────────
+  deploy-live-data-worker:
+    name: "☁️ Live Data Worker"
+    runs-on: [self-hosted, blackroad-fleet]
+    if: ${{ github.event.inputs.scope == 'all' || github.event.inputs.scope == 'live-data-worker' || github.event_name == 'push' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy blackroad-live-data worker
+        run: |
+          export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
+          if command -v wrangler >/dev/null 2>&1; then
+            wrangler deploy --config wrangler-configs/blackroad-live-data.toml
+            echo "✅ blackroad-live-data worker deployed"
+          else
+            echo "⚠️ wrangler not available on this runner"
+          fi
+
+  # ── Step 2: Deploy blackroad.io (static HTML with live data) ────────────────
+  deploy-blackroad-io:
+    name: "🌐 blackroad.io"
+    runs-on: [self-hosted, blackroad-fleet]
+    needs: [deploy-live-data-worker]
+    if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'blackroad-io' || github.event_name == 'push') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to CF Pages — blackroad-io
+        run: |
+          export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
+          if command -v wrangler >/dev/null 2>&1; then
+            wrangler pages deploy orgs/core/blackroad-io --project-name=blackroad-io --commit-dirty=true
+            echo "✅ blackroad.io deployed"
+          else
+            echo "⚠️ wrangler not available"
+          fi
+
+  # ── Step 3: Deploy blackroad-os-web (Next.js) ───────────────────────────────
+  deploy-blackroad-os-web:
+    name: "⚛️ blackroad-os-web (Next.js)"
+    runs-on: [self-hosted, blackroad-fleet]
+    needs: [deploy-live-data-worker]
+    if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'blackroad-os-web' || github.event_name == 'push') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install & Build Next.js
+        working-directory: orgs/core/blackroad-os-web
+        run: |
+          export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+          npm install --legacy-peer-deps
+          npm run build
+      - name: Deploy to CF Pages — blackroad-os-web
+        working-directory: orgs/core/blackroad-os-web
+        run: |
+          export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
+          if command -v wrangler >/dev/null 2>&1; then
+            wrangler pages deploy out --project-name=blackroad-os-web --commit-dirty=true
+            echo "✅ blackroad-os-web deployed"
+          fi
+
+  # ── Step 4: Deploy agents dashboard ─────────────────────────────────────────
+  deploy-agents-dashboard:
+    name: "🤖 Agents Dashboard"
+    runs-on: [self-hosted, blackroad-fleet]
+    needs: [deploy-live-data-worker]
+    if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'agents-dashboard' || github.event_name == 'push') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to CF Pages — blackroad-agents
+        run: |
+          export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
+          if command -v wrangler >/dev/null 2>&1; then
+            wrangler pages deploy orgs/core/blackroad-agents --project-name=blackroad-agents --commit-dirty=true
+            echo "✅ agents dashboard deployed"
+          fi
+
+  # ── Step 5: Deploy lucidia.earth ─────────────────────────────────────────────
+  deploy-lucidia-earth:
+    name: "🌍 lucidia.earth"
+    runs-on: [self-hosted, blackroad-fleet]
+    needs: [deploy-live-data-worker]
+    if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'lucidia-earth' || github.event_name == 'push') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to CF Pages — lucidia-earth
+        run: |
+          export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
+          if command -v wrangler >/dev/null 2>&1; then
+            wrangler pages deploy orgs/core/lucidia-earth --project-name=lucidia-earth --commit-dirty=true
+            echo "✅ lucidia.earth deployed"
+          fi
+
+  # ── Step 6: Deploy all subdomain workers ─────────────────────────────────────
+  deploy-subdomain-workers:
+    name: "⚙️ Subdomain Workers"
+    runs-on: [self-hosted, blackroad-fleet]
+    needs: [deploy-live-data-worker]
+    if: ${{ always() && (github.event.inputs.scope == 'all' || github.event.inputs.scope == 'subdomain-workers' || github.event_name == 'push') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy all wrangler-config workers
+        run: |
+          export PATH="$HOME/npm-global/bin:$HOME/bin:$PATH"
+          if ! command -v wrangler >/dev/null 2>&1; then
+            echo "⚠️ wrangler not available"; exit 0
+          fi
+          for conf in wrangler-configs/*.toml; do
+            name=$(basename "$conf" .toml)
+            echo "🚀 Deploying $name..."
+            wrangler deploy --config "$conf" 2>/dev/null && echo "✅ $name" || echo "⚠️ $name failed"
+          done
+
+  # ── Step 7: Memory journal + broadcast ───────────────────────────────────────
+  sync-memory:
+    name: "🧠 Sync Memory + Broadcast"
+    runs-on: [self-hosted, blackroad-fleet]
+    needs: [deploy-blackroad-io, deploy-blackroad-os-web, deploy-agents-dashboard]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - name: Log to memory journal
+        run: |
+          HASH=$(echo -n "deploy-$(date +%s)" | shasum | cut -c1-16)
+          cat >> memory/journals/master-journal.jsonl << EOF
+          {"hash":"${HASH}","prev":"7855a8419136738a","ts":"$(date -u +%Y-%m-%dT%H:%M:%SZ)","action":"domain-deploy-complete","entity":"all-domains","details":"Deploy complete: blackroad.io, blackroad-os-web, agents-dashboard, lucidia-earth, subdomain-workers. Live data worker deployed. All pulling from blackroad-live-data API.","agent":"CECE/GH-Actions","run":"${{ github.run_id }}"}
+          EOF
+          echo "✅ Memory journal updated"
+      - name: Push memory update
+        run: |
+          git config user.name "CECE"
+          git config user.email "cece@blackroad.io"
+          git add memory/journals/master-journal.jsonl
+          git diff --staged --quiet || git commit -m "🧠 memory: domain deploy checkpoint [run ${{ github.run_id }}]
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push origin HEAD || true

@@ -468,6 +468,15 @@
         </section>
 
         <footer>
+            <div id="live-stats-bar" style="background:#0a0a0a;border:1px solid #222;border-radius:8px;padding:12px 20px;margin-bottom:20px;display:flex;gap:30px;flex-wrap:wrap;justify-content:center;font-size:0.8em;color:#555;">
+                <span>🏢 <span style="color:#FF9D00;">BlackRoad-OS</span>: <span data-live="repos" style="color:#fff;">1,825+</span> repos</span>
+                <span>🤖 Agents online: <span data-live="agents-online" style="color:#FF1D6C;">4</span>/4 Pi nodes</span>
+                <span>⚡ Active agents: <span data-live="active-agents" style="color:#2979FF;">30,000</span></span>
+                <span>☁️ <span style="color:#9C27B0;">58</span> CF Pages live</span>
+                <span>🚂 <span style="color:#F5A623;">14</span> Railway projects</span>
+                <span style="color:#333;" id="live-updated">Loading live data...</span>
+            </div>
+            <div id="live-activity-feed" style="max-width:600px;margin:0 auto 20px;padding:0 20px;"></div>
             <div class="footer-links">
                 <a href="https://blackroad.io">Home</a>
                 <a href="https://os.blackroad.io">OS Interface</a>
@@ -482,16 +491,72 @@
     </div>
 
     <script>
-        console.log('🌌 BlackRoad OS, Inc. initialized');
-        console.log('   Colors: Official (#FF9D00 → #0066FF)');
-        console.log('   Typography: JetBrains Mono');
-        console.log('   Spacing: Golden Ratio (φ = 1.618)');
-        console.log('   Applications: 66+');
-        console.log('   Empire Repos: 27 (just deployed!)');
-        console.log('   AI Workers: 15');
-        console.log('   Languages: 10+');
-        console.log('   License: 100% Proprietary');
-        console.log('   🚀 Ready to change the world!');
+        const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
+
+        // Inject live GitHub + agent stats into the page
+        async function loadLiveData() {
+            try {
+                const [stats, agents] = await Promise.allSettled([
+                    fetch(`${LIVE_API}/github/stats`).then(r => r.json()),
+                    fetch(`${LIVE_API}/agents/status`).then(r => r.json()),
+                ]);
+
+                if (stats.status === 'fulfilled') {
+                    const s = stats.value;
+                    // Update any stat counters
+                    document.querySelectorAll('[data-live="repos"]').forEach(el => {
+                        el.textContent = s.total_repos?.toLocaleString() || el.textContent;
+                    });
+                    document.querySelectorAll('[data-live="recent-repos"]').forEach(el => {
+                        if (s.recent_repos?.length) {
+                            el.innerHTML = s.recent_repos.map(r =>
+                                `<a href="${r.url}" target="_blank" style="color:#FF9D00;text-decoration:none;">
+                                    <span style="font-size:0.85em;">⭐ ${r.name}</span>
+                                </a>`
+                            ).join(' &nbsp;·&nbsp; ');
+                        }
+                    });
+                }
+
+                if (agents.status === 'fulfilled') {
+                    const a = agents.value;
+                    document.querySelectorAll('[data-live="agents-online"]').forEach(el => {
+                        el.textContent = a.online_count || '0';
+                    });
+                    document.querySelectorAll('[data-live="active-agents"]').forEach(el => {
+                        el.textContent = (a.active_agents || 0).toLocaleString();
+                    });
+                }
+
+                console.log('🌌 Live data loaded:', { stats: stats.value, agents: agents.value });
+            } catch (err) {
+                console.warn('Live data unavailable (offline mode):', err.message);
+            }
+        }
+
+        // Live activity feed
+        async function loadActivity() {
+            try {
+                const activity = await fetch(`${LIVE_API}/github/activity`).then(r => r.json());
+                const feed = document.getElementById('live-activity-feed');
+                if (feed && activity.events?.length) {
+                    feed.innerHTML = activity.events.slice(0, 5).map(e => {
+                        const repo = e.repo?.replace('BlackRoad-OS/', '') || '';
+                        const type = e.type?.replace('Event', '') || '';
+                        return `<div style="padding:4px 0;font-size:0.8em;color:#888;border-bottom:1px solid #222;">
+                            <span style="color:#FF9D00;">${type}</span> 
+                            <a href="https://github.com/${e.repo}" target="_blank" style="color:#F5A623;text-decoration:none;">${repo}</a>
+                            <span style="float:right;color:#555;">${new Date(e.created_at).toLocaleDateString()}</span>
+                        </div>`;
+                    }).join('');
+                }
+            } catch {}
+        }
+
+        loadLiveData();
+        loadActivity();
+        setInterval(loadLiveData, 60000); // refresh every minute
+        setInterval(loadActivity, 120000);
     </script>
 </body>
 </html>

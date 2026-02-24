@@ -1,11 +1,22 @@
 name = "agents-api"
-main = "src/index.js"
+main = "wrangler-configs/agents-api/src/index.js"
 compatibility_date = "2024-12-01"
 account_id = "848cf0b18d51e0170e0d1537aec3505a"
 
 [vars]
 ENVIRONMENT = "production"
-PI_PRIMARY = "alice"
-PI_BACKUP = "aria"
+PI_PRIMARY  = "https://api.blackroad.io"
+PI_BACKUP   = "https://blackroad.systems"
 
-# Deploy from Pi: npx wrangler deploy --config wrangler-configs/agents-api.toml
+[[routes]]
+pattern = "agents.blackroad.ai/*"
+zone_name = "blackroad.ai"
+
+[[routes]]
+pattern = "agents.blackroad.io/*"
+zone_name = "blackroad.io"
+
+# Deploy:
+#   npx wrangler deploy --config wrangler-configs/agents-api.toml
+# Local dev:
+#   npx wrangler dev --config wrangler-configs/agents-api.toml --port 8791

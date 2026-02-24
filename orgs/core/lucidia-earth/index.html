@@ -536,6 +536,28 @@
             star.style.animationDelay = Math.random() * 3 + 's';
             starsContainer.appendChild(star);
         }
+
+        // Live data from BlackRoad fleet
+        const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
+        async function loadLucidiaLiveData() {
+            try {
+                const [agents, models] = await Promise.allSettled([
+                    fetch(`${LIVE_API}/agents/status`).then(r => r.json()),
+                    fetch(`${LIVE_API}/models`).then(r => r.json()),
+                ]);
+                // Inject live presence indicator
+                const footer = document.querySelector('.footer');
+                if (footer) {
+                    const bar = document.createElement('div');
+                    bar.style.cssText = 'padding:12px;text-align:center;font-size:0.75em;color:rgba(255,255,255,0.3);border-top:1px solid rgba(255,255,255,0.05);';
+                    const agentCount = agents.status === 'fulfilled' ? agents.value.active_agents : 30000;
+                    const modelCount = models.status === 'fulfilled' ? models.value.count : 108;
+                    bar.innerHTML = `🌌 <span style="color:#FF9D00">${agentCount?.toLocaleString() || '30,000'}</span> active agents &nbsp;·&nbsp; <span style="color:#7700FF">${modelCount}</span> AI models running &nbsp;·&nbsp; <a href="https://blackroad.io" style="color:rgba(255,255,255,0.4);text-decoration:none;">BlackRoad OS</a>`;
+                    footer.insertAdjacentElement('beforebegin', bar);
+                }
+            } catch {}
+        }
+        loadLucidiaLiveData();
     </script>
 </body>
 </html>

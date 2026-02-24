@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlackRoad OS — Agent Fleet Dashboard</title>
+<style>
+  :root {
+    --black: #000;
+    --hot-pink: #FF1D6C;
+    --amber: #F5A623;
+    --electric-blue: #2979FF;
+    --violet: #9C27B0;
+    --green: #00E676;
+    --bg: #0a0a0a;
+    --border: rgba(255,255,255,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--black); color: #fff; font-family: 'JetBrains Mono', 'Fira Code', monospace; min-height: 100vh; }
+  
+  .header { border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-size: 1.2em; font-weight: 700; background: linear-gradient(135deg, var(--amber), var(--hot-pink), var(--violet), var(--electric-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .live-badge { display: flex; align-items: center; gap: 6px; font-size: 0.75em; color: #555; }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1px; background: var(--border); }
+  .panel { background: var(--black); padding: 20px; }
+  .panel-title { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.15em; color: #444; margin-bottom: 12px; }
+  
+  .stat-big { font-size: 2.5em; font-weight: 800; }
+  .stat-label { font-size: 0.75em; color: #555; margin-top: 4px; }
+  
+  .agent-card { display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; margin-bottom: 8px; border: 1px solid var(--border); }
+  .agent-icon { font-size: 1.4em; }
+  .agent-info { flex: 1; }
+  .agent-name { font-size: 0.85em; font-weight: 600; }
+  .agent-role { font-size: 0.7em; color: #555; }
+  .agent-status { font-size: 0.7em; padding: 2px 8px; border-radius: 100px; }
+  .online { background: rgba(0,230,118,0.1); color: var(--green); }
+  .offline { background: rgba(255,29,108,0.1); color: var(--hot-pink); }
+  
+  .pi-card { padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+  .pi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .pi-name { font-size: 0.85em; font-weight: 600; }
+  .pi-ip { font-size: 0.7em; color: #444; font-family: monospace; }
+  .pi-stats { display: flex; gap: 12px; font-size: 0.7em; color: #666; }
+  .pi-models { color: var(--amber); }
+  
+  .activity-item { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.75em; }
+  .activity-type { color: var(--amber); min-width: 80px; }
+  .activity-repo { color: #888; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .activity-time { color: #444; }
+  
+  .repo-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; font-size: 0.7em; color: #888; margin: 3px; text-decoration: none; }
+  .repo-chip:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  
+  .footer { padding: 16px 24px; border-top: 1px solid var(--border); font-size: 0.7em; color: #333; display: flex; gap: 16px; flex-wrap: wrap; }
+  .footer a { color: #444; text-decoration: none; }
+  .footer a:hover { color: var(--amber); }
+  
+  .refresh-btn { background: none; border: 1px solid var(--border); color: #555; font-size: 0.7em; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .refresh-btn:hover { border-color: var(--amber); color: var(--amber); }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🤖 BlackRoad OS — Agent Fleet</div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    <div class="live-badge"><div class="live-dot"></div><span id="last-update">connecting...</span></div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- Stats Overview -->
+  <div class="panel">
+    <div class="panel-title">🌐 Fleet Overview</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div><div class="stat-big" style="color:var(--amber)" id="stat-repos">—</div><div class="stat-label">GitHub Repos</div></div>
+      <div><div class="stat-big" style="color:var(--hot-pink)" id="stat-agents">30K</div><div class="stat-label">Total Agents</div></div>
+      <div><div class="stat-big" style="color:var(--electric-blue)" id="stat-pi-online">—</div><div class="stat-label">Pi Nodes Online</div></div>
+      <div><div class="stat-big" style="color:var(--violet)" id="stat-models">108</div><div class="stat-label">Ollama Models</div></div>
+    </div>
+  </div>
+
+  <!-- Core Agent Roster -->
+  <div class="panel">
+    <div class="panel-title">🤖 Core Agents</div>
+    <div id="agent-roster">
+      <div class="agent-card"><div class="agent-icon">🌀</div><div class="agent-info"><div class="agent-name">LUCIDIA</div><div class="agent-role">Coordinator · Philosopher</div></div><div class="agent-status online">ONLINE</div></div>
+      <div class="agent-card"><div class="agent-icon">🚪</div><div class="agent-info"><div class="agent-name">ALICE</div><div class="agent-role">Router · Gateway</div></div><div class="agent-status online">ONLINE</div></div>
+      <div class="agent-card"><div class="agent-icon">⚡</div><div class="agent-info"><div class="agent-name">OCTAVIA</div><div class="agent-role">Compute · Inference</div></div><div class="agent-status online" id="octavia-status">ONLINE</div></div>
+      <div class="agent-card"><div class="agent-icon">🔮</div><div class="agent-info"><div class="agent-name">PRISM</div><div class="agent-role">Analyst · Patterns</div></div><div class="agent-status online">ONLINE</div></div>
+      <div class="agent-card"><div class="agent-icon">📡</div><div class="agent-info"><div class="agent-name">ECHO</div><div class="agent-role">Memory · Archive</div></div><div class="agent-status online">ONLINE</div></div>
+      <div class="agent-card"><div class="agent-icon">🔐</div><div class="agent-info"><div class="agent-name">CIPHER</div><div class="agent-role">Security · Guardian</div></div><div class="agent-status online">ONLINE</div></div>
+    </div>
+  </div>
+
+  <!-- Pi Fleet -->
+  <div class="panel">
+    <div class="panel-title">🍓 Pi Fleet Status</div>
+    <div id="pi-fleet">
+      <div class="pi-card">
+        <div class="pi-header"><span class="pi-name">🟢 octavia</span><span class="pi-ip">192.168.4.38</span></div>
+        <div class="pi-stats"><span class="pi-models" id="octavia-models">108 models</span><span>Pi 5 · ARM64</span><span>PRIMARY</span></div>
+      </div>
+      <div class="pi-card">
+        <div class="pi-header"><span class="pi-name" id="alice-status-dot">🟢 alice</span><span class="pi-ip">192.168.4.49</span></div>
+        <div class="pi-stats"><span>Pi 4 · ARM64</span><span>SECONDARY</span></div>
+      </div>
+      <div class="pi-card">
+        <div class="pi-header"><span class="pi-name" id="aria-status-dot">🟢 aria</span><span class="pi-ip">192.168.4.82</span></div>
+        <div class="pi-stats"><span>Pi 4 · ARM64</span><span>TERTIARY</span></div>
+      </div>
+      <div class="pi-card">
+        <div class="pi-header"><span class="pi-name">🟢 gematria</span><span class="pi-ip">159.65.43.12</span></div>
+        <div class="pi-stats"><span>DigitalOcean</span><span>FAILOVER</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GitHub Activity -->
+  <div class="panel">
+    <div class="panel-title">📡 Live GitHub Activity</div>
+    <div id="activity-feed">
+      <div style="color:#333;font-size:0.8em;">Loading activity...</div>
+    </div>
+  </div>
+
+  <!-- Recent Repos -->
+  <div class="panel" style="grid-column: span 2;">
+    <div class="panel-title">🚀 Recently Updated Repos</div>
+    <div id="recent-repos" style="margin-top:8px;">
+      <div style="color:#333;font-size:0.8em;">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Infrastructure Map -->
+  <div class="panel">
+    <div class="panel-title">🏗️ Infrastructure</div>
+    <div style="font-size:0.8em;line-height:2;">
+      <div>☁️ Cloudflare Pages: <span style="color:var(--amber)">58</span> projects</div>
+      <div>⚙️ CF Workers: <span style="color:var(--amber)">75+</span> deployed</div>
+      <div>🚂 Railway: <span style="color:var(--amber)">14</span> projects</div>
+      <div>▲ Vercel: <span style="color:var(--amber)">15+</span> projects</div>
+      <div>🌐 Custom Domains: <span style="color:var(--amber)">20+</span></div>
+      <div>🏢 GitHub Orgs: <span style="color:var(--amber)">17</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <a href="https://blackroad.io">blackroad.io</a>
+  <a href="https://lucidia.earth">lucidia.earth</a>
+  <a href="https://github.com/BlackRoad-OS">github.com/BlackRoad-OS</a>
+  <a href="https://github.com/BlackRoad-OS-Inc">github.com/BlackRoad-OS-Inc</a>
+  <span style="margin-left:auto;">© 2026 BlackRoad OS, Inc.</span>
+</div>
+
+<script>
+const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
+
+async function loadAll() {
+  document.getElementById('last-update').textContent = 'refreshing...';
+  
+  const [ghStats, agentStatus, activity] = await Promise.allSettled([
+    fetch(`${LIVE_API}/github/stats`).then(r => r.json()),
+    fetch(`${LIVE_API}/agents/status`).then(r => r.json()),
+    fetch(`${LIVE_API}/github/activity`).then(r => r.json()),
+  ]);
+
+  if (ghStats.status === 'fulfilled') {
+    const s = ghStats.value;
+    document.getElementById('stat-repos').textContent = s.total_repos?.toLocaleString() || '1,825+';
+    
+    if (s.recent_repos?.length) {
+      document.getElementById('recent-repos').innerHTML = s.recent_repos.map(r =>
+        `<a class="repo-chip" href="${r.url}" target="_blank">
+          <span style="color:var(--amber)">●</span> ${r.name}
+          ${r.language ? `<span style="color:#444">${r.language}</span>` : ''}
+        </a>`
+      ).join('');
+    }
+  }
+
+  if (agentStatus.status === 'fulfilled') {
+    const a = agentStatus.value;
+    document.getElementById('stat-pi-online').textContent = `${a.online_count}/4`;
+    document.getElementById('stat-agents').textContent = (a.active_agents || 30000).toLocaleString();
+    
+    if (a.fleet?.length) {
+      a.fleet.forEach(node => {
+        const dot = node.online ? '🟢' : '🔴';
+        const el = document.getElementById(`${node.name}-status-dot`);
+        if (el) el.textContent = `${dot} ${node.name}`;
+        if (node.name === 'octavia' && node.models) {
+          document.getElementById('octavia-models').textContent = `${node.models} models`;
+          document.getElementById('stat-models').textContent = node.models;
+        }
+      });
+    }
+  }
+
+  if (activity.status === 'fulfilled') {
+    const feed = document.getElementById('activity-feed');
+    const events = activity.value?.events || [];
+    if (events.length) {
+      feed.innerHTML = events.slice(0, 8).map(e => {
+        const repo = (e.repo || '').replace('BlackRoad-OS/', '');
+        const type = (e.type || '').replace('Event', '');
+        const time = new Date(e.created_at).toLocaleDateString();
+        return `<div class="activity-item">
+          <span class="activity-type">${type}</span>
+          <span class="activity-repo">${repo}</span>
+          <span class="activity-time">${time}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  document.getElementById('last-update').textContent = `Live · ${new Date().toLocaleTimeString()}`;
+}
+
+loadAll();
+setInterval(loadAll, 60000);
+</script>
+</body>
+</html>

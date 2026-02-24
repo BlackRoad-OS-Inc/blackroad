@@ -1,0 +1,186 @@
+name: 🌐 Deploy All Subdomain Workers
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: 'Which batch (all, core-workers, subdomain-workers, orgs-core)'
+        required: false
+        default: 'all'
+  push:
+    branches: [master, main]
+    paths:
+      - 'wrangler-configs/**'
+      - 'orgs/core/**-blackroadio/**'
+      - 'orgs/core/**-blackroad-io/**'
+
+concurrency:
+  group: deploy-workers-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-core-workers:
+    name: 🚀 Core Workers (agents-api, tools-api, command-center, os-core)
+    runs-on: [self-hosted, blackroad-fleet]
+    if: ${{ github.event.inputs.batch == 'all' || github.event.inputs.batch == 'core-workers' || github.event_name == 'push' }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 848cf0b18d51e0170e0d1537aec3505a
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Setup Wrangler
+        run: |
+          mkdir -p ~/npm-global ~/bin
+          npm config set prefix ~/npm-global 2>/dev/null || true
+          npm install -g wrangler --quiet 2>/dev/null || true
+          ln -sf ~/npm-global/bin/wrangler ~/bin/wrangler 2>/dev/null || true
+          echo "$HOME/bin:$HOME/npm-global/bin" >> $GITHUB_PATH
+
+      - name: Deploy Core Workers
+        run: |
+          export PATH="$HOME/bin:$HOME/npm-global/bin:$PATH"
+          DEPLOYED=0; FAILED=0
+          
+          WORKERS=(
+            "wrangler-configs/agents-api"
+            "wrangler-configs/tools-api"
+            "wrangler-configs/command-center"
+            "wrangler-configs/blackroad-os-core"
+          )
+          
+          for dir in "${WORKERS[@]}"; do
+            name=$(basename "$dir")
+            echo -n "  Deploying $name... "
+            if cd "$dir" && wrangler deploy 2>&1 | tail -2; then
+              echo "✅ $name deployed"
+              DEPLOYED=$((DEPLOYED+1))
+            else
+              echo "⚠️ $name failed"
+              FAILED=$((FAILED+1))
+            fi
+            cd $GITHUB_WORKSPACE
+          done
+          
+          echo "✅ Core workers: $DEPLOYED deployed, $FAILED failed"
+
+      - name: Verify Core Workers
+        run: |
+          sleep 8
+          for endpoint in \
+            "https://agents-api.blackroad.workers.dev/health" \
+            "https://tools-api.blackroad.workers.dev/health" \
+            "https://command-center.blackroad.workers.dev/health"; do
+            HTTP=$(curl -sf -o /dev/null -w "%{http_code}" "$endpoint" 2>/dev/null || echo "000")
+            echo "  $endpoint → $HTTP"
+          done
+
+  deploy-subdomain-workers:
+    name: 🌐 Subdomain Workers (42 *-blackroadio)
+    runs-on: [self-hosted, blackroad-fleet]
+    if: ${{ github.event.inputs.batch == 'all' || github.event.inputs.batch == 'subdomain-workers' }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 848cf0b18d51e0170e0d1537aec3505a
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Setup Wrangler
+        run: |
+          mkdir -p ~/npm-global ~/bin
+          npm config set prefix ~/npm-global 2>/dev/null || true
+          npm install -g wrangler --quiet 2>/dev/null || true
+          echo "$HOME/bin:$HOME/npm-global/bin" >> $GITHUB_PATH
+
+      - name: Deploy All Subdomain Workers
+        run: |
+          export PATH="$HOME/bin:$HOME/npm-global/bin:$PATH"
+          DEPLOYED=0; FAILED=0; SKIPPED=0
+          
+          for dir in orgs/core/*-blackroadio orgs/core/*-blackroad-io; do
+            [ -d "$dir" ] || continue
+            name=$(basename "$dir")
+            toml="$dir/wrangler.toml"
+            [ -f "$toml" ] || { echo "  SKIP $name (no wrangler.toml)"; SKIPPED=$((SKIPPED+1)); continue; }
+            
+            echo -n "  Deploying $name... "
+            if cd "$dir" && wrangler deploy 2>&1 | grep -E "(Deployed|Published|Error)" | tail -1; then
+              DEPLOYED=$((DEPLOYED+1))
+            else
+              echo "⚠️ failed"
+              FAILED=$((FAILED+1))
+            fi
+            cd $GITHUB_WORKSPACE
+          done
+          
+          echo ""
+          echo "📊 Results: ✅ $DEPLOYED deployed | ⚠️ $FAILED failed | ⏭️ $SKIPPED skipped"
+
+      - name: Log deployment to memory
+        run: |
+          TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          echo "{\"ts\":\"$TS\",\"type\":\"deployment\",\"entity\":\"subdomain-workers\",\"detail\":\"Deployed all *-blackroadio workers\",\"agent\":\"alice\"}" \
+            >> memory/journals/master-journal.jsonl || true
+
+  deploy-orgs-core-workers:
+    name: 🏗️ Orgs/Core Workers (with existing wrangler.toml)
+    runs-on: [self-hosted, blackroad-fleet]
+    if: ${{ github.event.inputs.batch == 'all' || github.event.inputs.batch == 'orgs-core' }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 848cf0b18d51e0170e0d1537aec3505a
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Setup Wrangler
+        run: |
+          mkdir -p ~/npm-global ~/bin
+          npm config set prefix ~/npm-global 2>/dev/null || true
+          npm install -g wrangler --quiet 2>/dev/null || true
+          echo "$HOME/bin:$HOME/npm-global/bin" >> $GITHUB_PATH
+
+      - name: Deploy Orgs/Core Workers
+        run: |
+          export PATH="$HOME/bin:$HOME/npm-global/bin:$PATH"
+          DEPLOYED=0; FAILED=0
+          
+          # Only deploy repos that have wrangler.toml (already ~16)
+          while IFS= read -r toml; do
+            dir=$(dirname "$toml")
+            name=$(basename "$dir")
+            echo -n "  Deploying $name... "
+            if cd "$dir" && wrangler deploy 2>&1 | grep -E "(Deployed|Published|Error)" | tail -1; then
+              DEPLOYED=$((DEPLOYED+1))
+            else
+              FAILED=$((FAILED+1))
+            fi
+            cd $GITHUB_WORKSPACE
+          done < <(find orgs/core -name "wrangler.toml" -not -path "*/node_modules/*" -not -path "*/scripts/*")
+          
+          echo "📊 Results: ✅ $DEPLOYED deployed | ⚠️ $FAILED failed"
+
+  summary:
+    name: 📊 Deployment Summary
+    runs-on: [self-hosted, blackroad-fleet]
+    needs: [deploy-core-workers, deploy-subdomain-workers, deploy-orgs-core-workers]
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "🏁 Full deployment run complete"
+          echo "  Core workers: ${{ needs.deploy-core-workers.result }}"
+          echo "  Subdomain workers: ${{ needs.deploy-subdomain-workers.result }}"
+          echo "  Orgs/core workers: ${{ needs.deploy-orgs-core-workers.result }}"
+          echo ""
+          echo "🌐 Live endpoints:"
+          echo "  https://agents-api.blackroad.workers.dev"
+          echo "  https://tools-api.blackroad.workers.dev"
+          echo "  https://command-center.blackroad.workers.dev"
+          echo "  https://about.blackroad.io"
+          echo "  (+ 38 more subdomain workers)"

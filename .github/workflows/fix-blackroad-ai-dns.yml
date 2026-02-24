@@ -1,0 +1,130 @@
+name: 🔧 Fix blackroad.ai DNS — api + agents subdomains
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - 'wrangler-configs/api-edge.toml'
+      - 'wrangler-configs/agents-api.toml'
+
+jobs:
+  fix-dns:
+    name: Add missing DNS records for blackroad.ai
+    runs-on: ubuntu-latest
+    env:
+      CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get blackroad.ai Zone ID
+        id: zone
+        run: |
+          ZONE=$(curl -sf "https://api.cloudflare.com/client/v4/zones?name=blackroad.ai" \
+            -H "Authorization: Bearer $CF_API_TOKEN" | \
+            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+          echo "ZONE_ID=$ZONE" >> "$GITHUB_ENV"
+          echo "Zone ID: $ZONE"
+
+      - name: Add api.blackroad.ai → Worker route CNAME
+        run: |
+          if [ -z "$ZONE_ID" ]; then echo "No zone ID"; exit 1; fi
+          # Check if record exists
+          EXISTING=$(curl -sf "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=api.blackroad.ai" \
+            -H "Authorization: Bearer $CF_API_TOKEN" | \
+            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+          
+          if [ -n "$EXISTING" ]; then
+            echo "✅ api.blackroad.ai record exists: $EXISTING"
+          else
+            echo "Creating api.blackroad.ai → blackroad-api-edge.amundsonalexa.workers.dev"
+            curl -sf -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+              -H "Authorization: Bearer $CF_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data '{
+                "type": "CNAME",
+                "name": "api.blackroad.ai",
+                "content": "blackroad-api-edge.amundsonalexa.workers.dev",
+                "proxied": true,
+                "ttl": 1,
+                "comment": "BlackRoad API Edge Worker"
+              }' | python3 -c "import sys,json; r=json.load(sys.stdin); print('✅ Created' if r.get('success') else '❌ Failed:', r.get('errors',''))"
+          fi
+
+      - name: Add agents.blackroad.ai → Worker route CNAME
+        run: |
+          if [ -z "$ZONE_ID" ]; then echo "No zone ID"; exit 1; fi
+          EXISTING=$(curl -sf "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=agents.blackroad.ai" \
+            -H "Authorization: Bearer $CF_API_TOKEN" | \
+            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+
+          if [ -n "$EXISTING" ]; then
+            echo "✅ agents.blackroad.ai record exists: $EXISTING"
+          else
+            echo "Creating agents.blackroad.ai → agents-api.amundsonalexa.workers.dev"
+            curl -sf -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+              -H "Authorization: Bearer $CF_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data '{
+                "type": "CNAME",
+                "name": "agents.blackroad.ai",
+                "content": "agents-api.amundsonalexa.workers.dev",
+                "proxied": true,
+                "ttl": 1,
+                "comment": "BlackRoad Agents API Worker"
+              }' | python3 -c "import sys,json; r=json.load(sys.stdin); print('✅ Created' if r.get('success') else '❌ Failed:', r.get('errors',''))"
+          fi
+
+      - name: Add gateway.blackroad.ai CNAME
+        run: |
+          if [ -z "$ZONE_ID" ]; then exit 0; fi
+          EXISTING=$(curl -sf "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=gateway.blackroad.ai" \
+            -H "Authorization: Bearer $CF_API_TOKEN" | \
+            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+          if [ -z "$EXISTING" ]; then
+            curl -sf -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+              -H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json" \
+              --data '{"type":"CNAME","name":"gateway.blackroad.ai","content":"blackroad-gateway.amundsonalexa.workers.dev","proxied":true,"ttl":1}' \
+              | python3 -c "import sys,json; r=json.load(sys.stdin); print('gateway.blackroad.ai:', '✅' if r.get('success') else '❌')"
+          fi
+
+  deploy-fixed-workers:
+    name: Deploy api-edge + agents-api workers
+    runs-on: ubuntu-latest
+    needs: fix-dns
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: "848cf0b18d51e0170e0d1537aec3505a"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Deploy api-edge worker
+        run: |
+          wrangler deploy --config wrangler-configs/api-edge.toml
+          echo "✅ api-edge deployed → api.blackroad.ai"
+
+      - name: Deploy agents-api worker
+        run: |
+          wrangler deploy --config wrangler-configs/agents-api.toml
+          echo "✅ agents-api deployed → agents.blackroad.ai"
+
+      - name: Deploy status worker
+        run: |
+          wrangler deploy --config workers/status/wrangler.toml
+          echo "✅ status worker deployed → status.blackroad.io, status.blackroad.ai"
+
+      - name: Verify endpoints
+        run: |
+          sleep 10
+          echo "Checking api.blackroad.ai..."
+          curl -sf "https://api.blackroad.ai/health" | python3 -c "import sys,json; d=json.load(sys.stdin); print('✅ API:', d.get('service','ok'))" 2>/dev/null || echo "⚠️ Not yet live (DNS propagation)"
+          echo "Checking agents.blackroad.ai..."
+          curl -sf "https://agents.blackroad.ai/health" | python3 -c "import sys,json; d=json.load(sys.stdin); print('✅ Agents:', d.get('status','ok'))" 2>/dev/null || echo "⚠️ Not yet live (DNS propagation)"

@@ -6,13 +6,17 @@ account_id = "848cf0b18d51e0170e0d1537aec3505a"
 
 [vars]
 ENVIRONMENT    = "production"
-API_ORIGIN     = "https://api.blackroad.ai"
+# API_ORIGIN points to blackroad.systems (Cloudflare tunnel → Pi :8788 FastAPI)
+API_ORIGIN     = "https://blackroad.systems"
 GATEWAY_ORIGIN = "https://gateway.blackroad.ai"
 
-# Routes — add these in Cloudflare dashboard or uncomment:
-# [[routes]]
-# pattern = "api.blackroad.ai/*"
-# zone_name = "blackroad.ai"
+[[routes]]
+pattern = "api.blackroad.ai/*"
+zone_name = "blackroad.ai"
+
+[[routes]]
+pattern = "api.blackroad.io/*"
+zone_name = "blackroad.io"
 
 # Deploy:
 #   npx wrangler deploy --config wrangler-configs/api-edge.toml

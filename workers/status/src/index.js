@@ -10,15 +10,21 @@
  */
 
 const SERVICES = [
-  { id: 'gateway',    name: 'Gateway',        url: 'https://blackroad-os-api.amundsonalexa.workers.dev/health' },
-  { id: 'agents-api', name: 'Agents API',     url: 'https://blackroad-agents.blackroad.workers.dev/health' },
-  { id: 'auth',       name: 'Auth Worker',    url: 'https://blackroad-auth.amundsonalexa.workers.dev/health' },
-  { id: 'email',      name: 'Email Router',   url: 'https://blackroad-email-router.blackroad.workers.dev/health' },
+  { id: 'api-edge',    name: 'API Edge',        url: 'https://api.blackroad.ai/health' },
+  { id: 'agents-api',  name: 'Agents API',      url: 'https://agents.blackroad.ai/health' },
+  { id: 'gateway',     name: 'Gateway',         url: 'https://gateway.blackroad.ai/healthz' },
+  { id: 'auth',        name: 'Auth Worker',     url: 'https://blackroad-auth.amundsonalexa.workers.dev/health' },
+  { id: 'email',       name: 'Email Router',    url: 'https://blackroad-email-router.blackroad.workers.dev/health' },
+  { id: 'systems',     name: 'blackroad.systems', url: 'https://blackroad.systems/v1/health' },
+  { id: 'live-data',   name: 'Live Data',       url: 'https://live.blackroad.io/health' },
 ];
 
 const PI_NODES = [
-  { id: 'aria64',     name: 'aria64 Pi',      ip: '192.168.4.38', role: 'PRIMARY',   capacity: 22500 },
-  { id: 'alice',      name: 'alice Pi',       ip: '192.168.4.49', role: 'SECONDARY', capacity: 7500  },
+  { id: 'octavia',    name: 'Octavia Pi (Primary)',   ip: '192.168.4.38', role: 'PRIMARY',   capacity: 22500 },
+  { id: 'alice',      name: 'Alice Pi (Secondary)',   ip: '192.168.4.49', role: 'SECONDARY', capacity: 7500  },
+  { id: 'lucidia',    name: 'Lucidia Pi',             ip: '192.168.4.64', role: 'LUCIDIA',   capacity: 7500  },
+  { id: 'alt',        name: 'Alt Pi (Backup)',        ip: '192.168.4.99', role: 'BACKUP',    capacity: 3000  },
+  { id: 'droplet',    name: 'DO Droplet (gematria)',  ip: '159.65.43.12', role: 'CLOUD',     capacity: 5000  },
 ];
 
 async function checkService(svc) {

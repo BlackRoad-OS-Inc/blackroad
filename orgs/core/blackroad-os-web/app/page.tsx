@@ -2,10 +2,13 @@
 
 import Link from 'next/link';
 import { ArrowRight, Zap, Shield, Cpu, Globe, Sparkles, ChevronRight } from 'lucide-react';
+import { LiveStatsBar, AgentStatusGrid, RecentRepos } from '@/components/live-stats';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* Live stats bar */}
+      <LiveStatsBar />
       {/* Animated background gradient */}
       <div className="fixed inset-0 bg-gradient-to-br from-black via-black to-violet-950/20 pointer-events-none" />
       <div className="fixed inset-0 opacity-30 pointer-events-none">

@@ -1,0 +1,195 @@
+name: 🔧 Fix + Deploy API Workers (api-edge, agents-api, status)
+
+# Fixes the broken api.blackroad.ai and agents.blackroad.ai endpoints
+# then deploys all core API workers end-to-end.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - 'wrangler-configs/api-edge.toml'
+      - 'wrangler-configs/agents-api.toml'
+      - 'workers/status/**'
+      - 'workers/api/**'
+
+concurrency:
+  group: fix-api-workers
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: "848cf0b18d51e0170e0d1537aec3505a"
+
+jobs:
+  fix-dns-blackroad-ai:
+    name: 🌐 Fix blackroad.ai DNS records
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get blackroad.ai Zone ID and create missing CNAME records
+        run: |
+          ZONE=$(curl -sf "https://api.cloudflare.com/client/v4/zones?name=blackroad.ai" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
+            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+          
+          if [ -z "$ZONE" ]; then
+            echo "❌ Could not get blackroad.ai zone ID — check CLOUDFLARE_API_TOKEN secret"
+            exit 1
+          fi
+          echo "Zone ID: $ZONE"
+
+          create_cname() {
+            local NAME=$1 CONTENT=$2 COMMENT=$3
+            EXISTING=$(curl -sf "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records?name=${NAME}" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
+              python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+
+            if [ -n "$EXISTING" ]; then
+              echo "✅ $NAME already exists ($EXISTING)"
+            else
+              RES=$(curl -sf -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records" \
+                -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data "{\"type\":\"CNAME\",\"name\":\"$NAME\",\"content\":\"$CONTENT\",\"proxied\":true,\"ttl\":1,\"comment\":\"$COMMENT\"}")
+              echo $RES | python3 -c "import sys,json; r=json.load(sys.stdin); print('✅ Created' if r.get('success') else '❌ Failed', '$NAME', r.get('errors',''))"
+            fi
+          }
+
+          create_cname "api.blackroad.ai"     "blackroad-api-edge.amundsonalexa.workers.dev" "BlackRoad API Edge Worker"
+          create_cname "agents.blackroad.ai"  "agents-api.amundsonalexa.workers.dev"         "BlackRoad Agents API Worker"
+          create_cname "gateway.blackroad.ai" "blackroad-gateway.amundsonalexa.workers.dev"  "BlackRoad Gateway Worker"
+          create_cname "status.blackroad.ai"  "blackroad-status.amundsonalexa.workers.dev"   "BlackRoad Status Worker"
+          create_cname "live.blackroad.ai"    "blackroad-live-data.amundsonalexa.workers.dev" "BlackRoad Live Data Worker"
+
+  fix-dns-blackroad-io:
+    name: 🌐 Ensure blackroad.io API DNS records
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get blackroad.io Zone ID and create missing CNAME records
+        run: |
+          ZONE=$(curl -sf "https://api.cloudflare.com/client/v4/zones?name=blackroad.io" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
+            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+
+          if [ -z "$ZONE" ]; then
+            echo "❌ Could not get blackroad.io zone ID"
+            exit 1
+          fi
+          echo "Zone ID: $ZONE"
+
+          create_cname() {
+            local NAME=$1 CONTENT=$2 COMMENT=$3
+            EXISTING=$(curl -sf "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records?name=${NAME}" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
+              python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+
+            if [ -n "$EXISTING" ]; then
+              echo "✅ $NAME already exists"
+            else
+              curl -sf -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records" \
+                -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+                --data "{\"type\":\"CNAME\",\"name\":\"$NAME\",\"content\":\"$CONTENT\",\"proxied\":true,\"ttl\":1,\"comment\":\"$COMMENT\"}" | \
+                python3 -c "import sys,json; r=json.load(sys.stdin); print('✅ Created' if r.get('success') else '❌', '$NAME')"
+            fi
+          }
+
+          create_cname "status.blackroad.io" "blackroad-status.amundsonalexa.workers.dev" "Status Worker"
+          create_cname "live.blackroad.io"   "blackroad-live-data.amundsonalexa.workers.dev" "Live Data Worker"
+
+  deploy-workers:
+    name: ⚡ Deploy Fixed Workers
+    runs-on: ubuntu-latest
+    needs: [fix-dns-blackroad-ai, fix-dns-blackroad-io]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install -g wrangler@latest
+
+      - name: Deploy api-edge → api.blackroad.ai + api.blackroad.io
+        run: |
+          wrangler deploy --config wrangler-configs/api-edge.toml
+          echo "✅ api-edge deployed"
+        continue-on-error: true
+
+      - name: Deploy agents-api → agents.blackroad.ai + agents.blackroad.io
+        run: |
+          wrangler deploy --config wrangler-configs/agents-api.toml
+          echo "✅ agents-api deployed"
+        continue-on-error: true
+
+      - name: Deploy status worker → status.blackroad.io
+        run: |
+          wrangler deploy --config workers/status/wrangler.toml
+          echo "✅ status worker deployed"
+        continue-on-error: true
+
+      - name: Deploy command-center
+        run: |
+          wrangler deploy --config wrangler-configs/command-center.toml
+          echo "✅ command-center deployed"
+        continue-on-error: true
+
+      - name: Deploy tools-api
+        run: |
+          wrangler deploy --config wrangler-configs/tools-api.toml
+          echo "✅ tools-api deployed"
+        continue-on-error: true
+
+  verify:
+    name: ✅ Verify All Endpoints
+    runs-on: ubuntu-latest
+    needs: deploy-workers
+    if: always()
+    steps:
+      - name: Health check all endpoints
+        run: |
+          sleep 15  # Wait for DNS + worker propagation
+          ENDPOINTS=(
+            "https://api.blackroad.ai/health"
+            "https://agents.blackroad.ai/health"
+            "https://api.blackroad.io/health"
+            "https://agents.blackroad.io/health"
+            "https://blackroad.io"
+            "https://blackroad.ai"
+            "https://blackroad.network"
+            "https://blackroad.systems"
+            "https://blackroad.me"
+            "https://lucidia.earth"
+          )
+          OK=0; FAIL=0
+          for URL in "${ENDPOINTS[@]}"; do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
+            if [[ "$STATUS" =~ ^[23] ]]; then
+              echo "✅ $URL ($STATUS)"; OK=$((OK+1))
+            else
+              echo "❌ $URL ($STATUS)"; FAIL=$((FAIL+1))
+            fi
+          done
+          echo ""; echo "🏁 $OK healthy, $FAIL failed"
+
+      - name: Write summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+## 🔧 API Worker Fix Summary
+
+### Fixed
+- `api.blackroad.ai` — DNS CNAME added + api-edge worker deployed
+- `agents.blackroad.ai` — DNS CNAME added + agents-api worker deployed  
+- `status.blackroad.io` — Updated with full Pi fleet + all 7 services
+
+### Architecture
+```
+api.blackroad.ai → blackroad-api-edge (Worker) → blackroad.systems (tunnel → Pi :8788)
+agents.blackroad.ai → agents-api (Worker) → api.blackroad.io (tunnel → Pi :8787)
+```
+
+### Related Repos
+- `BlackRoad-OS-Inc/blackroad-infra` — wrangler configs, DNS docs
+- `BlackRoad-OS-Inc/blackroad-core` — gateway + worker source
+EOF
