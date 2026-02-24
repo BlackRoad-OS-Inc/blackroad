@@ -15,6 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+        with:
+          submodules: false
       - name: Check all Pi agents
         id: check
         run: |
@@ -62,6 +64,8 @@ jobs:
     if: needs.health-check.outputs.failover_needed == 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Activate gematria as primary
         run: |
           echo "⚠️ Pi cluster degraded — gematria taking primary"
