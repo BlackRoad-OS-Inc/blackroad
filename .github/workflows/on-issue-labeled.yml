@@ -1,0 +1,37 @@
+name: On Issue Labeled → Agent Assignment
+
+on:
+  issues:
+    types: [labeled]
+  label:
+    types: [created]
+
+jobs:
+  assign-agent:
+    runs-on: [self-hosted, pi]
+    steps:
+      - name: Route to agent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LABEL="${{ github.event.label.name }}"
+          ISSUE="${{ github.event.issue.number }}"
+          
+          case "$LABEL" in
+            "security"|"vulnerability")   AGENT="CIPHER"  ;;
+            "bug"|"fix")                  AGENT="ALICE"   ;;
+            "ai"|"ml"|"model")            AGENT="LUCIDIA" ;;
+            "infra"|"deploy"|"devops")    AGENT="OCTAVIA" ;;
+            "data"|"analytics")           AGENT="PRISM"   ;;
+            "memory"|"recall")            AGENT="ECHO"    ;;
+            "feature"|"enhancement")      AGENT="CECE"    ;;
+            *)                            AGENT="ALICE"   ;;
+          esac
+          
+          gh issue comment $ISSUE \
+            --body "🤖 **$AGENT** has been assigned to this issue (label: \`$LABEL\`).
+          
+          Agent will begin analysis shortly. Labels determine routing:
+          - \`security\` → CIPHER | \`ai/ml\` → LUCIDIA | \`infra\` → OCTAVIA
+          - \`data\` → PRISM | \`memory\` → ECHO | \`feature\` → CECE | default → ALICE" \
+            --repo ${{ github.repository }} 2>/dev/null || true

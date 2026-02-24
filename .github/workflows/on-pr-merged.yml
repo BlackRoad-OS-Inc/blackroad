@@ -1,0 +1,40 @@
+name: On PR Merged → Release Pipeline
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master, main]
+
+jobs:
+  release-pipeline:
+    if: github.event.pull_request.merged == true
+    runs-on: [self-hosted, pi]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0, submodules: false }
+
+      - name: Detect change type
+        id: detect
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+          if echo "$TITLE$LABELS" | grep -qi "^feat\|^breaking\|major"; then
+            echo "bump=major" >> $GITHUB_OUTPUT
+          elif echo "$TITLE$LABELS" | grep -qi "^feat\|minor"; then
+            echo "bump=minor" >> $GITHUB_OUTPUT
+          else
+            echo "bump=patch" >> $GITHUB_OUTPUT
+          fi
+          echo "branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
+
+      - name: Auto-bump version
+        run: |
+          BUMP="${{ steps.detect.outputs.bump }}"
+          echo "Bumping $BUMP version after PR merge"
+          # Tag creation handled by semantic-release
+
+      - name: Notify agents
+        run: |
+          echo "PR #${{ github.event.pull_request.number }} merged by ${{ github.event.pull_request.merged_by.login }}"
+          echo "Branch: ${{ steps.detect.outputs.branch }} → master"
+          echo "Bump: ${{ steps.detect.outputs.bump }}"
