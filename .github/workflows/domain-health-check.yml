@@ -1,0 +1,63 @@
+name: Domain Health Check
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # every 15 minutes
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'orgs/core/**/*.html'
+      - 'workers/**'
+      - 'wrangler-configs/**'
+
+jobs:
+  check-domains:
+    runs-on: ubuntu-latest
+    name: Check All Domains
+    steps:
+      - name: Check Core Domains
+        id: domain-check
+        run: |
+          DOMAINS=(
+            "https://agents.blackroad.io"
+            "https://api.blackroad.io/health"
+            "https://ai.blackroad.io"
+            "https://cli.blackroad.io"
+            "https://console.blackroad.io"
+            "https://dashboard.blackroad.io"
+            "https://docs.blackroad.io"
+            "https://status.blackroad.io"
+            "https://blog.blackroad.io"
+            "https://dev.blackroad.io"
+          )
+          FAILED=0
+          for D in "${DOMAINS[@]}"; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$D" || echo "000")
+            if [ "$CODE" = "200" ] || [ "$CODE" = "301" ] || [ "$CODE" = "302" ]; then
+              echo "✅ $D → $CODE"
+            else
+              echo "❌ $D → $CODE"
+              FAILED=$((FAILED+1))
+            fi
+          done
+          echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
+          echo "Total failed: $FAILED"
+
+      - name: Post Status to status.blackroad.io
+        if: always()
+        run: |
+          curl -sf -X POST "https://api.blackroad.io/v1/status/update" \
+            -H "Content-Type: application/json" \
+            -d "{\"source\":\"github-actions\",\"failed\":${{ steps.domain-check.outputs.failed_count || 0 }},\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" \
+            || echo "Status update skipped (API not configured)"
+
+      - name: Alert on failures
+        if: steps.domain-check.outputs.failed_count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failed = ${{ steps.domain-check.outputs.failed_count || 0 }};
+            if (failed > 0) {
+              core.warning(`⚠️ ${failed} domain(s) returned non-2xx status`);
+            }
