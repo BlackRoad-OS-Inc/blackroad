@@ -24,7 +24,7 @@ on:
 jobs:
   validate-and-test:
     name: 🧪 Validate & Test
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     defaults:
       run:
         working-directory: blackroad-sf
@@ -52,7 +52,7 @@ jobs:
 
   deploy-scratch:
     name: 🔬 Scratch Org Deploy (PR)
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     needs: validate-and-test
     if: github.event_name == 'pull_request'
     defaults:
@@ -93,7 +93,7 @@ jobs:
 
   deploy-sandbox:
     name: 🏗️ Deploy to Sandbox
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     needs: validate-and-test
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
     environment: sandbox
@@ -117,7 +117,7 @@ jobs:
 
   deploy-production:
     name: 🚀 Deploy to Production
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     needs: validate-and-test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production

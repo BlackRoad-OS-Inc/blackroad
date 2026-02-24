@@ -7,7 +7,7 @@ on:
 jobs:
   health-check:
     name: Check Pi Cluster
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     outputs:
       pis_online: ${{ steps.check.outputs.pis_online }}
       failover_needed: ${{ steps.check.outputs.failover_needed }}
@@ -59,7 +59,7 @@ jobs:
 
   trigger-failover:
     name: Activate Failover Chain
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     needs: health-check
     if: needs.health-check.outputs.failover_needed == 'true'
     steps:

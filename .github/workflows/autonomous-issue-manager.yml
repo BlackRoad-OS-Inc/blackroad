@@ -43,7 +43,7 @@ jobs:
   triage:
     name: "Smart Triage"
     if: github.event_name == 'issues' && github.event.action == 'opened'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - uses: actions/checkout@v4
@@ -201,7 +201,7 @@ jobs:
   stale-cleanup:
     name: "Stale Cleanup"
     if: github.event_name == 'schedule' || github.event.inputs.action == 'cleanup_stale'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - name: Find Stale Issues
@@ -279,7 +279,7 @@ jobs:
   failure-issue:
     name: "Create Failure Issue"
     if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - name: Check for Existing Issue
@@ -353,7 +353,7 @@ jobs:
   report:
     name: "Generate Issue Report"
     if: github.event.inputs.action == 'generate_report'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - name: Generate Statistics

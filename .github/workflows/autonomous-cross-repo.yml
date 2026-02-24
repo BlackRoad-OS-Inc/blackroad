@@ -45,7 +45,7 @@ jobs:
   # ============================================
   identify-repos:
     name: "Identify Affected Repos"
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     outputs:
       repos: ${{ steps.find.outputs.repos }}
       sync_files: ${{ steps.changes.outputs.files }}
@@ -98,7 +98,7 @@ jobs:
     name: "Sync Workflows"
     needs: identify-repos
     if: github.event.inputs.sync_type == 'workflows' || github.event.inputs.sync_type == 'all' || contains(needs.identify-repos.outputs.sync_files, '.github/workflows')
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     strategy:
       matrix:
         repo: ${{ fromJSON(needs.identify-repos.outputs.repos) }}
@@ -192,7 +192,7 @@ jobs:
     name: "Sync Configurations"
     needs: identify-repos
     if: github.event.inputs.sync_type == 'config' || github.event.inputs.sync_type == 'all'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     strategy:
       matrix:
         repo: ${{ fromJSON(needs.identify-repos.outputs.repos) }}
@@ -273,7 +273,7 @@ jobs:
     name: "Sync Dependencies"
     needs: identify-repos
     if: github.event.inputs.sync_type == 'dependencies' || github.event.inputs.sync_type == 'all'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - uses: actions/checkout@v4
@@ -313,7 +313,7 @@ jobs:
     name: "Broadcast Changes"
     needs: [sync-workflows, sync-config, sync-deps]
     if: always()
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - name: Notify Coordination System

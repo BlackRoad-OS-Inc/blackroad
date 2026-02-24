@@ -41,7 +41,7 @@ jobs:
   # ============================================
   diagnose:
     name: "Diagnose Failure"
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     outputs:
       failure_type: ${{ steps.analyze.outputs.type }}
       failure_details: ${{ steps.analyze.outputs.details }}
@@ -137,7 +137,7 @@ jobs:
     name: "Fix Lint Issues"
     needs: diagnose
     if: needs.diagnose.outputs.fix_strategy == 'auto_lint_fix'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - uses: actions/checkout@v4
@@ -186,7 +186,7 @@ jobs:
     name: "Fix Dependencies"
     needs: diagnose
     if: needs.diagnose.outputs.fix_strategy == 'reinstall_deps'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - uses: actions/checkout@v4
@@ -234,7 +234,7 @@ jobs:
     name: "Fix Security Issues"
     needs: diagnose
     if: needs.diagnose.outputs.fix_strategy == 'security_patch'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - uses: actions/checkout@v4
@@ -298,7 +298,7 @@ jobs:
     name: "AI-Assisted Fix"
     needs: diagnose
     if: needs.diagnose.outputs.fix_strategy == 'ai_assisted_fix'
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - uses: actions/checkout@v4
@@ -365,7 +365,7 @@ jobs:
     name: "Report Results"
     needs: [diagnose, fix-lint, fix-deps, fix-security, ai-fix]
     if: always()
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
 
     steps:
       - name: Summarize Healing Attempt

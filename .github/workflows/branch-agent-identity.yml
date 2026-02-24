@@ -14,7 +14,7 @@ on:
 jobs:
   assign-identity:
     name: "Assign Agent to Branch"
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     outputs:
       agent_name: ${{ steps.resolve.outputs.agent_name }}
       agent_emoji: ${{ steps.resolve.outputs.agent_emoji }}
@@ -90,7 +90,7 @@ jobs:
 
   tag-pr:
     name: "Tag PR with Agent Identity"
-    runs-on: [self-hosted, pi]
+    runs-on: [self-hosted, blackroad-fleet]
     needs: assign-identity
     if: github.event_name == 'pull_request'
     steps:

@@ -12,7 +12,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, gematria-do]
+    runs-on: [self-hosted, gematria]
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
@@ -58,7 +58,7 @@ jobs:
           echo "✅ Railway deploy complete"
 
   health-check:
-    runs-on: [self-hosted, pi, blackroad]
+    runs-on: [self-hosted, blackroad-fleet]
     needs: deploy
     steps:
       - name: Check Railway services

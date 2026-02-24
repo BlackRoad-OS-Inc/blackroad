@@ -35,7 +35,7 @@ jobs:
           echo "✅ DO backup complete"
 
   backup-tier3-cloudflare:
-    runs-on: [self-hosted, gematria-do]
+    runs-on: [self-hosted, gematria]
     needs: backup-tier2-do
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -54,7 +54,7 @@ jobs:
           echo "✅ R2 backup complete"
 
   verify-backups:
-    runs-on: [self-hosted, pi, blackroad]
+    runs-on: [self-hosted, blackroad-fleet]
     needs: [backup-tier1-gdrive, backup-tier2-do]
     steps:
       - name: Verify backup chain

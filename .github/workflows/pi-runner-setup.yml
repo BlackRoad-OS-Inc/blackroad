@@ -1,7 +1,7 @@
 name: 🏃 Pi Runner Setup
 # Deploy GitHub Actions self-hosted runners to Pi cluster
 # Run this workflow ONCE per Pi to register it as a runner
-# After this, all workflows using runs-on: [self-hosted, pi] = $0 cost
+# After this, all workflows using runs-on: [self-hosted, blackroad-fleet] = $0 cost
 
 on:
   workflow_dispatch:
@@ -28,7 +28,7 @@ on:
 jobs:
   setup-runner:
     name: 🔧 Setup Runner on ${{ github.event.inputs.pi_host }}
-    runs-on: [self-hosted, pi, blackroad]   # Bootstrap only - runs on GitHub hosted
+    runs-on: [self-hosted, blackroad-fleet]   # Bootstrap only - runs on GitHub hosted
     steps:
       - uses: actions/checkout@v4
 
