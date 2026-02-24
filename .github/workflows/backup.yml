@@ -10,6 +10,8 @@ jobs:
     runs-on: [self-hosted, pi, blackroad]
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Backup to GDrive
         run: |
           rclone sync . gdrive-blackroad:blackroad-backup/$(date +%Y-%m-%d) \
