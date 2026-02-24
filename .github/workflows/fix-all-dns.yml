@@ -14,7 +14,7 @@ env:
 jobs:
   fix-dns:
     name: Fix DNS for all domains
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     strategy:
       matrix:
         domain: [blackroad.network, blackroad.systems, blackroad.me, blackroadai.com, blackroad.company, lucidia.studio, aliceqi.com, lucidiaqi.com, roadchain.io]
@@ -63,7 +63,7 @@ jobs:
 
   deploy-workers:
     name: Deploy workers via wrangler
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blackroad-fleet]
     needs: fix-dns
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
