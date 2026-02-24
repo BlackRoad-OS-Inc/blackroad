@@ -7,11 +7,13 @@ on:
         default: 'auth'
         type: choice
         options: [auth, test, list-orgs]
+  schedule:
+    - cron: '0 */12 * * *'
 
 jobs:
   sf-auth:
-    name: SF JWT Auth on cecilia
-    runs-on: [self-hosted, cecilia]
+    name: SF JWT Auth
+    runs-on: [self-hosted, blackroad-fleet, pi]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,22 +24,33 @@ jobs:
           echo "${{ secrets.SALESFORCE_JWT_KEY }}" > /tmp/sf-jwt.key
           chmod 600 /tmp/sf-jwt.key
 
+      - name: Setup SF CLI
+        run: |
+          SF_CMD=""
+          for p in ~/.local/node_modules/.bin ~/.nvm/versions/node/v20.20.0/bin /usr/local/bin; do
+            [ -x "$p/sf" ] && SF_CMD="$p/sf" && break
+          done
+          if [ -z "$SF_CMD" ]; then
+            source ~/.nvm/nvm.sh && nvm use 20 --delete-prefix 2>/dev/null || true
+            npm install -g @salesforce/cli --quiet
+            SF_CMD=sf
+          fi
+          echo "SF_CMD=$SF_CMD" >> $GITHUB_ENV
+          echo "SF CLI: $($SF_CMD --version 2>/dev/null | head -1)"
+
       - name: Salesforce JWT Auth
         run: |
-          export PATH="$HOME/.local/node_modules/.bin:$PATH"
-          sf org login jwt \
+          $SF_CMD org login jwt \
             --username "${{ secrets.SALESFORCE_USERNAME }}" \
             --client-id "${{ secrets.SALESFORCE_CLIENT_ID }}" \
             --jwt-key-file /tmp/sf-jwt.key \
             --instance-url "${{ secrets.SALESFORCE_INSTANCE_URL }}" \
-            --set-default || {
-              echo "⚠️ JWT auth failed, trying SFDX auth URL"
-              echo "${{ secrets.SF_AUTH_URL_PRODUCTION }}" | sf org login sfdx-url --sfdx-url-stdin 2>/dev/null || echo "SF auth needs review"
-            }
+            --set-default 2>&1 | head -5 || \
+          echo "${{ secrets.SF_AUTH_URL_PRODUCTION }}" | $SF_CMD org login sfdx-url --sfdx-url-stdin 2>/dev/null || \
+          echo "SF auth needs manual setup"
           rm -f /tmp/sf-jwt.key
+          echo "SF auth attempted"
 
       - name: List Salesforce Orgs
-        run: |
-          export PATH="$HOME/.local/node_modules/.bin:$PATH"
-          sf org list 2>&1 || echo "No orgs yet"
-          sf org display 2>&1 | head -10 || echo "No default org"
+        run: $SF_CMD org list 2>&1 | head -10 || echo "No orgs"
+        continue-on-error: true
