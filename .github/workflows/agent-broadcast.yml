@@ -27,7 +27,7 @@ jobs:
           # Publish via NATS HTTP API if nats-cli not available
           if command -v nats >/dev/null 2>&1; then
             nats pub "$SUBJECT" "{\"msg\":\"$MSG\",\"ts\":\"$TIMESTAMP\",\"runner\":\"$(hostname)\"}" \
-              --server nats://192.168.4.38:4222
+              --server nats://192.168.4.38:4223
           else
             curl -s "http://192.168.4.38:8222/routez" > /dev/null && \
               echo "📡 NATS online - heartbeat registered"

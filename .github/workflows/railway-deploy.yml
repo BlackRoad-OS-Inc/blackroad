@@ -40,14 +40,7 @@ jobs:
             -H "Authorization: Bearer $RAILWAY_TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"query": "{ projects(first: 10) { edges { node { id name } } } }"}' | \
-            python3 -c "
-import json, sys
-d = json.load(sys.stdin)
-projects = d.get('data', {}).get('projects', {}).get('edges', [])
-for p in projects:
-  print(f'  - {p[\"node\"][\"name\"]} ({p[\"node\"][\"id\"]})')
-print(f'Total: {len(projects)} projects')
-" 2>/dev/null || echo "Projects listed above"
+            python3 -m json.tool 2>/dev/null || echo "Projects listed above"
 
       - name: Deploy via Railway CLI
         run: |
