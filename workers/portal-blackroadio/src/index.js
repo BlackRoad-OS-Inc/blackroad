@@ -1,0 +1,12 @@
+export default {
+  async fetch(req, env) {
+    const url = new URL(req.url);
+    if (url.pathname === '/health') return Response.json({ ok: true, worker: 'portal-blackroadio' });
+    return new Response(`<!DOCTYPE html><html><head><title>🚪 Portal — BlackRoad OS</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;min-height:100vh}header{background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);padding:60px 40px;text-align:center}header h1{font-size:3rem;font-weight:800;letter-spacing:-2px}header p{opacity:.85;margin-top:12px;font-size:1.1rem}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;padding:40px;max-width:1200px;margin:0 auto}.card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:24px;transition:.2s}.card:hover{border-color:#FF1D6C;transform:translateY(-2px)}.card h3{font-size:1.1rem;margin-bottom:8px}.card p{font-size:.85rem;opacity:.6;line-height:1.5}.tag{display:inline-block;background:#111;border:1px solid #333;border-radius:20px;padding:4px 12px;font-size:.75rem;margin-top:12px;color:#FF1D6C}footer{text-align:center;padding:40px;opacity:.4;font-size:.8rem}</style></head><body><header><h1>🚪 Portal</h1><p>Main login portal and dashboard for BlackRoad OS accounts</p></header><div class="grid"><div class=card><h3>Login</h3><p>Secure login with GitHub, Google, or email</p><span class=tag>auth</span></div>
+   <div class=card><h3>Dashboard</h3><p>Your personalized BlackRoad OS dashboard</p><span class=tag>live</span></div>
+   <div class=card><h3>Team Management</h3><p>Invite members, set permissions, manage access</p><span class=tag>active</span></div>
+   <div class=card><h3>API Keys</h3><p>Generate and manage API tokens</p><span class=tag>secure</span></div>
+   <div class=card><h3>Billing</h3><p>Subscription, usage, and invoice management</p><span class=tag>live</span></div>
+   <div class=card><h3>Profile</h3><p>Account settings, preferences, and integrations</p><span class=tag>active</span></div></div><footer>© 2026 BlackRoad OS, Inc. · <a href=https://blackroad.io style=color:#FF1D6C>blackroad.io</a></footer></body></html>`, { headers: { 'content-type': 'text/html;charset=utf-8', 'cache-control': 'public,max-age=60' }});
+  }
+};
