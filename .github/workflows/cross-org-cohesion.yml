@@ -28,6 +28,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+        with:
+          submodules: false
       - name: Count registered agents
         run: |
           echo "Agent identities: $(ls agents/registry/ | wc -l)"
@@ -53,6 +55,8 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Propagate CLAUDE.md to key repos
         run: |
           ORGS=("BlackRoad-OS" "BlackRoad-AI" "blackboxprogramming")
@@ -65,6 +69,8 @@ jobs:
     runs-on: [self-hosted, pi, blackroad]
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
         with:
           fetch-depth: 0
 
