@@ -1,38 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>API — BlackRoad OS</title>
+<meta name="description" content="OpenAI-compatible endpoints. Multi-model routing. Edge-native.">
 <style>
+:root{--amber:#F5A623;--pink:#FF1D6C;--violet:#9C27B0;--blue:#2979FF;--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--accent:#2979FF}
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
-body{background:#000;color:#fff;font-family:'SF Mono',monospace;padding:2rem;max-width:900px;margin:0 auto}
-h1{font-size:2.5rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
-.sub{color:#444;margin-bottom:2rem;font-size:.9rem;font-family:-apple-system,sans-serif}
-.ep{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:1rem 1.25rem;margin-bottom:.75rem}
-.method{display:inline-block;font-size:.75rem;font-weight:700;border-radius:4px;padding:.2rem .5rem;margin-right:.75rem}
-.get{background:#1a3a1a;color:#4ade80}.post{background:#3a1a1a;color:#f87171}.base{color:#2979FF}
-.path{font-size:.9rem;color:#fff}
-.desc{color:#444;font-size:.8rem;margin-top:.5rem;font-family:-apple-system,sans-serif}
-h2{font-size:1.1rem;color:#555;margin:1.5rem 0 .75rem;text-transform:uppercase;letter-spacing:.1em;font-family:-apple-system,sans-serif}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8)}
+.logo{font-weight:900;font-size:1rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.live-stat{font-size:0.75rem;color:rgba(255,255,255,0.4)}
+.hero{padding:80px 40px 64px;text-align:center;max-width:900px;margin:0 auto}
+.hero-icon{font-size:3.5rem;margin-bottom:24px;display:block}
+h1{font-size:clamp(2.5rem,7vw,5.5rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;line-height:1}
+.tagline{font-size:1.15rem;color:rgba(255,255,255,0.5);line-height:1.618;max-width:560px;margin:0 auto 48px}
+.stat-bar{display:flex;gap:0;max-width:700px;margin:0 auto;border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.stat-item{flex:1;padding:20px 16px;text-align:center;border-right:1px solid rgba(255,255,255,0.07)}
+.stat-item:last-child{border-right:none}
+.stat-v{font-size:1.6rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1100px;margin:80px auto;padding:0 40px}
+.feat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:32px;transition:all 0.3s}
+.feat-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-3px);background:rgba(255,255,255,0.05)}
+.feat-icon{font-size:2rem;margin-bottom:16px;display:block}
+.feat-title{font-size:1rem;font-weight:700;margin-bottom:8px}
+.feat-desc{font-size:0.875rem;color:rgba(255,255,255,0.45);line-height:1.65}
+.cta{text-align:center;padding:80px 40px;border-top:1px solid rgba(255,255,255,0.07)}
+.cta h2{font-size:2rem;font-weight:800;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:100px;font-size:0.9rem;font-weight:700;text-decoration:none;background:var(--g);color:#fff;transition:opacity 0.2s,transform 0.2s}
+.btn:hover{opacity:0.85;transform:translateY(-2px)}
+footer{padding:40px;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.07)}
+footer a{color:rgba(255,29,108,0.7);text-decoration:none}
+@media(max-width:640px){.hero{padding:60px 20px 48px}.grid{padding:0 20px;margin:48px auto}.stat-bar{flex-direction:column}.stat-item{border-right:none;border-bottom:1px solid rgba(255,255,255,0.07)}}
 </style>
 </head>
 <body>
-<h1>BlackRoad API</h1>
-<p class="sub">Tokenless gateway · all providers behind one interface · base: <span class="base">https://api.blackroad.io/v1</span></p>
-<h2>Agents</h2>
-<div class="ep"><span class="method get">GET</span><span class="path">/agents</span><div class="desc">List all 30,000 fleet agents and named agents with capabilities</div></div>
-<div class="ep"><span class="method get">GET</span><span class="path">/agents/:id</span><div class="desc">Get single agent profile, skills, status</div></div>
-<div class="ep"><span class="method post">POST</span><span class="path">/agents/task</span><div class="desc">Route a task to the best-matched agent based on capabilities</div></div>
-<div class="ep"><span class="method get">GET</span><span class="path">/fleet</span><div class="desc">Pi fleet node status, capacity, active workloads</div></div>
-<h2>Tools</h2>
-<div class="ep"><span class="method get">GET</span><span class="path">/tools</span><div class="desc">All 162 br CLI tools with categories and usage</div></div>
-<div class="ep"><span class="method post">POST</span><span class="path">/tools/exec</span><div class="desc">Execute a br tool remotely via Pi fleet</div></div>
-<h2>Gateway (AI)</h2>
-<div class="ep"><span class="method post">POST</span><span class="path">/chat</span><div class="desc">Multi-provider AI chat (Anthropic · OpenAI · Ollama · Groq · Gemini · Mistral)</div></div>
-<div class="ep"><span class="method get">GET</span><span class="path">/models</span><div class="desc">All available models across all providers</div></div>
-<h2>System</h2>
-<div class="ep"><span class="method get">GET</span><span class="path">/health</span><div class="desc">System health — all services, Pi nodes, Cloudflare workers</div></div>
-<div class="ep"><span class="method get">GET</span><span class="path">/metrics</span><div class="desc">Real-time metrics: requests/sec, agent load, queue depth</div></div>
+<nav>
+  <div class="logo">BlackRoad OS</div>
+  <div class="live-stat" id="live-count">Loading...</div>
+</nav>
+<div class="hero">
+  <span class="hero-icon">⚙️</span>
+  <h1>BlackRoad API</h1>
+  <p class="tagline">OpenAI-compatible endpoints. Multi-model routing. Edge-native.</p>
+  <div class="stat-bar">
+    <div class="stat-item"><div class="stat-v" id="s1">990</div><div class="stat-l">Repositories</div></div>
+    <div class="stat-item"><div class="stat-v" id="s2">30k</div><div class="stat-l">AI Agents</div></div>
+    <div class="stat-item"><div class="stat-v" id="s3">17</div><div class="stat-l">Orgs</div></div>
+    <div class="stat-item"><div class="stat-v" id="s4">58</div><div class="stat-l">Deployments</div></div>
+  </div>
+</div>
+<div class="grid">
+
+    <div class="feat-card">
+      <div class="feat-icon">🔄</div>
+      <div class="feat-title">Live Data API</div>
+      <div class="feat-desc">Real-time ecosystem data at blackroad-live-hub.amundsonalexa.workers.dev. Endpoints: /all, /github/stats, /github/activity, /agents/status, /models.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🤖</div>
+      <div class="feat-title">Agents API</div>
+      <div class="feat-desc">POST /agent to invoke AI agents. POST /autofix for automated code fixes. Runs on Cloudflare Workers — globally distributed, zero cold starts.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🚀</div>
+      <div class="feat-title">Deploy API</div>
+      <div class="feat-desc">Trigger deployments via webhook at blackroad-deploy-dispatcher.blackroad.workers.dev. Supports Railway, Vercel, Cloudflare, and Pi fleet targets.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">OpenAI Compatible</div>
+      <div class="feat-desc">The AI gateway exposes an OpenAI-compatible API at port 8787. Drop-in replacement — change one URL, access every model we run.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔑</div>
+      <div class="feat-title">Authentication</div>
+      <div class="feat-desc">Bearer token authentication on all endpoints. Secrets live in the gateway — never in client code. Rotate tokens without touching applications.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Rate Limits</div>
+      <div class="feat-desc">Edge-enforced rate limiting via Cloudflare Workers. Per-IP and per-token limits. Custom headers with remaining quota and reset time.</div>
+    </div>
+</div>
+<div class="cta">
+  <h2>Built on BlackRoad OS</h2>
+  <p style="color:rgba(255,255,255,0.45);margin-bottom:32px">Your AI. Your Hardware. Your Rules.</p>
+  <a href="https://github.com/BlackRoad-OS" class="btn" target="_blank">⚡ Explore GitHub</a>
+</div>
+<footer>
+  <a href="https://blackroad-live-hub.amundsonalexa.workers.dev/all" target="_blank">Live API</a> · <a href="https://github.com/BlackRoad-OS" target="_blank">GitHub</a> · <a href="https://docs.blackroad.io" target="_blank">Docs</a><br><br>© 2026 BlackRoad OS, Inc. — All rights reserved.
+</footer>
+<script>
+const API='https://blackroad-live-hub.amundsonalexa.workers.dev';
+fetch(API+'/all').then(r=>r.json()).then(d=>{
+  const b=d.blackroad||{};
+  document.getElementById('s1').textContent=(b.total_repos||990).toLocaleString();
+  document.getElementById('s2').textContent='30k';
+  document.getElementById('s3').textContent=b.orgs||17;
+  document.getElementById('s4').textContent=b.domains||58;
+  document.getElementById('live-count').textContent=`${b.total_repos||990} repos live`;
+}).catch(()=>document.getElementById('live-count').textContent='BlackRoad OS');
+</script>
 </body>
 </html>

@@ -1,488 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlackRoad Systems - Enterprise AI Infrastructure</title>
-    <meta name="description" content="Enterprise-grade AI infrastructure and system integration. BlackRoad Systems provides production-ready platforms for autonomous agents, real-time monitoring, and sovereign computing.">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --br-sunrise: #F5A623;
-            --br-hot-pink: #FF1D6C;
-            --br-hot-pink: #FF0066;
-            --br-electric-magenta: #FF1D6C;
-            --br-deep-magenta: #D600AA;
-            --br-vivid-purple: #7700FF;
-            --br-cyber-blue: #0066FF;
-            --br-black: #000000;
-            --br-deep-black: #050505;
-            --br-charcoal: #0D0D0D;
-            --br-slate: #141414;
-            --br-white: #FFFFFF;
-            --br-gradient-brand: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
-            --br-gradient-os: linear-gradient(180deg, #FF0066 0%, #D600AA 33%, #7700FF 66%, #0066FF 100%);
-            --br-font-display: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
-            --br-font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            --br-font-mono: 'JetBrains Mono', 'Courier New', monospace;
-        }
-
-        body {
-            font-family: var(--br-font-body);
-            background: var(--br-black);
-            color: var(--br-white);
-            line-height: 1.6;
-        }
-
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(5, 5, 5, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 1rem 2rem;
-            z-index: 1000;
-        }
-
-        .nav {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-family: var(--br-font-display);
-            font-size: 1.5rem;
-            font-weight: 800;
-        }
-
-        .logo-gradient {
-            background: var(--br-gradient-os);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8rem 2rem 4rem;
-            background: linear-gradient(135deg, rgba(119, 0, 255, 0.1), rgba(0, 102, 255, 0.1));
-        }
-
-        .hero-content {
-            max-width: 1000px;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-family: var(--br-font-display);
-            font-size: clamp(3rem, 8vw, 5.5rem);
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            line-height: 1.1;
-        }
-
-        .hero .subtitle {
-            font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 3rem;
-        }
-
-        .terminal {
-            background: var(--br-charcoal);
-            border: 1px solid rgba(0, 102, 255, 0.3);
-            border-radius: 12px;
-            padding: 2rem;
-            font-family: var(--br-font-mono);
-            font-size: 0.95rem;
-            text-align: left;
-            max-width: 700px;
-            margin: 0 auto 3rem;
-            box-shadow: 0 0 40px rgba(0, 102, 255, 0.2);
-        }
-
-        .terminal-line {
-            margin-bottom: 0.5rem;
-        }
-
-        .terminal-prompt {
-            color: var(--br-cyber-blue);
-        }
-
-        .terminal-output {
-            color: #00ff00;
-        }
-
-        .terminal-comment {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .systems-grid {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 6rem 2rem;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-        }
-
-        .system-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 2.5rem;
-            transition: all 0.3s;
-        }
-
-        .system-card:hover {
-            border-color: var(--br-cyber-blue);
-            box-shadow: 0 0 30px rgba(0, 102, 255, 0.3);
-            transform: translateY(-4px);
-        }
-
-        .system-card .icon {
-            font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .system-card h3 {
-            font-family: var(--br-font-display);
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--br-cyber-blue);
-        }
-
-        .system-card .metrics {
-            display: flex;
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .metric {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .metric-value {
-            font-family: var(--br-font-display);
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--br-sunrise);
-        }
-
-        .metric-label {
-            font-size: 0.875rem;
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .tech-stack {
-            background: var(--br-gradient-os);
-            padding: 6rem 2rem;
-        }
-
-        .tech-grid {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-            text-align: center;
-        }
-
-        .tech-item {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 2rem;
-        }
-
-        .tech-item h4 {
-            font-family: var(--br-font-display);
-            font-size: 1.25rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .tech-item p {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .cta-section {
-            max-width: 1000px;
-            margin: 6rem auto;
-            padding: 0 2rem;
-            text-align: center;
-        }
-
-        .cta-section h2 {
-            font-family: var(--br-font-display);
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            margin-bottom: 2rem;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 1rem 2.5rem;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            text-decoration: none;
-            transition: all 0.3s;
-            margin: 0.5rem;
-        }
-
-        .btn-primary {
-            background: var(--br-gradient-brand);
-            color: var(--br-white);
-            box-shadow: 0 0 30px rgba(255, 0, 102, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 40px rgba(255, 0, 102, 0.5);
-        }
-
-        .footer {
-            background: var(--br-deep-black);
-            padding: 3rem 2rem 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .footer-links a {
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .footer-links a:hover {
-            color: var(--br-cyber-blue);
-        }
-
-        .footer p {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        @media (max-width: 768px) {
-            .hero {
-                padding: 6rem 1.5rem 3rem;
-            }
-
-            .terminal {
-                font-size: 0.75rem;
-                padding: 1.5rem;
-            }
-
-            .systems-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlackRoad Systems</title>
+<meta name="description" content="BlackRoad Systems — distributed AI infrastructure at global scale.">
+<style>
+:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);position:sticky;top:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(20px);z-index:100}
+.logo{font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero{text-align:center;padding:100px 40px 60px}
+h1{font-size:clamp(3rem,8vw,6rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px}
+.sub{color:rgba(255,255,255,0.5);font-size:1.15rem;max-width:560px;margin:0 auto 64px;line-height:1.618}
+.sys-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;max-width:1100px;margin:0 auto;border:1px solid rgba(255,255,255,0.07);border-radius:20px;overflow:hidden}
+.sys-item{padding:32px;background:rgba(255,255,255,0.02);transition:background 0.2s}
+.sys-item:hover{background:rgba(255,255,255,0.05)}
+.sys-num{font-size:0.7rem;color:rgba(255,255,255,0.25);font-family:monospace;margin-bottom:16px;letter-spacing:0.15em}
+.sys-icon{font-size:2rem;margin-bottom:14px;display:block}
+.sys-name{font-size:1.05rem;font-weight:700;margin-bottom:8px}
+.sys-desc{font-size:0.85rem;color:rgba(255,255,255,0.45);line-height:1.6}
+.sys-val{font-size:1.6rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-top:16px}
+.section{max-width:1100px;margin:80px auto;padding:0 40px}
+footer{text-align:center;padding:48px;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.07)}
+footer a{color:rgba(255,29,108,0.6);text-decoration:none}
+</style>
 </head>
 <body>
-    <header class="header">
-        <nav class="nav">
-            <div class="logo">BlackRoad <span class="logo-gradient">Systems</span></div>
-        </nav>
-    </header>
-
-    <section class="hero">
-        <div class="hero-content">
-            <h1>Enterprise AI<br><span class="logo-gradient">Infrastructure</span></h1>
-            <p class="subtitle">Production-ready platforms for autonomous agents, real-time monitoring, and sovereign computing.</p>
-
-            <div class="terminal">
-                <div class="terminal-line">
-                    <span class="terminal-prompt">$</span> blackroad-systems deploy --platform=prism
-                </div>
-                <div class="terminal-line terminal-output">
-                    ✓ PRISM Console deployed (16,384 files)
-                </div>
-                <div class="terminal-line terminal-output">
-                    ✓ ISI Analysis Engine: LIVE
-                </div>
-                <div class="terminal-line terminal-output">
-                    ✓ AI Agent Orchestration: ACTIVE
-                </div>
-                <div class="terminal-line terminal-output">
-                    ✓ Real-time Monitoring: ENABLED
-                </div>
-                <div class="terminal-line terminal-comment">
-                    # Deployment complete in 4.2s
-                </div>
-            </div>
-
-            <div>
-                <a href="https://github.com/BlackRoad-OS" class="btn btn-primary">Explore Platform</a>
-            </div>
-        </div>
-    </section>
-
-    <section class="systems-grid">
-        <div class="system-card">
-            <div class="icon">🏢</div>
-            <h3>PRISM Enterprise</h3>
-            <p>Complete ERP/CRM system with ISI analysis, sales operations, product lifecycle management, and CPQ integration.</p>
-            <div class="metrics">
-                <div class="metric">
-                    <div class="metric-value">16K+</div>
-                    <div class="metric-label">Files</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">100%</div>
-                    <div class="metric-label">Uptime</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="system-card">
-            <div class="icon">⚙️</div>
-            <h3>Operator Engine</h3>
-            <p>Job scheduling, background workers, and agent workflow coordination across OS, Prism, and Lucidia platforms.</p>
-            <div class="metrics">
-                <div class="metric">
-                    <div class="metric-value">115</div>
-                    <div class="metric-label">Scripts</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">24.5K</div>
-                    <div class="metric-label">LOC</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="system-card">
-            <div class="icon">📊</div>
-            <h3>Real-Time Monitoring</h3>
-            <p>Live dashboards tracking 113+ repositories, 125 deployments, and 20 AI agents across 15 organizations.</p>
-            <div class="metrics">
-                <div class="metric">
-                    <div class="metric-value">79</div>
-                    <div class="metric-label">CF Projects</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">$0</div>
-                    <div class="metric-label">Monthly Cost</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="system-card">
-            <div class="icon">🔍</div>
-            <h3>Codex System</h3>
-            <p>Universal code indexing and search across the entire BlackRoad ecosystem with verification suite.</p>
-            <div class="metrics">
-                <div class="metric">
-                    <div class="metric-value">8,789</div>
-                    <div class="metric-label">Components</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">56</div>
-                    <div class="metric-label">Repos</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="system-card">
-            <div class="icon">🤖</div>
-            <h3>Alice Migration</h3>
-            <p>Autonomous migration architect that deployed across 78 repositories and 15 organizations with 100% success.</p>
-            <div class="metrics">
-                <div class="metric">
-                    <div class="metric-value">17,681+</div>
-                    <div class="metric-label">Files</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">100%</div>
-                    <div class="metric-label">Success</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="system-card">
-            <div class="icon">🌐</div>
-            <h3>Edge Network</h3>
-            <p>Distributed Raspberry Pi mesh with real-time agent communication and hardware integration.</p>
-            <div class="metrics">
-                <div class="metric">
-                    <div class="metric-value">4</div>
-                    <div class="metric-label">Nodes</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">LIVE</div>
-                    <div class="metric-label">Status</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="tech-stack">
-        <div class="tech-grid">
-            <div class="tech-item">
-                <h4>Cloudflare</h4>
-                <p>Pages, Workers, KV, D1</p>
-            </div>
-            <div class="tech-item">
-                <h4>Railway</h4>
-                <p>Container deployment</p>
-            </div>
-            <div class="tech-item">
-                <h4>DigitalOcean</h4>
-                <p>VPS infrastructure</p>
-            </div>
-            <div class="tech-item">
-                <h4>Raspberry Pi</h4>
-                <p>Edge computing mesh</p>
-            </div>
-            <div class="tech-item">
-                <h4>GitHub</h4>
-                <p>15 organizations</p>
-            </div>
-            <div class="tech-item">
-                <h4>PS-SHA-∞</h4>
-                <p>Cryptographic verification</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="cta-section">
-        <h2>Ready to Deploy?</h2>
-        <p style="font-size: 1.25rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 2rem;">
-            Production-grade infrastructure. Zero vendor lock-in. Complete transparency.
-        </p>
-        <a href="https://github.com/BlackRoad-OS" class="btn btn-primary">View on GitHub</a>
-    </section>
-
-    <footer class="footer">
-        <div class="footer-links">
-            <a href="https://blackroad.io">BlackRoad OS</a>
-            <a href="https://lucidia.earth">Lucidia</a>
-            <a href="https://blackroad.company">Company</a>
-            <a href="https://docs.blackroad.io">Docs</a>
-            <a href="https://github.com/BlackRoad-OS">GitHub</a>
-        </div>
-        <p>&copy; 2025 BlackRoad Systems. Enterprise AI Infrastructure.</p>
-    </footer>
+<nav><div class="logo">BlackRoad Systems</div><span style="font-size:0.8rem;color:rgba(255,255,255,0.4)" id="live-ct">Live</span></nav>
+<div class="hero">
+  <h1>Systems</h1>
+  <p class="sub">The technical backbone of BlackRoad OS — distributed inference, edge networking, and autonomous agent coordination at global scale.</p>
+</div>
+<div class="section">
+<div class="sys-grid">
+  <div class="sys-item"><div class="sys-num">01 / INFERENCE</div><span class="sys-icon">⚡</span><div class="sys-name">Compute Layer</div><div class="sys-desc">Pi5 cluster + Railway A100/H100 GPUs + Cloudflare Workers. vLLM continuous batching for high-throughput inference.</div><div class="sys-val" id="sv-models">108</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:4px">Models running</div></div>
+  <div class="sys-item"><div class="sys-num">02 / AGENTS</div><span class="sys-icon">🤖</span><div class="sys-name">Agent Fleet</div><div class="sys-desc">30,000 agents across research, deployment, security, monitoring. Coordinated via event bus and capability registry.</div><div class="sys-val">30k</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:4px">Active agents</div></div>
+  <div class="sys-item"><div class="sys-num">03 / EDGE</div><span class="sys-icon">🌐</span><div class="sys-name">Edge Workers</div><div class="sys-desc">75+ Cloudflare Workers at 300+ PoPs worldwide. V8 isolates, zero cold starts, global sub-10ms P50.</div><div class="sys-val">75+</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:4px">Workers deployed</div></div>
+  <div class="sys-item"><div class="sys-num">04 / MEMORY</div><span class="sys-icon">💾</span><div class="sys-name">Memory System</div><div class="sys-desc">PS-SHA∞ hash-chained journals. Every agent action cryptographically linked. Tamper-proof, cross-session, portable.</div><div class="sys-val">∞</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:4px">Hash-chained</div></div>
+  <div class="sys-item"><div class="sys-num">05 / GATEWAY</div><span class="sys-icon">🔑</span><div class="sys-name">Tokenless Gateway</div><div class="sys-desc">All provider secrets in one gateway at 127.0.0.1:8787. Zero credentials in agent code. Architecture-enforced trust boundary.</div><div class="sys-val">0</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:4px">Tokens in agents</div></div>
+  <div class="sys-item"><div class="sys-num">06 / CODE</div><span class="sys-icon">📦</span><div class="sys-name">Repository Fleet</div><div class="sys-desc">990+ repos across 17 GitHub organizations. Every line proprietary to BlackRoad OS, Inc. Public visibility ≠ open source.</div><div class="sys-val" id="sv-repos">990+</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:4px">Repositories</div></div>
+</div>
+</div>
+<footer>
+  <a href="https://blackroad.io">Home</a> · <a href="https://agents.blackroad.io">Agents</a> · <a href="https://network.blackroad.io">Network</a> · <a href="https://status.blackroad.io">Status</a><br><br>© 2026 BlackRoad OS, Inc.
+</footer>
+<script>
+fetch('https://blackroad-live-hub.amundsonalexa.workers.dev/all').then(r=>r.json()).then(d=>{
+  const b=d.blackroad||{};
+  if(b.total_repos){document.getElementById('sv-repos').textContent=b.total_repos.toLocaleString()+'+';document.getElementById('live-ct').textContent=b.total_repos+' repos';}
+}).catch(()=>{});
+</script>
 </body>
 </html>

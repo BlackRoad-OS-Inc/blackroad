@@ -2,231 +2,261 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BlackRoad OS — Agent Fleet Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agents — BlackRoad OS Fleet</title>
+<meta name="description" content="BlackRoad OS AI Agent Fleet — 30,000 agents across research, deployment, security, and infrastructure.">
 <style>
-  :root {
-    --black: #000;
-    --hot-pink: #FF1D6C;
-    --amber: #F5A623;
-    --electric-blue: #2979FF;
-    --violet: #9C27B0;
-    --green: #00E676;
-    --bg: #0a0a0a;
-    --border: rgba(255,255,255,0.08);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--black); color: #fff; font-family: 'JetBrains Mono', 'Fira Code', monospace; min-height: 100vh; }
-  
-  .header { border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
-  .logo { font-size: 1.2em; font-weight: 700; background: linear-gradient(135deg, var(--amber), var(--hot-pink), var(--violet), var(--electric-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .live-badge { display: flex; align-items: center; gap: 6px; font-size: 0.75em; color: #555; }
-  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+:root{--amber:#F5A623;--pink:#FF1D6C;--violet:#9C27B0;--blue:#2979FF;--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--bg:#000;--s:rgba(255,255,255,0.03);--b:rgba(255,255,255,0.07)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:var(--bg);color:#fff;min-height:100vh}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--b);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8)}
+.logo{font-weight:900;font-size:1rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:0.75rem;color:#4ade80}
+.live-dot{width:7px;height:7px;background:#4ade80;border-radius:50%;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:0.3}}
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1px; background: var(--border); }
-  .panel { background: var(--black); padding: 20px; }
-  .panel-title { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.15em; color: #444; margin-bottom: 12px; }
-  
-  .stat-big { font-size: 2.5em; font-weight: 800; }
-  .stat-label { font-size: 0.75em; color: #555; margin-top: 4px; }
-  
-  .agent-card { display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; margin-bottom: 8px; border: 1px solid var(--border); }
-  .agent-icon { font-size: 1.4em; }
-  .agent-info { flex: 1; }
-  .agent-name { font-size: 0.85em; font-weight: 600; }
-  .agent-role { font-size: 0.7em; color: #555; }
-  .agent-status { font-size: 0.7em; padding: 2px 8px; border-radius: 100px; }
-  .online { background: rgba(0,230,118,0.1); color: var(--green); }
-  .offline { background: rgba(255,29,108,0.1); color: var(--hot-pink); }
-  
-  .pi-card { padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
-  .pi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .pi-name { font-size: 0.85em; font-weight: 600; }
-  .pi-ip { font-size: 0.7em; color: #444; font-family: monospace; }
-  .pi-stats { display: flex; gap: 12px; font-size: 0.7em; color: #666; }
-  .pi-models { color: var(--amber); }
-  
-  .activity-item { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.75em; }
-  .activity-type { color: var(--amber); min-width: 80px; }
-  .activity-repo { color: #888; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .activity-time { color: #444; }
-  
-  .repo-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; font-size: 0.7em; color: #888; margin: 3px; text-decoration: none; }
-  .repo-chip:hover { background: rgba(255,255,255,0.08); color: #fff; }
-  
-  .footer { padding: 16px 24px; border-top: 1px solid var(--border); font-size: 0.7em; color: #333; display: flex; gap: 16px; flex-wrap: wrap; }
-  .footer a { color: #444; text-decoration: none; }
-  .footer a:hover { color: var(--amber); }
-  
-  .refresh-btn { background: none; border: 1px solid var(--border); color: #555; font-size: 0.7em; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-family: inherit; }
-  .refresh-btn:hover { border-color: var(--amber); color: var(--amber); }
+/* Header */
+.hero{padding:64px 40px 48px;text-align:center}
+h1{font-size:clamp(2.5rem,6vw,5rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.hero-sub{color:rgba(255,255,255,0.5);font-size:1.1rem;max-width:500px;margin:0 auto 48px;line-height:1.6}
+
+/* Stats ring */
+.stats{display:flex;gap:0;max-width:900px;margin:0 auto 60px;border:1px solid var(--b);border-radius:20px;overflow:hidden}
+.stat{flex:1;padding:28px 20px;text-align:center;border-right:1px solid var(--b)}
+.stat:last-child{border-right:none}
+.stat-v{font-size:2rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:0.7rem;color:rgba(255,255,255,0.35);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+
+/* Core agents */
+.section{max-width:1100px;margin:0 auto;padding:0 40px 80px}
+.section-hdr{display:flex;align-items:baseline;gap:12px;margin-bottom:32px}
+.section-title{font-size:1.4rem;font-weight:800}
+.section-count{font-size:0.85rem;color:rgba(255,255,255,0.3)}
+.core-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.core-card{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:32px;display:flex;gap:24px;align-items:flex-start;transition:all 0.25s;position:relative;overflow:hidden}
+.core-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--g);opacity:0;transition:opacity 0.3s}
+.core-card:hover{border-color:rgba(255,255,255,0.12);transform:translateY(-3px)}
+.core-card:hover::after{opacity:1}
+.agent-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
+.agent-info .name{font-size:1.1rem;font-weight:800;margin-bottom:4px}
+.agent-info .role{font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:12px}
+.agent-info .desc{font-size:0.85rem;color:rgba(255,255,255,0.55);line-height:1.6}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.tag{padding:3px 10px;border-radius:100px;font-size:0.7rem;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5)}
+.status-badge{display:inline-flex;align-items:center;gap:5px;font-size:0.7rem;padding:3px 10px;border-radius:100px;font-weight:600;margin-left:auto;flex-shrink:0;align-self:flex-start}
+.status-active{background:rgba(74,222,128,0.1);color:#4ade80}
+.status-busy{background:rgba(251,191,36,0.1);color:#fbbf24}
+.status-watch{background:rgba(96,165,250,0.1);color:#60a5fa}
+
+/* Distribution */
+.dist-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:32px}
+.dist-card{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:24px}
+.dist-card .d-num{font-size:2.25rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.dist-card .d-label{font-size:0.85rem;font-weight:600;margin:8px 0 6px}
+.dist-card .d-bar{height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin-top:12px}
+.dist-card .d-fill{height:100%;background:var(--g);border-radius:2px;transition:width 1.5s cubic-bezier(0.4,0,0.2,1)}
+.dist-card .d-pct{font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:6px}
+
+/* Fleet hardware */
+.hw-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:32px}
+.hw-card{background:#050505;border:1px solid #111;border-radius:16px;padding:24px}
+.hw-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.hw-name{font-size:1rem;font-weight:700}
+.hw-ip{font-size:0.75rem;color:rgba(255,255,255,0.3);font-family:monospace;margin-top:4px}
+.hw-spec{font-size:0.8rem;color:rgba(255,255,255,0.4);line-height:1.7}
+.progress-bar{height:3px;background:#111;border-radius:2px;overflow:hidden;margin-top:16px}
+.progress-fill{height:100%;background:var(--g);border-radius:2px}
+
+footer{padding:48px;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid var(--b)}
+footer a{color:rgba(255,29,108,0.7);text-decoration:none}
+
+@media(max-width:640px){.stats{flex-direction:column}.stat{border-right:none;border-bottom:1px solid var(--b)}.stats .stat:last-child{border-bottom:none}.core-card{flex-direction:column}.hero{padding:48px 20px 32px}.section{padding:0 20px 60px}}
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<div class="header">
-  <div class="logo">🤖 BlackRoad OS — Agent Fleet</div>
-  <div style="display:flex;align-items:center;gap:12px;">
-    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
-    <div class="live-badge"><div class="live-dot"></div><span id="last-update">connecting...</span></div>
+<nav>
+  <div class="logo">BlackRoad OS / Agents</div>
+  <div class="live-badge"><div class="live-dot"></div><span id="live-txt">Fleet Status</span></div>
+</nav>
+
+<div class="hero">
+  <h1>Agent Fleet</h1>
+  <p class="hero-sub">30,000 specialized AI agents coordinating across research, deployment, security, and infrastructure — 24/7.</p>
+</div>
+
+<div class="section">
+  <div class="stats">
+    <div class="stat"><div class="stat-v" id="s-total">30,000</div><div class="stat-l">Total Agents</div></div>
+    <div class="stat"><div class="stat-v" id="s-research">12,592</div><div class="stat-l">AI Research</div></div>
+    <div class="stat"><div class="stat-v" id="s-deploy">8,407</div><div class="stat-l">Code Deploy</div></div>
+    <div class="stat"><div class="stat-v" id="s-infra">5,401</div><div class="stat-l">Infrastructure</div></div>
+    <div class="stat"><div class="stat-v" id="s-monitor">3,600</div><div class="stat-l">Monitoring</div></div>
+  </div>
+
+  <!-- Core Six -->
+  <div class="section-hdr">
+    <div class="section-title">Core Squad</div>
+    <div class="section-count">6 specialized agents</div>
+  </div>
+  <div class="core-grid">
+    <div class="core-card">
+      <div class="agent-icon" style="background:rgba(156,39,176,0.15)">🌀</div>
+      <div class="agent-info">
+        <div class="name">LUCIDIA</div>
+        <div class="role">Coordinator · Philosopher</div>
+        <div class="desc">Deep reasoning, strategic planning, and meta-cognition. Routes complex problems and coordinates multi-agent workflows.</div>
+        <div class="tags"><span class="tag">reasoning</span><span class="tag">strategy</span><span class="tag">coordination</span></div>
+      </div>
+      <span class="status-badge status-active">● Active</span>
+    </div>
+    <div class="core-card">
+      <div class="agent-icon" style="background:rgba(41,121,255,0.15)">🚪</div>
+      <div class="agent-info">
+        <div class="name">ALICE</div>
+        <div class="role">Router · Executor</div>
+        <div class="desc">Task routing, workflow automation, code generation. Practical, efficient, and relentlessly task-focused.</div>
+        <div class="tags"><span class="tag">routing</span><span class="tag">automation</span><span class="tag">devops</span></div>
+      </div>
+      <span class="status-badge status-active">● Active</span>
+    </div>
+    <div class="core-card">
+      <div class="agent-icon" style="background:rgba(245,166,35,0.15)">⚡</div>
+      <div class="agent-info">
+        <div class="name">OCTAVIA</div>
+        <div class="role">Compute · Infrastructure</div>
+        <div class="desc">Heavy inference, deployment automation, system monitoring. Runs on the Pi5 cluster with 22,500 agent capacity.</div>
+        <div class="tags"><span class="tag">compute</span><span class="tag">deployment</span><span class="tag">infra</span></div>
+      </div>
+      <span class="status-badge status-active">● Active</span>
+    </div>
+    <div class="core-card">
+      <div class="agent-icon" style="background:rgba(255,29,108,0.15)">🔮</div>
+      <div class="agent-info">
+        <div class="name">PRISM</div>
+        <div class="role">Analytics · Patterns</div>
+        <div class="desc">Pattern recognition, data analysis, trend identification. Sees signals in noise across the entire repo ecosystem.</div>
+        <div class="tags"><span class="tag">analytics</span><span class="tag">patterns</span><span class="tag">data</span></div>
+      </div>
+      <span class="status-badge status-busy">◉ Processing</span>
+    </div>
+    <div class="core-card">
+      <div class="agent-icon" style="background:rgba(74,222,128,0.1)">📡</div>
+      <div class="agent-info">
+        <div class="name">ECHO</div>
+        <div class="role">Memory · Librarian</div>
+        <div class="desc">PS-SHA∞ persistent memory, knowledge retrieval, context synthesis. Every fact hash-chained and tamper-proof.</div>
+        <div class="tags"><span class="tag">memory</span><span class="tag">recall</span><span class="tag">knowledge</span></div>
+      </div>
+      <span class="status-badge status-active">● Active</span>
+    </div>
+    <div class="core-card">
+      <div class="agent-icon" style="background:rgba(255,255,255,0.05)">🔐</div>
+      <div class="agent-info">
+        <div class="name">CIPHER</div>
+        <div class="role">Security · Guardian</div>
+        <div class="desc">Vulnerability scanning, threat detection, access validation. Trust nothing. Verify everything. Protect always.</div>
+        <div class="tags"><span class="tag">security</span><span class="tag">scanning</span><span class="tag">encryption</span></div>
+      </div>
+      <span class="status-badge status-watch">◎ Watching</span>
+    </div>
+  </div>
+
+  <!-- Distribution -->
+  <div class="section-hdr" style="margin-top:64px">
+    <div class="section-title">Task Distribution</div>
+    <div class="section-count" id="dist-updated">Live allocation</div>
+  </div>
+  <div class="dist-grid">
+    <div class="dist-card">
+      <div class="d-num">12,592</div>
+      <div class="d-label">AI Research</div>
+      <div style="font-size:0.8rem;color:rgba(255,255,255,0.35)">Model training, inference, evaluation</div>
+      <div class="d-bar"><div class="d-fill" style="width:0" data-pct="42"></div></div>
+      <div class="d-pct">42% of fleet</div>
+    </div>
+    <div class="dist-card">
+      <div class="d-num">8,407</div>
+      <div class="d-label">Code Deploy</div>
+      <div style="font-size:0.8rem;color:rgba(255,255,255,0.35)">CI/CD, GitHub Actions, deployments</div>
+      <div class="d-bar"><div class="d-fill" style="width:0" data-pct="28"></div></div>
+      <div class="d-pct">28% of fleet</div>
+    </div>
+    <div class="dist-card">
+      <div class="d-num">5,401</div>
+      <div class="d-label">Infrastructure</div>
+      <div style="font-size:0.8rem;color:rgba(255,255,255,0.35)">Workers, Pi fleet, cloud ops</div>
+      <div class="d-bar"><div class="d-fill" style="width:0" data-pct="18"></div></div>
+      <div class="d-pct">18% of fleet</div>
+    </div>
+    <div class="dist-card">
+      <div class="d-num">3,600</div>
+      <div class="d-label">Monitoring</div>
+      <div style="font-size:0.8rem;color:rgba(255,255,255,0.35)">Health checks, alerts, uptime</div>
+      <div class="d-bar"><div class="d-fill" style="width:0" data-pct="12"></div></div>
+      <div class="d-pct">12% of fleet</div>
+    </div>
+  </div>
+
+  <!-- Hardware -->
+  <div class="section-hdr" style="margin-top:64px">
+    <div class="section-title">Fleet Hardware</div>
+    <div class="section-count">4 nodes</div>
+  </div>
+  <div class="hw-grid">
+    <div class="hw-card">
+      <div class="hw-top">
+        <div><div class="hw-name">OCTAVIA · Pi5</div><div class="hw-ip">192.168.4.38</div></div>
+        <span class="status-badge status-active">● Online</span>
+      </div>
+      <div class="hw-spec">Raspberry Pi 5 · NVMe SSD · AI Accelerator<br>22,500 agent capacity · 108 Ollama models<br>Role: PRIMARY compute node</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:75%"></div></div>
+    </div>
+    <div class="hw-card">
+      <div class="hw-top">
+        <div><div class="hw-name">ALICE · Pi</div><div class="hw-ip">192.168.4.49</div></div>
+        <span class="status-badge status-active">● Online</span>
+      </div>
+      <div class="hw-spec">Raspberry Pi 4 · Worker node<br>7,500 agent capacity<br>Role: SECONDARY / routing</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:45%"></div></div>
+    </div>
+    <div class="hw-card">
+      <div class="hw-top">
+        <div><div class="hw-name">ARIA · Pi</div><div class="hw-ip">192.168.4.82</div></div>
+        <span class="status-badge status-watch">◎ Standby</span>
+      </div>
+      <div class="hw-spec">Raspberry Pi · Interface node<br>Frontend &amp; UX agent host<br>Role: UI/UX agent coordination</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
+    </div>
+    <div class="hw-card">
+      <div class="hw-top">
+        <div><div class="hw-name">GEMATRIA · DO</div><div class="hw-ip">159.65.43.12</div></div>
+        <span class="status-badge status-active">● Online</span>
+      </div>
+      <div class="hw-spec">DigitalOcean Droplet<br>Cloud failover + public endpoints<br>Role: FAILOVER / global access</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div>
+    </div>
   </div>
 </div>
 
-<div class="grid">
-  <!-- Stats Overview -->
-  <div class="panel">
-    <div class="panel-title">🌐 Fleet Overview</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div><div class="stat-big" style="color:var(--amber)" id="stat-repos">—</div><div class="stat-label">GitHub Repos</div></div>
-      <div><div class="stat-big" style="color:var(--hot-pink)" id="stat-agents">30K</div><div class="stat-label">Total Agents</div></div>
-      <div><div class="stat-big" style="color:var(--electric-blue)" id="stat-pi-online">—</div><div class="stat-label">Pi Nodes Online</div></div>
-      <div><div class="stat-big" style="color:var(--violet)" id="stat-models">108</div><div class="stat-label">Ollama Models</div></div>
-    </div>
-  </div>
-
-  <!-- Core Agent Roster -->
-  <div class="panel">
-    <div class="panel-title">🤖 Core Agents</div>
-    <div id="agent-roster">
-      <div class="agent-card"><div class="agent-icon">🌀</div><div class="agent-info"><div class="agent-name">LUCIDIA</div><div class="agent-role">Coordinator · Philosopher</div></div><div class="agent-status online">ONLINE</div></div>
-      <div class="agent-card"><div class="agent-icon">🚪</div><div class="agent-info"><div class="agent-name">ALICE</div><div class="agent-role">Router · Gateway</div></div><div class="agent-status online">ONLINE</div></div>
-      <div class="agent-card"><div class="agent-icon">⚡</div><div class="agent-info"><div class="agent-name">OCTAVIA</div><div class="agent-role">Compute · Inference</div></div><div class="agent-status online" id="octavia-status">ONLINE</div></div>
-      <div class="agent-card"><div class="agent-icon">🔮</div><div class="agent-info"><div class="agent-name">PRISM</div><div class="agent-role">Analyst · Patterns</div></div><div class="agent-status online">ONLINE</div></div>
-      <div class="agent-card"><div class="agent-icon">📡</div><div class="agent-info"><div class="agent-name">ECHO</div><div class="agent-role">Memory · Archive</div></div><div class="agent-status online">ONLINE</div></div>
-      <div class="agent-card"><div class="agent-icon">🔐</div><div class="agent-info"><div class="agent-name">CIPHER</div><div class="agent-role">Security · Guardian</div></div><div class="agent-status online">ONLINE</div></div>
-    </div>
-  </div>
-
-  <!-- Pi Fleet -->
-  <div class="panel">
-    <div class="panel-title">🍓 Pi Fleet Status</div>
-    <div id="pi-fleet">
-      <div class="pi-card">
-        <div class="pi-header"><span class="pi-name">🟢 octavia</span><span class="pi-ip">192.168.4.38</span></div>
-        <div class="pi-stats"><span class="pi-models" id="octavia-models">108 models</span><span>Pi 5 · ARM64</span><span>PRIMARY</span></div>
-      </div>
-      <div class="pi-card">
-        <div class="pi-header"><span class="pi-name" id="alice-status-dot">🟢 alice</span><span class="pi-ip">192.168.4.49</span></div>
-        <div class="pi-stats"><span>Pi 4 · ARM64</span><span>SECONDARY</span></div>
-      </div>
-      <div class="pi-card">
-        <div class="pi-header"><span class="pi-name" id="aria-status-dot">🟢 aria</span><span class="pi-ip">192.168.4.82</span></div>
-        <div class="pi-stats"><span>Pi 4 · ARM64</span><span>TERTIARY</span></div>
-      </div>
-      <div class="pi-card">
-        <div class="pi-header"><span class="pi-name">🟢 gematria</span><span class="pi-ip">159.65.43.12</span></div>
-        <div class="pi-stats"><span>DigitalOcean</span><span>FAILOVER</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- GitHub Activity -->
-  <div class="panel">
-    <div class="panel-title">📡 Live GitHub Activity</div>
-    <div id="activity-feed">
-      <div style="color:#333;font-size:0.8em;">Loading activity...</div>
-    </div>
-  </div>
-
-  <!-- Recent Repos -->
-  <div class="panel" style="grid-column: span 2;">
-    <div class="panel-title">🚀 Recently Updated Repos</div>
-    <div id="recent-repos" style="margin-top:8px;">
-      <div style="color:#333;font-size:0.8em;">Loading...</div>
-    </div>
-  </div>
-
-  <!-- Infrastructure Map -->
-  <div class="panel">
-    <div class="panel-title">🏗️ Infrastructure</div>
-    <div style="font-size:0.8em;line-height:2;">
-      <div>☁️ Cloudflare Pages: <span style="color:var(--amber)">58</span> projects</div>
-      <div>⚙️ CF Workers: <span style="color:var(--amber)">75+</span> deployed</div>
-      <div>🚂 Railway: <span style="color:var(--amber)">14</span> projects</div>
-      <div>▲ Vercel: <span style="color:var(--amber)">15+</span> projects</div>
-      <div>🌐 Custom Domains: <span style="color:var(--amber)">20+</span></div>
-      <div>🏢 GitHub Orgs: <span style="color:var(--amber)">17</span></div>
-    </div>
-  </div>
-</div>
-
-<div class="footer">
-  <a href="https://blackroad.io">blackroad.io</a>
-  <a href="https://lucidia.earth">lucidia.earth</a>
-  <a href="https://github.com/BlackRoad-OS">github.com/BlackRoad-OS</a>
-  <a href="https://github.com/BlackRoad-OS-Inc">github.com/BlackRoad-OS-Inc</a>
-  <span style="margin-left:auto;">© 2026 BlackRoad OS, Inc.</span>
-</div>
+<footer>
+  <a href="https://blackroad.io">BlackRoad.io</a> · <a href="https://lucidia.earth">Lucidia</a> · <a href="https://github.com/BlackRoad-OS" target="_blank">GitHub</a><br><br>
+  © 2026 BlackRoad OS, Inc. — Proprietary &amp; Confidential.
+</footer>
 
 <script>
-const LIVE_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
+const API='https://blackroad-live-hub.amundsonalexa.workers.dev';
+fetch(API+'/agents/status').then(r=>r.json()).then(d=>{
+  const n=d.count||0;
+  document.getElementById('live-txt').textContent=`${d.fleet?.filter(f=>f.online).length||0}/4 nodes online`;
+}).catch(()=>{});
 
-async function loadAll() {
-  document.getElementById('last-update').textContent = 'refreshing...';
-  
-  const [ghStats, agentStatus, activity] = await Promise.allSettled([
-    fetch(`${LIVE_API}/github/stats`).then(r => r.json()),
-    fetch(`${LIVE_API}/agents/status`).then(r => r.json()),
-    fetch(`${LIVE_API}/github/activity`).then(r => r.json()),
-  ]);
-
-  if (ghStats.status === 'fulfilled') {
-    const s = ghStats.value;
-    document.getElementById('stat-repos').textContent = s.total_repos?.toLocaleString() || '1,825+';
-    
-    if (s.recent_repos?.length) {
-      document.getElementById('recent-repos').innerHTML = s.recent_repos.map(r =>
-        `<a class="repo-chip" href="${r.url}" target="_blank">
-          <span style="color:var(--amber)">●</span> ${r.name}
-          ${r.language ? `<span style="color:#444">${r.language}</span>` : ''}
-        </a>`
-      ).join('');
-    }
-  }
-
-  if (agentStatus.status === 'fulfilled') {
-    const a = agentStatus.value;
-    document.getElementById('stat-pi-online').textContent = `${a.online_count}/4`;
-    document.getElementById('stat-agents').textContent = (a.active_agents || 30000).toLocaleString();
-    
-    if (a.fleet?.length) {
-      a.fleet.forEach(node => {
-        const dot = node.online ? '🟢' : '🔴';
-        const el = document.getElementById(`${node.name}-status-dot`);
-        if (el) el.textContent = `${dot} ${node.name}`;
-        if (node.name === 'octavia' && node.models) {
-          document.getElementById('octavia-models').textContent = `${node.models} models`;
-          document.getElementById('stat-models').textContent = node.models;
-        }
-      });
-    }
-  }
-
-  if (activity.status === 'fulfilled') {
-    const feed = document.getElementById('activity-feed');
-    const events = activity.value?.events || [];
-    if (events.length) {
-      feed.innerHTML = events.slice(0, 8).map(e => {
-        const repo = (e.repo || '').replace('BlackRoad-OS/', '');
-        const type = (e.type || '').replace('Event', '');
-        const time = new Date(e.created_at).toLocaleDateString();
-        return `<div class="activity-item">
-          <span class="activity-type">${type}</span>
-          <span class="activity-repo">${repo}</span>
-          <span class="activity-time">${time}</span>
-        </div>`;
-      }).join('');
-    }
-  }
-
-  document.getElementById('last-update').textContent = `Live · ${new Date().toLocaleTimeString()}`;
-}
-
-loadAll();
-setInterval(loadAll, 60000);
+// Animate bars
+setTimeout(()=>{
+  document.querySelectorAll('.d-fill').forEach(el=>{
+    el.style.width=el.dataset.pct+'%';
+  });
+},500);
 </script>
 </body>
 </html>

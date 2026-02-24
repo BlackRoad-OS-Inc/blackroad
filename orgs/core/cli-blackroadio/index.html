@@ -1,47 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BR CLI — BlackRoad OS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CLI — BlackRoad OS</title>
+<meta name="description" content="37 tools. One command. Your entire AI infrastructure at the terminal.">
 <style>
+:root{--amber:#F5A623;--pink:#FF1D6C;--violet:#9C27B0;--blue:#2979FF;--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--accent:#FF1D6C}
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
-body{background:#000;color:#fff;font-family:'SF Mono',monospace;padding:2rem;max-width:900px;margin:0 auto}
-h1{font-size:2.5rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem;font-family:-apple-system,sans-serif}
-.sub{color:#444;margin-bottom:2rem;font-family:-apple-system,sans-serif}
-.cmd{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:.75rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;gap:1rem}
-.br{color:#F5A623}.cn{color:#FF1D6C}.arg{color:#9C27B0}.desc{color:#333;font-size:.8rem;margin-left:auto;font-family:-apple-system,sans-serif}
-h2{font-size:.9rem;text-transform:uppercase;letter-spacing:.15em;color:#222;margin:1.5rem 0 .75rem;font-family:-apple-system,sans-serif}
-.install{background:#050505;border:1px solid #111;border-radius:12px;padding:1.5rem;margin-bottom:2rem}
-.install p{color:#444;font-size:.85rem;margin-bottom:1rem;font-family:-apple-system,sans-serif}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8)}
+.logo{font-weight:900;font-size:1rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.live-stat{font-size:0.75rem;color:rgba(255,255,255,0.4)}
+.hero{padding:80px 40px 64px;text-align:center;max-width:900px;margin:0 auto}
+.hero-icon{font-size:3.5rem;margin-bottom:24px;display:block}
+h1{font-size:clamp(2.5rem,7vw,5.5rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;line-height:1}
+.tagline{font-size:1.15rem;color:rgba(255,255,255,0.5);line-height:1.618;max-width:560px;margin:0 auto 48px}
+.stat-bar{display:flex;gap:0;max-width:700px;margin:0 auto;border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.stat-item{flex:1;padding:20px 16px;text-align:center;border-right:1px solid rgba(255,255,255,0.07)}
+.stat-item:last-child{border-right:none}
+.stat-v{font-size:1.6rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1100px;margin:80px auto;padding:0 40px}
+.feat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:32px;transition:all 0.3s}
+.feat-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-3px);background:rgba(255,255,255,0.05)}
+.feat-icon{font-size:2rem;margin-bottom:16px;display:block}
+.feat-title{font-size:1rem;font-weight:700;margin-bottom:8px}
+.feat-desc{font-size:0.875rem;color:rgba(255,255,255,0.45);line-height:1.65}
+.cta{text-align:center;padding:80px 40px;border-top:1px solid rgba(255,255,255,0.07)}
+.cta h2{font-size:2rem;font-weight:800;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:100px;font-size:0.9rem;font-weight:700;text-decoration:none;background:var(--g);color:#fff;transition:opacity 0.2s,transform 0.2s}
+.btn:hover{opacity:0.85;transform:translateY(-2px)}
+footer{padding:40px;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.07)}
+footer a{color:rgba(255,29,108,0.7);text-decoration:none}
+@media(max-width:640px){.hero{padding:60px 20px 48px}.grid{padding:0 20px;margin:48px auto}.stat-bar{flex-direction:column}.stat-item{border-right:none;border-bottom:1px solid rgba(255,255,255,0.07)}}
 </style>
 </head>
 <body>
-<h1>BR CLI</h1>
-<p class="sub">162 tools · br &lt;command&gt; &lt;args&gt; · runs on Pi fleet</p>
-<div class="install">
-<p>Install via git clone:</p>
-<div class="cmd"><span class="br">$</span> <span style="color:#fff">git clone https://github.com/BlackRoad-OS-Inc/blackroad && cd blackroad && chmod +x br && sudo ln -sf $(pwd)/br /usr/local/bin/br</span></div>
+<nav>
+  <div class="logo">BlackRoad OS</div>
+  <div class="live-stat" id="live-count">Loading...</div>
+</nav>
+<div class="hero">
+  <span class="hero-icon">💻</span>
+  <h1>br CLI</h1>
+  <p class="tagline">37 tools. One command. Your entire AI infrastructure at the terminal.</p>
+  <div class="stat-bar">
+    <div class="stat-item"><div class="stat-v" id="s1">990</div><div class="stat-l">Repositories</div></div>
+    <div class="stat-item"><div class="stat-v" id="s2">30k</div><div class="stat-l">AI Agents</div></div>
+    <div class="stat-item"><div class="stat-v" id="s3">17</div><div class="stat-l">Orgs</div></div>
+    <div class="stat-item"><div class="stat-v" id="s4">58</div><div class="stat-l">Deployments</div></div>
+  </div>
 </div>
-<h2>AI & Agents</h2>
-<div class="cmd"><span class="br">br</span> <span class="cn">radar</span> <span class="arg">watch</span><span class="desc">Context-aware file watcher with AI suggestions</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">cece</span> <span class="arg">whoami</span><span class="desc">CECE identity · portable AI consciousness</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">agent</span> <span class="arg">route &lt;task&gt;</span><span class="desc">Smart-route task to best available agent</span></div>
-<h2>DevOps</h2>
-<div class="cmd"><span class="br">br</span> <span class="cn">deploy</span> <span class="arg">--target cf</span><span class="desc">Deploy to Cloudflare Workers</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">docker</span> <span class="arg">up</span><span class="desc">Manage containers with smart defaults</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">ci</span> <span class="arg">status</span><span class="desc">GitHub Actions workflow status</span></div>
-<h2>Cloud</h2>
-<div class="cmd"><span class="br">br</span> <span class="cn">cloudflare</span> <span class="arg">workers</span><span class="desc">Cloudflare worker management</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">ocean</span> <span class="arg">list</span><span class="desc">DigitalOcean droplets</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">pi</span> <span class="arg">status</span><span class="desc">Raspberry Pi fleet health</span></div>
-<h2>Security</h2>
-<div class="cmd"><span class="br">br</span> <span class="cn">security</span> <span class="arg">scan</span><span class="desc">Vulnerability scanner (Trivy + custom rules)</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">secrets</span> <span class="arg">vault</span><span class="desc">AES-256-CBC encrypted secret storage</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">comply</span> <span class="arg">pci</span><span class="desc">PCI-DSS · HIPAA · SOC2 · GDPR compliance scan</span></div>
-<h2>Developer</h2>
-<div class="cmd"><span class="br">br</span> <span class="cn">git</span> <span class="arg">commit</span><span class="desc">AI-assisted git commits with context</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">snippet</span> <span class="arg">list</span><span class="desc">Code snippet manager</span></div>
-<div class="cmd"><span class="br">br</span> <span class="cn">test</span> <span class="arg">run</span><span class="desc">Unified test runner with coverage</span></div>
+<div class="grid">
+
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">br agents</div>
+      <div class="feat-desc">Multi-agent task routing. Spawn, coordinate, and monitor your fleet from a single command. Supports all 6 core agents + custom configurations.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🌐</div>
+      <div class="feat-title">br cloudflare</div>
+      <div class="feat-desc">Deploy Workers, manage Pages, configure DNS, tail logs — the entire Cloudflare stack from one sub-command.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🚀</div>
+      <div class="feat-title">br deploy</div>
+      <div class="feat-desc">Auto-detect stack (Node, Python, Go, Rust, Docker) and deploy to Railway, Vercel, Cloudflare, DigitalOcean, or Pi fleet in one command.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔒</div>
+      <div class="feat-title">br security</div>
+      <div class="feat-desc">Vulnerability scanning, dependency audits, secret detection. Integrated with Trivy, TruffleHog, and the Cloudflare WAF.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🍓</div>
+      <div class="feat-title">br pi</div>
+      <div class="feat-desc">Manage your Raspberry Pi fleet — SSH, deploy, monitor Ollama, check agent status, restart services. Full Pi ops from your laptop.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">💜</div>
+      <div class="feat-title">br cece / lucidia</div>
+      <div class="feat-desc">Interact with the Lucidia identity system — relationships, skills, experiences, goals. Export/import identity as portable JSON.</div>
+    </div>
+</div>
+<div class="cta">
+  <h2>Built on BlackRoad OS</h2>
+  <p style="color:rgba(255,255,255,0.45);margin-bottom:32px">Your AI. Your Hardware. Your Rules.</p>
+  <a href="https://github.com/BlackRoad-OS" class="btn" target="_blank">⚡ Explore GitHub</a>
+</div>
+<footer>
+  <a href="https://github.com/BlackRoad-OS-Inc/blackroad" target="_blank">GitHub</a> · <a href="https://docs.blackroad.io" target="_blank">Docs</a> · <a href="https://agents.blackroad.io" target="_blank">Agents</a><br><br>© 2026 BlackRoad OS, Inc. — All rights reserved.
+</footer>
+<script>
+const API='https://blackroad-live-hub.amundsonalexa.workers.dev';
+fetch(API+'/all').then(r=>r.json()).then(d=>{
+  const b=d.blackroad||{};
+  document.getElementById('s1').textContent=(b.total_repos||990).toLocaleString();
+  document.getElementById('s2').textContent='30k';
+  document.getElementById('s3').textContent=b.orgs||17;
+  document.getElementById('s4').textContent=b.domains||58;
+  document.getElementById('live-count').textContent=`${b.total_repos||990} repos live`;
+}).catch(()=>document.getElementById('live-count').textContent='BlackRoad OS');
+</script>
 </body>
 </html>

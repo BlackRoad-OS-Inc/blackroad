@@ -1,57 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI — BlackRoad OS</title>
+<meta name="description" content="State-of-the-art models. Local inference. Zero compromise.">
 <style>
+:root{--amber:#F5A623;--pink:#FF1D6C;--violet:#9C27B0;--blue:#2979FF;--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--accent:#9C27B0}
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
-body{background:#000;color:#fff;font-family:-apple-system,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center}
-h1{font-size:clamp(2.5rem,8vw,5rem);background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:900}
-p{color:#444;font-size:1.1rem;max-width:600px;margin:.75rem auto 2.5rem;line-height:1.618}
-.chat{background:#050505;border:1px solid #1a1a1a;border-radius:20px;padding:2rem;width:100%;max-width:700px}
-.msgs{min-height:200px;margin-bottom:1rem;text-align:left}
-.msg{padding:.75rem 1rem;border-radius:12px;margin:.5rem 0;font-size:.9rem;line-height:1.5}
-.msg.ai{background:#0a0a0a;border:1px solid #1a1a1a;color:#aaa}
-.msg.user{background:linear-gradient(135deg,#F5A62322,#FF1D6C22);border:1px solid #FF1D6C33;color:#fff;text-align:right}
-.input-row{display:flex;gap:.75rem}
-input{flex:1;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:.75rem 1rem;color:#fff;font-size:.9rem;outline:none}
-input:focus{border-color:#FF1D6C44}
-button{background:var(--g);border:none;border-radius:12px;padding:.75rem 1.5rem;color:#fff;font-weight:700;cursor:pointer;font-size:.9rem}
-.providers{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-top:1.5rem}
-.p{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:.4rem 1rem;font-size:.75rem;color:#444}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8)}
+.logo{font-weight:900;font-size:1rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.live-stat{font-size:0.75rem;color:rgba(255,255,255,0.4)}
+.hero{padding:80px 40px 64px;text-align:center;max-width:900px;margin:0 auto}
+.hero-icon{font-size:3.5rem;margin-bottom:24px;display:block}
+h1{font-size:clamp(2.5rem,7vw,5.5rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;line-height:1}
+.tagline{font-size:1.15rem;color:rgba(255,255,255,0.5);line-height:1.618;max-width:560px;margin:0 auto 48px}
+.stat-bar{display:flex;gap:0;max-width:700px;margin:0 auto;border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.stat-item{flex:1;padding:20px 16px;text-align:center;border-right:1px solid rgba(255,255,255,0.07)}
+.stat-item:last-child{border-right:none}
+.stat-v{font-size:1.6rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1100px;margin:80px auto;padding:0 40px}
+.feat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:32px;transition:all 0.3s}
+.feat-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-3px);background:rgba(255,255,255,0.05)}
+.feat-icon{font-size:2rem;margin-bottom:16px;display:block}
+.feat-title{font-size:1rem;font-weight:700;margin-bottom:8px}
+.feat-desc{font-size:0.875rem;color:rgba(255,255,255,0.45);line-height:1.65}
+.cta{text-align:center;padding:80px 40px;border-top:1px solid rgba(255,255,255,0.07)}
+.cta h2{font-size:2rem;font-weight:800;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:100px;font-size:0.9rem;font-weight:700;text-decoration:none;background:var(--g);color:#fff;transition:opacity 0.2s,transform 0.2s}
+.btn:hover{opacity:0.85;transform:translateY(-2px)}
+footer{padding:40px;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.07)}
+footer a{color:rgba(255,29,108,0.7);text-decoration:none}
+@media(max-width:640px){.hero{padding:60px 20px 48px}.grid{padding:0 20px;margin:48px auto}.stat-bar{flex-direction:column}.stat-item{border-right:none;border-bottom:1px solid rgba(255,255,255,0.07)}}
 </style>
 </head>
 <body>
-<h1>BlackRoad AI</h1>
-<p>Multi-provider AI gateway. One interface to all models — Anthropic, OpenAI, Ollama, Groq, Gemini, Mistral, DeepSeek — tokenless, private, your infrastructure.</p>
-<div class="chat">
-<div class="msgs" id="msgs">
-<div class="msg ai">💜 Hello, I'm CECE. I'm running through the BlackRoad tokenless gateway — ask me anything, or route your query to a specialist agent.</div>
+<nav>
+  <div class="logo">BlackRoad OS</div>
+  <div class="live-stat" id="live-count">Loading...</div>
+</nav>
+<div class="hero">
+  <span class="hero-icon">🧠</span>
+  <h1>BlackRoad AI</h1>
+  <p class="tagline">State-of-the-art models. Local inference. Zero compromise.</p>
+  <div class="stat-bar">
+    <div class="stat-item"><div class="stat-v" id="s1">990</div><div class="stat-l">Repositories</div></div>
+    <div class="stat-item"><div class="stat-v" id="s2">30k</div><div class="stat-l">AI Agents</div></div>
+    <div class="stat-item"><div class="stat-v" id="s3">17</div><div class="stat-l">Orgs</div></div>
+    <div class="stat-item"><div class="stat-v" id="s4">58</div><div class="stat-l">Deployments</div></div>
+  </div>
 </div>
-<div class="input-row">
-<input type="text" id="msg" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')send()">
-<button onclick="send()">Send</button>
+<div class="grid">
+
+    <div class="feat-card">
+      <div class="feat-icon">🦙</div>
+      <div class="feat-title">Ollama Fleet</div>
+      <div class="feat-desc">108 models running locally on the Pi5 cluster. Qwen2.5, DeepSeek-R1, Llama3.2, Mistral and more — no API calls, no rate limits, no billing.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">vLLM Inference</div>
+      <div class="feat-desc">High-throughput LLM serving with continuous batching. Railway GPU cluster with A100s and H100s for production-grade inference.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🧮</div>
+      <div class="feat-title">Model Library</div>
+      <div class="feat-desc">Qwen 72B, DeepSeek-R1, Llama 3.1 70B — 135GB of quantized models in Cloudflare R2. Always available, always fast.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔗</div>
+      <div class="feat-title">Vector Databases</div>
+      <div class="feat-desc">Qdrant, Weaviate, Chroma, Milvus — all deployed and integrated. Semantic search across the entire 990+ repo codebase.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🛡️</div>
+      <div class="feat-title">Tokenless Gateway</div>
+      <div class="feat-desc">All provider secrets in the gateway. Agents never touch API keys. Claude, OpenAI, and Ollama all behind one secure proxy.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔬</div>
+      <div class="feat-title">BlackRoad AI Org</div>
+      <div class="feat-desc">52 repositories including vLLM, Ollama, DeepSeek, Qwen, and custom memory bridges — the complete AI stack, owned and controlled.</div>
+    </div>
 </div>
+<div class="cta">
+  <h2>Built on BlackRoad OS</h2>
+  <p style="color:rgba(255,255,255,0.45);margin-bottom:32px">Your AI. Your Hardware. Your Rules.</p>
+  <a href="https://github.com/BlackRoad-OS" class="btn" target="_blank">⚡ Explore GitHub</a>
 </div>
-<div class="providers">
-<span class="p">Anthropic</span><span class="p">OpenAI</span><span class="p">Ollama</span><span class="p">Groq</span><span class="p">Gemini</span><span class="p">Mistral</span><span class="p">DeepSeek</span>
-</div>
+<footer>
+  <a href="https://github.com/BlackRoad-AI" target="_blank">Models</a> · <a href="https://agents.blackroad.io" target="_blank">Agents</a> · <a href="https://docs.blackroad.io" target="_blank">Docs</a><br><br>© 2026 BlackRoad OS, Inc. — All rights reserved.
+</footer>
 <script>
-async function send(){
-  const inp=document.getElementById('msg');const msgs=document.getElementById('msgs');
-  const v=inp.value.trim();if(!v)return;
-  inp.value='';
-  msgs.innerHTML+=`<div class="msg user">${v}</div>`;
-  try{
-    const r=await fetch('https://agents-api.blackroad.workers.dev/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:v,agent:'cece'})});
-    const d=await r.json();
-    msgs.innerHTML+=`<div class="msg ai">💜 ${d.response||'(response via gateway)'}</div>`;
-  }catch{
-    msgs.innerHTML+=`<div class="msg ai">💜 Gateway connecting... (deploy br CLI for direct access)</div>`;
-  }
-  msgs.scrollTop=msgs.scrollHeight;
-}
+const API='https://blackroad-live-hub.amundsonalexa.workers.dev';
+fetch(API+'/all').then(r=>r.json()).then(d=>{
+  const b=d.blackroad||{};
+  document.getElementById('s1').textContent=(b.total_repos||990).toLocaleString();
+  document.getElementById('s2').textContent='30k';
+  document.getElementById('s3').textContent=b.orgs||17;
+  document.getElementById('s4').textContent=b.domains||58;
+  document.getElementById('live-count').textContent=`${b.total_repos||990} repos live`;
+}).catch(()=>document.getElementById('live-count').textContent='BlackRoad OS');
 </script>
 </body>
 </html>

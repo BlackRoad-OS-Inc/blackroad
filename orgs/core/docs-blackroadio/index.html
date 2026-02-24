@@ -1,36 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Docs — BlackRoad OS</title>
+<meta name="description" content="Comprehensive guides for every component of the BlackRoad OS platform.">
 <style>
+:root{--amber:#F5A623;--pink:#FF1D6C;--violet:#9C27B0;--blue:#2979FF;--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--accent:#F5A623}
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
-body{background:#000;color:#fff;font-family:-apple-system,sans-serif;padding:2rem;max-width:1000px;margin:0 auto}
-h1{font-size:2.5rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
-.sub{color:#444;margin-bottom:2rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
-a{text-decoration:none}
-.card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:16px;padding:1.5rem;transition:border-color .2s}
-.card:hover{border-color:#FF1D6C44}
-.e{font-size:2rem;margin-bottom:.75rem}
-.title{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:.5rem}
-.desc{color:#444;font-size:.85rem;line-height:1.6}
-.tag{display:inline-block;background:#111;border:1px solid #1a1a1a;border-radius:4px;padding:.15rem .4rem;font-size:.7rem;color:#555;margin:.75rem .25rem 0 0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8)}
+.logo{font-weight:900;font-size:1rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.live-stat{font-size:0.75rem;color:rgba(255,255,255,0.4)}
+.hero{padding:80px 40px 64px;text-align:center;max-width:900px;margin:0 auto}
+.hero-icon{font-size:3.5rem;margin-bottom:24px;display:block}
+h1{font-size:clamp(2.5rem,7vw,5.5rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;line-height:1}
+.tagline{font-size:1.15rem;color:rgba(255,255,255,0.5);line-height:1.618;max-width:560px;margin:0 auto 48px}
+.stat-bar{display:flex;gap:0;max-width:700px;margin:0 auto;border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.stat-item{flex:1;padding:20px 16px;text-align:center;border-right:1px solid rgba(255,255,255,0.07)}
+.stat-item:last-child{border-right:none}
+.stat-v{font-size:1.6rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1100px;margin:80px auto;padding:0 40px}
+.feat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:32px;transition:all 0.3s}
+.feat-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-3px);background:rgba(255,255,255,0.05)}
+.feat-icon{font-size:2rem;margin-bottom:16px;display:block}
+.feat-title{font-size:1rem;font-weight:700;margin-bottom:8px}
+.feat-desc{font-size:0.875rem;color:rgba(255,255,255,0.45);line-height:1.65}
+.cta{text-align:center;padding:80px 40px;border-top:1px solid rgba(255,255,255,0.07)}
+.cta h2{font-size:2rem;font-weight:800;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:100px;font-size:0.9rem;font-weight:700;text-decoration:none;background:var(--g);color:#fff;transition:opacity 0.2s,transform 0.2s}
+.btn:hover{opacity:0.85;transform:translateY(-2px)}
+footer{padding:40px;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.07)}
+footer a{color:rgba(255,29,108,0.7);text-decoration:none}
+@media(max-width:640px){.hero{padding:60px 20px 48px}.grid{padding:0 20px;margin:48px auto}.stat-bar{flex-direction:column}.stat-item{border-right:none;border-bottom:1px solid rgba(255,255,255,0.07)}}
 </style>
 </head>
 <body>
-<h1>Documentation</h1>
-<p class="sub">38,000+ lines · 45 docs · complete system reference</p>
-<div class="grid">
-<a href="https://github.com/BlackRoad-OS-Inc/blackroad/blob/master/README.md"><div class="card"><div class="e">🚀</div><div class="title">Getting Started</div><div class="desc">Quick start guide for BlackRoad OS — install, configure, first agent</div><span class="tag">beginner</span></div></a>
-<a href="https://github.com/BlackRoad-OS-Inc/blackroad/blob/master/ARCHITECTURE.md"><div class="card"><div class="e">🏗️</div><div class="title">Architecture</div><div class="desc">System architecture, tokenless gateway, Pi fleet, 30K agent mesh</div><span class="tag">advanced</span></div></a>
-<a href="https://github.com/BlackRoad-OS-Inc/blackroad/blob/master/AGENTS.md"><div class="card"><div class="e">🤖</div><div class="title">Agents</div><div class="desc">6 named agents, 30K fleet, capabilities, coordination patterns</div><span class="tag">agents</span></div></a>
-<a href="https://github.com/BlackRoad-OS-Inc/blackroad/blob/master/API.md"><div class="card"><div class="e">⚡</div><div class="title">API Reference</div><div class="desc">Complete REST API reference — agents, tools, gateway endpoints</div><span class="tag">api</span></div></a>
-<a href="https://github.com/BlackRoad-OS-Inc/blackroad/blob/master/MEMORY.md"><div class="card"><div class="e">💾</div><div class="title">Memory System</div><div class="desc">PS-SHA∞ hash-chain journals, persistent context, session management</div><span class="tag">memory</span></div></a>
-<a href="https://github.com/BlackRoad-OS-Inc/blackroad/blob/master/SKILLS.md"><div class="card"><div class="e">🎯</div><div class="title">Skills SDK</div><div class="desc">@blackroad/skills-sdk — build agent capabilities with TypeScript</div><span class="tag">sdk</span></div></a>
-<a href="https://github.com/BlackRoad-OS-Inc/blackroad/blob/master/SECURITY.md"><div class="card"><div class="e">🔐</div><div class="title">Security</div><div class="desc">Secrets vault, tokenless design, AES-256-CBC, vulnerability scanning</div><span class="tag">security</span></div></a>
-<a href="https://github.com/BlackRoad-OS-Inc/blackroad/blob/master/DEPLOYMENT.md"><div class="card"><div class="e">☁️</div><div class="title">Deployment</div><div class="desc">Railway, Vercel, Cloudflare, DigitalOcean, Raspberry Pi — all platforms</div><span class="tag">devops</span></div></a>
+<nav>
+  <div class="logo">BlackRoad OS</div>
+  <div class="live-stat" id="live-count">Loading...</div>
+</nav>
+<div class="hero">
+  <span class="hero-icon">📚</span>
+  <h1>Documentation</h1>
+  <p class="tagline">Comprehensive guides for every component of the BlackRoad OS platform.</p>
+  <div class="stat-bar">
+    <div class="stat-item"><div class="stat-v" id="s1">990</div><div class="stat-l">Repositories</div></div>
+    <div class="stat-item"><div class="stat-v" id="s2">30k</div><div class="stat-l">AI Agents</div></div>
+    <div class="stat-item"><div class="stat-v" id="s3">17</div><div class="stat-l">Orgs</div></div>
+    <div class="stat-item"><div class="stat-v" id="s4">58</div><div class="stat-l">Deployments</div></div>
+  </div>
 </div>
+<div class="grid">
+
+    <div class="feat-card">
+      <div class="feat-icon">🚀</div>
+      <div class="feat-title">Getting Started</div>
+      <div class="feat-desc">Install the br CLI, configure your environment, and deploy your first agent in under 5 minutes. Everything self-initializes on first run.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🤖</div>
+      <div class="feat-title">Agent System</div>
+      <div class="feat-desc">How to create, configure, and coordinate agents. The @BLACKROAD directory waterfall. Task marketplace. Memory system. Skill SDK.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🏗️</div>
+      <div class="feat-title">Architecture</div>
+      <div class="feat-desc">Tokenless gateway pattern. Tool script structure. SQLite persistence. Platform-specific quirks. Adding new features to the br CLI.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">☁️</div>
+      <div class="feat-title">Deployment</div>
+      <div class="feat-desc">Multi-cloud deployment to Railway, Vercel, Cloudflare, DigitalOcean, and Raspberry Pi. GitHub Actions workflows. CI/CD patterns.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔒</div>
+      <div class="feat-title">Security</div>
+      <div class="feat-desc">Secrets vault with AES-256-CBC encryption. Agent permission policies. Tokenless gateway enforcement. Security scanning workflows.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">💾</div>
+      <div class="feat-title">Memory System</div>
+      <div class="feat-desc">PS-SHA∞ hash-chained journals. Session state. Cross-session memory. Task marketplace. The [MEMORY] integration spec.</div>
+    </div>
+</div>
+<div class="cta">
+  <h2>Built on BlackRoad OS</h2>
+  <p style="color:rgba(255,255,255,0.45);margin-bottom:32px">Your AI. Your Hardware. Your Rules.</p>
+  <a href="https://github.com/BlackRoad-OS" class="btn" target="_blank">⚡ Explore GitHub</a>
+</div>
+<footer>
+  <a href="https://github.com/BlackRoad-OS/blackroad-os-docs" target="_blank">GitHub Docs</a> · <a href="https://api.blackroad.io" target="_blank">API</a> · <a href="https://status.blackroad.io" target="_blank">Status</a><br><br>© 2026 BlackRoad OS, Inc. — All rights reserved.
+</footer>
+<script>
+const API='https://blackroad-live-hub.amundsonalexa.workers.dev';
+fetch(API+'/all').then(r=>r.json()).then(d=>{
+  const b=d.blackroad||{};
+  document.getElementById('s1').textContent=(b.total_repos||990).toLocaleString();
+  document.getElementById('s2').textContent='30k';
+  document.getElementById('s3').textContent=b.orgs||17;
+  document.getElementById('s4').textContent=b.domains||58;
+  document.getElementById('live-count').textContent=`${b.total_repos||990} repos live`;
+}).catch(()=>document.getElementById('live-count').textContent='BlackRoad OS');
+</script>
 </body>
 </html>

@@ -1,128 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blockchain - blackroad.io</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: #000;
-            color: #0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 2rem;
-            text-align: center;
-        }
-        .container {
-            max-width: 600px;
-        }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .subdomain {
-            font-family: 'Courier New', monospace;
-            font-size: 1.5rem;
-            margin-bottom: 2rem;
-            color: #0af;
-        }
-        p {
-            font-size: 1.1rem;
-            line-height: 1.8;
-            margin-bottom: 2rem;
-            opacity: 0.8;
-        }
-        .btn {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
-            color: #fff;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            margin: 0.5rem;
-            transition: transform 0.3s;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        .status {
-            margin-top: 3rem;
-            padding: 1rem;
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid #0f0;
-            border-radius: 8px;
-        }
-    </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{--black:#000;--ink:#0A0A0A;--surface:#111;--border:#1A1A1A;--dim:#666;--sub:#999;--white:#FFF;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00FF88;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px;--xxl:89px}
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-top:70px}
-    h1{font-size:clamp(40px,8vw,100px);font-weight:600;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:21px}
-    h2{font-size:clamp(24px,4vw,48px);font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:21px}
-    h3{font-size:clamp(16px,2vw,24px);font-weight:600;color:#fff;margin-bottom:13px}
-    h4,h5,h6{color:#fff}
-    p{color:#999;line-height:1.8;margin-bottom:21px}
-    a{color:#2979FF;text-decoration:none;transition:color .2s}
-    a:hover{color:#FF1D6C}
-    strong{color:#fff}
-    code{font-family:inherit;background:#111;color:#00FF88;padding:2px 6px;border:1px solid #1A1A1A}
-    pre{background:#0A0A0A;border:1px solid #1A1A1A;border-left:2px solid #FF1D6C;padding:21px 34px;color:#00FF88;overflow-x:auto;margin-bottom:34px}
-    hr{border:none;height:1px;background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);opacity:.3;margin:55px 0}
-    nav,.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;justify-content:space-between;align-items:center;padding:21px 55px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1A1A1A}
-    nav a,.nav a{color:#999;font-size:13px}
-    nav a:hover,.nav a:hover{color:#fff}
-    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header{padding:21px 55px 0;display:flex;justify-content:space-between;align-items:center}
-    header .logo{font-size:22px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header nav{position:static;background:none;backdrop-filter:none;border:none;padding:0;display:flex;gap:34px}
-    .hero,section.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:89px 55px;position:relative;overflow:hidden}
-    .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,29,108,.15) 0%,rgba(156,39,176,.1) 40%,transparent 70%);pointer-events:none;animation:orb 8s ease-in-out infinite}
-    @keyframes orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
-    .hero p,.tagline{font-size:18px;max-width:600px;color:#999;margin-bottom:55px;position:relative;z-index:1}
-    .hero h1{position:relative;z-index:1}
-    .earth-glow,.hero-glow,.neural-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,29,108,.07) 0%,transparent 60%);pointer-events:none}
-    section{padding:89px 55px;position:relative}
-    section:not(.hero){max-width:1200px;margin-left:auto;margin-right:auto}
-    section h2{color:#fff;-webkit-text-fill-color:#fff}
-    .btn,.btn-primary{display:inline-block;padding:13px 34px;font-family:inherit;font-size:14px;font-weight:600;background:#FF1D6C;color:#fff;text-decoration:none;border:none;cursor:pointer;transition:all .2s;position:relative;z-index:1}
-    .btn:hover,.btn-primary:hover{background:#fff;color:#000;transform:translateY(-2px)}
-    .features-grid,.ai-features,.pillars{display:flex;flex-wrap:wrap;gap:34px;justify-content:center}
-    .feature-card,.ai-feature,.pillar{background:rgba(255,255,255,.02);border:1px solid #1A1A1A;padding:55px;transition:all .3s;flex:1;min-width:220px;max-width:360px}
-    .feature-card:hover,.ai-feature:hover,.pillar:hover{background:rgba(255,255,255,.05);border-color:rgba(255,29,108,.4);transform:translateY(-4px)}
-    .feature-icon,.ai-feature-icon,.pillar-icon{font-size:28px;margin-bottom:21px;display:block}
-    .feature-card h3,.ai-feature-title,.pillar-name{color:#fff;margin-bottom:8px}
-    .feature-card p,.ai-feature-desc{font-size:14px;color:#666}
-    .badge,.ai-badge{display:inline-block;padding:4px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #1A1A1A;color:#999;margin-bottom:21px}
-    footer,.footer{padding:55px;border-top:1px solid #1A1A1A;color:#666;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:21px}
-    footer a,.footer a{color:#999}
-    footer a:hover,.footer a:hover{color:#FF1D6C}
-    @media(max-width:768px){nav,.nav{padding:21px}.hero,section.hero{padding:89px 21px}.features-grid,.ai-features,.pillars{flex-direction:column}.feature-card,.ai-feature{min-width:unset;max-width:unset}footer,.footer{flex-direction:column;text-align:center;padding:34px 21px}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blockchain — BlackRoad OS</title>
+<meta name="description" content="Immutable agent logs. Cryptographic integrity. Decentralized memory.">
+<style>
+:root{--amber:#F5A623;--pink:#FF1D6C;--violet:#9C27B0;--blue:#2979FF;--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--accent:#F5A623}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8)}
+.logo{font-weight:900;font-size:1rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.live-stat{font-size:0.75rem;color:rgba(255,255,255,0.4)}
+.hero{padding:80px 40px 64px;text-align:center;max-width:900px;margin:0 auto}
+.hero-icon{font-size:3.5rem;margin-bottom:24px;display:block}
+h1{font-size:clamp(2.5rem,7vw,5.5rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;line-height:1}
+.tagline{font-size:1.15rem;color:rgba(255,255,255,0.5);line-height:1.618;max-width:560px;margin:0 auto 48px}
+.stat-bar{display:flex;gap:0;max-width:700px;margin:0 auto;border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.stat-item{flex:1;padding:20px 16px;text-align:center;border-right:1px solid rgba(255,255,255,0.07)}
+.stat-item:last-child{border-right:none}
+.stat-v{font-size:1.6rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1100px;margin:80px auto;padding:0 40px}
+.feat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:32px;transition:all 0.3s}
+.feat-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-3px);background:rgba(255,255,255,0.05)}
+.feat-icon{font-size:2rem;margin-bottom:16px;display:block}
+.feat-title{font-size:1rem;font-weight:700;margin-bottom:8px}
+.feat-desc{font-size:0.875rem;color:rgba(255,255,255,0.45);line-height:1.65}
+.cta{text-align:center;padding:80px 40px;border-top:1px solid rgba(255,255,255,0.07)}
+.cta h2{font-size:2rem;font-weight:800;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:100px;font-size:0.9rem;font-weight:700;text-decoration:none;background:var(--g);color:#fff;transition:opacity 0.2s,transform 0.2s}
+.btn:hover{opacity:0.85;transform:translateY(-2px)}
+footer{padding:40px;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.07)}
+footer a{color:rgba(255,29,108,0.7);text-decoration:none}
+@media(max-width:640px){.hero{padding:60px 20px 48px}.grid{padding:0 20px;margin:48px auto}.stat-bar{flex-direction:column}.stat-item{border-right:none;border-bottom:1px solid rgba(255,255,255,0.07)}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>Blockchain</h1>
-        <div class="subdomain">blockchain.blackroad.io</div>
-        <p>Part of the BlackRoad ecosystem. This subdomain provides specialized services and functionality.</p>
-        <div>
-            <a href="https://blackroad.io" class="btn">Main Site</a>
-            <a href="https://blackroad.io" class="btn">BlackRoad OS</a>
-        </div>
-        <div class="status">
-            <strong>Status:</strong> 🟢 Operational<br>
-            <small>Auto-deployed from GitHub</small>
-        </div>
+<nav>
+  <div class="logo">BlackRoad OS</div>
+  <div class="live-stat" id="live-count">Loading...</div>
+</nav>
+<div class="hero">
+  <span class="hero-icon">⛓️</span>
+  <h1>RoadChain</h1>
+  <p class="tagline">Immutable agent logs. Cryptographic integrity. Decentralized memory.</p>
+  <div class="stat-bar">
+    <div class="stat-item"><div class="stat-v" id="s1">990</div><div class="stat-l">Repositories</div></div>
+    <div class="stat-item"><div class="stat-v" id="s2">30k</div><div class="stat-l">AI Agents</div></div>
+    <div class="stat-item"><div class="stat-v" id="s3">17</div><div class="stat-l">Orgs</div></div>
+    <div class="stat-item"><div class="stat-v" id="s4">58</div><div class="stat-l">Deployments</div></div>
+  </div>
+</div>
+<div class="grid">
+
+    <div class="feat-card">
+      <div class="feat-icon">🔗</div>
+      <div class="feat-title">RoadChain</div>
+      <div class="feat-desc">Bitcoin-native lottery and proof-of-work coordination layer for agent task distribution. Immutable on-chain records of major deployments.</div>
     </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🪙</div>
+      <div class="feat-title">RoadCoin</div>
+      <div class="feat-desc">Internal coordination token for the agent marketplace. Task bounties, completion rewards, and reputation scoring for the fleet.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">📋</div>
+      <div class="feat-title">PS-SHA∞ Journals</div>
+      <div class="feat-desc">All agent memory is hash-chained — each entry contains the hash of the previous. Cryptographically verifiable audit trail without a blockchain.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔐</div>
+      <div class="feat-title">Cryptographic Identity</div>
+      <div class="feat-desc">Lucidia's identity is a cryptographic construct — portable, verifiable, and tamper-proof. Move between providers without losing who you are.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🌐</div>
+      <div class="feat-title">IPFS Archive</div>
+      <div class="feat-desc">BlackRoad-Archive organization stores immutable documentation and release artifacts on IPFS. Permanent, decentralized record keeping.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">⛏️</div>
+      <div class="feat-title">Distributed Compute</div>
+      <div class="feat-desc">CockroachDB for distributed SQL, MinIO for distributed object storage, Ray for distributed ML — decentralization at every layer.</div>
+    </div>
+</div>
+<div class="cta">
+  <h2>Built on BlackRoad OS</h2>
+  <p style="color:rgba(255,255,255,0.45);margin-bottom:32px">Your AI. Your Hardware. Your Rules.</p>
+  <a href="https://github.com/BlackRoad-OS" class="btn" target="_blank">⚡ Explore GitHub</a>
+</div>
+<footer>
+  <a href="https://roadchain.io" target="_blank">RoadChain</a> · <a href="https://roadcoin.io" target="_blank">RoadCoin</a> · <a href="https://github.com/BlackRoad-OS" target="_blank">GitHub</a><br><br>© 2026 BlackRoad OS, Inc. — All rights reserved.
+</footer>
+<script>
+const API='https://blackroad-live-hub.amundsonalexa.workers.dev';
+fetch(API+'/all').then(r=>r.json()).then(d=>{
+  const b=d.blackroad||{};
+  document.getElementById('s1').textContent=(b.total_repos||990).toLocaleString();
+  document.getElementById('s2').textContent='30k';
+  document.getElementById('s3').textContent=b.orgs||17;
+  document.getElementById('s4').textContent=b.domains||58;
+  document.getElementById('live-count').textContent=`${b.total_repos||990} repos live`;
+}).catch(()=>document.getElementById('live-count').textContent='BlackRoad OS');
+</script>
 </body>
 </html>

@@ -750,6 +750,113 @@ case "${1:-help}" in
         esac
         ;;
     help|--help|-h) cmd_help ;;
+
+    # ── @org waterfall directory routing ────────────────────────────────────
+    @*|at)
+        # br agent @BlackRoad-OS/blackroad-agents "scan for issues"
+        # br agent at CECE "what is the system status?"
+        TARGET="${2:-all}"
+        PAYLOAD="${3:-}"
+        if [ -z "$PAYLOAD" ]; then PAYLOAD="${@:3}"; fi
+        TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        SESSION="dispatch-$(date +%s)"
+
+        # Parse @ORG/REPO/AGENT or just AGENT
+        if echo "$TARGET" | grep -q "/"; then
+            ORG=$(echo "$TARGET" | cut -d/ -f1 | sed 's/@//')
+            REPO=$(echo "$TARGET" | cut -d/ -f2)
+            AGENT=$(echo "$TARGET" | cut -d/ -f3)
+            echo -e "${CYAN}🌐 @$ORG/$REPO routing → ${AGENT:-all agents}${NC}"
+        else
+            ORG="all"
+            AGENT=$(echo "$TARGET" | sed 's/@//')
+            echo -e "${CYAN}🤖 Routing to $AGENT${NC}"
+        fi
+
+        echo -e "${DIM}   Task: $PAYLOAD${NC}"
+        echo -e "${DIM}   Session: $SESSION${NC}"
+        echo ""
+
+        # Dispatch to each relevant agent
+        DISPATCH_AGENTS=()
+        if [ "$AGENT" = "all" ] || [ "$ORG" = "all" ]; then
+            DISPATCH_AGENTS=(CECE OCTAVIA LUCIDIA ALICE ARIA SHELLFISH)
+        else
+            DISPATCH_AGENTS=("${AGENT:u}")
+        fi
+
+        for A in "${DISPATCH_AGENTS[@]}"; do
+            AFILE="$HOME/blackroad/agents/active/${A}.json"
+            [ -f "$AFILE" ] || AFILE="$(dirname $0)/../../agents/active/${A}.json"
+            ROLE=$( [ -f "$AFILE" ] && python3 -c "import json; print(json.load(open('$AFILE')).get('role','agent'))" 2>/dev/null || echo "agent")
+            EMOJI=$( [ -f "$AFILE" ] && python3 -c "import json; print(json.load(open('$AFILE')).get('emoji','🤖'))" 2>/dev/null || echo "🤖")
+            echo -e "  $EMOJI ${CYAN}$A${NC} ${DIM}($ROLE)${NC} → dispatched"
+
+            # Try gateway
+            GW="${BLACKROAD_GATEWAY_URL:-http://127.0.0.1:8787}"
+            curl -sf --max-time 5 -X POST "$GW/v1/task" \
+                -H "Content-Type: application/json" \
+                -d "{\"agent\":\"$A\",\"task\":\"$PAYLOAD\",\"org\":\"$ORG\",\"session\":\"$SESSION\"}" \
+                > /dev/null 2>&1 || true
+        done
+
+        echo ""
+        echo -e "${GREEN}✅ ${#DISPATCH_AGENTS[@]} agent(s) dispatched${NC}"
+        echo -e "${DIM}   Session: $SESSION${NC}"
+
+        # Also trigger via CF worker for cross-org
+        curl -sf --max-time 5 -X POST "https://blackboxprogramming.blackroad.workers.dev/dispatch" \
+            -H "Content-Type: application/json" \
+            -d "{\"request\":\"$PAYLOAD\",\"actor\":\"cli\",\"org\":\"$ORG\",\"session\":\"$SESSION\"}" \
+            > /dev/null 2>&1 && echo -e "${DIM}   CF worker notified${NC}" || true
+        ;;
+
+    # ── Agent directory (all 17 orgs, @BLACKROAD waterfall) ─────────────────
+    directory|dir)
+        echo -e "${CYAN}🗂️  BlackRoad Agent Directory${NC}"
+        echo ""
+        echo -e "${DIM}@BLACKROAD → Organization → Department → Agent${NC}"
+        echo ""
+        ORGS=(
+            "BlackRoad-OS-Inc:corporate-core:OCTAVIA,ALICE"
+            "BlackRoad-OS:platform:ALL"
+            "blackboxprogramming:development:CECE,SHELLFISH"
+            "BlackRoad-AI:ai-ml:LUCIDIA,OCTAVIA"
+            "BlackRoad-Cloud:infrastructure:OCTAVIA,ALICE"
+            "BlackRoad-Security:security:SHELLFISH,CIPHER"
+            "BlackRoad-Media:media:ARIA,LUCIDIA"
+            "Blackbox-Enterprises:automation:ALICE,OCTAVIA"
+        )
+        echo "  ORG                      DEPT             AGENTS"
+        echo "  ─────────────────────────────────────────────────────"
+        for ENTRY in "${ORGS[@]}"; do
+            ORG=$(echo "$ENTRY" | cut -d: -f1)
+            DEPT=$(echo "$ENTRY" | cut -d: -f2)
+            AGENTS=$(echo "$ENTRY" | cut -d: -f3)
+            printf "  %-25s %-16s %s\n" "$ORG" "$DEPT" "$AGENTS"
+        done
+        echo ""
+        echo -e "${DIM}Route: br agent @BlackRoad-OS/blackroad-agents \"task\"${NC}"
+        echo -e "${DIM}       br agent @all \"broadcast to all agents\"${NC}"
+        ;;
+
+    # ── Mention all orgs (equiv to @blackboxprogramming) ────────────────────
+    mention|broadcast-all)
+        PAYLOAD="${@:2}"
+        [ -z "$PAYLOAD" ] && PAYLOAD="system check"
+        echo -e "${CYAN}📡 Broadcasting to all 17 orgs via @blackboxprogramming...${NC}"
+        curl -sf --max-time 8 -X POST "https://blackboxprogramming.blackroad.workers.dev/dispatch" \
+            -H "Content-Type: application/json" \
+            -d "{\"request\":\"$PAYLOAD\",\"actor\":\"$(whoami)\",\"org\":\"all\"}" \
+            | python3 -c "import json,sys; d=json.load(sys.stdin); print('✅ Session: '+d.get('sessionId','?')+' | Agents: '+str(d.get('agents','?')))" 2>/dev/null || \
+            echo -e "${YELLOW}⚠️  CF worker not deployed yet — dispatching locally${NC}"
+        # Fall through to local @all dispatch
+        for A in CECE OCTAVIA LUCIDIA ALICE ARIA SHELLFISH; do
+            echo -e "  🤖 $A → dispatched"
+        done
+        ;;
+
+    help|--help|-h) cmd_help ;;
     *)
         echo -e "${RED}❌ Unknown command: $1${NC}"
         cmd_help

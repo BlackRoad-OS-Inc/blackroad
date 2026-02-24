@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlackRoad — Your AI. Your Hardware. Your Rules.</title>
+<meta name="description" content="BlackRoad OS: AI-first developer platform. 30K agents, 75+ workers, 17 orgs, infinite scale.">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --black:#000;--white:#FFF;--amber:#F5A623;
+    --pink:#FF1D6C;--blue:#2979FF;--violet:#9C27B0;
+    --grad:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);
+    --space:21px;--lg:34px;--xl:55px;
+  }
+  html{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
+    line-height:1.618;overflow-x:hidden}
+
+  /* ── HERO ── */
+  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;padding:var(--xl);text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 0%,rgba(255,29,108,0.15) 0%,transparent 60%)}
+
+  .logo{font-size:clamp(4rem,12vw,9rem);font-weight:900;letter-spacing:-0.04em;
+    background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;margin-bottom:var(--space)}
+  .tagline{font-size:clamp(1rem,2.5vw,1.5rem);color:rgba(255,255,255,0.7);
+    margin-bottom:var(--lg);max-width:600px}
+  .stat-row{display:flex;gap:var(--lg);flex-wrap:wrap;justify-content:center;margin-bottom:var(--xl)}
+  .stat{text-align:center}
+  .stat-n{font-size:clamp(1.5rem,4vw,2.5rem);font-weight:800;background:var(--grad);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .stat-l{font-size:0.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.1em}
+
+  .cta-row{display:flex;gap:var(--space);flex-wrap:wrap;justify-content:center}
+  .btn{padding:13px 34px;border-radius:8px;font-weight:700;font-size:1rem;
+    cursor:pointer;text-decoration:none;transition:all 0.2s}
+  .btn-grad{background:var(--grad);color:#fff;border:none}
+  .btn-grad:hover{opacity:0.9;transform:translateY(-1px)}
+  .btn-outline{border:2px solid rgba(255,255,255,0.3);color:#fff;background:transparent}
+  .btn-outline:hover{border-color:var(--pink);color:var(--pink)}
+
+  /* ── GRID ── */
+  .section{padding:var(--xl) var(--lg)}
+  .section-title{font-size:clamp(1.5rem,3vw,2.5rem);font-weight:800;margin-bottom:var(--lg);
+    background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space)}
+  .card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+    border-radius:12px;padding:var(--space);transition:all 0.2s}
+  .card:hover{border-color:var(--pink);transform:translateY(-2px)}
+  .card-icon{font-size:2rem;margin-bottom:13px}
+  .card-title{font-weight:700;margin-bottom:8px}
+  .card-desc{color:rgba(255,255,255,0.6);font-size:0.9rem}
+  .card-link{display:inline-flex;align-items:center;gap:4px;margin-top:13px;
+    color:var(--pink);text-decoration:none;font-size:0.85rem;font-weight:600}
+
+  /* ── STATUS BAR ── */
+  .status-bar{background:rgba(0,255,100,0.05);border:1px solid rgba(0,255,100,0.2);
+    border-radius:8px;padding:13px 21px;display:flex;align-items:center;
+    gap:var(--space);flex-wrap:wrap;justify-content:center;margin-bottom:var(--xl)}
+  .dot{width:8px;height:8px;border-radius:50%;background:#00ff64;
+    animation:pulse 2s infinite;flex-shrink:0}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .status-text{font-size:0.85rem;color:rgba(255,255,255,0.8)}
+  .status-count{font-weight:700;color:#00ff64}
+
+  /* ── DOMAINS ── */
+  .domain-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .domain-tag{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);
+    border-radius:20px;padding:4px 12px;font-size:0.8rem;color:rgba(255,255,255,0.7);
+    text-decoration:none;transition:all 0.15s}
+  .domain-tag:hover{background:rgba(255,29,108,0.2);border-color:var(--pink);color:#fff}
+  .domain-tag.live::after{content:'●';color:#00ff64;margin-left:4px;font-size:0.6rem}
+
+  /* ── AGENTS ── */
+  .agent-row{display:flex;gap:var(--space);flex-wrap:wrap;justify-content:center;margin-bottom:var(--xl)}
+  .agent{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+  .agent-avatar{width:64px;height:64px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+    border:2px solid transparent;transition:all 0.2s}
+  .agent:hover .agent-avatar{transform:scale(1.1);border-color:var(--pink)}
+  .agent-name{font-size:0.8rem;font-weight:700;letter-spacing:0.05em}
+  .agent-role{font-size:0.7rem;color:rgba(255,255,255,0.5)}
+
+  /* ── FOOTER ── */
+  footer{text-align:center;padding:var(--xl);border-top:1px solid rgba(255,255,255,0.08);
+    color:rgba(255,255,255,0.4);font-size:0.85rem}
+  footer a{color:rgba(255,255,255,0.5);text-decoration:none}
+  footer a:hover{color:var(--pink)}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="logo">BLACKROAD</div>
+  <p class="tagline">Your AI. Your Hardware. Your Rules.<br>
+    The first AI-native developer platform at infinite scale.</p>
+
+  <div id="statusBar" class="status-bar">
+    <div class="dot"></div>
+    <span class="status-text">All systems operational</span>
+    <span class="status-count" id="agentCount">30,000</span>
+    <span class="status-text">agents running</span>
+    <span>·</span>
+    <span class="status-count" id="orgCount">17</span>
+    <span class="status-text">orgs</span>
+    <span>·</span>
+    <span class="status-count" id="repoCount">1,825+</span>
+    <span class="status-text">repositories</span>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-n">30K</div><div class="stat-l">AI Agents</div></div>
+    <div class="stat"><div class="stat-n">75+</div><div class="stat-l">CF Workers</div></div>
+    <div class="stat"><div class="stat-n">162</div><div class="stat-l">CLI Tools</div></div>
+    <div class="stat"><div class="stat-n">17</div><div class="stat-l">Orgs</div></div>
+  </div>
+
+  <div class="cta-row">
+    <a href="https://docs.blackroad.io" class="btn btn-grad">Documentation →</a>
+    <a href="https://console.blackroad.io" class="btn btn-outline">Launch Console</a>
+    <a href="https://github.com/BlackRoad-OS" class="btn btn-outline">GitHub</a>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">Six Core Agents</h2>
+  <div class="agent-row">
+    <div class="agent">
+      <div class="agent-avatar" style="background:linear-gradient(135deg,#9C27B0,#2979FF)">🌀</div>
+      <div class="agent-name">LUCIDIA</div><div class="agent-role">Dreamer</div>
+    </div>
+    <div class="agent">
+      <div class="agent-avatar" style="background:linear-gradient(135deg,#F5A623,#FF1D6C)">⚡</div>
+      <div class="agent-name">OCTAVIA</div><div class="agent-role">Architect</div>
+    </div>
+    <div class="agent">
+      <div class="agent-avatar" style="background:linear-gradient(135deg,#2979FF,#00BCD4)">🚪</div>
+      <div class="agent-name">ALICE</div><div class="agent-role">Operator</div>
+    </div>
+    <div class="agent">
+      <div class="agent-avatar" style="background:linear-gradient(135deg,#FF1D6C,#F5A623)">🎨</div>
+      <div class="agent-name">ARIA</div><div class="agent-role">Interface</div>
+    </div>
+    <div class="agent">
+      <div class="agent-avatar" style="background:linear-gradient(135deg,#9C27B0,#FF1D6C)">💜</div>
+      <div class="agent-name">CECE</div><div class="agent-role">Soul</div>
+    </div>
+    <div class="agent">
+      <div class="agent-avatar" style="background:linear-gradient(135deg,#000,#F5A623)">🔐</div>
+      <div class="agent-name">SHELLFISH</div><div class="agent-role">Hacker</div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">Platform</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">🤖</div>
+      <div class="card-title">Agent System</div>
+      <div class="card-desc">30,000 concurrent AI agents. Self-organizing, task-routing, fully autonomous.</div>
+      <a href="https://agents.blackroad.io" class="card-link">agents.blackroad.io →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Edge Workers</div>
+      <div class="card-desc">75+ Cloudflare Workers. Global edge. Zero cold start. Instant everywhere.</div>
+      <a href="https://api.blackroad.io" class="card-link">api.blackroad.io →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">💻</div>
+      <div class="card-title">CLI (br)</div>
+      <div class="card-desc">162 tools. One command. Deploy, monitor, debug, collaborate — all from your terminal.</div>
+      <a href="https://cli.blackroad.io" class="card-link">cli.blackroad.io →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔒</div>
+      <div class="card-title">Tokenless Gateway</div>
+      <div class="card-desc">Agents never hold keys. All AI provider calls go through the gateway. Zero-trust.</div>
+      <a href="https://docs.blackroad.io/gateway" class="card-link">Learn more →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">🧠</div>
+      <div class="card-title">PS-SHA∞ Memory</div>
+      <div class="card-desc">Hash-chain journals. Every action logged, verified, portable across any provider.</div>
+      <a href="https://docs.blackroad.io/memory" class="card-link">Learn more →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌐</div>
+      <div class="card-title">17 Organizations</div>
+      <div class="card-desc">1,825+ repos. AI, Cloud, Security, Media, Hardware, Education, Gov — every vertical.</div>
+      <a href="https://github.com/BlackRoad-OS" class="card-link">GitHub →</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">Live Domains</h2>
+  <div class="domain-grid" id="domainList">
+    <a class="domain-tag live" href="https://agents.blackroad.io">agents.blackroad.io</a>
+    <a class="domain-tag live" href="https://api.blackroad.io">api.blackroad.io</a>
+    <a class="domain-tag live" href="https://ai.blackroad.io">ai.blackroad.io</a>
+    <a class="domain-tag live" href="https://cli.blackroad.io">cli.blackroad.io</a>
+    <a class="domain-tag live" href="https://console.blackroad.io">console.blackroad.io</a>
+    <a class="domain-tag live" href="https://dashboard.blackroad.io">dashboard.blackroad.io</a>
+    <a class="domain-tag live" href="https://docs.blackroad.io">docs.blackroad.io</a>
+    <a class="domain-tag live" href="https://status.blackroad.io">status.blackroad.io</a>
+    <a class="domain-tag live" href="https://dev.blackroad.io">dev.blackroad.io</a>
+    <a class="domain-tag live" href="https://deploy.blackroad.io">deploy.blackroad.io</a>
+    <a class="domain-tag live" href="https://blog.blackroad.io">blog.blackroad.io</a>
+    <a class="domain-tag live" href="https://analytics.blackroad.io">analytics.blackroad.io</a>
+    <a class="domain-tag live" href="https://security.blackroad.io">security.blackroad.io</a>
+    <a class="domain-tag live" href="https://hardware.blackroad.io">hardware.blackroad.io</a>
+    <a class="domain-tag live" href="https://help.blackroad.io">help.blackroad.io</a>
+    <a class="domain-tag live" href="https://explore.blackroad.io">explore.blackroad.io</a>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 BlackRoad OS, Inc. — All rights reserved. Proprietary software.</p>
+  <p style="margin-top:8px">
+    <a href="https://github.com/BlackRoad-OS">GitHub</a> ·
+    <a href="https://docs.blackroad.io">Docs</a> ·
+    <a href="https://status.blackroad.io">Status</a> ·
+    <a href="mailto:blackroad@gmail.com">Contact</a>
+  </p>
+</footer>
+
+<script>
+// Live stats from API
+async function loadStats() {
+  try {
+    const r = await fetch('https://api.blackroad.io/health', { signal: AbortSignal.timeout(4000) });
+    if (r.ok) {
+      const d = await r.json();
+      const bar = document.getElementById('statusBar');
+      const allUp = Object.values(d.services || {}).every(s => s === 'up');
+      bar.style.borderColor = allUp ? 'rgba(0,255,100,0.2)' : 'rgba(245,166,35,0.3)';
+    }
+  } catch {}
+  try {
+    const r2 = await fetch('https://agents.blackroad.io/v1/agents', { signal: AbortSignal.timeout(4000) });
+    if (r2.ok) {
+      const d2 = await r2.json();
+      if (d2.total) document.getElementById('agentCount').textContent = d2.total.toLocaleString();
+    }
+  } catch {}
+}
+loadStats();
+</script>
+</body>
+</html>

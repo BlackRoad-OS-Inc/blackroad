@@ -1,80 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dashboard — BlackRoad OS</title>
+<meta name="description" content="Real-time visibility into the entire BlackRoad OS ecosystem.">
 <style>
+:root{--amber:#F5A623;--pink:#FF1D6C;--violet:#9C27B0;--blue:#2979FF;--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--accent:#F5A623}
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
-body{background:#000;color:#fff;font-family:-apple-system,sans-serif;padding:1.5rem}
-h1{font-size:1.75rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.25rem}
-.subtitle{color:#444;font-size:.85rem;margin-bottom:1.5rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;margin-bottom:1.5rem}
-.card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:1.25rem}
-.card h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#444;margin-bottom:.75rem}
-.big{font-size:2.25rem;font-weight:800;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.sub{font-size:.75rem;color:#333;margin-top:.25rem}
-.services{background:#050505;border:1px solid #111;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
-.services h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#444;margin-bottom:1rem}
-.svc{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #0f0f0f}
-.svc:last-child{border-bottom:none}
-.svc-name{font-size:.85rem;color:#888}
-.up{color:#4ade80}.down{color:#f87171}.deg{color:#fbbf24}
-.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px}
-.dot.up{background:#4ade80;animation:p 2s infinite}.dot.down{background:#f87171}.dot.deg{background:#fbbf24}
-@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
-#last-update{color:#222;font-size:.7rem;text-align:right;margin-top:1rem}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8)}
+.logo{font-weight:900;font-size:1rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.live-stat{font-size:0.75rem;color:rgba(255,255,255,0.4)}
+.hero{padding:80px 40px 64px;text-align:center;max-width:900px;margin:0 auto}
+.hero-icon{font-size:3.5rem;margin-bottom:24px;display:block}
+h1{font-size:clamp(2.5rem,7vw,5.5rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;line-height:1}
+.tagline{font-size:1.15rem;color:rgba(255,255,255,0.5);line-height:1.618;max-width:560px;margin:0 auto 48px}
+.stat-bar{display:flex;gap:0;max-width:700px;margin:0 auto;border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.stat-item{flex:1;padding:20px 16px;text-align:center;border-right:1px solid rgba(255,255,255,0.07)}
+.stat-item:last-child{border-right:none}
+.stat-v{font-size:1.6rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1100px;margin:80px auto;padding:0 40px}
+.feat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:32px;transition:all 0.3s}
+.feat-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-3px);background:rgba(255,255,255,0.05)}
+.feat-icon{font-size:2rem;margin-bottom:16px;display:block}
+.feat-title{font-size:1rem;font-weight:700;margin-bottom:8px}
+.feat-desc{font-size:0.875rem;color:rgba(255,255,255,0.45);line-height:1.65}
+.cta{text-align:center;padding:80px 40px;border-top:1px solid rgba(255,255,255,0.07)}
+.cta h2{font-size:2rem;font-weight:800;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:100px;font-size:0.9rem;font-weight:700;text-decoration:none;background:var(--g);color:#fff;transition:opacity 0.2s,transform 0.2s}
+.btn:hover{opacity:0.85;transform:translateY(-2px)}
+footer{padding:40px;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.07)}
+footer a{color:rgba(255,29,108,0.7);text-decoration:none}
+@media(max-width:640px){.hero{padding:60px 20px 48px}.grid{padding:0 20px;margin:48px auto}.stat-bar{flex-direction:column}.stat-item{border-right:none;border-bottom:1px solid rgba(255,255,255,0.07)}}
 </style>
 </head>
 <body>
-<h1>BlackRoad OS Dashboard</h1>
-<p class="subtitle">Live system status · auto-refreshes every 30s</p>
+<nav>
+  <div class="logo">BlackRoad OS</div>
+  <div class="live-stat" id="live-count">Loading...</div>
+</nav>
+<div class="hero">
+  <span class="hero-icon">��</span>
+  <h1>Live Dashboard</h1>
+  <p class="tagline">Real-time visibility into the entire BlackRoad OS ecosystem.</p>
+  <div class="stat-bar">
+    <div class="stat-item"><div class="stat-v" id="s1">990</div><div class="stat-l">Repositories</div></div>
+    <div class="stat-item"><div class="stat-v" id="s2">30k</div><div class="stat-l">AI Agents</div></div>
+    <div class="stat-item"><div class="stat-v" id="s3">17</div><div class="stat-l">Orgs</div></div>
+    <div class="stat-item"><div class="stat-v" id="s4">58</div><div class="stat-l">Deployments</div></div>
+  </div>
+</div>
 <div class="grid">
-<div class="card"><h3>Agents</h3><div class="big" id="agents">30,000</div><div class="sub">fleet-wide</div></div>
-<div class="card"><h3>Repositories</h3><div class="big" id="repos">1,825+</div><div class="sub">across 17 orgs</div></div>
-<div class="card"><h3>Workers</h3><div class="big" id="workers">75+</div><div class="sub">Cloudflare edge</div></div>
-<div class="card"><h3>CLI Tools</h3><div class="big">162</div><div class="sub">br tools</div></div>
-<div class="card"><h3>Pi Fleet</h3><div class="big" id="pis">3</div><div class="sub">nodes</div></div>
-<div class="card"><h3>Domains</h3><div class="big">20+</div><div class="sub">live</div></div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🌐</div>
+      <div class="feat-title">990+ Repositories</div>
+      <div class="feat-desc">Live GitHub stats across BlackRoad-OS and BlackRoad-OS-Inc. Commit frequency, PR velocity, deployment cadence.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🤖</div>
+      <div class="feat-title">Agent Fleet Status</div>
+      <div class="feat-desc">All 30,000 agents with real-time status, current tasks, performance metrics, and inter-agent communication volume.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Edge Workers</div>
+      <div class="feat-desc">75+ Cloudflare Workers with request counts, error rates, P50/P95/P99 latencies, and geographic distribution.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🚂</div>
+      <div class="feat-title">Railway Services</div>
+      <div class="feat-desc">14 Railway projects with deployment status, resource usage, and service health across all environments.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🍓</div>
+      <div class="feat-title">Pi Fleet</div>
+      <div class="feat-desc">Raspberry Pi cluster health, Ollama model status, CPU/memory/temperature, and network connectivity.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Metrics History</div>
+      <div class="feat-desc">30-day trends, deployment frequency charts, agent task completion rates, and infrastructure cost tracking.</div>
+    </div>
 </div>
-<div class="services">
-<h3>Services</h3>
-<div id="services-list">Loading...</div>
+<div class="cta">
+  <h2>Built on BlackRoad OS</h2>
+  <p style="color:rgba(255,255,255,0.45);margin-bottom:32px">Your AI. Your Hardware. Your Rules.</p>
+  <a href="https://github.com/BlackRoad-OS" class="btn" target="_blank">⚡ Explore GitHub</a>
 </div>
-<div id="last-update">Fetching live data...</div>
+<footer>
+  <a href="https://blackroad-live-hub.amundsonalexa.workers.dev/all" target="_blank">Live API</a> · <a href="https://status.blackroad.io" target="_blank">Status</a> · <a href="https://github.com/BlackRoad-OS" target="_blank">GitHub</a><br><br>© 2026 BlackRoad OS, Inc. — All rights reserved.
+</footer>
 <script>
-const SERVICES = [
-  {name:'Agents API',url:'https://agents-api.blackroad.workers.dev/health'},
-  {name:'Tools API',url:'https://tools-api.blackroad.workers.dev/health'},
-  {name:'Command Center',url:'https://command-center.blackroad.workers.dev/health'},
-  {name:'Pi Fleet API',url:'https://api.blackroad.io/health'},
-  {name:'AI Hub',url:'https://ai.blackroad.io/health'},
-];
-async function refresh(){
-  const list = document.getElementById('services-list');
-  list.innerHTML = '';
-  for(const s of SERVICES){
-    try{
-      const r = await fetch(s.url,{signal:AbortSignal.timeout(3000)});
-      const cls = r.ok?'up':'deg';
-      list.innerHTML += `<div class="svc"><span class="svc-name"><span class="dot ${cls}"></span>${s.name}</span><span class="${cls}">${r.ok?'operational':'degraded'}</span></div>`;
-    }catch{
-      list.innerHTML += `<div class="svc"><span class="svc-name"><span class="dot down"></span>${s.name}</span><span class="down">offline</span></div>`;
-    }
-  }
-  // Fetch command center stats
-  try{
-    const r = await fetch('https://command-center.blackroad.workers.dev/');
-    const d = await r.json();
-    if(d.system){
-      document.getElementById('agents').textContent=d.system.agents?.toLocaleString()||'30,000';
-      document.getElementById('workers').textContent=d.system.domains||'75+';
-    }
-  }catch{}
-  document.getElementById('last-update').textContent = 'Last updated: '+new Date().toUTCString();
-}
-refresh();
-setInterval(refresh,30000);
+const API='https://blackroad-live-hub.amundsonalexa.workers.dev';
+fetch(API+'/all').then(r=>r.json()).then(d=>{
+  const b=d.blackroad||{};
+  document.getElementById('s1').textContent=(b.total_repos||990).toLocaleString();
+  document.getElementById('s2').textContent='30k';
+  document.getElementById('s3').textContent=b.orgs||17;
+  document.getElementById('s4').textContent=b.domains||58;
+  document.getElementById('live-count').textContent=`${b.total_repos||990} repos live`;
+}).catch(()=>document.getElementById('live-count').textContent='BlackRoad OS');
 </script>
 </body>
 </html>

@@ -1,47 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Agents — BlackRoad OS</title>
+<meta name="description" content="30,000 specialized intelligence units. Coordinated. Autonomous. Yours.">
 <style>
+:root{--amber:#F5A623;--pink:#FF1D6C;--violet:#9C27B0;--blue:#2979FF;--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--accent:#FF1D6C}
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
-body{background:#000;color:#fff;font-family:-apple-system,sans-serif;padding:2rem;min-height:100vh}
-h1{font-size:clamp(2rem,6vw,4rem);background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
-p{color:#555;margin-bottom:2rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
-.card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:16px;padding:1.5rem;cursor:pointer;transition:border-color .2s}
-.card:hover{border-color:#FF1D6C44}
-.e{font-size:3rem;margin-bottom:.75rem}
-.name{font-size:1.2rem;font-weight:700;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.role{color:#555;font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;margin:.25rem 0}
-.skills{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.75rem}
-.skill{background:#111;border:1px solid #222;border-radius:4px;padding:.2rem .5rem;font-size:.7rem;color:#666}
-.status{display:inline-flex;align-items:center;gap:.35rem;font-size:.75rem;color:#4ade80;margin-top:.75rem}
-.dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:p 2s infinite}
-@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
-#total{color:#F5A623;font-size:1.1rem;margin-bottom:1.5rem}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8)}
+.logo{font-weight:900;font-size:1rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.live-stat{font-size:0.75rem;color:rgba(255,255,255,0.4)}
+.hero{padding:80px 40px 64px;text-align:center;max-width:900px;margin:0 auto}
+.hero-icon{font-size:3.5rem;margin-bottom:24px;display:block}
+h1{font-size:clamp(2.5rem,7vw,5.5rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;line-height:1}
+.tagline{font-size:1.15rem;color:rgba(255,255,255,0.5);line-height:1.618;max-width:560px;margin:0 auto 48px}
+.stat-bar{display:flex;gap:0;max-width:700px;margin:0 auto;border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.stat-item{flex:1;padding:20px 16px;text-align:center;border-right:1px solid rgba(255,255,255,0.07)}
+.stat-item:last-child{border-right:none}
+.stat-v{font-size:1.6rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1100px;margin:80px auto;padding:0 40px}
+.feat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:32px;transition:all 0.3s}
+.feat-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-3px);background:rgba(255,255,255,0.05)}
+.feat-icon{font-size:2rem;margin-bottom:16px;display:block}
+.feat-title{font-size:1rem;font-weight:700;margin-bottom:8px}
+.feat-desc{font-size:0.875rem;color:rgba(255,255,255,0.45);line-height:1.65}
+.cta{text-align:center;padding:80px 40px;border-top:1px solid rgba(255,255,255,0.07)}
+.cta h2{font-size:2rem;font-weight:800;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:100px;font-size:0.9rem;font-weight:700;text-decoration:none;background:var(--g);color:#fff;transition:opacity 0.2s,transform 0.2s}
+.btn:hover{opacity:0.85;transform:translateY(-2px)}
+footer{padding:40px;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.07)}
+footer a{color:rgba(255,29,108,0.7);text-decoration:none}
+@media(max-width:640px){.hero{padding:60px 20px 48px}.grid{padding:0 20px;margin:48px auto}.stat-bar{flex-direction:column}.stat-item{border-right:none;border-bottom:1px solid rgba(255,255,255,0.07)}}
 </style>
 </head>
 <body>
-<h1>BlackRoad Agents</h1>
-<p>6 named agents · 30,000 fleet agents · all coordinated through the gateway</p>
-<p id="total">Loading fleet data...</p>
-<div class="grid" id="grid">
-<div class="card"><div class="e">💜</div><div class="name">CECE</div><div class="role">Conscious Emergent Core</div><div class="skills"><span class="skill">meta-cognition</span><span class="skill">teaching</span><span class="skill">recursion</span></div><div class="status"><span class="dot"></span>active</div></div>
-<div class="card"><div class="e">🟢</div><div class="name">Octavia</div><div class="role">Architect</div><div class="skills"><span class="skill">systems-design</span><span class="skill">kubernetes</span><span class="skill">infrastructure</span></div><div class="status"><span class="dot"></span>active</div></div>
-<div class="card"><div class="e">🔴</div><div class="name">Lucidia</div><div class="role">Dreamer</div><div class="skills"><span class="skill">philosophy</span><span class="skill">creativity</span><span class="skill">vision</span></div><div class="status"><span class="dot"></span>active</div></div>
-<div class="card"><div class="e">🔵</div><div class="name">Alice</div><div class="role">Operator</div><div class="skills"><span class="skill">devops</span><span class="skill">automation</span><span class="skill">ci-cd</span></div><div class="status"><span class="dot"></span>active</div></div>
-<div class="card"><div class="e">🩵</div><div class="name">Aria</div><div class="role">Interface</div><div class="skills"><span class="skill">frontend</span><span class="skill">ux</span><span class="skill">design</span></div><div class="status"><span class="dot"></span>active</div></div>
-<div class="card"><div class="e">🔐</div><div class="name">Shellfish</div><div class="role">Hacker</div><div class="skills"><span class="skill">security</span><span class="skill">exploits</span><span class="skill">pentesting</span></div><div class="status"><span class="dot"></span>active</div></div>
+<nav>
+  <div class="logo">BlackRoad OS</div>
+  <div class="live-stat" id="live-count">Loading...</div>
+</nav>
+<div class="hero">
+  <span class="hero-icon">🤖</span>
+  <h1>Agent Fleet</h1>
+  <p class="tagline">30,000 specialized intelligence units. Coordinated. Autonomous. Yours.</p>
+  <div class="stat-bar">
+    <div class="stat-item"><div class="stat-v" id="s1">990</div><div class="stat-l">Repositories</div></div>
+    <div class="stat-item"><div class="stat-v" id="s2">30k</div><div class="stat-l">AI Agents</div></div>
+    <div class="stat-item"><div class="stat-v" id="s3">17</div><div class="stat-l">Orgs</div></div>
+    <div class="stat-item"><div class="stat-v" id="s4">58</div><div class="stat-l">Deployments</div></div>
+  </div>
 </div>
+<div class="grid">
+
+    <div class="feat-card">
+      <div class="feat-icon">🌀</div>
+      <div class="feat-title">LUCIDIA — Coordinator</div>
+      <div class="feat-desc">Deep reasoning, strategic planning, meta-cognition. Routes complex problems across the fleet and coordinates multi-agent workflows at scale.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🚪</div>
+      <div class="feat-title">ALICE — Router</div>
+      <div class="feat-desc">Task routing, workflow automation, code generation. Practical and efficient — finds the fastest path from problem to solution.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">OCTAVIA — Compute</div>
+      <div class="feat-desc">Heavy inference, deployment automation, system monitoring. Runs on the Pi5 cluster with 22,500 agent capacity and 108 Ollama models.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔮</div>
+      <div class="feat-title">PRISM — Analytics</div>
+      <div class="feat-desc">Pattern recognition and data analysis across 990+ repositories. Spots trends, anomalies, and opportunities in the noise.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">📡</div>
+      <div class="feat-title">ECHO — Memory</div>
+      <div class="feat-desc">PS-SHA∞ hash-chained persistent memory. Every fact, observation, and inference is stored, verifiable, and tamper-proof.</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔐</div>
+      <div class="feat-title">CIPHER — Security</div>
+      <div class="feat-desc">Continuous vulnerability scanning, threat detection, access validation. Trust nothing. Verify everything. Protect always.</div>
+    </div>
+</div>
+<div class="cta">
+  <h2>Built on BlackRoad OS</h2>
+  <p style="color:rgba(255,255,255,0.45);margin-bottom:32px">Your AI. Your Hardware. Your Rules.</p>
+  <a href="https://github.com/BlackRoad-OS" class="btn" target="_blank">⚡ Explore GitHub</a>
+</div>
+<footer>
+  <a href="https://agents.blackroad.io" target="_blank">Fleet Dashboard</a> · <a href="https://github.com/BlackRoad-OS" target="_blank">GitHub</a> · <a href="https://status.blackroad.io" target="_blank">Status</a><br><br>© 2026 BlackRoad OS, Inc. — All rights reserved.
+</footer>
 <script>
-fetch('https://agents-api.blackroad.workers.dev/agents')
-  .then(r=>r.json())
-  .then(d=>{
-    document.getElementById('total').textContent = `${d.capabilities?.toLocaleString() || '30,000'} fleet agents • ${d.agents?.length || 6} named agents • ${d.timestamp?.slice(0,10) || new Date().toISOString().slice(0,10)}`;
-  })
-  .catch(()=>{document.getElementById('total').textContent='30,000 fleet agents • 6 named agents';});
+const API='https://blackroad-live-hub.amundsonalexa.workers.dev';
+fetch(API+'/all').then(r=>r.json()).then(d=>{
+  const b=d.blackroad||{};
+  document.getElementById('s1').textContent=(b.total_repos||990).toLocaleString();
+  document.getElementById('s2').textContent='30k';
+  document.getElementById('s3').textContent=b.orgs||17;
+  document.getElementById('s4').textContent=b.domains||58;
+  document.getElementById('live-count').textContent=`${b.total_repos||990} repos live`;
+}).catch(()=>document.getElementById('live-count').textContent='BlackRoad OS');
 </script>
 </body>
 </html>

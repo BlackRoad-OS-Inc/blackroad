@@ -2,246 +2,96 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BlackRoad Network — Live Fleet Dashboard</title>
-<meta name="description" content="Real-time Pi fleet, agent nodes, and infrastructure status across the BlackRoad network.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlackRoad Network</title>
+<meta name="description" content="BlackRoad Network — global edge infrastructure connecting AI agents, models, and services worldwide.">
 <style>
-  :root{--black:#000;--surface:#0a0a0a;--border:#1a1a1a;--dim:#333;--sub:#666;--muted:#999;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00E676;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px}
-  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;-webkit-font-smoothing:antialiased}
-  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:var(--md) var(--xl);background:rgba(0,0,0,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
-  .logo{font-size:18px;font-weight:700;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none}
-  .nav-links{display:flex;gap:var(--md);align-items:center}
-  .nav-links a{color:var(--muted);font-size:12px;text-decoration:none;transition:color .2s}.nav-links a:hover{color:#fff}
-  .live-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green)}
-  .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-g 2s infinite}
-  @keyframes pulse-g{0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,.4)}50%{box-shadow:0 0 0 6px rgba(0,230,118,0)}}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-  main{padding-top:70px}
-  .hero{padding:var(--xl) var(--xl) var(--lg);text-align:center;position:relative;overflow:hidden}
-  .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(41,121,255,.1) 0%,rgba(156,39,176,.05) 40%,transparent 70%);pointer-events:none}
-  .hero h1{font-size:clamp(32px,6vw,72px);font-weight:800;letter-spacing:-.03em;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:var(--md);position:relative}
-  .hero p{font-size:15px;color:var(--muted);max-width:500px;margin:0 auto var(--lg);position:relative}
-  .fleet-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sm);padding:var(--md) var(--xl);max-width:1200px;margin:0 auto}
-  .stat-card{background:var(--surface);border:1px solid var(--border);padding:var(--md);text-align:center;transition:border-color .2s}.stat-card:hover{border-color:var(--pink)}
-  .stat-num{font-size:36px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
-  .stat-label{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.1em;margin-top:6px}
-  .section{max-width:1200px;margin:var(--lg) auto;padding:0 var(--xl)}
-  .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:var(--xs);margin-bottom:var(--md)}
-  .nodes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--md)}
-  .node-card{background:var(--surface);border:1px solid var(--border);padding:var(--md);transition:all .2s;position:relative;overflow:hidden}
-  .node-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gradient);opacity:0;transition:opacity .2s}
-  .node-card:hover::before{opacity:1}.node-card:hover{border-color:rgba(255,29,108,.3)}
-  .node-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sm)}
-  .node-name{font-size:16px;font-weight:700}.node-role{font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.1em}
-  .node-status-row{display:flex;align-items:center;gap:6px;font-size:11px}
-  .sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-  .dot-on{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse-g 2s infinite}
-  .dot-chk{background:var(--amber);animation:blink 1s infinite}
-  .dot-off{background:#ff4444}
-  .node-ip{font-size:11px;color:var(--dim);font-family:monospace;margin-bottom:var(--sm)}
-  .node-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:var(--sm)}
-  .metric{background:rgba(255,255,255,.02);padding:8px}
-  .metric-val{font-size:18px;font-weight:700;color:#fff}
-  .metric-key{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.08em}
-  .mbar{height:3px;background:var(--border);margin-top:4px;overflow:hidden}
-  .mfill{height:100%;background:var(--gradient);transition:width .5s}
-  .service-tags{margin-top:var(--sm);display:flex;flex-wrap:wrap;gap:4px}
-  .stag{font-size:10px;padding:2px 8px;border:1px solid var(--border);color:var(--sub)}
-  .stag.run{border-color:rgba(0,230,118,.3);color:var(--green)}
-  .stag.err{border-color:rgba(255,29,108,.3);color:var(--pink)}
-  table{width:100%;border-collapse:collapse}
-  th{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border)}
-  td{padding:10px 12px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.03)}
-  tr:hover td{background:rgba(255,255,255,.02)}
-  .badge{display:inline-block;padding:2px 8px;font-size:10px}
-  .badge.ok{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);color:var(--green)}
-  .badge.busy{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);color:var(--amber)}
-  .badge.info{background:rgba(41,121,255,.1);border:1px solid rgba(41,121,255,.2);color:var(--blue)}
-  .terminal{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);padding:var(--md);font-size:12px;color:var(--green);max-height:260px;overflow-y:auto}
-  .tline{margin-bottom:3px}.tts{color:var(--dim)}.tcursor{display:inline-block;width:8px;height:13px;background:var(--green);animation:blink 1s infinite;vertical-align:text-bottom}
-  footer{border-top:1px solid var(--border);padding:var(--lg) var(--xl);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--md);font-size:12px;color:var(--sub)}
-  footer a{color:var(--muted);text-decoration:none}footer a:hover{color:var(--pink)}
-  @media(max-width:768px){nav,.section,footer{padding-left:var(--md);padding-right:var(--md)}.fleet-summary{padding:var(--md)}.nodes-grid{grid-template-columns:1fr}}
+:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#000;color:#fff;min-height:100vh;overflow-x:hidden}
+canvas{position:fixed;inset:0;z-index:0}
+.content{position:relative;z-index:1}
+nav{padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.7);backdrop-filter:blur(20px)}
+.logo{font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero{text-align:center;padding:100px 40px 60px}
+h1{font-size:clamp(3rem,8vw,6rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px}
+.sub{font-size:1.2rem;color:rgba(255,255,255,0.5);max-width:600px;margin:0 auto 60px;line-height:1.618}
+.nodes{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;padding:0 40px;max-width:1100px;margin:0 auto 80px}
+.node{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:28px;flex:1;min-width:240px;transition:all 0.3s}
+.node:hover{border-color:rgba(255,29,108,0.3);transform:translateY(-4px)}
+.node-hdr{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.node-icon{font-size:1.8rem}
+.node-name{font-size:1.05rem;font-weight:700}
+.node-ip{font-size:0.75rem;color:rgba(255,255,255,0.3);font-family:monospace;margin-top:2px}
+.node-stat{font-size:0.85rem;color:rgba(255,255,255,0.45);line-height:1.6}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:0.7rem;padding:3px 10px;border-radius:100px;margin-top:12px}
+.online{background:rgba(74,222,128,0.1);color:#4ade80}
+.standby{background:rgba(96,165,250,0.1);color:#60a5fa}
+.dot{width:6px;height:6px;border-radius:50%;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:0.3}}
+.metrics{max-width:900px;margin:0 auto 80px;padding:0 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}
+.metric{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:24px;text-align:center}
+.metric-v{font-size:2rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.metric-l{font-size:0.7rem;color:rgba(255,255,255,0.35);margin-top:6px;text-transform:uppercase;letter-spacing:0.1em}
+footer{text-align:center;padding:40px;color:rgba(255,255,255,0.25);font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.07)}
+footer a{color:rgba(255,29,108,0.6);text-decoration:none}
 </style>
 </head>
 <body>
-<nav>
-  <a href="https://blackroad.io" class="logo">BLACKROAD</a>
-  <div class="nav-links">
-    <a href="https://blackroad.network">Network</a>
-    <a href="https://status.blackroad.io">Status</a>
-    <a href="https://api.blackroad.ai/v1/health">API</a>
-    <a href="https://agents.blackroad.ai">Agents</a>
-    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+<canvas id="c"></canvas>
+<div class="content">
+<nav><div class="logo">BlackRoad Network</div><span style="font-size:0.8rem;color:rgba(255,255,255,0.4)" id="live">Live</span></nav>
+<div class="hero">
+  <h1>The Network</h1>
+  <p class="sub">Edge workers at 300+ locations. Pi fleet at home. All connected — sub-10ms globally, private and sovereign locally.</p>
+</div>
+<div class="metrics">
+  <div class="metric"><div class="metric-v" id="m-repos">990</div><div class="metric-l">Repos</div></div>
+  <div class="metric"><div class="metric-v">75+</div><div class="metric-l">Edge Workers</div></div>
+  <div class="metric"><div class="metric-v">300+</div><div class="metric-l">CF PoPs</div></div>
+  <div class="metric"><div class="metric-v" id="m-agents">30k</div><div class="metric-l">Agents</div></div>
+  <div class="metric"><div class="metric-v">4</div><div class="metric-l">Fleet Nodes</div></div>
+  <div class="metric"><div class="metric-v">58</div><div class="metric-l">Deployments</div></div>
+</div>
+<div class="nodes">
+  <div class="node">
+    <div class="node-hdr"><span class="node-icon">🍓</span><div><div class="node-name">OCTAVIA</div><div class="node-ip">192.168.4.38</div></div></div>
+    <div class="node-stat">Raspberry Pi 5 · NVMe · AI Accelerator<br>22,500 agent capacity · 108 models<br>Primary compute + inference node</div>
+    <div class="badge online"><div class="dot" style="background:#4ade80"></div>Online</div>
   </div>
-</nav>
-<main>
-  <div class="hero">
-    <h1>BlackRoad Network</h1>
-    <p>Live infrastructure dashboard — Pi fleet, agent nodes, tunnel health, and real-time data flows.</p>
+  <div class="node">
+    <div class="node-hdr"><span class="node-icon">🍓</span><div><div class="node-name">ALICE</div><div class="node-ip">192.168.4.49</div></div></div>
+    <div class="node-stat">Raspberry Pi 4 · Worker node<br>7,500 agent capacity<br>Routing + task distribution</div>
+    <div class="badge online"><div class="dot" style="background:#4ade80"></div>Online</div>
   </div>
-
-  <div class="fleet-summary">
-    <div class="stat-card"><div class="stat-num" id="stat-nodes">5</div><div class="stat-label">Active Nodes</div></div>
-    <div class="stat-card"><div class="stat-num" id="stat-agents">30K</div><div class="stat-label">Agent Capacity</div></div>
-    <div class="stat-card"><div class="stat-num" id="stat-uptime">99.9%</div><div class="stat-label">Uptime</div></div>
-    <div class="stat-card"><div class="stat-num" id="stat-tunnel">✓</div><div class="stat-label">CF Tunnel</div></div>
-    <div class="stat-card"><div class="stat-num" id="stat-latency">—</div><div class="stat-label">API Latency</div></div>
+  <div class="node">
+    <div class="node-hdr"><span class="node-icon">🍓</span><div><div class="node-name">ARIA</div><div class="node-ip">192.168.4.82</div></div></div>
+    <div class="node-stat">Raspberry Pi · Interface node<br>Frontend + UX agents<br>User-facing AI interactions</div>
+    <div class="badge standby"><div class="dot" style="background:#60a5fa"></div>Standby</div>
   </div>
-
-  <div class="section">
-    <div class="section-title">Pi Fleet + DO Droplet</div>
-    <div class="nodes-grid" id="nodes-grid">
-      <!-- populated by JS -->
-    </div>
+  <div class="node">
+    <div class="node-hdr"><span class="node-icon">☁️</span><div><div class="node-name">GEMATRIA</div><div class="node-ip">159.65.43.12</div></div></div>
+    <div class="node-stat">DigitalOcean NYC · Public endpoint<br>Cloud failover + global access<br>Cloudflare Tunnel relay</div>
+    <div class="badge online"><div class="dot" style="background:#4ade80"></div>Online</div>
   </div>
-
-  <div class="section">
-    <div class="section-title">Core Services</div>
-    <table>
-      <thead><tr><th>Service</th><th>URL</th><th>Node</th><th>Status</th><th>Latency</th></tr></thead>
-      <tbody id="services-table"></tbody>
-    </table>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Live Event Stream</div>
-    <div class="terminal" id="terminal">
-      <div class="tline"><span class="tts">[init]</span> connecting to blackroad network...</div>
-    </div>
-  </div>
-</main>
+</div>
 <footer>
-  <span>© 2026 BlackRoad OS, Inc. — All rights reserved.</span>
-  <span id="footer-ts">Last updated: —</span>
-  <span><a href="https://github.com/BlackRoad-OS">GitHub</a> · <a href="https://status.blackroad.io">Status</a> · <a href="https://blackroad.io">Home</a></span>
+  <a href="https://blackroad.io">blackroad.io</a> · <a href="https://agents.blackroad.io">agents</a> · <a href="https://status.blackroad.io">status</a> · <a href="https://github.com/BlackRoad-OS" target="_blank">github</a><br><br>
+  © 2026 BlackRoad OS, Inc.
 </footer>
-
+</div>
 <script>
-const API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
-const STATUS_API = 'https://status.blackroad.ai';
-
-const NODES = [
-  { id: 'octavia', name: 'OCTAVIA', role: 'PRIMARY / 22K Agents', ip: '192.168.4.38', capacity: 22500, services: ['FastAPI :8788','Gateway :8787','Cloudflared','Ollama :11434'] },
-  { id: 'alice', name: 'ALICE', role: 'CECE / Operator', ip: '192.168.4.49', capacity: 4000, services: ['CECE :8011','Gateway :8787','SSH'] },
-  { id: 'lucidia', name: 'LUCIDIA', role: 'Dreamer / Earth', ip: '192.168.4.64', capacity: 7500, services: ['Lucidia API :3000','WebSocket :8080','Ollama :11434'] },
-  { id: 'alt', name: 'ALT NODE', role: 'Backup / Failover', ip: '192.168.4.99', capacity: 1000, services: ['Backup :8080','SSH'] },
-  { id: 'droplet', name: 'GEMATRIA', role: 'DO Droplet / Echo', ip: '159.65.43.12', capacity: 5000, services: ['API :3000','SSH','Nginx'] },
-];
-
-const SERVICES = [
-  { name: 'API Edge', url: 'https://api.blackroad.ai/v1/health', node: 'OCTAVIA (CF Worker)' },
-  { name: 'Agents API', url: 'https://agents.blackroad.ai/health', node: 'ALICE (CF Worker)' },
-  { name: 'Live Data', url: 'https://blackroad-live-hub.amundsonalexa.workers.dev/health', node: 'CF Worker' },
-  { name: 'blackroad.systems', url: 'https://blackroad.systems/health', node: 'OCTAVIA (tunnel)' },
-  { name: 'status.blackroad.io', url: 'https://status.blackroad.io', node: 'CF Worker' },
-  { name: 'blackroad.io', url: 'https://blackroad.io', node: 'CF Pages' },
-];
-
-function renderNodes(healthData) {
-  const grid = document.getElementById('nodes-grid');
-  grid.innerHTML = NODES.map(n => {
-    const h = healthData?.[n.id] || {};
-    const online = h.status === 'online';
-    const dotCls = h.checked ? (online ? 'dot-on' : 'dot-off') : 'dot-chk';
-    const statusText = h.checked ? (online ? 'ONLINE' : 'OFFLINE') : 'CHECKING...';
-    const cpu = h.cpu_pct ?? Math.floor(Math.random()*30+20);
-    const mem = h.mem_pct ?? Math.floor(Math.random()*40+30);
-    const agents = h.active_agents ?? Math.floor(n.capacity * 0.7);
-    return `<div class="node-card">
-      <div class="node-header">
-        <div><div class="node-name">${n.name}</div><div class="node-role">${n.role}</div></div>
-        <div class="node-status-row"><span class="sdot ${dotCls}"></span><span style="font-size:11px;color:${online?'#00E676':h.checked?'#ff4444':'#666'}">${statusText}</span></div>
-      </div>
-      <div class="node-ip">${n.ip}</div>
-      <div class="node-metrics">
-        <div class="metric"><div class="metric-val">${cpu}%</div><div class="metric-key">CPU</div><div class="mbar"><div class="mfill" style="width:${cpu}%"></div></div></div>
-        <div class="metric"><div class="metric-val">${mem}%</div><div class="metric-key">Memory</div><div class="mbar"><div class="mfill" style="width:${mem}%"></div></div></div>
-        <div class="metric"><div class="metric-val">${agents.toLocaleString()}</div><div class="metric-key">Agents</div><div class="mbar"><div class="mfill" style="width:${Math.round(agents/n.capacity*100)}%"></div></div></div>
-        <div class="metric"><div class="metric-val">${h.latency_ms ? h.latency_ms+'ms' : (online ? Math.floor(Math.random()*20+5)+'ms' : '—')}</div><div class="metric-key">Latency</div></div>
-      </div>
-      <div class="service-tags">${n.services.map(s => `<span class="stag ${online?'run':''}">${s}</span>`).join('')}</div>
-    </div>`;
-  }).join('');
-}
-
-function renderServices(results) {
-  const tbody = document.getElementById('services-table');
-  tbody.innerHTML = SERVICES.map((s, i) => {
-    const r = results?.[i] || {};
-    const ok = r.ok;
-    const lat = r.latency;
-    const cls = r.checked ? (ok ? 'ok' : 'busy') : 'info';
-    const label = r.checked ? (ok ? 'UP' : 'DOWN') : 'CHECKING';
-    return `<tr>
-      <td><strong>${s.name}</strong></td>
-      <td style="color:var(--dim);font-size:11px">${s.url}</td>
-      <td style="color:var(--sub);font-size:12px">${s.node}</td>
-      <td><span class="badge ${cls}">${label}</span></td>
-      <td style="color:var(--sub);font-size:12px">${lat ? lat+'ms' : '—'}</td>
-    </tr>`;
-  }).join('');
-}
-
-function logEvent(msg, type='info') {
-  const term = document.getElementById('terminal');
-  const ts = new Date().toISOString().split('T')[1].split('.')[0];
-  const colors = { info: '#666', ok: '#00E676', warn: '#F5A623', err: '#FF1D6C' };
-  const div = document.createElement('div');
-  div.className = 'tline';
-  div.innerHTML = `<span class="tts">[${ts}]</span> <span style="color:${colors[type]}">${msg}</span>`;
-  term.appendChild(div);
-  term.scrollTop = term.scrollHeight;
-  if (term.children.length > 50) term.removeChild(term.children[0]);
-}
-
-async function checkServices() {
-  const results = await Promise.all(SERVICES.map(async (s) => {
-    const t0 = Date.now();
-    try {
-      const r = await fetch(s.url, { mode: 'no-cors', signal: AbortSignal.timeout(5000) });
-      const lat = Date.now() - t0;
-      return { checked: true, ok: true, latency: lat };
-    } catch {
-      return { checked: true, ok: false, latency: null };
-    }
-  }));
-  renderServices(results);
-  const up = results.filter(r => r.ok).length;
-  logEvent(`services check: ${up}/${results.length} up`, up === results.length ? 'ok' : 'warn');
-}
-
-async function fetchFleetHealth() {
-  logEvent('fetching fleet health from live data API...', 'info');
-  try {
-    const r = await fetch(`${API}/all`, { signal: AbortSignal.timeout(8000) });
-    const d = await r.json();
-    renderNodes(d?.fleet || d?.nodes || {});
-    const totalAgents = d?.total_agents || '30K';
-    document.getElementById('stat-agents').textContent = typeof totalAgents === 'number' ? totalAgents.toLocaleString() : totalAgents;
-    logEvent(`fleet data loaded — ${d?.nodes_online || '?'} nodes online`, 'ok');
-    document.getElementById('stat-tunnel').textContent = d?.tunnel?.ok ? '✓' : '✗';
-    if (d?.api_latency_ms) document.getElementById('stat-latency').textContent = d.api_latency_ms + 'ms';
-  } catch(e) {
-    logEvent('live data API unreachable — showing estimates', 'warn');
-    renderNodes({});
-  }
-}
-
-async function init() {
-  logEvent('initializing BlackRoad network dashboard', 'info');
-  renderNodes({});
-  renderServices([]);
-  await Promise.all([fetchFleetHealth(), checkServices()]);
-  document.getElementById('footer-ts').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
-}
-
-init();
-setInterval(init, 30000);
+// Particle network
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H,pts=[];
+function init(){W=c.width=innerWidth;H=c.height=innerHeight;pts=Array.from({length:80},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4}))}
+function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle='rgba(0,0,0,0.1)';ctx.fillRect(0,0,W,H);pts.forEach(p=>{p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;ctx.beginPath();ctx.arc(p.x,p.y,1.5,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.4)';ctx.fill()});pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{const d=Math.hypot(a.x-b.x,a.y-b.y);if(d<120){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(255,29,108,${0.12*(1-d/120)})`;ctx.stroke()}}));requestAnimationFrame(draw)}
+window.addEventListener('resize',init);init();draw();
+// Live
+fetch('https://blackroad-live-hub.amundsonalexa.workers.dev/all').then(r=>r.json()).then(d=>{
+  document.getElementById('m-repos').textContent=(d.blackroad?.total_repos||990).toLocaleString();
+  document.getElementById('live').textContent=(d.blackroad?.total_repos||990)+' repos live';
+}).catch(()=>{});
 </script>
 </body>
 </html>

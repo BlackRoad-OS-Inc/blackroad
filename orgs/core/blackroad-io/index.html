@@ -1,562 +1,370 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlackRoad OS, Inc. - The Complete AI-Powered Ecosystem</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            /* OFFICIAL BlackRoad Colors (from blackroad_brand_take_2.html) */
-            --amber: #F5A623;
-            --hot-pink: #FF1D6C;
-            --hot-pink: #FF0066;
-            --electric-magenta: #FF1D6C;
-            --deep-magenta: #D600AA;
-            --vivid-purple: #7700FF;
-            --cyber-blue: #0066FF;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlackRoad OS — Your AI. Your Hardware. Your Rules.</title>
+<meta name="description" content="BlackRoad OS: 990+ repos, 30,000 AI agents, 17 GitHub orgs. The AI-first operating system for builders.">
+<meta property="og:title" content="BlackRoad OS">
+<meta property="og:description" content="Your AI. Your Hardware. Your Rules.">
+<style>
+:root{--amber:#F5A623;--pink:#FF1D6C;--violet:#9C27B0;--blue:#2979FF;--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--bg:#000;--surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.07)}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:var(--bg);color:#fff;overflow-x:hidden}
+::selection{background:rgba(255,29,108,0.3)}
 
-            /* Neutrals */
-            --pure-black: #000000;
-            --deep-black: #0A0A0A;
-            --charcoal: #1A1A1A;
-            --pure-white: #FFFFFF;
+/* Canvas */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 
-            /* Official Gradients */
-            --gradient-br: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
-            --gradient-os: linear-gradient(180deg, #FF1D6C 0%, #D600AA 25%, #7700FF 75%, #0066FF 100%);
-            --gradient-full: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 48px;height:64px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(20px);background:rgba(0,0,0,0.6)}
+.nav-logo{font-size:1.15rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.02em}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{color:rgba(255,255,255,0.5);text-decoration:none;font-size:0.875rem;transition:color 0.2s}
+.nav-links a:hover{color:#fff}
+.nav-cta{background:var(--g);color:#fff;padding:8px 20px;border-radius:100px;font-size:0.875rem;font-weight:600;text-decoration:none;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
 
-            /* Spacing (Golden Ratio φ = 1.618) */
-            --space-xs: 8px;
-            --space-sm: 13px;
-            --space-md: 21px;
-            --space-lg: 34px;
-            --space-xl: 55px;
-            --space-2xl: 89px;
-            --space-3xl: 144px;
+/* Hero */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border:1px solid rgba(255,29,108,0.3);border-radius:100px;font-size:0.8rem;color:rgba(255,255,255,0.6);margin-bottom:32px;background:rgba(255,29,108,0.05)}
+.hero-badge span{width:6px;height:6px;background:#FF1D6C;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}
+h1{font-size:clamp(3.5rem,9vw,7.5rem);font-weight:900;line-height:0.95;letter-spacing:-0.03em;margin-bottom:28px;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(1.1rem,2.5vw,1.4rem);color:rgba(255,255,255,0.55);max-width:560px;line-height:1.618;margin-bottom:48px}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-bottom:80px}
+.btn-primary{background:var(--g);color:#fff;padding:14px 32px;border-radius:100px;font-size:0.95rem;font-weight:700;text-decoration:none;transition:transform 0.2s,opacity 0.2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{transform:translateY(-2px);opacity:0.9}
+.btn-secondary{background:rgba(255,255,255,0.06);color:#fff;padding:14px 32px;border-radius:100px;font-size:0.95rem;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.1);transition:all 0.2s}
+.btn-secondary:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2)}
 
-            /* Easing */
-            --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
-            --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+/* Live stats */
+.live-ring{display:flex;gap:48px;justify-content:center;flex-wrap:wrap;padding:40px 48px;background:rgba(255,255,255,0.025);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;z-index:1}
+.live-ring::before{content:'● LIVE';position:absolute;top:12px;right:24px;font-size:0.65rem;color:#4ade80;letter-spacing:0.15em;animation:pulse 2s infinite}
+.stat{text-align:center}
+.stat-val{font-size:2.25rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.stat-lbl{font-size:0.7rem;color:rgba(255,255,255,0.35);margin-top:6px;letter-spacing:0.1em;text-transform:uppercase}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+/* Terminal */
+.terminal-section{position:relative;z-index:1;max-width:800px;margin:80px auto;padding:0 24px}
+.terminal{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:16px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.8)}
+.terminal-bar{padding:14px 20px;background:#0f0f0f;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:8px}
+.terminal-dot{width:12px;height:12px;border-radius:50%}
+.terminal-body{padding:28px;font-family:'SF Mono','Fira Code',monospace;font-size:0.875rem;line-height:2;min-height:220px}
+.t-line{display:block;overflow:hidden}
+.t-prompt{color:#FF1D6C}
+.t-cmd{color:#e2e8f0}
+.t-out{color:rgba(255,255,255,0.45)}
+.t-green{color:#4ade80}
+.t-blue{color:#60a5fa}
+.t-purple{color:#a78bfa}
+.cursor{display:inline-block;width:8px;height:16px;background:#FF1D6C;animation:blink 1.2s infinite;vertical-align:middle}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
-        body {
-            font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
-            background: var(--pure-black);
-            color: var(--pure-white);
-            line-height: 1.618;
-            overflow-x: hidden;
-        }
+/* Features */
+.section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:80px 24px}
+.section-label{font-size:0.75rem;color:var(--pink);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:16px;font-weight:600}
+.section-title{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;letter-spacing:-0.02em;line-height:1.1;margin-bottom:16px}
+.section-sub{font-size:1.1rem;color:rgba(255,255,255,0.5);max-width:520px;line-height:1.618;margin-bottom:56px}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.feat-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;transition:all 0.3s;position:relative;overflow:hidden}
+.feat-card::before{content:'';position:absolute;inset:0;background:var(--g);opacity:0;transition:opacity 0.3s;border-radius:20px}
+.feat-card:hover{border-color:rgba(255,29,108,0.3);transform:translateY(-4px)}
+.feat-card:hover::before{opacity:0.04}
+.feat-icon{font-size:2.25rem;margin-bottom:20px;display:block}
+.feat-title{font-size:1.1rem;font-weight:700;margin-bottom:8px;position:relative;z-index:1}
+.feat-desc{font-size:0.875rem;color:rgba(255,255,255,0.45);line-height:1.65;position:relative;z-index:1}
 
-        /* Animated Background Grid */
-        .bg-grid {
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255, 157, 0, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 157, 0, 0.02) 1px, transparent 1px);
-            background-size: 55px 55px;
-            animation: grid-move 30s linear infinite;
-            z-index: 0;
-        }
+/* Agents section */
+.agents-section{background:rgba(255,255,255,0.015);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:80px 24px;position:relative;z-index:1}
+.agents-inner{max-width:1200px;margin:0 auto}
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-top:48px}
+.agent-card{background:#050505;border:1px solid #111;border-radius:16px;padding:24px;transition:all 0.25s;cursor:default}
+.agent-card:hover{border-color:rgba(255,255,255,0.15);transform:translateY(-2px)}
+.agent-avatar{width:48px;height:48px;border-radius:12px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.agent-name{font-size:0.9rem;font-weight:700;margin-bottom:4px}
+.agent-role{font-size:0.75rem;color:rgba(255,255,255,0.35)}
+.agent-status{display:inline-flex;align-items:center;gap:6px;font-size:0.7rem;margin-top:12px;color:rgba(255,255,255,0.5)}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
-        @keyframes grid-move {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(55px, 55px); }
-        }
+/* Recent repos */
+.repos-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:80px 24px}
+.repos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:48px}
+.repo-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all 0.25s;text-decoration:none;color:#fff;display:block}
+.repo-card:hover{border-color:rgba(255,29,108,0.3);background:rgba(255,29,108,0.04)}
+.repo-name{font-size:0.95rem;font-weight:700;margin-bottom:6px;color:var(--pink)}
+.repo-desc{font-size:0.8rem;color:rgba(255,255,255,0.4);line-height:1.5;min-height:36px}
+.repo-meta{display:flex;gap:16px;margin-top:16px;font-size:0.75rem;color:rgba(255,255,255,0.3)}
 
-        /* Floating Orbs */
-        .orbs {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-        }
+/* CTA */
+.cta-section{position:relative;z-index:1;text-align:center;padding:120px 24px;background:linear-gradient(0deg,rgba(255,29,108,0.06) 0%,transparent 100%);border-top:1px solid var(--border)}
+.cta-section h2{font-size:clamp(2.5rem,6vw,5rem);font-weight:900;letter-spacing:-0.03em;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:24px}
+.cta-section p{font-size:1.2rem;color:rgba(255,255,255,0.5);margin-bottom:48px}
 
-        .orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(100px);
-            animation: orb-pulse 10s ease-in-out infinite;
-        }
+/* Footer */
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:48px;text-align:center;color:rgba(255,255,255,0.25);font-size:0.825rem}
+footer a{color:rgba(255,255,255,0.4);text-decoration:none}
+footer a:hover{color:#FF1D6C}
+.footer-links{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
 
-        .orb-1 {
-            width: 600px;
-            height: 600px;
-            background: var(--hot-pink);
-            opacity: 0.08;
-            top: -200px;
-            right: -100px;
-        }
+/* Scroll reveal */
+.reveal{opacity:0;transform:translateY(32px);transition:opacity 0.7s,transform 0.7s}
+.reveal.visible{opacity:1;transform:none}
 
-        .orb-2 {
-            width: 500px;
-            height: 500px;
-            background: var(--cyber-blue);
-            opacity: 0.06;
-            bottom: -150px;
-            left: -100px;
-            animation-delay: -5s;
-        }
-
-        .orb-3 {
-            width: 550px;
-            height: 550px;
-            background: var(--vivid-purple);
-            opacity: 0.05;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation-delay: -2.5s;
-        }
-
-        @keyframes orb-pulse {
-            0%, 100% { transform: scale(1); opacity: 0.05; }
-            50% { transform: scale(1.2); opacity: 0.1; }
-        }
-
-        /* Container */
-        .container {
-            position: relative;
-            z-index: 1;
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: var(--space-xl);
-        }
-
-        /* Header */
-        header {
-            text-align: center;
-            padding: var(--space-3xl) 0 var(--space-2xl);
-        }
-
-        .logo {
-            font-size: 4rem;
-            font-weight: 800;
-            background: var(--gradient-full);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: var(--space-md);
-            animation: title-float 3s ease-in-out infinite;
-        }
-
-        @keyframes title-float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-13px); }
-        }
-
-        .company-name {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 300;
-            margin-bottom: var(--space-xl);
-        }
-
-        .tagline {
-            font-size: 1.8rem;
-            color: rgba(255, 255, 255, 0.7);
-            max-width: 800px;
-            margin: 0 auto var(--space-xl);
-        }
-
-        /* Stats */
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: var(--space-xl);
-            flex-wrap: wrap;
-            margin-bottom: var(--space-3xl);
-        }
-
-        .stat {
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 3.5rem;
-            font-weight: 800;
-            background: var(--gradient-br);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: var(--space-xs);
-        }
-
-        /* Navigation */
-        nav {
-            display: flex;
-            justify-content: center;
-            gap: var(--space-md);
-            flex-wrap: wrap;
-            margin-bottom: var(--space-3xl);
-        }
-
-        .nav-btn {
-            padding: var(--space-md) var(--space-lg);
-            background: rgba(255, 255, 255, 0.03);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--space-sm);
-            color: var(--pure-white);
-            text-decoration: none;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: all 0.3s var(--ease-spring);
-        }
-
-        .nav-btn:hover {
-            border-color: var(--hot-pink);
-            background: linear-gradient(135deg, var(--hot-pink) 0%, var(--vivid-purple) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 13px 34px rgba(255, 0, 102, 0.3);
-        }
-
-        /* Section */
-        section {
-            margin-bottom: var(--space-3xl);
-        }
-
-        h2 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: var(--gradient-os);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: var(--space-xl);
-            text-align: center;
-        }
-
-        /* App Grid */
-        .app-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: var(--space-lg);
-            margin-bottom: var(--space-2xl);
-        }
-
-        .app-card {
-            background: rgba(10, 10, 10, 0.9);
-            border: 2px solid rgba(255, 255, 255, 0.08);
-            border-radius: var(--space-md);
-            padding: var(--space-lg);
-            transition: all 0.3s var(--ease-spring);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .app-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--gradient-full);
-            transform: scaleX(0);
-            transition: transform 0.3s var(--ease-smooth);
-        }
-
-        .app-card:hover {
-            border-color: var(--hot-pink);
-            transform: translateY(-8px);
-            box-shadow: 0 21px 55px rgba(255, 0, 102, 0.3);
-        }
-
-        .app-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .app-icon {
-            font-size: 3rem;
-            margin-bottom: var(--space-md);
-        }
-
-        .app-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: var(--space-sm);
-        }
-
-        .app-description {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.618;
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: var(--space-3xl) 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            margin-top: var(--space-3xl);
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: var(--space-lg);
-            margin-bottom: var(--space-xl);
-            flex-wrap: wrap;
-        }
-
-        .footer-links a {
-            color: rgba(255, 255, 255, 0.6);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .footer-links a:hover {
-            color: var(--hot-pink);
-        }
-
-        .copyright {
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 0.9rem;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .logo { font-size: 2.5rem; }
-            .tagline { font-size: 1.2rem; }
-            .app-grid { grid-template-columns: 1fr; }
-            .stats { gap: var(--space-lg); }
-        }
-    </style>
+@media(max-width:768px){
+nav{padding:0 20px}.nav-links{display:none}
+.live-ring{gap:24px;padding:28px 20px}
+.feat-card{padding:24px}
+.terminal-body{font-size:0.78rem;padding:20px}
+}
+</style>
 </head>
 <body>
-    <div class="bg-grid"></div>
-    <div class="orbs">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
+<canvas id="bg-canvas"></canvas>
+
+<nav>
+  <div class="nav-logo">BlackRoad OS</div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#agents">Agents</a></li>
+    <li><a href="https://github.com/BlackRoad-OS" target="_blank">GitHub</a></li>
+    <li><a href="https://docs.blackroad.io">Docs</a></li>
+  </ul>
+  <a href="https://github.com/BlackRoad-OS" class="nav-cta" target="_blank">Get Started →</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge"><span></span> 30,000 agents active across the fleet</div>
+  <h1>Your AI.<br>Your Rules.</h1>
+  <p class="hero-sub">BlackRoad OS is the AI-first operating system — 990+ repositories, 17 GitHub organizations, and a fleet of specialized intelligence ready to deploy.</p>
+  <div class="hero-actions">
+    <a href="https://github.com/BlackRoad-OS" class="btn-primary" target="_blank">⚡ Explore on GitHub</a>
+    <a href="https://lucidia.earth" class="btn-secondary">Meet Lucidia →</a>
+  </div>
+</section>
+
+<div class="live-ring">
+  <div class="stat"><div class="stat-val" id="s-repos">990</div><div class="stat-lbl">Repositories</div></div>
+  <div class="stat"><div class="stat-val" id="s-agents">30,000</div><div class="stat-lbl">AI Agents</div></div>
+  <div class="stat"><div class="stat-val" id="s-orgs">17</div><div class="stat-lbl">Organizations</div></div>
+  <div class="stat"><div class="stat-val" id="s-workers">75</div><div class="stat-lbl">Edge Workers</div></div>
+  <div class="stat"><div class="stat-val" id="s-domains">58</div><div class="stat-lbl">Deployments</div></div>
+</div>
+
+<div class="terminal-section reveal">
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dot" style="background:#ff5f57"></div>
+      <div class="terminal-dot" style="background:#febc2e"></div>
+      <div class="terminal-dot" style="background:#28c840"></div>
+      <span style="margin-left:8px;font-size:0.75rem;color:#444;font-family:monospace">blackroad — zsh</span>
     </div>
-
-    <div class="container">
-        <header>
-            <h1 class="logo">BlackRoad OS</h1>
-            <p class="company-name">BlackRoad OS, Inc.</p>
-            <p class="tagline">The Complete AI-Powered Ecosystem</p>
-
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-number">66+</div>
-                    <div class="stat-label">Applications</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">27</div>
-                    <div class="stat-label">Empire Repos</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">15</div>
-                    <div class="stat-label">AI Workers</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">10+</div>
-                    <div class="stat-label">Languages</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">100%</div>
-                    <div class="stat-label">Proprietary</div>
-                </div>
-            </div>
-
-            <nav>
-                <a href="https://os.blackroad.io" class="nav-btn">🌐 OS Interface</a>
-                <a href="https://music.blackroad.io" class="nav-btn">🎵 Music Studio</a>
-                <a href="https://lucidia.earth" class="nav-btn">💫 Lucidia</a>
-                <a href="https://docs.blackroad.io" class="nav-btn">📚 Documentation</a>
-                <a href="https://brand.blackroad.io" class="nav-btn">🎨 Brand</a>
-                <a href="https://github.com/BlackRoad-OS" class="nav-btn">💻 GitHub</a>
-            </nav>
-        </header>
-
-        <section>
-            <h2>🌌 The Empire</h2>
-
-            <div class="app-grid">
-                <div class="app-card" onclick="window.open('https://music.blackroad.io', '_blank')">
-                    <div class="app-icon">🎵</div>
-                    <div class="app-title">BlackRoad Music</div>
-                    <div class="app-description">AI-powered remix studio with beat detection, auto-mix, and Web Audio API integration. Create music like never before.</div>
-                </div>
-
-                <div class="app-card" onclick="window.open('https://os.blackroad.io', '_blank')">
-                    <div class="app-icon">💻</div>
-                    <div class="app-title">BlackRoad OS Interface</div>
-                    <div class="app-description">Unified app launcher for 66+ applications. Search, filter, and access the entire ecosystem from one place.</div>
-                </div>
-
-                <div class="app-card" onclick="window.open('https://lucidia.earth', '_blank')">
-                    <div class="app-icon">💫</div>
-                    <div class="app-title">Lucidia</div>
-                    <div class="app-description">The soul site. AI companion built on transparency, consent, and care. Experience Minnesota wilderness in HD.</div>
-                </div>
-
-                <div class="app-card">
-                    <div class="app-icon">🤖</div>
-                    <div class="app-title">AI Agents (30k)</div>
-                    <div class="app-description">Deploy and manage 30,000 autonomous AI agents with Kubernetes orchestration. Scale like never before.</div>
-                </div>
-
-                <div class="app-card">
-                    <div class="app-icon">⚛️</div>
-                    <div class="app-title">Quantum Computing</div>
-                    <div class="app-description">Real quantum computing on Raspberry Pi 5. Photons, qudits, AI acceleration. The future is here.</div>
-                </div>
-
-                <div class="app-card">
-                    <div class="app-icon">🌍</div>
-                    <div class="app-title">Earth Systems</div>
-                    <div class="app-description">12 different Earth visualization engines. From biomes to street views, explore our planet like never before.</div>
-                </div>
-
-                <div class="app-card">
-                    <div class="app-icon">🎮</div>
-                    <div class="app-title">Game Engines</div>
-                    <div class="app-description">Multiple game engines including Lucidia Minnesota HD, metaverse platform, and living world simulations.</div>
-                </div>
-
-                <div class="app-card">
-                    <div class="app-icon">🎬</div>
-                    <div class="app-title">Motion Gallery</div>
-                    <div class="app-description">Official motion design library with hundreds of animations. Pulse, rotate, bounce, morph - all with official colors.</div>
-                </div>
-
-                <div class="app-card">
-                    <div class="app-icon">🎨</div>
-                    <div class="app-title">Brand System</div>
-                    <div class="app-description">Official BlackRoad colors, JetBrains Mono typography, Golden Ratio spacing. Design perfection.</div>
-                </div>
-
-                <div class="app-card">
-                    <div class="app-icon">📟</div>
-                    <div class="app-title">Pager System</div>
-                    <div class="app-description">Alert pager with homescreen, monitoring dashboard, and real-time notifications. Stay connected.</div>
-                </div>
-
-                <div class="app-card">
-                    <div class="app-icon">🏗️</div>
-                    <div class="app-title">Architecture</div>
-                    <div class="app-description">Visualization tools for system architecture, infrastructure planning, and technical documentation.</div>
-                </div>
-
-                <div class="app-card" onclick="window.open('https://github.com/BlackRoad-OS', '_blank')">
-                    <div class="app-icon">🚀</div>
-                    <div class="app-title">And 55 More...</div>
-                    <div class="app-description">27 empire repos just deployed! 3D worlds, animation showcase, metaverse, all Earth systems, Lucidia game, and more. Explore at github.com/BlackRoad-OS</div>
-                </div>
-            </div>
-        </section>
-
-        <footer>
-            <div id="live-stats-bar" style="background:#0a0a0a;border:1px solid #222;border-radius:8px;padding:12px 20px;margin-bottom:20px;display:flex;gap:30px;flex-wrap:wrap;justify-content:center;font-size:0.8em;color:#555;">
-                <span>🏢 <span style="color:#F5A623;">BlackRoad-OS</span>: <span data-live="repos" style="color:#fff;">1,825+</span> repos</span>
-                <span>🤖 Agents online: <span data-live="agents-online" style="color:#FF1D6C;">4</span>/4 Pi nodes</span>
-                <span>⚡ Active agents: <span data-live="active-agents" style="color:#2979FF;">30,000</span></span>
-                <span>☁️ <span style="color:#9C27B0;">58</span> CF Pages live</span>
-                <span>🚂 <span style="color:#F5A623;">14</span> Railway projects</span>
-                <span style="color:#333;" id="live-updated">Loading live data...</span>
-            </div>
-            <div id="live-activity-feed" style="max-width:600px;margin:0 auto 20px;padding:0 20px;"></div>
-            <div class="footer-links">
-                <a href="https://blackroad.io">Home</a>
-                <a href="https://os.blackroad.io">OS Interface</a>
-                <a href="https://docs.blackroad.io">Documentation</a>
-                <a href="https://brand.blackroad.io">Brand</a>
-                <a href="https://lucidia.earth">Lucidia</a>
-                <a href="https://github.com/BlackRoad-OS">GitHub</a>
-                <a href="mailto:blackroad.systems@gmail.com">Contact</a>
-            </div>
-            <p class="copyright">© 2026 BlackRoad OS, Inc. • Built with Claude Code • JetBrains Mono • Official Colors</p>
-        </footer>
+    <div class="terminal-body" id="terminal-body">
+      <span class="t-line"><span class="t-prompt">❯</span> <span class="t-cmd">br agents status</span></span>
+      <span class="t-line t-out" id="t1"></span>
+      <span class="t-line t-out" id="t2"></span>
+      <span class="t-line" style="margin-top:12px"><span class="t-prompt">❯</span> <span class="t-cmd">br fleet ping</span></span>
+      <span class="t-line t-out" id="t3"></span>
+      <span class="t-line t-out" id="t4"></span>
+      <span class="t-line" style="margin-top:12px"><span class="t-prompt">❯</span> <span class="t-cmd" id="tcmd3"></span><span class="cursor" id="cursor"></span></span>
+      <span class="t-line t-out" id="t5"></span>
     </div>
+  </div>
+</div>
 
-    <script>
-        const LIVE_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
+<section class="section" id="features">
+  <div class="reveal">
+    <div class="section-label">Platform</div>
+    <h2 class="section-title">Built for AI-first<br>builders</h2>
+    <p class="section-sub">Everything you need to build, deploy, and scale AI systems — from edge workers to hardware fleets.</p>
+  </div>
+  <div class="features-grid reveal">
+    <div class="feat-card">
+      <span class="feat-icon">🤖</span>
+      <div class="feat-title">30,000 AI Agents</div>
+      <div class="feat-desc">Specialized intelligence across research, deployment, security, and infrastructure. Each agent is an expert in its domain.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">⚡</span>
+      <div class="feat-title">Edge-Native Workers</div>
+      <div class="feat-desc">75+ Cloudflare Workers serving every subdomain — sub-10ms response times globally with zero cold starts.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🔒</span>
+      <div class="feat-title">Tokenless Gateway</div>
+      <div class="feat-desc">Zero credentials in agent code. All provider secrets live in the gateway. Trust boundary enforced at the architecture level.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🍓</span>
+      <div class="feat-title">Pi Fleet</div>
+      <div class="feat-desc">Raspberry Pi cluster running 108 Ollama models locally. Your AI on your hardware — no third-party dependencies required.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🌐</span>
+      <div class="feat-title">990+ Repositories</div>
+      <div class="feat-desc">17 GitHub organizations covering AI/ML, security, cloud, hardware, media, education, and enterprise automation.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">💜</span>
+      <div class="feat-title">Lucidia Identity</div>
+      <div class="feat-desc">Portable AI identity system. Lucidia persists across providers, sessions, and models — maintaining memory and relationships.</div>
+    </div>
+  </div>
+</section>
 
-        // Inject live GitHub + agent stats into the page
-        async function loadLiveData() {
-            try {
-                const [stats, agents] = await Promise.allSettled([
-                    fetch(`${LIVE_API}/github/stats`).then(r => r.json()),
-                    fetch(`${LIVE_API}/agents/status`).then(r => r.json()),
-                ]);
+<section class="agents-section" id="agents">
+  <div class="agents-inner">
+    <div class="reveal">
+      <div class="section-label">Fleet</div>
+      <h2 class="section-title">Core Agent Squad</h2>
+      <p class="section-sub">Six specialized agents coordinating across the entire stack.</p>
+    </div>
+    <div class="agents-grid reveal">
+      <div class="agent-card">
+        <div class="agent-avatar" style="background:rgba(156,39,176,0.15)">🌀</div>
+        <div class="agent-name">LUCIDIA</div>
+        <div class="agent-role">Coordinator &amp; Philosopher</div>
+        <div class="agent-status"><div class="dot" style="background:#4ade80"></div>Active</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-avatar" style="background:rgba(41,121,255,0.15)">🚪</div>
+        <div class="agent-name">ALICE</div>
+        <div class="agent-role">Router &amp; Navigator</div>
+        <div class="agent-status"><div class="dot" style="background:#4ade80"></div>Active</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-avatar" style="background:rgba(245,166,35,0.15)">⚡</div>
+        <div class="agent-name">OCTAVIA</div>
+        <div class="agent-role">Compute &amp; Inference</div>
+        <div class="agent-status"><div class="dot" style="background:#4ade80"></div>Active</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-avatar" style="background:rgba(255,29,108,0.15)">🔮</div>
+        <div class="agent-name">PRISM</div>
+        <div class="agent-role">Analytics &amp; Patterns</div>
+        <div class="agent-status"><div class="dot" style="background:#fbbf24"></div>Processing</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-avatar" style="background:rgba(74,222,128,0.1)">📡</div>
+        <div class="agent-name">ECHO</div>
+        <div class="agent-role">Memory &amp; Recall</div>
+        <div class="agent-status"><div class="dot" style="background:#4ade80"></div>Active</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-avatar" style="background:rgba(255,255,255,0.05)">🔐</div>
+        <div class="agent-name">CIPHER</div>
+        <div class="agent-role">Security &amp; Auth</div>
+        <div class="agent-status"><div class="dot" style="background:#4ade80"></div>Watching</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-                if (stats.status === 'fulfilled') {
-                    const s = stats.value;
-                    // Update any stat counters
-                    document.querySelectorAll('[data-live="repos"]').forEach(el => {
-                        el.textContent = s.total_repos?.toLocaleString() || el.textContent;
-                    });
-                    document.querySelectorAll('[data-live="recent-repos"]').forEach(el => {
-                        if (s.recent_repos?.length) {
-                            el.innerHTML = s.recent_repos.map(r =>
-                                `<a href="${r.url}" target="_blank" style="color:#F5A623;text-decoration:none;">
-                                    <span style="font-size:0.85em;">⭐ ${r.name}</span>
-                                </a>`
-                            ).join(' &nbsp;·&nbsp; ');
-                        }
-                    });
-                }
+<section class="repos-section">
+  <div class="reveal">
+    <div class="section-label">Activity</div>
+    <h2 class="section-title">Recent Repositories</h2>
+    <p class="section-sub">Live from GitHub — what's being built right now.</p>
+  </div>
+  <div class="repos-grid reveal" id="repos-grid">
+    <div class="repo-card"><div class="repo-name">Loading...</div><div class="repo-desc">Fetching live data from GitHub...</div></div>
+  </div>
+</section>
 
-                if (agents.status === 'fulfilled') {
-                    const a = agents.value;
-                    document.querySelectorAll('[data-live="agents-online"]').forEach(el => {
-                        el.textContent = a.online_count || '0';
-                    });
-                    document.querySelectorAll('[data-live="active-agents"]').forEach(el => {
-                        el.textContent = (a.active_agents || 0).toLocaleString();
-                    });
-                }
+<section class="cta-section">
+  <h2 class="reveal">Join the Fleet</h2>
+  <p class="reveal">Build with 30,000 agents. Deploy to 58 domains. Ship on your terms.</p>
+  <div class="hero-actions">
+    <a href="https://github.com/BlackRoad-OS" class="btn-primary" target="_blank">⚡ BlackRoad-OS on GitHub</a>
+    <a href="https://agents.blackroad.io" class="btn-secondary">View Agent Fleet</a>
+  </div>
+</section>
 
-                console.log('🌌 Live data loaded:', { stats: stats.value, agents: agents.value });
-            } catch (err) {
-                console.warn('Live data unavailable (offline mode):', err.message);
-            }
-        }
+<footer>
+  <div class="footer-links">
+    <a href="https://github.com/BlackRoad-OS" target="_blank">GitHub</a>
+    <a href="https://lucidia.earth">Lucidia</a>
+    <a href="https://agents.blackroad.io">Agents</a>
+    <a href="https://status.blackroad.io">Status</a>
+    <a href="https://docs.blackroad.io">Docs</a>
+    <a href="https://blackroad.network">Network</a>
+  </div>
+  <div>© 2026 BlackRoad OS, Inc. — All rights reserved. Proprietary &amp; Confidential.</div>
+</footer>
 
-        // Live activity feed
-        async function loadActivity() {
-            try {
-                const activity = await fetch(`${LIVE_API}/github/activity`).then(r => r.json());
-                const feed = document.getElementById('live-activity-feed');
-                if (feed && activity.events?.length) {
-                    feed.innerHTML = activity.events.slice(0, 5).map(e => {
-                        const repo = e.repo?.replace('BlackRoad-OS/', '') || '';
-                        const type = e.type?.replace('Event', '') || '';
-                        return `<div style="padding:4px 0;font-size:0.8em;color:#888;border-bottom:1px solid #222;">
-                            <span style="color:#F5A623;">${type}</span> 
-                            <a href="https://github.com/${e.repo}" target="_blank" style="color:#F5A623;text-decoration:none;">${repo}</a>
-                            <span style="float:right;color:#555;">${new Date(e.created_at).toLocaleDateString()}</span>
-                        </div>`;
-                    }).join('');
-                }
-            } catch {}
-        }
+<script>
+// Canvas stars
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let stars = [];
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight;stars=Array.from({length:200},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.2+0.3,o:Math.random()*0.5+0.1,s:Math.random()*0.3+0.1,d:Math.random()>0.5?1:-1}))}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);stars.forEach(s=>{s.o+=s.s*0.01*s.d;if(s.o>0.6||s.o<0.1)s.d*=-1;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${s.o})`;ctx.fill()});requestAnimationFrame(draw)}
+window.addEventListener('resize',resize);resize();draw();
 
-        loadLiveData();
-        loadActivity();
-        setInterval(loadLiveData, 60000); // refresh every minute
-        setInterval(loadActivity, 120000);
-    </script>
+// Scroll reveal
+const observer=new IntersectionObserver(e=>e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('visible')}),{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+// Terminal animation
+const lines=[
+  {id:'t1',text:'  ✅ Fleet online — 30,000 agents ready',cls:'t-green'},
+  {id:'t2',text:'  🧠 LUCIDIA · ALICE · OCTAVIA · PRISM · ECHO · CIPHER',cls:'t-purple'},
+  {id:'t3',text:'  ○ octavia @ 192.168.4.38  ... online',cls:'t-blue'},
+  {id:'t4',text:'  ○ alice   @ 192.168.4.49  ... online',cls:'t-blue'},
+  {id:'t5',text:'',cls:''},
+];
+let i=0;
+function nextLine(){
+  if(i<lines.length){
+    const l=lines[i];
+    if(l.id==='t5'){document.getElementById('cursor').style.display='none'}
+    else{
+      const el=document.getElementById(l.id);
+      if(el){el.textContent=l.text;el.className='t-line '+l.cls}
+    }
+    i++;setTimeout(nextLine,700);
+  }
+}
+setTimeout(()=>{
+  const cmds=['br deploy --fleet','br models list','br status --all'];
+  let ci=0;
+  function rotateCmd(){document.getElementById('tcmd3').textContent=cmds[ci%cmds.length];ci++;setTimeout(rotateCmd,3000)}
+  rotateCmd();
+  nextLine();
+},800);
+
+// Live stats
+const API='https://blackroad-live-hub.amundsonalexa.workers.dev';
+function fmt(n){return n>=1000?(n/1000).toFixed(1)+'k':n}
+function animCount(el,target){
+  const start=0,dur=1500,st=Date.now();
+  const step=()=>{const p=Math.min((Date.now()-st)/dur,1),val=Math.round(p*p*target);el.textContent=val>=1000?(val>=1000000?(val/1000000).toFixed(1)+'M':(val/1000).toFixed(1)+'k'):val.toLocaleString();if(p<1)requestAnimationFrame(step)};
+  step();
+}
+fetch(API+'/all').then(r=>r.json()).then(d=>{
+  animCount(document.getElementById('s-repos'),d.blackroad.total_repos||990);
+  animCount(document.getElementById('s-agents'),d.blackroad.agents||30000);
+  animCount(document.getElementById('s-orgs'),d.blackroad.orgs||17);
+  animCount(document.getElementById('s-workers'),d.infrastructure?.cloudflare_workers||75);
+  animCount(document.getElementById('s-domains'),d.blackroad.domains||58);
+}).catch(()=>{});
+
+fetch(API+'/github/activity').then(r=>r.json()).then(d=>{
+  const repos=d.repos||d.recent_repos||[];
+  const grid=document.getElementById('repos-grid');
+  if(!repos.length)return;
+  grid.innerHTML=repos.slice(0,6).map(r=>`
+    <a class="repo-card" href="https://github.com/BlackRoad-OS/${r.name}" target="_blank">
+      <div class="repo-name">${r.name}</div>
+      <div class="repo-desc">${r.description||'BlackRoad OS repository'}</div>
+      <div class="repo-meta">
+        <span>⭐ ${r.stars||0}</span>
+        <span>🍴 ${r.forks||0}</span>
+        <span>${r.language||'Shell'}</span>
+      </div>
+    </a>`).join('');
+}).catch(()=>{});
+</script>
 </body>
 </html>
