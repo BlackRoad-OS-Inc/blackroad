@@ -54,9 +54,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: false
-        with:
           fetch-depth: 2
-
       - name: Get Changed Files
         id: changes
         run: |
@@ -110,18 +108,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: false
-        with:
           path: source
-
       - name: Checkout Target
         uses: actions/checkout@v4
         with:
           submodules: false
-        with:
           repository: ${{ matrix.repo }}
           path: target
           token: ${{ secrets.CROSS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
-
       - name: Sync Workflow Files
         run: |
           # Copy autonomous workflows
@@ -204,18 +198,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: false
-        with:
           path: source
-
       - name: Checkout Target
         uses: actions/checkout@v4
         with:
           submodules: false
-        with:
           repository: ${{ matrix.repo }}
           path: target
           token: ${{ secrets.CROSS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
-
       - name: Sync Config Files
         run: |
           # Sync common configs that should be consistent
