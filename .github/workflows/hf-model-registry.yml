@@ -1,7 +1,8 @@
-name: "🤗 HuggingFace Model Registry Sync"
+name: HuggingFace Model Registry Sync
+
 on:
   schedule:
-    - cron: '0 4 * * *'   # Daily 4am UTC
+    - cron: '0 4 * * *'
   workflow_dispatch:
     inputs:
       model:
@@ -11,37 +12,38 @@ on:
 
 jobs:
   sync-registry:
-    runs-on: [self-hosted, cecilia]
+    runs-on: [self-hosted, blackroad-fleet]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Install/Update HF Hub
+      - name: Install HF Hub
         run: pip3 install -q --upgrade huggingface_hub 2>/dev/null || true
 
-      - name: List models on cecilia
+      - name: List Ollama models
         run: |
-          echo "=== Ollama models on cecilia ==="
-          ollama list 2>/dev/null || curl -sf http://localhost:11434/api/tags 2>/dev/null | python3 -m json.tool || echo "ollama not running"
+          ollama list 2>/dev/null || \
+            curl -sf http://localhost:11434/api/tags | python3 -m json.tool 2>/dev/null || \
+            echo "ollama not running on $(hostname)"
 
       - name: Pull model if specified
-        if: github.event.inputs.model != ''
+        if: ${{ github.event.inputs.model != '' && github.event.inputs.model != 'none' }}
         env:
           HF_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
         run: |
           MODEL="${{ github.event.inputs.model }}"
-          echo "🤗 Pulling: $MODEL"
-          # Convert HF model ID to ollama format
+          echo "Pulling: $MODEL"
           MODEL_SHORT=$(echo "$MODEL" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
-          # Try ollama pull first (if model is in ollama registry)
           curl -X POST http://localhost:11434/api/pull \
             -H 'Content-Type: application/json' \
-            -d '{"name":"'"$MODEL_SHORT"'"}' \
+            -d "{\"name\":\"${MODEL_SHORT}\"}" \
             --no-buffer 2>/dev/null | tail -2 || true
-          echo "✅ Model pull requested"
+          echo "Model pull requested"
 
       - name: Update model registry
         run: |
-          curl -sf http://localhost:11434/api/tags 2>/dev/null > agents/platform-registry/ollama-models.json || true
+          mkdir -p agents/platform-registry
+          curl -sf http://localhost:11434/api/tags 2>/dev/null \
+            > agents/platform-registry/ollama-models.json || true
           if [ -s agents/platform-registry/ollama-models.json ]; then
             git config user.email "actions@blackroad.io"
             git config user.name "BlackRoad Actions"
@@ -51,4 +53,4 @@ jobs:
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
             git push origin HEAD || true
           fi
-          echo "✅ Registry updated"
+          echo "Registry updated"
