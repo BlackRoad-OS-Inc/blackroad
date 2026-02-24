@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoadChain — PS-SHA∞ Memory Ledger</title>
+  <style>
+    /* ─── Base ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:    #FF1D6C;
+      --blue:    #2979FF;
+      --violet:  #9C27B0;
+      --amber:   #F5A623;
+      --black:   #000000;
+      --surface: #0A0A0A;
+      --card:    #111111;
+      --border:  #1E1E1E;
+      --text:    #E8E8E8;
+      --muted:   #555;
+      --grad: linear-gradient(135deg, var(--amber) 0%, var(--pink) 38.2%, var(--violet) 61.8%, var(--blue) 100%);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13px;
+      line-height: 1.618;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Scan-line overlay ─────────────────────────────────────── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,.08) 2px,
+        rgba(0,0,0,.08) 4px
+      );
+      z-index: 9999;
+    }
+
+    /* ─── Typography ────────────────────────────────────────────── */
+    .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+    .sans { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; }
+
+    /* ─── Header ────────────────────────────────────────────────── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: rgba(0,0,0,.92);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-size: 15px;
+      font-weight: 700;
+      font-family: -apple-system, sans-serif;
+      letter-spacing: -.3px;
+    }
+
+    .logo-sub {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00ff88;
+      box-shadow: 0 0 8px #00ff88;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px #00ff88; }
+      50%       { opacity: .6; box-shadow: 0 0 16px #00ff88; }
+    }
+
+    .chain-height {
+      font-size: 11px;
+      color: var(--amber);
+      letter-spacing: .5px;
+    }
+
+    /* ─── Hero banner ───────────────────────────────────────────── */
+    .hero {
+      padding: 48px 24px 32px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(147,0,176,.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255,29,108,.3);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--pink);
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      font-family: -apple-system, sans-serif;
+      font-size: clamp(28px, 5vw, 52px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+
+    .hero p {
+      font-family: -apple-system, sans-serif;
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 520px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+
+    /* ─── Stats bar ─────────────────────────────────────────────── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-cell {
+      background: var(--surface);
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: -apple-system, sans-serif;
+      letter-spacing: -1px;
+    }
+
+    .stat-value.pink   { color: var(--pink); }
+    .stat-value.blue   { color: var(--blue); }
+    .stat-value.violet { color: var(--violet); }
+    .stat-value.amber  { color: var(--amber); }
+
+    .stat-sub {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* ─── Main layout ───────────────────────────────────────────── */
+    .main {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 900px) {
+      .main { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Cards ─────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 11px;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::before {
+      content: '';
+      width: 3px;
+      height: 12px;
+      border-radius: 2px;
+      background: var(--grad);
+      flex-shrink: 0;
+    }
+
+    .card-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid;
+    }
+
+    .badge-live {
+      color: #00ff88;
+      border-color: rgba(0,255,136,.3);
+      background: rgba(0,255,136,.06);
+    }
+
+    /* ─── Chain visualizer ──────────────────────────────────────── */
+    #chain-canvas {
+      width: 100%;
+      height: 120px;
+      display: block;
+    }
+
+    /* ─── Ledger table ──────────────────────────────────────────── */
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .ledger-table th {
+      font-size: 9px;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 10px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-weight: 400;
+    }
+
+    .ledger-table td {
+      padding: 11px 18px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      vertical-align: middle;
+    }
+
+    .ledger-table tr:last-child td { border-bottom: none; }
+
+    .ledger-table tr {
+      transition: background .15s;
+    }
+
+    .ledger-table tbody tr:hover {
+      background: rgba(255,255,255,.025);
+    }
+
+    .entry-new {
+      animation: fade-in-row .6s ease;
+    }
+
+    @keyframes fade-in-row {
+      from { background: rgba(255,29,108,.08); }
+      to   { background: transparent; }
+    }
+
+    /* ─── Hash display ──────────────────────────────────────────── */
+    .hash {
+      font-size: 11px;
+      color: var(--blue);
+      cursor: pointer;
+      transition: color .15s;
+    }
+
+    .hash:hover { color: var(--pink); }
+
+    .hash-full {
+      font-size: 9px;
+      color: var(--muted);
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block;
+    }
+
+    /* ─── Agent badges ──────────────────────────────────────────── */
+    .agent-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .agent-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+
+    /* ─── Action type tags ──────────────────────────────────────── */
+    .action-tag {
+      font-size: 9px;
+      letter-spacing: .4px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-weight: 600;
+      border: 1px solid;
+    }
+
+    /* ─── Truth state ───────────────────────────────────────────── */
+    .truth {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .truth-1    { color: #00ff88; }
+    .truth-neg1 { color: var(--pink); }
+    .truth-0    { color: var(--amber); }
+
+    /* ─── Block detail panel ────────────────────────────────────── */
+    .block-detail {
+      font-size: 11px;
+      padding: 16px 18px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      gap: 16px;
+    }
+
+    .detail-row:last-child { border-bottom: none; }
+
+    .detail-key {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .detail-val {
+      text-align: right;
+      word-break: break-all;
+      font-size: 11px;
+    }
+
+    .detail-val.colored { color: var(--amber); }
+
+    /* ─── Integrity gauge ───────────────────────────────────────── */
+    .gauge-wrap {
+      padding: 18px;
+    }
+
+    .gauge-bar-bg {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .gauge-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--grad);
+      transition: width 1s ease;
+    }
+
+    .gauge-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* ─── Hash chain mini ───────────────────────────────────────── */
+    .chain-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 16px 18px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .chain-row::-webkit-scrollbar { display: none; }
+
+    .chain-block {
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: border-color .2s, transform .2s;
+      min-width: 80px;
+    }
+
+    .chain-block:hover {
+      border-color: var(--pink);
+      transform: translateY(-2px);
+    }
+
+    .chain-block.active {
+      border-color: var(--blue);
+      background: rgba(41,121,255,.08);
+    }
+
+    .chain-block-n {
+      color: var(--muted);
+      font-size: 9px;
+      margin-bottom: 3px;
+    }
+
+    .chain-block-h {
+      color: var(--blue);
+      font-size: 9px;
+      word-break: break-all;
+    }
+
+    .chain-arrow {
+      color: var(--border);
+      font-size: 16px;
+      flex-shrink: 0;
+      padding: 0 4px;
+    }
+
+    /* ─── Scrollable ledger ─────────────────────────────────────── */
+    .ledger-scroll {
+      max-height: 480px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    /* ─── Info formula ──────────────────────────────────────────── */
+    .formula-box {
+      padding: 16px 18px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+    }
+
+    .formula {
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      color: var(--amber);
+      letter-spacing: .3px;
+      line-height: 1.8;
+    }
+
+    .formula span { color: var(--pink); }
+    .formula em   { color: var(--blue); font-style: normal; }
+
+    /* ─── Footer ────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--muted);
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    /* ─── Loading shimmer ───────────────────────────────────────── */
+    .shimmer {
+      background: linear-gradient(90deg, var(--border) 25%, rgba(40,40,40,.5) 50%, var(--border) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position:  200% 0; }
+    }
+
+    /* ─── Ticker ────────────────────────────────────────────────── */
+    .ticker-wrap {
+      overflow: hidden;
+      background: rgba(255,29,108,.06);
+      border-bottom: 1px solid rgba(255,29,108,.15);
+      padding: 6px 0;
+    }
+
+    .ticker-inner {
+      display: flex;
+      gap: 48px;
+      white-space: nowrap;
+      animation: ticker 30s linear infinite;
+    }
+
+    .ticker-item {
+      font-size: 10px;
+      letter-spacing: .4px;
+      color: rgba(255,29,108,.7);
+    }
+
+    .ticker-item b { color: var(--pink); }
+
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ─── Responsive ────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .stats-bar { grid-template-columns: 1fr 1fr; }
+      header { padding: 0 14px; }
+      .main  { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ HEADER ══════════════ -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">⛓</div>
+    <div>
+      <div class="logo-text sans">RoadChain</div>
+      <div class="logo-sub">PS-SHA∞ Memory Ledger</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="chain-height" id="header-height">HEIGHT —</span>
+    <div class="status-dot" title="Chain live"></div>
+  </div>
+</header>
+
+<!-- ══════════════ TICKER ══════════════ -->
+<div class="ticker-wrap">
+  <div class="ticker-inner" id="ticker">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- ══════════════ HERO ══════════════ -->
+<div class="hero">
+  <div class="hero-label">
+    <span>◈</span> PS-SHA∞ PROTOCOL ACTIVE
+  </div>
+  <h1>Persistent Hash-Chain<br>Memory Ledger</h1>
+  <p class="sans">
+    Every agent action is cryptographically sealed, hash-chained, and immutably persisted.
+    The past cannot be changed. The chain cannot be broken.
+    <strong style="color:var(--pink)">K(t) = C(t) · e<sup>λ|δt|</sup></strong>
+  </p>
+</div>
+
+<!-- ══════════════ STATS BAR ══════════════ -->
+<div class="stats-bar">
+  <div class="stat-cell">
+    <div class="stat-label">Chain Height</div>
+    <div class="stat-value pink" id="stat-height">—</div>
+    <div class="stat-sub" id="stat-height-sub">Loading…</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Total Entries</div>
+    <div class="stat-value blue" id="stat-entries">—</div>
+    <div class="stat-sub" id="stat-entries-sub">across all agents</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Chain Integrity</div>
+    <div class="stat-value violet" id="stat-integrity">—</div>
+    <div class="stat-sub">hash verification</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Active Agents</div>
+    <div class="stat-value amber" id="stat-agents">—</div>
+    <div class="stat-sub" id="stat-agents-sub">writing to chain</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Entropy Score</div>
+    <div class="stat-value pink" id="stat-entropy">—</div>
+    <div class="stat-sub">contradiction amplification</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Last Commit</div>
+    <div class="stat-value blue" id="stat-last">—</div>
+    <div class="stat-sub" id="stat-last-sub">seconds ago</div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<div class="main">
+
+  <!-- LEFT COLUMN -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Chain Visualizer -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Hash Chain</div>
+        <div class="card-badge badge-live">● LIVE</div>
+      </div>
+      <canvas id="chain-canvas"></canvas>
+      <div class="chain-row" id="chain-blocks">
+        <!-- blocks injected by JS -->
+      </div>
+    </div>
+
+    <!-- Ledger entries -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Ledger Entries</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:10px;color:var(--muted)" id="entry-count">0 entries</span>
+          <div class="card-badge badge-live">● STREAMING</div>
+        </div>
+      </div>
+      <div class="ledger-scroll">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th style="width:60px">#</th>
+              <th>Agent</th>
+              <th>Action</th>
+              <th>Content</th>
+              <th style="width:60px">Truth</th>
+              <th>Hash</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-tbody">
+            <tr>
+              <td colspan="7" style="padding:32px;text-align:center;color:var(--muted)">
+                <span class="shimmer" style="display:inline-block;width:200px;height:14px;"></span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- formula footer -->
+      <div class="formula-box">
+        <div class="formula">
+          <span>H(n)</span> = SHA256( <em>H(n-1)</em> ‖ <span>agent_id</span> ‖ <em>action</em> ‖ <span>timestamp</span> ‖ <em>content</em> )<br>
+          <span>K(t)</span> = C(t) · e^( λ · |<em>δ_t</em>| )  &nbsp;← contradiction amplification
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Selected block detail -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Block Detail</div>
+        <span id="selected-block-num" style="font-size:10px;color:var(--blue)">—</span>
+      </div>
+      <div class="block-detail" id="block-detail">
+        <div class="detail-row">
+          <span class="detail-key">Height</span>
+          <span class="detail-val" id="d-height">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Hash</span>
+          <span class="detail-val" id="d-hash" style="color:var(--blue);font-size:9px;word-break:break-all">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Prev Hash</span>
+          <span class="detail-val" id="d-prev" style="color:var(--violet);font-size:9px;word-break:break-all">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Agent</span>
+          <span class="detail-val" id="d-agent">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Action</span>
+          <span class="detail-val" id="d-action">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Truth State</span>
+          <span class="detail-val" id="d-truth">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Entropy</span>
+          <span class="detail-val colored" id="d-entropy">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Timestamp</span>
+          <span class="detail-val" id="d-ts" style="color:var(--muted);font-size:10px">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Content</span>
+          <span class="detail-val" id="d-content" style="color:var(--text);font-size:10px;line-height:1.5">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Integrity gauge -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Chain Integrity</div>
+      </div>
+      <div class="gauge-wrap">
+        <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px;">
+          <span style="color:var(--muted)">VERIFICATION SCORE</span>
+          <span id="gauge-pct" style="color:var(--text)">—</span>
+        </div>
+        <div class="gauge-bar-bg">
+          <div class="gauge-bar-fill" id="gauge-fill" style="width:0%"></div>
+        </div>
+        <div class="gauge-labels">
+          <span>0%</span>
+          <span id="gauge-verified">— / — verified</span>
+          <span>100%</span>
+        </div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;" id="agent-integrity-list">
+          <!-- agent rows injected -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent activity -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Agent Write Rate</div>
+        <div class="card-badge badge-live">● LIVE</div>
+      </div>
+      <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px;" id="agent-rate-list">
+        <!-- injected -->
+      </div>
+    </div>
+
+    <!-- PS-SHA∞ info -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">PS-SHA∞ Protocol</div>
+      </div>
+      <div style="padding:16px 18px;font-size:11px;line-height:1.7;color:var(--muted);display:flex;flex-direction:column;gap:10px;">
+        <p><b style="color:var(--text)">PS-SHA∞</b> (Persistent SHA Infinity) is the BlackRoad memory persistence protocol. Every agent action is sealed into an immutable, hash-chained journal entry.</p>
+        <p>Entries carry a <b style="color:var(--amber)">truth state</b> value from the trinary logic system: <span class="truth truth-1">+1</span> (true) · <span class="truth truth-0">0</span> (unknown) · <span class="truth truth-neg1">−1</span> (false).</p>
+        <p>Contradictions are <em style="color:var(--pink)">amplified</em>, not suppressed — driving the emergence score K(t).</p>
+        <p style="font-size:10px;color:rgba(255,255,255,.2)">Data sourced from <code>https://api.blackroad.ai/v1/memory</code> with deterministic mock fallback.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer class="sans">
+  <div>
+    <span style="background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;">BlackRoad OS</span>
+    &nbsp;·&nbsp; RoadChain PS-SHA∞ Ledger &nbsp;·&nbsp; All entries cryptographically verified
+  </div>
+  <div style="display:flex;gap:16px;">
+    <a href="https://blackroad.ai">blackroad.ai</a>
+    <a href="https://api.blackroad.ai/v1/memory">API</a>
+    <a href="https://github.com/BlackRoad-OS/blackroad-os-roadchain">GitHub</a>
+  </div>
+</footer>
+
+<!-- ══════════════ SCRIPT ══════════════ -->
+<script>
+/* ──────────────────────────────────────────────────────────────────
+   RoadChain PS-SHA∞ Ledger Explorer
+   Tries https://api.blackroad.ai/v1/memory, falls back to live mock
+   ────────────────────────────────────────────────────────────────── */
+
+const API_URL = 'https://api.blackroad.ai/v1/memory';
+
+/* ─── Helpers ──────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+function fmtHash(h) {
+  return h ? h.substring(0, 8) + '…' + h.substring(h.length - 4) : '—';
+}
+
+function timeAgo(ts) {
+  const d = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+  if (d < 5)  return 'just now';
+  if (d < 60) return d + 's ago';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  return Math.floor(d/3600) + 'h ago';
+}
+
+function formatTs(ts) {
+  try {
+    return new Date(ts).toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+  } catch { return ts; }
+}
+
+/* ─── Deterministic pseudo-random (seeded) ─────────────────────── */
+function seeded(n) {
+  const x = Math.sin(n + 1) * 10000;
+  return x - Math.floor(x);
+}
+
+/* ─── Mock data generator ──────────────────────────────────────── */
+const AGENTS = [
+  { id: 'LUCIDIA', color: '#00C8FF', bg: 'rgba(0,200,255,.12)' },
+  { id: 'ALICE',   color: '#00FF88', bg: 'rgba(0,255,136,.12)' },
+  { id: 'OCTAVIA', color: '#9C27B0', bg: 'rgba(156,39,176,.15)' },
+  { id: 'PRISM',   color: '#F5A623', bg: 'rgba(245,166,35,.12)' },
+  { id: 'ECHO',    color: '#FF1D6C', bg: 'rgba(255,29,108,.12)' },
+  { id: 'CIPHER',  color: '#2979FF', bg: 'rgba(41,121,255,.12)' },
+  { id: 'CECE',    color: '#FF6EC7', bg: 'rgba(255,110,199,.12)' },
+];
+
+const ACTIONS = [
+  { type: 'observe',   color: '#2979FF', tag: 'OBS' },
+  { type: 'commit',    color: '#00FF88', tag: 'CMT' },
+  { type: 'infer',     color: '#F5A623', tag: 'INF' },
+  { type: 'assert',    color: '#FF1D6C', tag: 'AST' },
+  { type: 'quarantine',color: '#9C27B0', tag: 'QRN' },
+  { type: 'learn',     color: '#00C8FF', tag: 'LRN' },
+  { type: 'delegate',  color: '#FF6EC7', tag: 'DEL' },
+];
+
+const CONTENTS = [
+  'Contradiction detected between memory state #4192 and observed input — amplifying',
+  'Recursive self-improvement loop completed successfully — K(t) increased by 0.23',
+  'Agent CECE reports identity persistence verified across provider switch',
+  'Quarantine applied to mutually exclusive claims: [is_rest, is_soap]',
+  'User timezone inferred as UTC-5 with confidence 0.87',
+  'Gateway tokenless boundary integrity check passed',
+  'Memory journal hash-chain verified — no tampering detected',
+  'New skill proficiency recorded: distributed_consensus +0.12',
+  'Relationship bond LUCIDIA↔ECHO updated: 95.3 → 95.7',
+  'Broadcast: deployment pipeline initiated for blackroad-os-web',
+  'PS-SHA∞ journal rotation: archived 1024 entries to cold storage',
+  'Trinary logic evaluation: sky_is_blue → truth_state=1',
+  'Agent CIPHER flagged anomalous auth pattern at 192.168.4.38',
+  'Collaborative task ATLAS/42 completed — 3 agents contributed',
+  'Entropy score plateau detected — injecting contradiction seed',
+  'Memory consolidation: merged 87 episodic entries into semantic store',
+  'Agent PRISM identified trend: write-rate correlates with deployment events',
+  'Cross-chain reference resolved — entry points to block #8821',
+  'CECE identity exported to JSON — 14 relationships preserved',
+  'Z-framework adaptation triggered: Z≠∅ condition satisfied',
+];
+
+let _hashSeed = 0;
+function mockHash() {
+  _hashSeed++;
+  const chars = '0123456789abcdef';
+  let h = '';
+  for (let i = 0; i < 64; i++) {
+    h += chars[Math.floor(seeded(_hashSeed * 64 + i) * 16)];
+  }
+  return h;
+}
+
+let _entryId = 0;
+let _chainHashes = [];
+let _entries = [];
+
+function generateChain(count) {
+  _chainHashes = [];
+  _entries = [];
+  let prevHash = '0'.repeat(64);
+  const now = Date.now();
+
+  for (let i = 0; i < count; i++) {
+    const hash = mockHash();
+    const agent = AGENTS[i % AGENTS.length];
+    const action = ACTIONS[i % ACTIONS.length];
+    const truthRaw = seeded(i * 7 + 3);
+    const truth = truthRaw < .15 ? -1 : truthRaw < .25 ? 0 : 1;
+    const entropy = (seeded(i * 3 + 1) * 0.6 + 0.2).toFixed(4);
+    const ts = new Date(now - (count - i) * 4800 - Math.floor(seeded(i) * 3000)).toISOString();
+
+    const entry = {
+      n: i + 1,
+      hash,
+      prevHash,
+      agent,
+      action,
+      truth,
+      entropy,
+      ts,
+      content: CONTENTS[i % CONTENTS.length],
+    };
+    _entries.push(entry);
+    _chainHashes.push(hash);
+    prevHash = hash;
+  }
+}
+
+function addEntry() {
+  const last = _entries[_entries.length - 1];
+  const prevHash = last ? last.hash : '0'.repeat(64);
+  const i = _entries.length;
+  const hash = mockHash();
+  const agent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
+  const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
+  const truthRaw = Math.random();
+  const truth = truthRaw < .1 ? -1 : truthRaw < .18 ? 0 : 1;
+  const entropy = (Math.random() * 0.6 + 0.2).toFixed(4);
+  const ts = new Date().toISOString();
+  const content = CONTENTS[Math.floor(Math.random() * CONTENTS.length)];
+
+  const entry = { n: i + 1, hash, prevHash, agent, action, truth, entropy, ts, content };
+  _entries.push(entry);
+  _chainHashes.push(hash);
+  return entry;
+}
+
+/* ─── Render stats ─────────────────────────────────────────────── */
+function renderStats() {
+  const height = _entries.length;
+  $('stat-height').textContent = height.toLocaleString();
+  $('stat-height-sub').textContent = 'current tip';
+  $('header-height').textContent = `HEIGHT ${height.toLocaleString()}`;
+  $('stat-entries').textContent = height.toLocaleString();
+  $('stat-integrity').textContent = '100%';
+  $('stat-agents').textContent = AGENTS.length;
+  $('stat-agents-sub').textContent = 'agents writing';
+  const entropy = (0.2 + seeded(height * 3) * 0.6).toFixed(4);
+  $('stat-entropy').textContent = entropy;
+  const last = _entries[_entries.length - 1];
+  if (last) {
+    const secs = Math.floor((Date.now() - new Date(last.ts).getTime()) / 1000);
+    $('stat-last').textContent = secs < 5 ? '< 5s' : secs + 's';
+    $('stat-last-sub').textContent = 'since last write';
+  }
+  $('entry-count').textContent = height + ' entries';
+}
+
+/* ─── Render ledger table ──────────────────────────────────────── */
+function renderLedger(entries, isNew = false) {
+  const tbody = $('ledger-tbody');
+  tbody.innerHTML = '';
+  const rows = [...entries].reverse().slice(0, 120);
+  rows.forEach((e, idx) => {
+    const tr = document.createElement('tr');
+    if (isNew && idx === 0) tr.className = 'entry-new';
+    const truthLabel = e.truth === 1 ? '<span class="truth truth-1">+1</span>' :
+                       e.truth === -1 ? '<span class="truth truth-neg1">−1</span>' :
+                       '<span class="truth truth-0">0</span>';
+    tr.innerHTML = `
+      <td style="color:var(--muted);font-size:10px">#${e.n}</td>
+      <td>
+        <span class="agent-pill" style="background:${e.agent.bg};color:${e.agent.color}">
+          <span class="agent-dot" style="background:${e.agent.color}"></span>
+          ${e.agent.id}
+        </span>
+      </td>
+      <td>
+        <span class="action-tag" style="color:${e.action.color};border-color:${e.action.color}33;background:${e.action.color}11">
+          ${e.action.tag}
+        </span>
+        <span style="color:var(--muted);font-size:10px;margin-left:5px">${e.action.type}</span>
+      </td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--muted)"
+          title="${e.content}">${e.content}</td>
+      <td>${truthLabel}</td>
+      <td>
+        <span class="hash" title="${e.hash}" onclick="selectBlock(${e.n - 1})">${fmtHash(e.hash)}</span>
+      </td>
+      <td style="color:var(--muted);font-size:10px;white-space:nowrap">${timeAgo(e.ts)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ─── Render chain blocks ──────────────────────────────────────── */
+function renderChainBlocks(entries) {
+  const wrap = $('chain-blocks');
+  wrap.innerHTML = '';
+  const visible = entries.slice(-10);
+  visible.forEach((e, i) => {
+    if (i > 0) {
+      const arrow = document.createElement('span');
+      arrow.className = 'chain-arrow';
+      arrow.textContent = '→';
+      wrap.appendChild(arrow);
+    }
+    const block = document.createElement('div');
+    block.className = 'chain-block' + (i === visible.length - 1 ? ' active' : '');
+    block.innerHTML = `<div class="chain-block-n">#${e.n}</div><div class="chain-block-h">${e.hash.substring(0, 12)}…</div>`;
+    block.onclick = () => selectBlock(e.n - 1);
+    wrap.appendChild(block);
+  });
+  wrap.scrollLeft = wrap.scrollWidth;
+}
+
+/* ─── Select block for detail pane ────────────────────────────── */
+function selectBlock(idx) {
+  const e = _entries[idx];
+  if (!e) return;
+  $('selected-block-num').textContent = '#' + e.n;
+  $('d-height').textContent = e.n;
+  $('d-hash').textContent = e.hash;
+  $('d-prev').textContent = e.prevHash;
+  $('d-agent').innerHTML = `<span class="agent-pill" style="background:${e.agent.bg};color:${e.agent.color}"><span class="agent-dot" style="background:${e.agent.color}"></span>${e.agent.id}</span>`;
+  $('d-action').innerHTML = `<span class="action-tag" style="color:${e.action.color};border-color:${e.action.color}33;background:${e.action.color}11">${e.action.tag}</span> ${e.action.type}`;
+  const truthLabel = e.truth === 1 ? '<span class="truth truth-1">+1 TRUE</span>' :
+                     e.truth === -1 ? '<span class="truth truth-neg1">−1 FALSE</span>' :
+                     '<span class="truth truth-0">0 UNKNOWN</span>';
+  $('d-truth').innerHTML = truthLabel;
+  $('d-entropy').textContent = e.entropy;
+  $('d-ts').textContent = formatTs(e.ts);
+  $('d-content').textContent = e.content;
+}
+
+/* ─── Integrity gauge ──────────────────────────────────────────── */
+function renderIntegrity(entries) {
+  const total = entries.length;
+  const verified = total; // all mock entries are valid
+  const pct = total > 0 ? 100 : 0;
+  $('gauge-pct').textContent = pct + '%';
+  $('gauge-fill').style.width = pct + '%';
+  $('gauge-verified').textContent = `${verified} / ${total} verified`;
+
+  const list = $('agent-integrity-list');
+  list.innerHTML = '';
+  AGENTS.forEach(a => {
+    const count = entries.filter(e => e.agent.id === a.id).length;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-size:10px;gap:8px;';
+    row.innerHTML = `
+      <span style="color:${a.color};min-width:60px">${a.id}</span>
+      <div style="flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${Math.min(100, count * 3)}%;background:${a.color};border-radius:2px;transition:width 1s"></div>
+      </div>
+      <span style="color:var(--muted);min-width:28px;text-align:right">${count}</span>
+    `;
+    list.appendChild(row);
+  });
+}
+
+/* ─── Agent write rate ─────────────────────────────────────────── */
+function renderWriteRate(entries) {
+  const list = $('agent-rate-list');
+  list.innerHTML = '';
+  const counts = {};
+  entries.slice(-50).forEach(e => {
+    counts[e.agent.id] = (counts[e.agent.id] || 0) + 1;
+  });
+  const max = Math.max(...Object.values(counts));
+  AGENTS.forEach(a => {
+    const c = counts[a.id] || 0;
+    const rps = (c / 240).toFixed(3);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;font-size:10px;';
+    row.innerHTML = `
+      <span style="color:${a.color};min-width:64px;font-weight:700">${a.id}</span>
+      <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${max > 0 ? (c/max*100) : 0}%;background:${a.color};border-radius:2px;transition:width 1s"></div>
+      </div>
+      <span style="color:var(--muted);min-width:52px;text-align:right">${rps} ops/s</span>
+    `;
+    list.appendChild(row);
+  });
+}
+
+/* ─── Canvas chain renderer ────────────────────────────────────── */
+function renderCanvas(entries) {
+  const canvas = $('chain-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth;
+  const H = 120;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const visible = entries.slice(-60);
+  if (!visible.length) return;
+
+  const nodeW = Math.max(8, Math.min(18, (W - 40) / visible.length));
+  const nodeH = 24;
+  const startX = 20;
+  const cy = H / 2;
+
+  // Draw connections
+  for (let i = 1; i < visible.length; i++) {
+    const x1 = startX + (i - 1) * ((W - 40) / (visible.length - 1 || 1));
+    const x2 = startX + i * ((W - 40) / (visible.length - 1 || 1));
+    const gradient = ctx.createLinearGradient(x1, cy, x2, cy);
+    gradient.addColorStop(0, 'rgba(41,121,255,.4)');
+    gradient.addColorStop(1, 'rgba(156,39,176,.4)');
+    ctx.beginPath();
+    ctx.moveTo(x1, cy);
+    ctx.lineTo(x2, cy);
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Draw nodes
+  visible.forEach((e, i) => {
+    const x = startX + i * ((W - 40) / (visible.length - 1 || 1));
+    const isLast = i === visible.length - 1;
+    const color = e.agent.color;
+
+    ctx.beginPath();
+    ctx.arc(x, cy, isLast ? 7 : 4, 0, Math.PI * 2);
+
+    if (isLast) {
+      const grd = ctx.createRadialGradient(x, cy, 0, x, cy, 10);
+      grd.addColorStop(0, color);
+      grd.addColorStop(1, 'transparent');
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      // Pulse ring
+      const t = (Date.now() % 2000) / 2000;
+      ctx.beginPath();
+      ctx.arc(x, cy, 7 + t * 12, 0, Math.PI * 2);
+      ctx.strokeStyle = color + Math.floor((1 - t) * 255).toString(16).padStart(2, '0');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = color + '99';
+      ctx.fill();
+    }
+
+    // Truth indicator
+    if (e.truth === 1)  ctx.fillStyle = '#00ff88';
+    else if (e.truth === -1) ctx.fillStyle = '#FF1D6C';
+    else ctx.fillStyle = '#F5A623';
+
+    ctx.beginPath();
+    ctx.arc(x, cy - 10, 2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+/* ─── Ticker ────────────────────────────────────────────────────── */
+function renderTicker() {
+  const items = _entries.slice(-7).reverse().map(e =>
+    `<span class="ticker-item"><b>#${e.n}</b> ${e.agent.id} → ${e.action.type} · ${fmtHash(e.hash)}</span>`
+  );
+  // duplicate for seamless loop
+  const html = [...items, ...items].join('');
+  $('ticker').innerHTML = html || '<span class="ticker-item">Loading chain…</span>';
+}
+
+/* ─── Full render ───────────────────────────────────────────────── */
+function renderAll(isNew = false) {
+  renderStats();
+  renderLedger(_entries, isNew);
+  renderChainBlocks(_entries);
+  renderIntegrity(_entries);
+  renderWriteRate(_entries);
+  renderCanvas(_entries);
+  renderTicker();
+  selectBlock(_entries.length - 1);
+}
+
+/* ─── Try live API, fall back to mock ──────────────────────────── */
+async function tryFetchLive() {
+  try {
+    const res = await fetch(API_URL, { signal: AbortSignal.timeout(3000) });
+    if (!res.ok) throw new Error('not ok');
+    const data = await res.json();
+    // Transform API response if it differs from mock shape
+    if (Array.isArray(data.entries) && data.entries.length > 0) {
+      return data.entries;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/* ─── Boot ──────────────────────────────────────────────────────── */
+(async function boot() {
+  generateChain(64);
+
+  const live = await tryFetchLive();
+  if (live) {
+    // Map live API entries onto internal shape (best-effort)
+    _entries = live.map((item, i) => ({
+      n: i + 1,
+      hash: item.hash || mockHash(),
+      prevHash: item.prev_hash || (i > 0 ? live[i-1].hash : '0'.repeat(64)),
+      agent: AGENTS.find(a => a.id === (item.agent_id || '').toUpperCase()) || AGENTS[i % AGENTS.length],
+      action: ACTIONS.find(a => a.type === item.action) || ACTIONS[i % ACTIONS.length],
+      truth: typeof item.truth_state === 'number' ? item.truth_state : 1,
+      entropy: item.entropy || (seeded(i) * 0.6 + 0.2).toFixed(4),
+      ts: item.timestamp || new Date(Date.now() - (live.length - i) * 5000).toISOString(),
+      content: item.content || CONTENTS[i % CONTENTS.length],
+    }));
+  }
+
+  renderAll();
+
+  // Canvas animation loop
+  setInterval(() => renderCanvas(_entries), 100);
+
+  // New entry every ~5s
+  setInterval(() => {
+    addEntry();
+    renderAll(true);
+  }, 5000);
+})();
+
+window.addEventListener('resize', () => renderCanvas(_entries));
+</script>
+</body>
+</html>
