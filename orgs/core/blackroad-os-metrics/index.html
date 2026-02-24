@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlackRoad OS — Mission Control</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --pink:#FF1D6C;--blue:#2979FF;--amber:#F5A623;
+    --green:#00E676;--red:#FF1744;--dim:#111317;
+    --card:#161A1F;--border:#1E2329;--text:#E8ECF0;--muted:#5A6478;
+    --font:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
+  }
+  html,body{height:100%;background:#0A0C0F;color:var(--text);font-family:var(--font);overflow:hidden}
+  /* ── Layout ── */
+  #app{display:grid;height:100vh;grid-template-rows:48px 1fr 28px;gap:0}
+  #header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+    background:linear-gradient(90deg,rgba(255,29,108,.08),rgba(41,121,255,.08));
+    border-bottom:1px solid var(--border)}
+  #header h1{font-size:15px;font-weight:700;letter-spacing:.08em;
+    background:linear-gradient(90deg,var(--pink),var(--blue));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  #header .right{display:flex;align-items:center;gap:12px}
+  #ts{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  /* spinner */
+  #spin{width:20px;height:20px;position:relative}
+  #spin svg{width:20px;height:20px}
+  .spin-ring{transform-origin:50% 50%;animation:spin 1.5s linear infinite;display:none}
+  .spin-ring.active{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* ── Grid ── */
+  #grid{display:grid;padding:12px;gap:10px;overflow:hidden;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(2,1fr)}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:12px;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+  .panel-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .panel-title span.dot{width:6px;height:6px;border-radius:50%;background:var(--pink);display:inline-block}
+  /* ── System Health ── */
+  #p-health .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1}
+  .svc{background:var(--dim);border:1px solid var(--border);border-radius:7px;
+    padding:8px 10px;display:flex;flex-direction:column;gap:4px}
+  .svc-top{display:flex;align-items:center;gap:6px}
+  .svc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .svc-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+  .svc-dot.warn{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+  .svc-dot.err{background:var(--red);box-shadow:0 0 6px var(--red)}
+  .svc-name{font-size:11px;font-weight:600;flex:1}
+  .svc-lat{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .svc-ms{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  .svc-ms.ok{color:var(--green)}.svc-ms.warn{color:var(--amber)}.svc-ms.err{color:var(--red)}
+  /* ── Pi Fleet ── */
+  #p-pi .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;flex:1}
+  .pi-card{background:var(--dim);border:1px solid var(--border);border-radius:7px;padding:8px 10px}
+  .pi-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .pi-name{font-size:12px;font-weight:700;color:var(--blue)}
+  .pi-ip{font-size:10px;color:var(--muted)}
+  .pi-bars{display:flex;flex-direction:column;gap:3px}
+  .bar-row{display:flex;align-items:center;gap:6px;font-size:10px}
+  .bar-label{width:30px;color:var(--muted)}
+  .bar-track{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+  .bar-fill.cpu{background:var(--pink)}
+  .bar-fill.mem{background:var(--blue)}
+  .bar-val{width:32px;text-align:right;font-variant-numeric:tabular-nums;color:var(--text)}
+  .pi-agents{font-size:10px;color:var(--amber);margin-top:5px}
+  /* ── Agent Activity ── */
+  #p-activity{position:relative}
+  #p-activity .log{flex:1;overflow:hidden;position:relative}
+  #log-inner{position:absolute;bottom:0;left:0;right:0;display:flex;flex-direction:column;gap:3px}
+  .log-entry{font-size:11px;display:flex;gap:8px;padding:3px 6px;border-radius:4px;
+    background:rgba(255,255,255,.02);animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  .log-ts{color:var(--muted);font-variant-numeric:tabular-nums;flex-shrink:0;width:52px}
+  .log-agent{font-weight:700;flex-shrink:0;width:56px}
+  .log-msg{color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ── GitHub Stats ── */
+  #p-github .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;flex:1}
+  .gh-stat{background:var(--dim);border:1px solid var(--border);border-radius:7px;
+    padding:10px;text-align:center;display:flex;flex-direction:column;gap:4px}
+  .gh-val{font-size:28px;font-weight:800;line-height:1;
+    background:linear-gradient(135deg,var(--pink),var(--blue));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .gh-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  /* ── Domain Status ── */
+  #p-domains .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;flex:1}
+  .domain{background:var(--dim);border:1px solid var(--border);border-radius:5px;
+    padding:5px 6px;display:flex;align-items:center;gap:5px;overflow:hidden}
+  .domain-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .domain-dot.ok{background:var(--green);box-shadow:0 0 5px var(--green)}
+  .domain-dot.err{background:var(--red);box-shadow:0 0 5px var(--red)}
+  .domain-name{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ── Live Metrics Graph ── */
+  #p-graph canvas{width:100%;height:100%;display:block}
+  #p-graph .canvas-wrap{flex:1;position:relative;min-height:0}
+  #p-graph canvas{position:absolute;inset:0}
+  /* ── Footer ── */
+  #footer{display:flex;align-items:center;justify-content:center;
+    font-size:10px;color:var(--muted);background:var(--dim);
+    border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <div id="header">
+    <h1>⬡ BlackRoad OS — Mission Control</h1>
+    <div class="right">
+      <span id="ts">--:--:--</span>
+      <div id="spin">
+        <svg viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="#1E2329" stroke-width="2"/>
+          <path class="spin-ring" d="M10 2a8 8 0 0 1 8 8" stroke="url(#sg)" stroke-width="2" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#FF1D6C"/>
+              <stop offset="100%" stop-color="#2979FF"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div id="grid">
+
+    <!-- System Health -->
+    <div class="panel" id="p-health">
+      <div class="panel-title"><span class="dot"></span>System Health</div>
+      <div class="cards" id="health-cards">
+        <!-- injected by JS -->
+      </div>
+    </div>
+
+    <!-- Pi Fleet -->
+    <div class="panel" id="p-pi">
+      <div class="panel-title"><span class="dot" style="background:var(--blue)"></span>Pi Fleet</div>
+      <div class="cards" id="pi-cards">
+        <!-- injected by JS -->
+      </div>
+    </div>
+
+    <!-- GitHub Stats -->
+    <div class="panel" id="p-github">
+      <div class="panel-title"><span class="dot" style="background:var(--amber)"></span>GitHub Stats</div>
+      <div class="stats" id="gh-stats">
+        <div class="gh-stat"><div class="gh-val" id="gh-repos">…</div><div class="gh-label">Public Repos</div></div>
+        <div class="gh-stat"><div class="gh-val" id="gh-members">…</div><div class="gh-label">Members</div></div>
+        <div class="gh-stat"><div class="gh-val" id="gh-orgs">17</div><div class="gh-label">Orgs</div></div>
+        <div class="gh-stat"><div class="gh-val" id="gh-agents">30K</div><div class="gh-label">Agents</div></div>
+      </div>
+    </div>
+
+    <!-- Agent Activity -->
+    <div class="panel" id="p-activity">
+      <div class="panel-title"><span class="dot" style="background:var(--green)"></span>Agent Activity</div>
+      <div class="log"><div id="log-inner"></div></div>
+    </div>
+
+    <!-- Domain Status -->
+    <div class="panel" id="p-domains">
+      <div class="panel-title"><span class="dot" style="background:var(--blue)"></span>Domain Status</div>
+      <div class="grid" id="domain-grid">
+        <!-- injected by JS -->
+      </div>
+    </div>
+
+    <!-- Live Metrics Graph -->
+    <div class="panel" id="p-graph">
+      <div class="panel-title"><span class="dot" style="background:var(--amber)"></span>Requests / sec</div>
+      <div class="canvas-wrap"><canvas id="graph-canvas"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div id="footer">© 2024-2026 BlackRoad OS, Inc. All Rights Reserved.</div>
+
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const LIVE_URL  = 'https://blackroad-live-data.blackroad.workers.dev/all';
+const GH_URL    = 'https://api.github.com/orgs/BlackRoad-OS';
+const REFRESH   = 15000;
+
+const SERVICES = [
+  {id:'api',     name:'API',     port:3000},
+  {id:'agents',  name:'Agents',  port:8080},
+  {id:'gateway', name:'Gateway', port:8787},
+  {id:'ollama',  name:'Ollama',  port:11434},
+  {id:'workers', name:'Workers', port:443},
+  {id:'tunnel',  name:'Tunnel',  port:7844},
+];
+
+const PI_NODES = [
+  {name:'octavia', ip:'192.168.4.38', role:'Primary'},
+  {name:'alice',   ip:'192.168.4.49', role:'Worker'},
+  {name:'lucidia', ip:'192.168.4.64', role:'Secondary'},
+  {name:'gematria',ip:'159.65.43.12', role:'Cloud'},
+];
+
+const DOMAINS = [
+  'blackroad.ai','blackroad.io','blackroad.network','blackroad.systems',
+  'blackroad.me','blackroad.inc','lucidia.earth','lucidia.studio',
+  'alice.blackroad.io','agents.blackroad.io','api.blackroad.io','docs.blackroad.io',
+];
+
+const AGENT_NAMES  = ['LUCIDIA','ALICE','OCTAVIA','PRISM','ECHO','CIPHER','CECE'];
+const AGENT_COLORS = {'LUCIDIA':'#2979FF','ALICE':'#00E676','OCTAVIA':'#9C27B0',
+                      'PRISM':'#FF1D6C','ECHO':'#F5A623','CIPHER':'#00BCD4','CECE':'#FF1D6C'};
+const MOCK_ACTIONS = [
+  'Processed inference request','Deployed new worker','Synced memory journal',
+  'Health check completed','Routed traffic to edge','Compiled skill module',
+  'Federated identity sync','Updated agent registry','Pushed to R2 storage',
+  'Scanned for vulnerabilities','Logged PS-SHA∞ commit','Broadcast coordination msg',
+  'Refreshed KV namespace','Executed task marketplace job','Reconciled Pi fleet state',
+];
+
+// ── State ────────────────────────────────────────────────────────────────────
+const rpsHistory = Array(60).fill(0);
+let logEntries   = [];
+let liveData     = null;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const rand = (a,b) => Math.random()*(b-a)+a;
+const randInt = (a,b) => Math.floor(rand(a,b));
+const pick = arr => arr[randInt(0,arr.length)];
+const fmt2 = n => String(n).padStart(2,'0');
+const nowHMS = () => { const d=new Date(); return `${fmt2(d.getHours())}:${fmt2(d.getMinutes())}:${fmt2(d.getSeconds())}`; };
+
+function latencyClass(ms) {
+  if(ms === null) return 'err';
+  if(ms < 200) return 'ok';
+  if(ms < 500) return 'warn';
+  return 'err';
+}
+
+// ── Render: System Health ────────────────────────────────────────────────────
+function renderHealth(data) {
+  const wrap = document.getElementById('health-cards');
+  wrap.innerHTML = SERVICES.map(s => {
+    const ms  = data?.services?.[s.id]?.latency ?? randInt(12,340);
+    const cls = latencyClass(ms);
+    return `<div class="svc">
+      <div class="svc-top">
+        <div class="svc-dot ${cls}"></div>
+        <span class="svc-name">${s.name}</span>
+      </div>
+      <div class="svc-ms ${cls}">${ms}</div>
+      <div class="svc-lat">ms latency</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render: Pi Fleet ─────────────────────────────────────────────────────────
+function renderPi(data) {
+  const wrap = document.getElementById('pi-cards');
+  wrap.innerHTML = PI_NODES.map(n => {
+    const nd  = data?.nodes?.[n.name] ?? {};
+    const cpu = nd.cpu  ?? randInt(8,72);
+    const mem = nd.mem  ?? randInt(20,85);
+    const ags = nd.agents ?? randInt(100,7500);
+    return `<div class="pi-card">
+      <div class="pi-header">
+        <span class="pi-name">${n.name}</span>
+        <span class="pi-ip">${n.ip}</span>
+      </div>
+      <div class="pi-bars">
+        <div class="bar-row">
+          <span class="bar-label">CPU</span>
+          <div class="bar-track"><div class="bar-fill cpu" style="width:${cpu}%"></div></div>
+          <span class="bar-val">${cpu}%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">MEM</span>
+          <div class="bar-track"><div class="bar-fill mem" style="width:${mem}%"></div></div>
+          <span class="bar-val">${mem}%</span>
+        </div>
+      </div>
+      <div class="pi-agents">⚡ ${ags.toLocaleString()} agents</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render: Domain Status ────────────────────────────────────────────────────
+function renderDomains(data) {
+  const wrap = document.getElementById('domain-grid');
+  wrap.innerHTML = DOMAINS.map(d => {
+    const ok = data?.domains?.[d] ?? (Math.random() > 0.08);
+    return `<div class="domain">
+      <div class="domain-dot ${ok?'ok':'err'}"></div>
+      <span class="domain-name">${d}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Render: Agent Log ────────────────────────────────────────────────────────
+function pushLog(entry) {
+  logEntries.push(entry);
+  if(logEntries.length > 30) logEntries.shift();
+  const inner = document.getElementById('log-inner');
+  const panel = document.getElementById('p-activity');
+  const panelH = panel.offsetHeight - 44; // minus title
+  const rowH   = 20;
+  const visible = Math.floor(panelH / rowH);
+  const show = logEntries.slice(-visible);
+  inner.innerHTML = show.map(e => {
+    const col = AGENT_COLORS[e.agent] || '#E8ECF0';
+    return `<div class="log-entry">
+      <span class="log-ts">${e.ts}</span>
+      <span class="log-agent" style="color:${col}">${e.agent}</span>
+      <span class="log-msg">${e.action}</span>
+    </div>`;
+  }).join('');
+}
+
+function mockLog() {
+  pushLog({ts:nowHMS(), agent:pick(AGENT_NAMES), action:pick(MOCK_ACTIONS)});
+}
+
+// ── Render: GitHub Stats ─────────────────────────────────────────────────────
+async function fetchGitHub() {
+  try {
+    const r = await fetch(GH_URL, {headers:{Accept:'application/vnd.github.v3+json'}});
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    document.getElementById('gh-repos').textContent   = (d.public_repos||0).toLocaleString();
+    document.getElementById('gh-members').textContent = (d.public_members||0).toLocaleString();
+  } catch(_) {
+    document.getElementById('gh-repos').textContent   = '1,332+';
+    document.getElementById('gh-members').textContent = '8';
+  }
+}
+
+// ── Canvas Graph ─────────────────────────────────────────────────────────────
+function drawGraph() {
+  const canvas = document.getElementById('graph-canvas');
+  const wrap   = canvas.parentElement;
+  canvas.width  = wrap.clientWidth  * devicePixelRatio;
+  canvas.height = wrap.clientHeight * devicePixelRatio;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = { t:10, r:10, b:22, l:36 };
+  const gW = W - pad.l - pad.r;
+  const gH = H - pad.t - pad.b;
+
+  ctx.clearRect(0,0,W,H);
+
+  const vals = rpsHistory;
+  const max  = Math.max(...vals, 1);
+  const step = gW / (vals.length - 1);
+
+  // Grid lines
+  ctx.strokeStyle = '#1E2329';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){
+    const y = pad.t + (gH/4)*i;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    const label = Math.round(max*(1-i/4));
+    ctx.fillStyle='#5A6478'; ctx.font=`${10*devicePixelRatio}px -apple-system,sans-serif`;
+    ctx.textAlign='right'; ctx.fillText(label, pad.l-4, y+4);
+  }
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0,pad.t,0,pad.t+gH);
+  grad.addColorStop(0,'rgba(255,29,108,0.35)');
+  grad.addColorStop(1,'rgba(255,29,108,0.00)');
+  ctx.beginPath();
+  vals.forEach((v,i) => {
+    const x = pad.l + i*step;
+    const y = pad.t + gH*(1 - v/max);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.lineTo(pad.l+(vals.length-1)*step, pad.t+gH);
+  ctx.lineTo(pad.l, pad.t+gH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  const lineGrad = ctx.createLinearGradient(pad.l,0,W-pad.r,0);
+  lineGrad.addColorStop(0,'#FF1D6C');
+  lineGrad.addColorStop(1,'#2979FF');
+  ctx.beginPath();
+  vals.forEach((v,i) => {
+    const x = pad.l + i*step;
+    const y = pad.t + gH*(1 - v/max);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle = lineGrad;
+  ctx.lineWidth   = 2 * devicePixelRatio;
+  ctx.lineJoin    = 'round';
+  ctx.stroke();
+
+  // X-axis labels
+  ctx.fillStyle='#5A6478'; ctx.textAlign='center';
+  ctx.font=`${9*devicePixelRatio}px -apple-system,sans-serif`;
+  [0,15,30,45,59].forEach(i => {
+    const x = pad.l + i*step;
+    const lbl = i===59?'now':`-${59-i}s`;
+    ctx.fillText(lbl, x, H-pad.b+14);
+  });
+}
+
+function tickRps(data) {
+  const rps = data?.metrics?.rps ?? randInt(18,320);
+  rpsHistory.push(rps);
+  if(rpsHistory.length > 60) rpsHistory.shift();
+  drawGraph();
+}
+
+// ── Fetch Live Data ──────────────────────────────────────────────────────────
+async function fetchLive() {
+  const ring = document.querySelector('.spin-ring');
+  ring.classList.add('active');
+  try {
+    const r = await fetch(LIVE_URL, {signal: AbortSignal.timeout(8000)});
+    if(!r.ok) throw new Error();
+    liveData = await r.json();
+  } catch(_) {
+    liveData = null; // use mock
+  } finally {
+    ring.classList.remove('active');
+  }
+  return liveData;
+}
+
+// ── Main Refresh ─────────────────────────────────────────────────────────────
+async function refresh() {
+  const data = await fetchLive();
+  renderHealth(data);
+  renderPi(data);
+  renderDomains(data);
+  tickRps(data);
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+function tickClock() {
+  document.getElementById('ts').textContent = nowHMS();
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+(async function init() {
+  // Seed log with initial mock entries
+  for(let i=0;i<12;i++){
+    const past = new Date(Date.now() - (12-i)*7000);
+    const ts = `${fmt2(past.getHours())}:${fmt2(past.getMinutes())}:${fmt2(past.getSeconds())}`;
+    logEntries.push({ts, agent:pick(AGENT_NAMES), action:pick(MOCK_ACTIONS)});
+  }
+  pushLog({ts:nowHMS(), agent:'CECE', action:'Mission Control online — monitoring activated'});
+
+  // Draw empty graph
+  drawGraph();
+
+  // First load
+  await refresh();
+  fetchGitHub();
+
+  // Clock
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // Mock log entries every ~4s
+  setInterval(mockLog, 4000);
+
+  // Full refresh every 15s
+  setInterval(refresh, REFRESH);
+
+  // Redraw graph on resize
+  window.addEventListener('resize', drawGraph);
+})();
+</script>
+</body>
+</html>

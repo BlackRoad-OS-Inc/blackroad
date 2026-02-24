@@ -1,7 +1,7 @@
 // blocks.blackroad.io — Block Storage
 // BlackRoad OS, Inc. — All Rights Reserved
 
-const DATA_URL = 'https://blackroad-live-hub.amundsonalexa.workers.dev/health';
+const DATA_URL = 'https://blackroad-live-hub.amundsonalexa.workers.dev/agents/status';
 const AGENTS_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';
 
 async function fetchLiveData() {

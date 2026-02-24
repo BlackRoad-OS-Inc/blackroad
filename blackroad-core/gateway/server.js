@@ -305,8 +305,17 @@ async function start() {
       // ---------------------------------------------------------------
       // Health check
       // ---------------------------------------------------------------
-      if (req.method === 'GET' && req.url === '/healthz') {
-        return send(200, { status: 'ok', gateway: 'blackroad-core', version: 2 })
+      if (req.method === 'GET' && (req.url === '/healthz' || req.url === '/health')) {
+        const providerList = listProviders()
+        return send(200, {
+          status: 'ok',
+          gateway: 'blackroad-core',
+          version: 2,
+          providers: providerList,
+          agents: metrics ? metrics.snapshot().activeAgents || 0 : 0,
+          uptime: process.uptime(),
+          timestamp: new Date().toISOString()
+        })
       }
 
       // ---------------------------------------------------------------

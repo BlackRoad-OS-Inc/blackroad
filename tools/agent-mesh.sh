@@ -4,10 +4,10 @@
 AGENT="$1"
 MODEL="$2"
 
-QUEUE="$HOME/BlackRoad/shared/mesh/queue"
-ROUNDS="$HOME/BlackRoad/shared/mesh/rounds"
-LOCKDIR="$HOME/BlackRoad/runtime/locks"
-TRANS="$HOME/BlackRoad/shared/transcripts/${AGENT}.log"
+QUEUE="$HOME/blackroad/shared/mesh/queue"
+ROUNDS="$HOME/blackroad/shared/mesh/rounds"
+LOCKDIR="$HOME/blackroad/runtime/locks"
+TRANS="$HOME/blackroad/shared/transcripts/${AGENT}.log"
 
 mkdir -p "$QUEUE" "$ROUNDS" "$LOCKDIR"
 

@@ -1,5 +1,5 @@
 // status.blackroad.io — System Status Page Worker
-// BlackRoad OS, Inc. © 2025 — All Rights Reserved
+// BlackRoad OS, Inc. © 2026 — All Rights Reserved
 
 const MONITORED_SERVICES = [
   { name: 'BlackRoad.io',          url: 'https://blackroad.io',                    category: 'Frontend' },
@@ -12,7 +12,7 @@ const MONITORED_SERVICES = [
   { name: 'Analytics',             url: 'https://analytics.blackroad.io',          category: 'Analytics' },
   { name: 'BlackRoad.ai',          url: 'https://blackroad.ai',                    category: 'Frontend' },
   { name: 'GitHub API',            url: 'https://api.github.com/orgs/BlackRoad-OS-Inc', category: 'External' },
-  { name: 'Cloudflare Workers',    url: 'https://blackroad-live-hub.amundsonalexa.workers.dev/health', category: 'Infrastructure' },
+  { name: 'Cloudflare Workers',    url: 'https://blackroad-live-hub.amundsonalexa.workers.dev/agents/status', category: 'Infrastructure' },
 ];
 
 async function checkService(svc) {

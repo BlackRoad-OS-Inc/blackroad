@@ -3,9 +3,9 @@
 AGENT="$1"
 MODEL="$2"
 
-INBOX="$HOME/BlackRoad/shared/inbox"
-OUTBOX="$HOME/BlackRoad/shared/outbox"
-TRANS="$HOME/BlackRoad/shared/transcripts/${AGENT}.log"
+INBOX="$HOME/blackroad/shared/inbox"
+OUTBOX="$HOME/blackroad/shared/outbox"
+TRANS="$HOME/blackroad/shared/transcripts/${AGENT}.log"
 
 mkdir -p "$(dirname "$TRANS")"
 
@@ -15,7 +15,7 @@ while true; do
   for file in "$INBOX"/*; do
     [ -f "$file" ] || continue
 
-    LOCK="$HOME/BlackRoad/runtime/locks/$(basename "$file").lock"
+    LOCK="$HOME/blackroad/runtime/locks/$(basename "$file").lock"
     exec 9>"$LOCK" || continue
     flock -n 9 || continue
 

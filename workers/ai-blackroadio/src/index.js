@@ -1,5 +1,5 @@
 // ai.blackroad.io — AI Platform Portal Worker
-// BlackRoad OS, Inc. © 2025 — All Rights Reserved
+// BlackRoad OS, Inc. © 2026 — All Rights Reserved
 
 const GH_ORG = 'BlackRoad-OS-Inc';
 const AGENTS_API = 'https://blackroad-live-hub.amundsonalexa.workers.dev';

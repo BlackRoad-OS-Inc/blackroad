@@ -1,29 +1,58 @@
 {
   "total_agents": 30000,
   "infrastructure": {
-    "octavia_pi": {
-      "capacity": 22500,
-      "role": "PRIMARY",
-      "hardware": "AI Accelerator + NVMe",
-      "ip": "192.168.4.38",
-      "status": "OPERATIONAL",
-      "disk_free": "164GB",
-      "ollama_bridge": "http://192.168.4.38:4010"
-    },
     "lucidia_pi": {
+      "capacity": 15000,
+      "role": "PRIMARY",
+      "hardware": "Pi 5 8GB + 117G+916G NVMe",
+      "ip": "192.168.4.81",
+      "status": "OPERATIONAL",
+      "ollama": true,
+      "cloudflared": true,
+      "docker": true
+    },
+    "aria_pi": {
       "capacity": 7500,
       "role": "SECONDARY",
-      "hardware": "Standard Pi 5",
-      "ip": "192.168.4.64",
+      "hardware": "Pi 5 8GB + 29G disk",
+      "ip": "192.168.4.82",
       "status": "OPERATIONAL",
-      "disk_free": "21GB"
+      "ollama": true,
+      "actions_runner": true
     },
-    "shellfish_droplet": {
-      "capacity": 0,
-      "role": "FAILOVER",
-      "hardware": "DigitalOcean Droplet",
+    "alice_pi": {
+      "capacity": 3000,
+      "role": "WORKER",
+      "hardware": "Pi 4 4GB + 15G disk",
+      "ip": "192.168.4.49",
+      "status": "OPERATIONAL",
+      "actions_runner": true
+    },
+    "octavia_pi": {
+      "capacity": 2500,
+      "role": "COMPUTE",
+      "hardware": "Pi + NVMe",
+      "ip": "192.168.4.38",
+      "status": "OPERATIONAL"
+    },
+    "gematria_droplet": {
+      "capacity": 1500,
+      "role": "EDGE",
+      "hardware": "DigitalOcean 4vCPU/8GB",
       "ip": "159.65.43.12",
-      "status": "STANDBY"
+      "status": "OPERATIONAL",
+      "ollama": true,
+      "nginx": true,
+      "nats": true
+    },
+    "anastasia_droplet": {
+      "capacity": 500,
+      "role": "FAILOVER",
+      "hardware": "DigitalOcean 1vCPU/1GB",
+      "ip": "174.138.44.45",
+      "status": "OPERATIONAL",
+      "nginx": true,
+      "redis": true
     }
   },
   "task_distribution": {
@@ -143,6 +172,6 @@
       "description": "Ideation and prototyping"
     }
   },
-  "last_updated": "2026-02-23T08:45:00Z",
+  "last_updated": "2026-02-24T22:00:00Z",
   "version": "2.0.0"
 }

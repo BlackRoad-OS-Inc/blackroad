@@ -23,11 +23,11 @@ export default {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
-    // API docs at root
-    if (url.pathname === '/' || url.pathname === '') {
-      return Response.redirect('https://api.blackroad.io/docs', 302);
+    // API landing page at root
+    if (url.pathname === "/") {
+      const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BlackRoad API</title><style>body{font-family:system-ui;background:#0a0a0a;color:#fff;padding:60px;max-width:800px;margin:0 auto}h1{color:#FF1D6C}p{color:#888}.ep{background:#111;padding:12px 16px;border-radius:8px;margin:8px 0;font-family:monospace;color:#38bdf8}</style></head><body><h1>BlackRoad API</h1><p>api.blackroad.io REST API for BlackRoad OS Agent Network</p><div class="ep">GET /v1/agents</div><div class="ep">GET /v1/agents/fleet</div><div class="ep">GET /v1/health</div><div class="ep">GET /v1/metrics</div></body></html>';
+      return new Response(html, { headers: { 'Content-Type': 'text/html', 'Access-Control-Allow-Origin': '*' } });
     }
-
     // Route to upstream
     const upstream = ROUTES[url.pathname];
     if (upstream) {

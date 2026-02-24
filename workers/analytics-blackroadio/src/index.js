@@ -1,5 +1,5 @@
 // analytics.blackroad.io — Analytics Dashboard Worker
-// BlackRoad OS, Inc. © 2025 — All Rights Reserved
+// BlackRoad OS, Inc. © 2026 — All Rights Reserved
 
 const GH_ORG = 'BlackRoad-OS-Inc';
 const KEY_REPOS = ['blackroad', 'blackroad-core', 'blackroad-agents', 'blackroad-web', 'blackroad-docs'];
