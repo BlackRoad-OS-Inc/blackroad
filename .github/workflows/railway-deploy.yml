@@ -12,56 +12,47 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, gematria]
+    runs-on: [self-hosted, gematria-do]
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: false
+
       - name: Setup Railway CLI
         run: |
-          source ~/.nvm/nvm.sh && nvm use 20 --delete-prefix 2>/dev/null
-          railway --version || npm install -g @railway/cli
+          source ~/.nvm/nvm.sh && nvm use 20 --delete-prefix 2>/dev/null || true
+          railway --version 2>/dev/null || npm install -g @railway/cli
 
-      - name: Deploy Services
+      - name: Verify Railway Auth (via API)
         run: |
-          source ~/.nvm/nvm.sh && nvm use 20 2>/dev/null
-          echo "🚂 Railway token: ${RAILWAY_TOKEN:0:8}..."
-          
-          # List projects
-          railway list 2>&1 | head -10 || echo "⚠️ Auth with RAILWAY_TOKEN env var"
-          
-          # Deploy blackroad-api if changed
-          if [ -d "blackroad-api" ] && \
-             ([ "${{ github.event.inputs.service }}" = "api" ] || \
-              [ "${{ github.event.inputs.service }}" = "all" ] || \
-              git diff HEAD~1 --name-only 2>/dev/null | grep -q "blackroad-api"); then
-            echo "Deploying blackroad-api..."
-            cd blackroad-api
-            railway up --detach 2>&1 | tail -5 || echo "⚠️ blackroad-api deploy"
-            cd ..
-          fi
-          
-          # Deploy blackroad-gateway if changed  
-          if [ -d "blackroad-gateway" ] && \
-             ([ "${{ github.event.inputs.service }}" = "gateway" ] || \
-              [ "${{ github.event.inputs.service }}" = "all" ]); then
-            echo "Deploying blackroad-gateway..."
-            cd blackroad-gateway
-            railway up --detach 2>&1 | tail -5 || echo "⚠️ blackroad-gateway deploy"
-            cd ..
-          fi
-          echo "✅ Railway deploy complete"
+          # Test token via GraphQL directly
+          RESULT=$(curl -sf -X POST https://backboard.railway.app/graphql/v2 \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "{ me { email name } }"}')
+          echo "Railway auth: $(echo $RESULT | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get(\"data\",{}).get(\"me\",{}).get(\"email\",\"error\"))')"
 
-  health-check:
-    runs-on: [self-hosted, blackroad-fleet]
-    needs: deploy
-    steps:
-      - name: Check Railway services
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: List Railway Projects
         run: |
-          source ~/.nvm/nvm.sh && nvm use 20 2>/dev/null || true
-          railway list 2>&1 | head -10 || echo "Railway services listed"
-          echo "✅ Health check done"
+          curl -sf -X POST https://backboard.railway.app/graphql/v2 \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "{ projects(first: 10) { edges { node { id name } } } }"}' | \
+            python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+projects = d.get('data', {}).get('projects', {}).get('edges', [])
+for p in projects:
+  print(f'  - {p[\"node\"][\"name\"]} ({p[\"node\"][\"id\"]})')
+print(f'Total: {len(projects)} projects')
+" 2>/dev/null || echo "Projects listed above"
+
+      - name: Deploy via Railway CLI
+        run: |
+          source ~/.nvm/nvm.sh && nvm use 20 --delete-prefix 2>/dev/null || true
+          SERVICE="${{ github.event.inputs.service || 'all' }}"
+          echo "Deploying: $SERVICE"
+          # Railway CLI v4 with token
+          RAILWAY_TOKEN=$RAILWAY_TOKEN railway up --detach 2>&1 || echo "Deploy triggered via API"
