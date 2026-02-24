@@ -51,7 +51,7 @@ def get_fleet_data():
                 "qdrant(:6333)", "redis(:6379)", "postgres(:5432)"
             ]
         elif name == "octavia":
-            models_data = fetch_url("http://192.168.4.81:8787/models")
+            models_data = fetch_url("http://192.168.4.81:8787/")
             if models_data:
                 d["online"] = True
                 live = [m for m in models_data.get("models", []) if m.get("status") == "live"]

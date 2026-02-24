@@ -297,6 +297,136 @@ cmd_all() {
   done
 }
 
+# ── CODE FINGERPRINT ────────────────────────────────────────────────────────
+cmd_fingerprint() {
+  local target="${2:-.}"
+  echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║   🔏 CODE FINGERPRINT GENERATOR          ║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}\n"
+
+  local FP_DIR="$HOME/.blackroad/fingerprints"
+  mkdir -p "$FP_DIR"
+  local FP_FILE="$FP_DIR/fingerprint-$(date +%Y%m%d-%H%M%S).jsonl"
+  local count=0
+
+  echo -e "${BLUE}Scanning: $target${NC}"
+  find "$target" -type f \( -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.sh" -o -name "*.tsx" -o -name "*.jsx" -o -name "*.css" -o -name "*.html" \) \
+    ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/dist/*" ! -path "*/__pycache__/*" 2>/dev/null | while read -r file; do
+    local hash=$(shasum -a 256 "$file" 2>/dev/null | cut -d' ' -f1)
+    local lines=$(wc -l < "$file" 2>/dev/null | tr -d ' ')
+    local size=$(stat -f%z "$file" 2>/dev/null || echo 0)
+    local rel="${file#$target/}"
+    echo "{\"file\":\"$rel\",\"sha256\":\"$hash\",\"lines\":$lines,\"bytes\":$size,\"time\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" >> "$FP_FILE"
+    ((count++))
+  done
+
+  local total=$(wc -l < "$FP_FILE" 2>/dev/null | tr -d ' ')
+  local master_hash=$(shasum -a 256 "$FP_FILE" | cut -d' ' -f1)
+
+  echo -e "\n  ${GREEN}✓${NC} Fingerprinted ${GREEN}$total${NC} files"
+  echo -e "  ${GREEN}✓${NC} Saved to: $FP_FILE"
+  echo -e "  ${GREEN}✓${NC} Master hash: ${PURPLE}$master_hash${NC}"
+
+  sqlite3 "$DB_FILE" "INSERT INTO checks (type,target,status,confidence,details) VALUES('fingerprint','$target','pass',100,'files:$total master:$master_hash')"
+}
+
+# ── CODE REUSE SCAN ─────────────────────────────────────────────────────────
+cmd_scan_reuse() {
+  local query="${@:2}"
+  [[ -z "$query" ]] && echo -e "${RED}Usage: br verify scan <unique-code-string-or-filename>${NC}" && return 1
+
+  echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║   🔎 CODE REUSE SCANNER                  ║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}\n"
+
+  echo -e "${BLUE}Searching GitHub for: \"$query\"${NC}\n"
+
+  # Search GitHub code for exact matches outside our orgs
+  local our_orgs="BlackRoad-OS BlackRoad-OS-Inc blackboxprogramming BlackRoad-AI BlackRoad-Cloud BlackRoad-Security BlackRoad-Media BlackRoad-Foundation BlackRoad-Interactive BlackRoad-Hardware BlackRoad-Labs BlackRoad-Studio BlackRoad-Ventures BlackRoad-Education BlackRoad-Gov Blackbox-Enterprises BlackRoad-Archive"
+
+  local results=$(gh api "search/code?q=$(python3 -c "import urllib.parse; print(urllib.parse.quote('\"$query\"'))" 2>/dev/null)&per_page=30" 2>/dev/null)
+
+  if [[ -z "$results" ]]; then
+    echo -e "  ${YELLOW}No results or API rate limited${NC}"
+    return
+  fi
+
+  local total=$(echo "$results" | python3 -c "import json,sys; print(json.load(sys.stdin).get('total_count',0))" 2>/dev/null || echo 0)
+  echo -e "  Total matches: ${YELLOW}$total${NC}\n"
+
+  echo "$results" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+our_orgs = set('$our_orgs'.lower().split())
+ours = 0; external = 0
+for item in data.get('items', []):
+    owner = item.get('repository', {}).get('owner', {}).get('login', '').lower()
+    repo = item.get('repository', {}).get('full_name', '')
+    path = item.get('path', '')
+    if owner in our_orgs:
+        ours += 1
+    else:
+        external += 1
+        print(f'  ⚠️  EXTERNAL: {repo}/{path}')
+if external == 0:
+    print(f'  ✅ No external matches found ({ours} internal matches)')
+else:
+    print(f'\n  🔴 {external} EXTERNAL matches found ({ours} internal)')
+" 2>/dev/null
+
+  sqlite3 "$DB_FILE" "INSERT INTO checks (type,target,status,confidence,details) VALUES('reuse-scan','$(echo $query | sed "s/'/''/g")','$([ $total -gt 0 ] && echo warn || echo pass)',80,'total:$total')"
+}
+
+# ── LICENSE CHECK ───────────────────────────────────────────────────────────
+cmd_license() {
+  echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║   ⚖️  LICENSE VERIFICATION                ║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}\n"
+
+  local target="${2:-/Users/alexa/blackroad}"
+  local pass=0; local warn=0; local fail=0
+
+  # Check for proprietary license file
+  echo -e "${BLUE}[1/4] License files${NC}"
+  if [[ -f "$target/LICENSE-BLACKROAD-PROPRIETARY" ]]; then
+    printf "  ${GREEN}✓${NC} LICENSE-BLACKROAD-PROPRIETARY present\n"; ((pass++))
+  else
+    printf "  ${RED}✗${NC} LICENSE-BLACKROAD-PROPRIETARY missing\n"; ((fail++))
+  fi
+
+  if [[ -f "$target/LICENSE" ]]; then
+    local lic_type=$(head -1 "$target/LICENSE" 2>/dev/null)
+    printf "  ${YELLOW}~${NC} LICENSE file found: %s\n" "$lic_type"; ((warn++))
+  fi
+
+  # Check FUNDING.yml
+  echo -e "\n${BLUE}[2/4] Funding${NC}"
+  if [[ -f "$target/.github/FUNDING.yml" ]]; then
+    printf "  ${GREEN}✓${NC} .github/FUNDING.yml present\n"; ((pass++))
+  else
+    printf "  ${RED}✗${NC} .github/FUNDING.yml missing\n"; ((fail++))
+  fi
+
+  # Check for IP notice
+  echo -e "\n${BLUE}[3/4] IP markers${NC}"
+  local ip_count=$(grep -rl "BlackRoad OS, Inc" "$target" --include="*.md" --include="*.html" --include="*.js" --include="*.sh" 2>/dev/null | wc -l | tr -d ' ')
+  printf "  ${GREEN}✓${NC} IP attribution found in %s files\n" "$ip_count"; ((pass++))
+
+  # Check for exposed secrets
+  echo -e "\n${BLUE}[4/4] Secret exposure${NC}"
+  local env_files=$(find "$target" -name ".env" -o -name ".env.local" -o -name ".env.production" 2>/dev/null | grep -v node_modules | grep -v .git)
+  if [[ -z "$env_files" ]]; then
+    printf "  ${GREEN}✓${NC} No exposed .env files\n"; ((pass++))
+  else
+    printf "  ${RED}✗${NC} Found .env files:\n"
+    echo "$env_files" | while read f; do printf "       %s\n" "$f"; done
+    ((fail++))
+  fi
+
+  echo -e "\n  Results: ${GREEN}$pass pass${NC} / ${YELLOW}$warn warn${NC} / ${RED}$fail fail${NC}"
+  sqlite3 "$DB_FILE" "INSERT INTO checks (type,target,status,confidence,details) VALUES('license','$target','$([ $fail -gt 0 ] && echo fail || echo pass)',$(( pass * 100 / (pass + warn + fail + 1) )),'pass:$pass warn:$warn fail:$fail')"
+}
+
 show_help() {
   echo -e "${CYAN}BR Verify — Information Verification System${NC}\n"
   echo "  br verify                     Full dashboard"
@@ -307,6 +437,9 @@ show_help() {
   echo "  br verify env                 Check environment variables"
   echo "  br verify schema <file>       Validate JSON/YAML schema"
   echo "  br verify repo <owner/repo>   Check GitHub repo health"
+  echo "  br verify fingerprint [dir]   Generate code fingerprints (SHA-256 per file)"
+  echo "  br verify scan <code-string>  Scan GitHub for code reuse outside our orgs"
+  echo "  br verify license [dir]       Check license/IP/funding compliance"
   echo "  br verify history             Show recent verifications"
 }
 
@@ -323,15 +456,18 @@ cmd_history() {
 init_db
 
 case "${1:-dashboard}" in
-  url)        cmd_url "$@" ;;
-  claim)      cmd_claim "$@" ;;
-  hash)       cmd_hash "$@" ;;
-  env)        cmd_env ;;
-  schema)     cmd_schema "$@" ;;
-  repo)       cmd_repo "$@" ;;
-  all|full)   cmd_all ;;
-  history)    cmd_history ;;
-  dashboard|"") cmd_dashboard ;;
-  help|--help) show_help ;;
-  *)          show_help ;;
+  url)             cmd_url "$@" ;;
+  claim)           cmd_claim "$@" ;;
+  hash)            cmd_hash "$@" ;;
+  env)             cmd_env ;;
+  schema)          cmd_schema "$@" ;;
+  repo)            cmd_repo "$@" ;;
+  fingerprint|fp)  cmd_fingerprint "$@" ;;
+  scan|reuse)      cmd_scan_reuse "$@" ;;
+  license|lic)     cmd_license "$@" ;;
+  all|full)        cmd_all ;;
+  history)         cmd_history ;;
+  dashboard|"")    cmd_dashboard ;;
+  help|--help)     show_help ;;
+  *)               show_help ;;
 esac

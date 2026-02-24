@@ -20,6 +20,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Restore wrangler auth
         run: |
           if [ -n "$WRANGLER_CONFIG_B64" ]; then
@@ -28,9 +30,6 @@ jobs:
           fi
         env:
           WRANGLER_CONFIG_B64: ${{ secrets.WRANGLER_CONFIG_B64 }}
-
-        with:
-          submodules: false
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
