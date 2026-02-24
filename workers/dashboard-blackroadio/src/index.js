@@ -29,7 +29,8 @@ async function getGitHubData() {
 }
 
 async function getAgentData() {
-  return fetchJSON(`${AGENTS_API}/agents`, 30) || { online: 6, total: 8 };
+  const data = await fetchJSON(`${AGENTS_API}/agents/status`, 30);
+  return data || { online: 6, total: 8 };
 }
 
 function repoCard(repo) {
