@@ -11,7 +11,7 @@ BLACKROAD_DOMAINS=(
 )
 
 show_help() {
-  echo -e "${CYAN}${BOLD}BR Cert{{NC}"
+  echo -e "${CYAN}${BOLD}BR Cert${NC}"
   echo "  br cert check <domain>  Check SSL cert for a domain"
   echo "  br cert all             Check all blackroad domains"
   echo "  br cert expiry <domain> Show cert expiry date only"
@@ -38,39 +38,39 @@ days_until_expiry() {
 
 cmd_check() {
   local DOMAIN="${1:-blackroad.io}"
-  echo -e "${CYAN}SSL Check: $DOMAIN{{NC}\n"
+  echo -e "${CYAN}SSL Check: $DOMAIN${NC}\n"
   EXPIRY=$(get_expiry "$DOMAIN")
   if [[ -z "$EXPIRY" ]]; then
-    echo -e "  ${RED}● Could not retrieve certificate{{NC}"
+    echo -e "  ${RED}● Could not retrieve certificate${NC}"
     return
   fi
   DAYS=$(days_until_expiry "$EXPIRY")
   if [[ "$DAYS" -gt 30 ]]; then
-    echo -e "  ${GREEN}● Valid{{NC}"
+    echo -e "  ${GREEN}● Valid${NC}"
   elif [[ "$DAYS" -gt 7 ]]; then
-    echo -e "  ${YELLOW}● Expiring soon{{NC}"
+    echo -e "  ${YELLOW}● Expiring soon${NC}"
   else
-    echo -e "  ${RED}● CRITICAL: Expiring in $DAYS days{{NC}"
+    echo -e "  ${RED}● CRITICAL: Expiring in $DAYS days${NC}"
   fi
   echo -e "  Expires: $EXPIRY"
   echo -e "  Days left: $DAYS"
 }
 
 cmd_all() {
-  echo -e "${CYAN}SSL Certificate Check — All Domains{{NC}\n"
+  echo -e "${CYAN}SSL Certificate Check — All Domains${NC}\n"
   for D in "${BLACKROAD_DOMAINS[@]}"; do
     EXPIRY=$(get_expiry "$D")
     if [[ -z "$EXPIRY" ]]; then
-      echo -e "  ${RED}● $D{{NC} — no cert / unreachable"
+      echo -e "  ${RED}● $D${NC} — no cert / unreachable"
       continue
     fi
     DAYS=$(days_until_expiry "$EXPIRY")
     if [[ "$DAYS" -gt 30 ]]; then
-      echo -e "  ${GREEN}● $D{{NC} — ${DAYS}d left"
+      echo -e "  ${GREEN}● $D${NC} — ${DAYS}d left"
     elif [[ "$DAYS" -gt 7 ]]; then
-      echo -e "  ${YELLOW}● $D{{NC} — ${DAYS}d left (renew soon)"
+      echo -e "  ${YELLOW}● $D${NC} — ${DAYS}d left (renew soon)"
     else
-      echo -e "  ${RED}● $D{{NC} — ${DAYS}d left (URGENT)"
+      echo -e "  ${RED}● $D${NC} — ${DAYS}d left (URGENT)"
     fi
   done
 }
@@ -83,7 +83,7 @@ cmd_expiry() {
 
 cmd_info() {
   local DOMAIN="${1:-blackroad.io}"
-  echo -e "${CYAN}Cert Info: $DOMAIN{{NC}\n"
+  echo -e "${CYAN}Cert Info: $DOMAIN${NC}\n"
   echo | openssl s_client -servername "$DOMAIN" -connect "$DOMAIN:443" 2>/dev/null \
     | openssl x509 -noout -text 2>/dev/null \
     | grep -E "Subject:|Issuer:|Not Before|Not After|DNS:" \
@@ -97,6 +97,6 @@ case "${1:-help}" in
   info)   cmd_info "$2" ;;
   help|-h|--help) show_help ;;
   *)
-    echo -e "${RED}Unknown command: $1{{NC}"
+    echo -e "${RED}Unknown command: $1${NC}"
     show_help ;;
 esac

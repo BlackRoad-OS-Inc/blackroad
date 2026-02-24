@@ -14,7 +14,7 @@ init_memory() {
 }
 
 show_help() {
-  echo -e "${CYAN}${BOLD}BR Memory{{NC}"
+  echo -e "${CYAN}${BOLD}BR Memory${NC}"
   echo "  br memory write <key> <value>  Write to memory"
   echo "  br memory read <key>           Read from memory"
   echo "  br memory list                 List all keys"
@@ -28,7 +28,7 @@ cmd_write() {
   local KEY="$1"
   local VALUE="${@:2}"
   if [[ -z "$KEY" ]]; then
-    echo -e "${RED}Usage: br memory write <key> <value>{{NC}"
+    echo -e "${RED}Usage: br memory write <key> <value>${NC}"
     return 1
   fi
   init_memory
@@ -36,33 +36,33 @@ cmd_write() {
   local ENTRY="{\"key\":\"$KEY\",\"value\":\"$VALUE\",\"hash\":\"$HASH\",\"time\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
   echo "$ENTRY" >> "$JOURNAL"
   echo "$ENTRY" >> "$LEDGER"
-  echo -e "${GREEN}✓{{NC} Stored [$HASH] $KEY"
+  echo -e "${GREEN}✓${NC} Stored [$HASH] $KEY"
 }
 
 cmd_read() {
   local KEY="$1"
   if [[ -z "$KEY" ]]; then
-    echo -e "${RED}Usage: br memory read <key>{{NC}"
+    echo -e "${RED}Usage: br memory read <key>${NC}"
     return 1
   fi
   if [[ ! -f "$JOURNAL" ]]; then
-    echo -e "${YELLOW}No memory journal found{{NC}"
+    echo -e "${YELLOW}No memory journal found${NC}"
     return 1
   fi
   local RESULT=$(grep "\"key\":\"$KEY\"" "$JOURNAL" 2>/dev/null | tail -1)
   if [[ -n "$RESULT" ]]; then
     echo "$RESULT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['value'])" 2>/dev/null || echo "$RESULT"
   else
-    echo -e "${YELLOW}Key not found: $KEY{{NC}"
+    echo -e "${YELLOW}Key not found: $KEY${NC}"
   fi
 }
 
 cmd_list() {
   if [[ ! -f "$JOURNAL" ]]; then
-    echo -e "${YELLOW}No memory journal found{{NC}"
+    echo -e "${YELLOW}No memory journal found${NC}"
     return
   fi
-  echo -e "${CYAN}Memory Keys{{NC}\n"
+  echo -e "${CYAN}Memory Keys${NC}\n"
   python3 -c "
 import json, sys
 keys = {}
@@ -79,14 +79,14 @@ for k, t in sorted(keys.items()):
 cmd_search() {
   local QUERY="${*:-}"
   if [[ -z "$QUERY" ]]; then
-    echo -e "${RED}Usage: br memory search <query>{{NC}"
+    echo -e "${RED}Usage: br memory search <query>${NC}"
     return 1
   fi
   if [[ ! -f "$JOURNAL" ]]; then
-    echo -e "${YELLOW}No memory journal found{{NC}"
+    echo -e "${YELLOW}No memory journal found${NC}"
     return
   fi
-  echo -e "${CYAN}Search: \"$QUERY\"{{NC}\n"
+  echo -e "${CYAN}Search: \"$QUERY\"${NC}\n"
   grep -i "$QUERY" "$JOURNAL" 2>/dev/null | while read LINE; do
     echo "$LINE" | python3 -c "
 import json,sys
@@ -104,21 +104,21 @@ cmd_log() {
   local HASH=$(echo "${ACTION}:${DATA}:$(date +%s)" | shasum -a 256 | cut -c1-16)
   local ENTRY="{\"type\":\"action\",\"action\":\"$ACTION\",\"data\":\"$DATA\",\"hash\":\"$HASH\",\"time\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
   echo "$ENTRY" >> "$JOURNAL"
-  echo -e "${GREEN}✓{{NC} Logged [$HASH] $ACTION"
+  echo -e "${GREEN}✓${NC} Logged [$HASH] $ACTION"
 }
 
 cmd_stats() {
   init_memory
-  echo -e "${CYAN}Memory Statistics{{NC}\n"
+  echo -e "${CYAN}Memory Statistics${NC}\n"
   if [[ -f "$JOURNAL" ]]; then
     ENTRIES=$(wc -l < "$JOURNAL" | tr -d ' ')
     SIZE=$(du -sh "$JOURNAL" 2>/dev/null | cut -f1)
     KEYS=$(grep -o '"key":"[^"]*"' "$JOURNAL" 2>/dev/null | sort -u | wc -l | tr -d ' ')
-    echo -e "  Journal entries: ${GREEN}$ENTRIES{{NC}"
-    echo -e "  Unique keys:     ${GREEN}$KEYS{{NC}"
-    echo -e "  Journal size:    ${GREEN}$SIZE{{NC}"
+    echo -e "  Journal entries: ${GREEN}$ENTRIES${NC}"
+    echo -e "  Unique keys:     ${GREEN}$KEYS${NC}"
+    echo -e "  Journal size:    ${GREEN}$SIZE${NC}"
   else
-    echo -e "  ${YELLOW}No journal yet{{NC}"
+    echo -e "  ${YELLOW}No journal yet${NC}"
   fi
   echo -e "  Memory dir: $MEMORY_DIR"
 }
@@ -126,11 +126,11 @@ cmd_stats() {
 cmd_clear() {
   local KEY="$1"
   if [[ -z "$KEY" ]]; then
-    echo -e "${RED}Usage: br memory clear <key>{{NC}"
+    echo -e "${RED}Usage: br memory clear <key>${NC}"
     return 1
   fi
   cmd_write "$KEY" "__DELETED__"
-  echo -e "${YELLOW}Marked $KEY as deleted{{NC}"
+  echo -e "${YELLOW}Marked $KEY as deleted${NC}"
 }
 
 case "${1:-help}" in
@@ -143,6 +143,6 @@ case "${1:-help}" in
   clear)   cmd_clear "$2" ;;
   help|-h|--help) show_help ;;
   *)
-    echo -e "${RED}Unknown command: $1{{NC}"
+    echo -e "${RED}Unknown command: $1${NC}"
     show_help ;;
 esac

@@ -19,47 +19,47 @@ show_help() {
 }
 
 cmd_list() {
-  echo -e "${CYAN}BlackRoad Domains{{NC}"
+  echo -e "${CYAN}BlackRoad Domains${NC}"
   for D in "${BLACKROAD_DOMAINS[@]}"; do
-    echo -e "  ${GREEN}●{{NC} $D"
+    echo -e "  ${GREEN}●${NC} $D"
   done
 }
 
 cmd_check() {
   local DOMAIN="${1:-blackroad.io}"
-  echo -e "${CYAN}DNS Check: $DOMAIN{{NC}\n"
-  echo -e "${YELLOW}A Records:{{NC}"
+  echo -e "${CYAN}DNS Check: $DOMAIN${NC}\n"
+  echo -e "${YELLOW}A Records:${NC}"
   dig +short A "$DOMAIN" 2>/dev/null | while read LINE; do
     echo "  $LINE"
   done
-  echo -e "${YELLOW}AAAA Records:{{NC}"
+  echo -e "${YELLOW}AAAA Records:${NC}"
   dig +short AAAA "$DOMAIN" 2>/dev/null | while read LINE; do
     echo "  $LINE"
   done
-  echo -e "${YELLOW}NS Records:{{NC}"
+  echo -e "${YELLOW}NS Records:${NC}"
   dig +short NS "$DOMAIN" 2>/dev/null | while read LINE; do
     echo "  $LINE"
   done
-  echo -e "${YELLOW}MX Records:{{NC}"
+  echo -e "${YELLOW}MX Records:${NC}"
   dig +short MX "$DOMAIN" 2>/dev/null | while read LINE; do
     echo "  $LINE"
   done
 }
 
 cmd_live() {
-  echo -e "${CYAN}Live Domain Check{{NC}\n"
+  echo -e "${CYAN}Live Domain Check${NC}\n"
   OK=0; FAIL=0
   for D in "${BLACKROAD_DOMAINS[@]}"; do
     CODE=$(curl -s -m 5 -o /dev/null -w "%{http_code}" "https://$D" 2>/dev/null)
     if [[ "$CODE" =~ ^2|^3 ]]; then
-      echo -e "  ${GREEN}● $D{{NC} — $CODE"
+      echo -e "  ${GREEN}● $D${NC} — $CODE"
       ((OK++))
     else
-      echo -e "  ${RED}● $D{{NC} — ${CODE:-timeout}"
+      echo -e "  ${RED}● $D${NC} — ${CODE:-timeout}"
       ((FAIL++))
     fi
   done
-  echo -e "\n  ${YELLOW}$OK live / $FAIL down{{NC}"
+  echo -e "\n  ${YELLOW}$OK live / $FAIL down${NC}"
 }
 
 cmd_whois() {
@@ -67,20 +67,20 @@ cmd_whois() {
   if command -v whois &>/dev/null; then
     whois "$DOMAIN" 2>/dev/null | head -30
   else
-    echo -e "${YELLOW}whois not installed{{NC}"
+    echo -e "${YELLOW}whois not installed${NC}"
     dig +short "$DOMAIN"
   fi
 }
 
 cmd_workers() {
-  echo -e "${CYAN}CF Worker Subdomains (blackroad.io){{NC}\n"
+  echo -e "${CYAN}CF Worker Subdomains (blackroad.io)${NC}\n"
   SUBS=(worlds verify studio docs blog api analytics search nodes portal status console admin agents ai cdn data dev demo)
   for S in "${SUBS[@]}"; do
     CODE=$(curl -s -m 3 -o /dev/null -w "%{http_code}" "https://$S.blackroad.io" 2>/dev/null)
     if [[ "$CODE" =~ ^2|^3 ]]; then
-      echo -e "  ${GREEN}● $S.blackroad.io{{NC} — $CODE"
+      echo -e "  ${GREEN}● $S.blackroad.io${NC} — $CODE"
     else
-      echo -e "  ${RED}● $S.blackroad.io{{NC} — ${CODE:-timeout}"
+      echo -e "  ${RED}● $S.blackroad.io${NC} — ${CODE:-timeout}"
     fi
   done
 }
@@ -93,6 +93,6 @@ case "${1:-help}" in
   workers) cmd_workers ;;
   help|-h|--help) show_help ;;
   *)
-    echo -e "${RED}Unknown command: $1{{NC}"
+    echo -e "${RED}Unknown command: $1${NC}"
     show_help ;;
 esac

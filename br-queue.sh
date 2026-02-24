@@ -25,7 +25,7 @@ EOF
 }
 
 show_help() {
-  echo -e "${CYAN}${BOLD}BR Queue{{NC}"
+  echo -e "${CYAN}${BOLD}BR Queue${NC}"
   echo "  br queue list              List all tasks"
   echo "  br queue post <title>      Post a new task"
   echo "  br queue claim <id>        Claim a task"
@@ -37,16 +37,16 @@ show_help() {
 
 cmd_list() {
   init_db
-  echo -e "${CYAN}Task Queue{{NC}\n"
+  echo -e "${CYAN}Task Queue${NC}\n"
   sqlite3 "$QUEUE_DB" "SELECT id, status, priority, title FROM tasks ORDER BY created_at DESC;" 2>/dev/null | \
     while IFS='|' read ID STATUS PRIORITY TITLE; do
       case "$STATUS" in
-        pending)   echo -e "  ${YELLOW}⏳{{NC} [$ID] $TITLE (${PRIORITY})" ;;
-        claimed)   echo -e "  ${CYAN}⚡{{NC} [$ID] $TITLE" ;;
-        done)      echo -e "  ${GREEN}✓{{NC} [$ID] $TITLE" ;;
-        *)         echo -e "  ${RED}?{{NC} [$ID] $TITLE" ;;
+        pending)   echo -e "  ${YELLOW}⏳${NC} [$ID] $TITLE (${PRIORITY})" ;;
+        claimed)   echo -e "  ${CYAN}⚡${NC} [$ID] $TITLE" ;;
+        done)      echo -e "  ${GREEN}✓${NC} [$ID] $TITLE" ;;
+        *)         echo -e "  ${RED}?${NC} [$ID] $TITLE" ;;
       esac
-    done || echo -e "  ${YELLOW}No tasks{{NC}"
+    done || echo -e "  ${YELLOW}No tasks${NC}"
 }
 
 cmd_post() {
@@ -54,29 +54,29 @@ cmd_post() {
   init_db
   local ID="task-$(date +%s | tail -c 6)"
   sqlite3 "$QUEUE_DB" "INSERT INTO tasks (id, title) VALUES ('$ID', '$TITLE');"
-  echo -e "${GREEN}✓{{NC} Posted: [$ID] $TITLE"
+  echo -e "${GREEN}✓${NC} Posted: [$ID] $TITLE"
 }
 
 cmd_claim() {
   local ID="$1"
   if [[ -z "$ID" ]]; then
-    echo -e "${RED}Usage: br queue claim <id>{{NC}"
+    echo -e "${RED}Usage: br queue claim <id>${NC}"
     return 1
   fi
   init_db
   sqlite3 "$QUEUE_DB" "UPDATE tasks SET status='claimed', updated_at=datetime('now') WHERE id='$ID';"
-  echo -e "${CYAN}⚡ Claimed: $ID{{NC}"
+  echo -e "${CYAN}⚡ Claimed: $ID${NC}"
 }
 
 cmd_done() {
   local ID="$1"
   if [[ -z "$ID" ]]; then
-    echo -e "${RED}Usage: br queue done <id>{{NC}"
+    echo -e "${RED}Usage: br queue done <id>${NC}"
     return 1
   fi
   init_db
   sqlite3 "$QUEUE_DB" "UPDATE tasks SET status='done', updated_at=datetime('now') WHERE id='$ID';"
-  echo -e "${GREEN}✓ Done: $ID{{NC}"
+  echo -e "${GREEN}✓ Done: $ID${NC}"
 }
 
 cmd_view() {
@@ -84,7 +84,7 @@ cmd_view() {
   init_db
   sqlite3 "$QUEUE_DB" "SELECT id, title, description, priority, status, agent, created_at FROM tasks WHERE id='$ID';" 2>/dev/null | \
     while IFS='|' read ID TITLE DESC PRIORITY STATUS AGENT CREATED; do
-      echo -e "${CYAN}Task: $ID{{NC}"
+      echo -e "${CYAN}Task: $ID${NC}"
       echo -e "  Title:    $TITLE"
       echo -e "  Status:   $STATUS"
       echo -e "  Priority: $PRIORITY"
@@ -96,18 +96,18 @@ cmd_view() {
 
 cmd_pending() {
   init_db
-  echo -e "${CYAN}Pending Tasks{{NC}\n"
+  echo -e "${CYAN}Pending Tasks${NC}\n"
   sqlite3 "$QUEUE_DB" "SELECT id, priority, title FROM tasks WHERE status='pending' ORDER BY created_at;" 2>/dev/null | \
     while IFS='|' read ID PRIORITY TITLE; do
-      echo -e "  ${YELLOW}⏳{{NC} [$ID] $TITLE (${PRIORITY})"
-    done || echo -e "  ${GREEN}No pending tasks{{NC}"
+      echo -e "  ${YELLOW}⏳${NC} [$ID] $TITLE (${PRIORITY})"
+    done || echo -e "  ${GREEN}No pending tasks${NC}"
 }
 
 cmd_clear() {
   init_db
   COUNT=$(sqlite3 "$QUEUE_DB" "SELECT COUNT(*) FROM tasks WHERE status='done';" 2>/dev/null || echo 0)
   sqlite3 "$QUEUE_DB" "DELETE FROM tasks WHERE status='done';"
-  echo -e "${GREEN}✓{{NC} Cleared $COUNT completed tasks"
+  echo -e "${GREEN}✓${NC} Cleared $COUNT completed tasks"
 }
 
 case "${1:-help}" in
@@ -120,6 +120,6 @@ case "${1:-help}" in
   clear)   cmd_clear ;;
   help|-h|--help) show_help ;;
   *)
-    echo -e "${RED}Unknown command: $1{{NC}"
+    echo -e "${RED}Unknown command: $1${NC}"
     show_help ;;
 esac

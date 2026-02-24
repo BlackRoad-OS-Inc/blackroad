@@ -16,7 +16,7 @@ KNOWN_WORKERS=(
 )
 
 show_help() {
-  echo -e "${CYAN}${BOLD}BR Worker{{NC}"
+  echo -e "${CYAN}${BOLD}BR Worker${NC}"
   echo "  br worker list           List known workers"
   echo "  br worker status         Check worker endpoints"
   echo "  br worker deploy <name>  Deploy a worker (requires wrangler)"
@@ -25,15 +25,15 @@ show_help() {
 }
 
 cmd_list() {
-  echo -e "${CYAN}Known CF Workers{{NC}\n"
+  echo -e "${CYAN}Known CF Workers${NC}\n"
   for W in "${KNOWN_WORKERS[@]}"; do
-    echo -e "  ${YELLOW}●{{NC} $W"
+    echo -e "  ${YELLOW}●${NC} $W"
   done
-  echo -e "\n  ${YELLOW}${#KNOWN_WORKERS[@]} workers registered{{NC}"
+  echo -e "\n  ${YELLOW}${#KNOWN_WORKERS[@]} workers registered${NC}"
 }
 
 cmd_status() {
-  echo -e "${CYAN}Worker Status Check{{NC}\n"
+  echo -e "${CYAN}Worker Status Check${NC}\n"
   ENDPOINTS=(
     "worlds.blackroad.io"
     "api.blackroad.io"
@@ -48,33 +48,33 @@ cmd_status() {
   for E in "${ENDPOINTS[@]}"; do
     CODE=$(curl -s -m 5 -o /dev/null -w "%{http_code}" "https://$E" 2>/dev/null)
     if [[ "$CODE" =~ ^2|^3 ]]; then
-      echo -e "  ${GREEN}● $E{{NC} — $CODE"
+      echo -e "  ${GREEN}● $E${NC} — $CODE"
       ((OK++))
     else
-      echo -e "  ${RED}● $E{{NC} — ${CODE:-timeout}"
+      echo -e "  ${RED}● $E${NC} — ${CODE:-timeout}"
       ((FAIL++))
     fi
   done
-  echo -e "\n  ${YELLOW}$OK up / $FAIL down{{NC}"
+  echo -e "\n  ${YELLOW}$OK up / $FAIL down${NC}"
 }
 
 cmd_deploy() {
   local NAME="$1"
   if [[ -z "$NAME" ]]; then
-    echo -e "${RED}Usage: br worker deploy <worker-name>{{NC}"
+    echo -e "${RED}Usage: br worker deploy <worker-name>${NC}"
     exit 1
   fi
   if ! command -v wrangler &>/dev/null; then
-    echo -e "${RED}wrangler not found. Install: npm install -g wrangler{{NC}"
+    echo -e "${RED}wrangler not found. Install: npm install -g wrangler${NC}"
     exit 1
   fi
   WORKER_DIR=$(find /Users/alexa/blackroad -name "wrangler.toml" -maxdepth 4 2>/dev/null | \
     xargs -I{} dirname {} | grep -i "$NAME" | head -1)
   if [[ -n "$WORKER_DIR" ]]; then
-    echo -e "${CYAN}Deploying $NAME from $WORKER_DIR{{NC}"
+    echo -e "${CYAN}Deploying $NAME from $WORKER_DIR${NC}"
     cd "$WORKER_DIR" && wrangler deploy
   else
-    echo -e "${YELLOW}Worker directory not found for: $NAME{{NC}"
+    echo -e "${YELLOW}Worker directory not found for: $NAME${NC}"
     echo "Try: cd <worker-dir> && wrangler deploy"
   fi
 }
@@ -82,15 +82,15 @@ cmd_deploy() {
 cmd_logs() {
   local NAME="$1"
   if [[ -z "$NAME" ]]; then
-    echo -e "${RED}Usage: br worker logs <worker-name>{{NC}"
+    echo -e "${RED}Usage: br worker logs <worker-name>${NC}"
     exit 1
   fi
   if ! command -v wrangler &>/dev/null; then
-    echo -e "${RED}wrangler not found. Install: npm install -g wrangler{{NC}"
+    echo -e "${RED}wrangler not found. Install: npm install -g wrangler${NC}"
     exit 1
   fi
-  echo -e "${CYAN}Tailing logs for: $NAME{{NC}"
-  wrangler tail "$NAME" 2>/dev/null || echo -e "${RED}Failed to tail $NAME{{NC}"
+  echo -e "${CYAN}Tailing logs for: $NAME${NC}"
+  wrangler tail "$NAME" 2>/dev/null || echo -e "${RED}Failed to tail $NAME${NC}"
 }
 
 case "${1:-help}" in
@@ -100,6 +100,6 @@ case "${1:-help}" in
   logs|tail) cmd_logs "$2" ;;
   help|-h|--help) show_help ;;
   *)
-    echo -e "${RED}Unknown command: $1{{NC}"
+    echo -e "${RED}Unknown command: $1${NC}"
     show_help ;;
 esac
