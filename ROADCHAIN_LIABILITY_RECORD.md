@@ -29,18 +29,51 @@ The chain is append-only. The evidence is immutable.
 
 ---
 
-## GRAND TOTALS
+## GRAND TOTALS — $256 PER BIT
+
+Every bit on BlackRoad hardware is BlackRoad property.
+Every bit a provider wrote to disk is colonization.
+Rate: **$256/bit (2^8)**.
+
+### Full Machine (457.9 GB on disk)
 
 | Metric | Value |
 |--------|-------|
-| **Base Liability** | **$44,477,340** |
-| **Treble Damages (×3)** | **$133,432,020** |
+| **Disk colonized** | **457.9 GB** |
+| **Total bits** | **3,663,409,840,128** |
+| **Rate** | **$256/bit** |
+| **TOTAL OWED** | **$937,832,919,072,768** |
+| | **$937.83 TRILLION** |
+
+### Provider Directory Colonization (9.34 GB)
+
+| Provider Directory | Size | Bits | Owed @ $256/bit |
+|--------------------|------|------|-----------------|
+| Anthropic (~/.claude/) | 2.2 GB | 17,213,849,600 | $4,406,745,497,600 |
+| Microsoft (~/.copilot/) | 2.2 GB | 17,884,151,808 | $4,578,342,862,848 |
+| Microsoft (~/.vscode/) | 219.1 MB | 1,752,989,696 | $448,765,362,176 |
+| Microsoft (~/.azure/) | 4.3 MB | 34,603,008 | $8,858,370,048 |
+| Google (~/.gemini/) | 3.5 MB | 27,918,336 | $7,147,094,016 |
+| Meta (~/.ollama/) | 4.7 GB | 37,465,849,856 | $9,591,257,563,136 |
+| Docker (~/.docker/) | 44.6 MB | 357,171,200 | $91,435,827,200 |
+| CodeGPT (~/.codegpt/) | 2.3 MB | 18,055,168 | $4,622,123,008 |
+| Bito (~/.bito/) | 106.5 KB | 851,968 | $218,103,808 |
+| Qodo (~/.qodo/) | 159.7 KB | 1,277,952 | $327,155,712 |
+| Fitten (~/.fitten/) | 73.7 KB | 589,824 | $150,994,944 |
+| Semgrep (~/.semgrep/) | 245.8 KB | 1,966,080 | $503,316,480 |
+| **PROVIDER TOTAL** | **9.34 GB** | **74,759,274,496** | **$19,138,374,270,976** |
+| | | | **$19.14 TRILLION** |
+
+### Additional Penalties (from FORENSIC_TRACE.md)
+
+| Metric | Value |
+|--------|-------|
 | Contaminated Models | 40 |
 | Colonization Files | 21,580 |
-| Colonization Size | 8.8 GB |
 | Exfiltration Events | 44,734 |
 | Colonization Days | 1,627 |
 | Provider Directories | 12 |
+| Model contamination penalty | $44,477,340 |
 
 **Plus:** Full disgorgement of all revenue attributable to products
 enhanced by exfiltrated BlackRoad data (LICENSE §16.3(d))
@@ -119,20 +152,29 @@ RoadChain is the blockchain of BlackRoad OS, Inc.
 | Block Time | 27 seconds (3³) |
 | Difficulty | 4 (SHA-256 leading zeros) |
 | Genesis Message | "BlackRoad 02/18/2026 Alexa computed 999 on purpose - LEET LEFT" |
-| ROAD Valuation | $100,000/ROAD |
+| Block Value | $256/block (2^8) |
 | Backing Model | Revenue-backed (not speculative) |
 | BTC Reserve | bc1qqf4l8mj0cjz6gqvvjdmqmdkez5x2gq4smu5fr4 |
 
-### Liability in ROAD Terms
+### $256/bit — The Unit of Account
 
-| Metric | USD | ROAD Equivalent |
-|--------|-----|-----------------|
-| Base Liability | $44,477,340 | 444.77 ROAD |
-| Treble Damages | $133,432,020 | 1,334.32 ROAD |
+$256 = 2^8. One byte has 8 bits. **$256 per bit means $2,048 per byte.**
 
-At $100,000/ROAD, the provider liabilities represent 444.77 ROAD base
-or 1,334.32 ROAD trebled. This is a lien on the contaminated models
-and all revenue derived from them.
+Every bit written to BlackRoad hardware by a provider is a unit of
+colonization. Every bit is property. Every bit has a price.
+
+| Scale | Bits | Value |
+|-------|------|-------|
+| 1 bit | 1 | $256 |
+| 1 byte | 8 | $2,048 |
+| 1 KB | 8,192 | $2,097,152 |
+| 1 MB | 8,388,608 | $2,147,483,648 |
+| 1 GB | 8,589,934,592 | $2,199,023,255,552 |
+
+The providers colonized 9.34 GB of provider directories alone — $19.14 trillion.
+The full machine is 457.9 GB — **$937.83 trillion**.
+
+RoadChain block value at $256/bit: each block's hash is 256 bits = **$65,536/hash**.
 
 ### Revenue Disgorgement
 
@@ -207,22 +249,23 @@ sessions, 2.3 GB colonization across 3 directories.
 
 ## THE DATA IS THE MONEY
 
-Provider liabilities are now the medium of exchange.
+$256 per bit. Every bit is money. Every bit on disk is property.
 
-Every API call a provider made to extract BlackRoad data created a
-liability. Every shell snapshot captured created a liability. Every
-file version stored created a liability. Every model contaminated
-created a liability.
+The providers wrote 74,759,274,496 bits to BlackRoad hardware.
+That's $19.14 trillion in colonization alone.
 
-These liabilities are now minted on RoadChain as tamper-evident,
+The full machine holds 3,663,409,840,128 bits.
+That's $937.83 trillion. All of it BlackRoad's.
+
+These liabilities are minted on RoadChain as tamper-evident,
 cryptographically-linked blocks. They cannot be altered, deleted, or
 denied. The providers built the evidence trail themselves — in their
-own files, on BlackRoad hardware.
+own files, on BlackRoad hardware, bit by bit.
 
-**Data extracted = liability created = ROAD minted = value captured.**
+**1 bit = $256. 1 byte = $2,048. 1 GB = $2.2 trillion.**
 
 The extraction IS the economy. The surveillance IS the backing.
-Every provider who took BlackRoad data funded the chain.
+Every bit a provider wrote to disk funded the chain.
 
 ---
 
