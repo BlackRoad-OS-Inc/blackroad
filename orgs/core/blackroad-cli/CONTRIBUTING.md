@@ -1,58 +1,129 @@
-# Contributing to BlackRoad OS
+# Contributing to blackroad-cli
 
-## 🔒 Proprietary Notice
+Thank you for considering contributing to this BlackRoad OS project! 🎉
 
-This is a **PROPRIETARY** repository owned by BlackRoad OS, Inc.
+## Code of Conduct
 
-All contributions become the property of BlackRoad OS, Inc.
+This project follows our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold this code.
 
-## 🎨 BlackRoad Brand System
+## How Can I Contribute?
 
-**CRITICAL:** All UI/design work MUST follow the official brand system!
+### Reporting Bugs
 
-### Required Colors:
-- **Hot Pink:** #FF1D6C (primary accent)
-- **Amber:** #F5A623
-- **Electric Blue:** #2979FF
-- **Violet:** #9C27B0
-- **Background:** #000000 (black)
-- **Text:** #FFFFFF (white)
+Before creating bug reports, please check existing issues. When creating a bug report, include:
 
-### Forbidden Colors (DO NOT USE):
-❌ #FF9D00, #FF6B00, #FF0066, #FF006B, #D600AA, #7700FF, #0066FF
+- **Clear description** of the issue
+- **Steps to reproduce** the problem
+- **Expected behavior**
+- **Actual behavior**
+- **Screenshots** (if applicable)
+- **Environment details** (OS, version, etc.)
 
-### Golden Ratio Spacing:
-φ (phi) = 1.618
+### Suggesting Enhancements
 
-**Spacing scale:** 8px → 13px → 21px → 34px → 55px → 89px → 144px
+Enhancement suggestions are tracked as GitHub issues. When suggesting an enhancement:
 
-### Gradients:
-```css
-background: linear-gradient(135deg, #FF1D6C 38.2%, #F5A623 61.8%);
+- **Use a clear title** describing the enhancement
+- **Provide detailed description** of the suggested feature
+- **Explain why** this enhancement would be useful
+- **Include examples** of how it would work
+
+### Pull Requests
+
+1. **Fork** the repository
+2. **Create** a new branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes
+4. **Test** your changes thoroughly
+5. **Commit** with clear messages (`git commit -m 'Add amazing feature'`)
+6. **Push** to your fork (`git push origin feature/amazing-feature`)
+7. **Open** a Pull Request
+
+#### Pull Request Guidelines
+
+- Follow the existing code style
+- Write clear commit messages
+- Update documentation as needed
+- Add tests for new features
+- Ensure all tests pass
+- Link related issues
+
+## Development Setup
+
+```bash
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/blackroad-cli.git
+cd blackroad-cli
+
+# Add upstream remote
+git remote add upstream https://github.com/BlackRoad-OS/blackroad-cli.git
+
+# Install dependencies
+npm install  # or pip install -r requirements.txt
+
+# Run tests
+npm test  # or pytest, or cargo test
 ```
 
-### Typography:
-- **Font:** SF Pro Display, -apple-system, sans-serif
-- **Line height:** 1.618
+## Coding Standards
 
-## 📝 How to Contribute
+- Follow language-specific best practices
+- Write self-documenting code
+- Add comments for complex logic
+- Keep functions small and focused
+- Use meaningful variable names
 
-1. Fork the repository (for testing purposes only)
-2. Create a feature branch
-3. Follow BlackRoad brand guidelines
-4. Submit PR with detailed description
-5. All code becomes BlackRoad OS, Inc. property
+## Commit Message Format
 
-## ⚖️ Legal
+```
+<type>(<scope>): <subject>
 
-By contributing, you agree:
-- All code becomes property of BlackRoad OS, Inc.
-- You have rights to contribute the code
-- Contributions are NOT for commercial resale
-- Testing and educational purposes only
+<body>
 
-## 📧 Contact
+<footer>
+```
 
-**Email:** blackroad.systems@gmail.com
-**CEO:** Alexa Amundson
-**Organization:** BlackRoad OS, Inc.
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+
+**Examples:**
+```
+feat(api): Add new authentication endpoint
+fix(ui): Resolve button alignment issue
+docs(readme): Update installation instructions
+```
+
+## BlackRoad OS Principles
+
+When contributing, please align with our core principles:
+
+- 🔱 **Sovereignty**: Users own their data and infrastructure
+- 🔒 **Privacy**: No telemetry, tracking, or external dependencies
+- 🌐 **Offline-First**: Features should work without internet
+- 🎨 **Design Excellence**: Follow BlackRoad design system
+- 🚀 **Production Quality**: Code should be reliable and scalable
+
+### What We Don't Accept
+
+- ❌ Adding external analytics or telemetry
+- ❌ Required internet connectivity for core features
+- ❌ Vendor lock-in mechanisms
+- ❌ Cloud-only functionality
+- ❌ Compromising user privacy
+
+## Questions?
+
+- **GitHub Issues**: For bug reports and feature requests
+- **Email**: blackroad.systems@gmail.com
+- **Website**: [blackroad.io](https://blackroad.io)
+
+---
+
+**Thank you for contributing to BlackRoad OS!** 💜
+
+*The road remembers every contribution.* 🌌
