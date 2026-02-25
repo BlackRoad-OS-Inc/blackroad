@@ -1,0 +1,297 @@
+# .github/workflows/autonomous-dependency-manager.yml
+# Intelligent dependency management with bundled updates
+
+name: "Autonomous Dependency Manager"
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'  # Every Monday at 3 AM
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Update type'
+        required: false
+        default: 'safe'
+        type: choice
+        options:
+          - safe          # Patch versions only
+          - minor         # Minor + patch
+          - major         # All updates (risky)
+          - security      # Security updates only
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: read
+
+env:
+  BLACKROAD_AGENT_API: https://blackroad-agents.amundsonalexa.workers.dev
+
+jobs:
+  # ============================================
+  # Analyze Current State
+  # ============================================
+  analyze:
+    name: "Analyze Dependencies"
+    runs-on: ubuntu-latest
+    outputs:
+      has_npm: ${{ steps.detect.outputs.npm }}
+      has_python: ${{ steps.detect.outputs.python }}
+      has_go: ${{ steps.detect.outputs.go }}
+      has_rust: ${{ steps.detect.outputs.rust }}
+      outdated_count: ${{ steps.check.outputs.count }}
+      security_issues: ${{ steps.security.outputs.count }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect Package Managers
+        id: detect
+        run: |
+          echo "npm=$([[ -f package.json ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "python=$([[ -f requirements.txt || -f pyproject.toml ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "go=$([[ -f go.mod ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "rust=$([[ -f Cargo.toml ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      - name: Check Outdated (npm)
+        id: check
+        if: steps.detect.outputs.npm == 'true'
+        run: |
+          npm outdated --json > outdated.json 2>/dev/null || true
+          COUNT=$(jq 'length' outdated.json 2>/dev/null || echo 0)
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "Found $COUNT outdated packages"
+
+      - name: Security Audit
+        id: security
+        run: |
+          ISSUES=0
+
+          if [ -f "package.json" ]; then
+            npm audit --json > npm-audit.json 2>/dev/null || true
+            NPM_VULNS=$(jq '.metadata.vulnerabilities | .low + .moderate + .high + .critical' npm-audit.json 2>/dev/null || echo 0)
+            ISSUES=$((ISSUES + NPM_VULNS))
+          fi
+
+          echo "count=$ISSUES" >> $GITHUB_OUTPUT
+          echo "Found $ISSUES security issues"
+
+  # ============================================
+  # Update npm Dependencies
+  # ============================================
+  update-npm:
+    name: "Update npm Dependencies"
+    needs: analyze
+    if: needs.analyze.outputs.has_npm == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+
+      - name: Update Based on Type
+        id: update
+        run: |
+          UPDATE_TYPE="${{ github.event.inputs.update_type || 'safe' }}"
+
+          case "$UPDATE_TYPE" in
+            safe)
+              # Only patch updates
+              npm update 2>/dev/null || true
+              ;;
+            minor)
+              # Minor and patch updates
+              npx npm-check-updates -u --target minor 2>/dev/null || npm update
+              npm install
+              ;;
+            major)
+              # All updates (risky)
+              npx npm-check-updates -u 2>/dev/null || true
+              npm install
+              ;;
+            security)
+              # Security updates only
+              npm audit fix 2>/dev/null || true
+              npm audit fix --force 2>/dev/null || true
+              ;;
+          esac
+
+          # Check what changed
+          if [ -n "$(git status --porcelain package.json package-lock.json)" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Tests
+        if: steps.update.outputs.changes == 'true'
+        id: test
+        continue-on-error: true
+        run: |
+          npm test 2>&1 && echo "result=passed" >> $GITHUB_OUTPUT || echo "result=failed" >> $GITHUB_OUTPUT
+
+      - name: Create PR
+        if: steps.update.outputs.changes == 'true' && steps.test.outputs.result != 'failed'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="deps/npm-update-$(date +%Y%m%d)"
+          git config user.name "BlackRoad Dependency Bot"
+          git config user.email "deps@blackroad.ai"
+
+          # Check if branch already exists
+          if git ls-remote --exit-code origin "$BRANCH" 2>/dev/null; then
+            echo "Branch already exists, updating..."
+            git fetch origin "$BRANCH"
+            git checkout "$BRANCH"
+            git merge main --no-edit || true
+          else
+            git checkout -b "$BRANCH"
+          fi
+
+          git add package.json package-lock.json
+          git commit -m "chore(deps): Update npm dependencies
+
+          Update type: ${{ github.event.inputs.update_type || 'safe' }}
+          Tests: ${{ steps.test.outputs.result || 'not run' }}
+
+          Co-Authored-By: BlackRoad Bot <bot@blackroad.ai>" || true
+
+          git push -u origin "$BRANCH" --force
+
+          # Check if PR already exists
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
+          if [ -z "$EXISTING_PR" ]; then
+            gh pr create \
+              --title "chore(deps): Weekly npm dependency updates" \
+              --body "## Dependency Updates
+
+            **Update Type:** ${{ github.event.inputs.update_type || 'safe' }}
+            **Test Status:** ${{ steps.test.outputs.result || 'not run' }}
+
+            ### Changes
+            Updated npm dependencies according to the configured update strategy.
+
+            ### Verification
+            - [ ] Tests pass
+            - [ ] Build succeeds
+            - [ ] No breaking changes
+
+            ---
+            *Automated by BlackRoad Dependency Manager*" \
+              --label "dependencies,automated"
+          fi
+
+  # ============================================
+  # Update Python Dependencies
+  # ============================================
+  update-python:
+    name: "Update Python Dependencies"
+    needs: analyze
+    if: needs.analyze.outputs.has_python == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Update Dependencies
+        id: update
+        run: |
+          pip install pip-tools safety 2>/dev/null || true
+
+          if [ -f "requirements.txt" ]; then
+            # Backup original
+            cp requirements.txt requirements.txt.bak
+
+            # Update all packages
+            pip install --upgrade $(cat requirements.txt | grep -v "^#" | cut -d'=' -f1 | tr '\n' ' ') 2>/dev/null || true
+
+            # Regenerate requirements with updated versions
+            pip freeze > requirements.txt.new
+
+            # Check for changes
+            if ! diff -q requirements.txt requirements.txt.new > /dev/null 2>&1; then
+              mv requirements.txt.new requirements.txt
+              echo "changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "changes=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Run Tests
+        if: steps.update.outputs.changes == 'true'
+        id: test
+        continue-on-error: true
+        run: |
+          pip install -r requirements.txt
+          pytest 2>&1 && echo "result=passed" >> $GITHUB_OUTPUT || \
+          python -m unittest discover 2>&1 && echo "result=passed" >> $GITHUB_OUTPUT || \
+          echo "result=skipped" >> $GITHUB_OUTPUT
+
+      - name: Create PR
+        if: steps.update.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="deps/python-update-$(date +%Y%m%d)"
+          git config user.name "BlackRoad Dependency Bot"
+          git config user.email "deps@blackroad.ai"
+
+          git checkout -b "$BRANCH"
+          git add requirements.txt
+          git commit -m "chore(deps): Update Python dependencies
+
+          Co-Authored-By: BlackRoad Bot <bot@blackroad.ai>"
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --title "chore(deps): Weekly Python dependency updates" \
+            --body "## Dependency Updates
+
+          Updated Python dependencies.
+
+          ---
+          *Automated by BlackRoad Dependency Manager*" \
+            --label "dependencies,automated"
+
+  # ============================================
+  # Report Summary
+  # ============================================
+  report:
+    name: "Generate Report"
+    needs: [analyze, update-npm, update-python]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create Summary
+        run: |
+          echo "## Dependency Update Summary"
+          echo ""
+          echo "| Package Manager | Outdated | Security Issues |"
+          echo "|-----------------|----------|-----------------|"
+          echo "| npm | ${{ needs.analyze.outputs.outdated_count || 'N/A' }} | ${{ needs.analyze.outputs.security_issues || 'N/A' }} |"
+
+      - name: Log to Memory
+        run: |
+          curl -s -X POST "${{ env.BLACKROAD_AGENT_API }}/memory" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repo": "${{ github.repository }}",
+              "event": "dependency_update",
+              "outdated_count": "${{ needs.analyze.outputs.outdated_count }}",
+              "security_issues": "${{ needs.analyze.outputs.security_issues }}",
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' 2>/dev/null || true

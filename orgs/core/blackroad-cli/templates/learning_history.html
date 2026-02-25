@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Learning History - BlackRoad OS (Σ)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg-primary: #020308;
+      --bg-secondary: rgba(6, 10, 30, 0.92);
+      --text-primary: #f5f5ff;
+      --text-muted: rgba(245, 245, 255, 0.7);
+      --accent-cyan: #00e5ff;
+      --accent-green: #1af59d;
+      --accent-yellow: #ffc400;
+      --accent-purple: #a855f7;
+      --accent-orange: #ff9d00;
+      --border-subtle: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(circle at top, #050816 0, #020308 45%, #000000 100%);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 .sigma {
+      color: var(--accent-purple);
+      font-size: 2rem;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    .muted {
+      opacity: 0.7;
+      font-size: 0.85rem;
+    }
+
+    .mono {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.8rem;
+    }
+
+    .panel {
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+      padding: 16px 18px;
+      margin-top: 16px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    .stat-value.xp {
+      color: var(--accent-yellow);
+    }
+
+    .stat-value.lessons {
+      color: var(--accent-green);
+    }
+
+    .stat-value.streak {
+      color: var(--accent-orange);
+    }
+
+    /* Rank Card */
+    .rank-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: rgba(168, 85, 247, 0.08);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+
+    .rank-badge {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .rank-info {
+      flex: 1;
+    }
+
+    .rank-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .rank-progress-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .rank-progress-bar {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .rank-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .rank-progress-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Event List */
+    .event-row {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 12px 0;
+    }
+
+    .event-row:last-child {
+      border-bottom: none;
+    }
+
+    .event-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .event-meta {
+      text-align: right;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 0.75rem;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+
+    .tag.lesson {
+      border-color: rgba(26, 245, 157, 0.6);
+      background: rgba(26, 245, 157, 0.08);
+    }
+
+    .tag.quiz {
+      border-color: rgba(0, 180, 255, 0.7);
+      background: rgba(0, 180, 255, 0.08);
+    }
+
+    .tag.graded {
+      border-color: rgba(255, 196, 0, 0.8);
+      background: rgba(255, 196, 0, 0.08);
+    }
+
+    .tag.rank-up {
+      border-color: rgba(168, 85, 247, 0.8);
+      background: rgba(168, 85, 247, 0.15);
+      font-weight: 600;
+    }
+
+    .rank-up-card {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(0, 229, 255, 0.08));
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-top: 8px;
+    }
+
+    .rank-up-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent-purple);
+      margin-bottom: 4px;
+    }
+
+    .rank-arrow {
+      color: var(--accent-cyan);
+      margin: 0 8px;
+    }
+
+    .score-pill {
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: rgba(255, 196, 0, 0.15);
+      border: 1px solid rgba(255, 196, 0, 0.5);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .score-pill.perfect {
+      background: rgba(26, 245, 157, 0.15);
+      border-color: rgba(26, 245, 157, 0.5);
+      color: var(--accent-green);
+    }
+
+    .small {
+      font-size: 0.78rem;
+    }
+
+    .results-list {
+      margin-top: 8px;
+      padding-left: 12px;
+    }
+
+    .result-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .result-icon {
+      font-size: 0.9rem;
+    }
+
+    .result-icon.correct {
+      color: var(--accent-green);
+    }
+
+    .result-icon.incorrect {
+      color: #ff6b6b;
+    }
+
+    /* Links */
+    a {
+      color: #66b2ff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    /* Tips panel */
+    .tips-list {
+      margin: 8px 0 0 0;
+      padding-left: 20px;
+    }
+
+    .tips-list li {
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div style="margin-bottom: 24px;">
+      <a href="/" style="color: #00e5ff; text-decoration: none; font-size: 0.9rem;">&larr; Dashboard</a>
+    </div>
+    <h1><span class="sigma">Σ</span> Learning History</h1>
+    <p class="muted">
+      Actor: <span class="mono">{{ actor }}</span><br />
+      Tracking: <span class="mono">lesson.completed</span>,
+      <span class="mono">quiz.submitted</span>,
+      <span class="mono">quiz.graded</span>
+    </p>
+
+    {% if stats_error %}
+      <div class="panel">
+        <div class="muted small">Error loading stats: {{ stats_error }}</div>
+      </div>
+    {% else %}
+      <!-- Stats Summary -->
+      <div class="panel">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total XP</div>
+            <div class="stat-value xp">{{ stats.xp or 0 }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Lessons</div>
+            <div class="stat-value lessons">{{ stats.lessons_completed or 0 }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Quizzes</div>
+            <div class="stat-value">{{ stats.quizzes_graded or 0 }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Current Streak</div>
+            <div class="stat-value streak">
+              {{ stats.current_streak_days or 0 }}
+              <span class="small">day{{ 's' if (stats.current_streak_days or 0) != 1 else '' }}</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Best Streak</div>
+            <div class="stat-value">
+              {{ stats.longest_streak_days or 0 }}
+              <span class="small">day{{ 's' if (stats.longest_streak_days or 0) != 1 else '' }}</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Last Active</div>
+            <div class="mono small" style="margin-top: 8px;">
+              {{ stats.last_active_date or "Never" }}
+            </div>
+          </div>
+        </div>
+
+        {% if stats.rank %}
+        <!-- Rank Card -->
+        <div class="rank-card">
+          <div class="rank-badge">
+            {{ stats.rank.rank_index + 1 }}
+          </div>
+          <div class="rank-info">
+            <div class="rank-name">{{ stats.rank.rank_name }}</div>
+            {% if stats.rank.next_rank_name %}
+            <div class="rank-progress-container">
+              <div class="rank-progress-bar">
+                <div class="rank-progress-fill" style="width: {{ (stats.rank.progress * 100)|int }}%;"></div>
+              </div>
+              <div class="rank-progress-text">
+                {{ stats.rank.xp }} / {{ stats.rank.xp_for_next }} XP to {{ stats.rank.next_rank_name }}
+              </div>
+            </div>
+            {% else %}
+            <div class="rank-progress-text">Max rank achieved!</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if events_error %}
+      <div class="panel">
+        <div class="muted small">Error loading events: {{ events_error }}</div>
+      </div>
+    {% endif %}
+
+    <!-- Events List -->
+    <div class="panel">
+      <h2>Activity Log</h2>
+      {% if not events %}
+        <div class="empty-state">
+          <div class="icon">📚</div>
+          <p>No learning events recorded yet.</p>
+          <p class="small">Complete a Math Lab lesson to get started!</p>
+        </div>
+      {% else %}
+        {% for e in events %}
+          <div class="event-row">
+            <div class="event-main">
+              <div>
+                {% if e.event_type == "lesson.completed" %}
+                  <span class="tag lesson">Lesson {{ e.lesson }} completed</span>
+                {% elif e.event_type == "quiz.submitted" %}
+                  <span class="tag quiz">Quiz submitted (L{{ e.lesson }})</span>
+                {% elif e.event_type == "quiz.graded" %}
+                  <span class="tag graded">Quiz graded (L{{ e.lesson }})</span>
+                {% elif e.event_type == "rank.changed" %}
+                  <span class="tag rank-up">🎖️ Rank Up!</span>
+                {% else %}
+                  <span class="tag">{{ e.event_type }}</span>
+                {% endif %}
+
+                {% if e.event_type == "lesson.completed" %}
+                  <div class="small muted">
+                    Track: <span class="mono">{{ e.track }}</span>
+                    {% if e.metadata and e.metadata.title %}
+                      - {{ e.metadata.title }}
+                    {% endif %}
+                  </div>
+                {% elif e.event_type == "quiz.graded" %}
+                  <div class="small">
+                    Score:
+                    {% if e.score is not none %}
+                      {% set score_pct = (e.score * 100)|int %}
+                      <span class="score-pill {{ 'perfect' if score_pct == 100 else '' }}">
+                        {{ score_pct }}%
+                      </span>
+                      {% if score_pct == 100 %}
+                        <span style="margin-left: 4px;">Perfect!</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="muted">n/a</span>
+                    {% endif %}
+                  </div>
+                {% elif e.event_type == "rank.changed" %}
+                  <div class="rank-up-card">
+                    <div class="rank-up-title">
+                      {{ e.old_rank or "New" }}
+                      <span class="rank-arrow">→</span>
+                      {{ e.new_rank }}
+                    </div>
+                    <div class="small muted" style="margin-top: 4px;">
+                      XP: <span class="mono">{{ e.xp or 0 }}</span>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="event-meta">
+                <div class="mono">
+                  {{ (e.timestamp or "")[:19] }}
+                </div>
+                {% if e.node_id %}
+                  <div class="small">node: <span class="mono">{{ e.node_id }}</span></div>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if e.event_type == "quiz.graded" and e.results %}
+              <div class="results-list">
+                {% for r in e.results %}
+                  <div class="result-item mono small">
+                    <span class="result-icon {{ 'correct' if r.correct else 'incorrect' }}">
+                      {{ "✓" if r.correct else "✗" }}
+                    </span>
+                    <span>{{ r.id }}: {{ r.feedback[:60] }}{{ '...' if r.feedback|length > 60 else '' }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- Tips -->
+    <div class="panel">
+      <h2>How to Earn XP</h2>
+      <ul class="tips-list small">
+        <li><strong>+10 XP</strong> - Complete a Math Lab lesson</li>
+        <li><strong>+2 XP</strong> - Submit a quiz</li>
+        <li><strong>+0-20 XP</strong> - Quiz graded (score × 20)</li>
+        <li>Keep a streak going by learning every day!</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

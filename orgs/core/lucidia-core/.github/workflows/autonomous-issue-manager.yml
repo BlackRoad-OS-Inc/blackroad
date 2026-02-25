@@ -1,0 +1,399 @@
+# .github/workflows/autonomous-issue-manager.yml
+# Autonomous issue creation, triage, and management
+
+name: "Autonomous Issue Manager"
+
+on:
+  issues:
+    types: [opened, edited, labeled, assigned]
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9 AM - stale check
+  workflow_run:
+    workflows: ["Autonomous Orchestrator", "Autonomous Self-Healer"]
+    types: [completed]
+    conclusions: [failure]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - triage_all
+          - cleanup_stale
+          - generate_report
+          - create_health_issues
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+env:
+  BLACKROAD_AGENT_API: https://blackroad-agents.amundsonalexa.workers.dev
+  STALE_DAYS: 30
+  CLOSE_DAYS: 7
+
+jobs:
+  # ============================================
+  # Smart Issue Triage
+  # ============================================
+  triage:
+    name: "Smart Triage"
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: AI Analysis
+        id: ai
+        run: |
+          TITLE="${{ github.event.issue.title }}"
+          BODY="${{ github.event.issue.body }}"
+
+          # Call AI for smart categorization
+          ANALYSIS=$(curl -s -X POST "${{ env.BLACKROAD_AGENT_API }}/analyze-issue" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "title": "'"$TITLE"'",
+              "body": "'"$(echo "$BODY" | head -c 2000 | jq -Rs .)"'",
+              "repo": "${{ github.repository }}"
+            }' 2>/dev/null || echo '{}')
+
+          echo "analysis=$ANALYSIS" >> $GITHUB_OUTPUT
+
+          # Parse AI response for labels
+          LABELS=$(echo "$ANALYSIS" | jq -r '.labels // [] | join(",")' 2>/dev/null || echo "")
+          PRIORITY=$(echo "$ANALYSIS" | jq -r '.priority // "normal"' 2>/dev/null || echo "normal")
+          ASSIGNEE=$(echo "$ANALYSIS" | jq -r '.assignee // ""' 2>/dev/null || echo "")
+
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+          echo "priority=$PRIORITY" >> $GITHUB_OUTPUT
+          echo "assignee=$ASSIGNEE" >> $GITHUB_OUTPUT
+
+      - name: Keyword-Based Labeling
+        id: keywords
+        run: |
+          TITLE="${{ github.event.issue.title }}"
+          BODY="${{ github.event.issue.body }}"
+          TEXT="$TITLE $BODY"
+          LABELS=""
+
+          # Type detection
+          echo "$TEXT" | grep -qi "bug\|error\|broken\|not working\|crash\|fail" && LABELS="$LABELS,bug"
+          echo "$TEXT" | grep -qi "feature\|add\|new\|enhance\|request" && LABELS="$LABELS,enhancement"
+          echo "$TEXT" | grep -qi "question\|how\|help\|what\|why" && LABELS="$LABELS,question"
+          echo "$TEXT" | grep -qi "doc\|documentation\|readme\|typo" && LABELS="$LABELS,documentation"
+
+          # Area detection
+          echo "$TEXT" | grep -qi "security\|vulnerability\|cve\|auth" && LABELS="$LABELS,security"
+          echo "$TEXT" | grep -qi "performance\|slow\|memory\|cpu" && LABELS="$LABELS,performance"
+          echo "$TEXT" | grep -qi "ui\|frontend\|css\|style\|design" && LABELS="$LABELS,frontend"
+          echo "$TEXT" | grep -qi "api\|backend\|server\|database" && LABELS="$LABELS,backend"
+          echo "$TEXT" | grep -qi "ci\|deploy\|workflow\|action" && LABELS="$LABELS,infrastructure"
+
+          # Priority detection
+          echo "$TEXT" | grep -qi "urgent\|critical\|asap\|important\|blocker" && LABELS="$LABELS,priority:high"
+          echo "$TEXT" | grep -qi "minor\|low\|when possible" && LABELS="$LABELS,priority:low"
+
+          # Clean up labels
+          LABELS=$(echo "$LABELS" | sed 's/^,//' | sed 's/,,/,/g')
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+
+      - name: Apply Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const aiLabels = '${{ steps.ai.outputs.labels }}'.split(',').filter(l => l);
+            const keywordLabels = '${{ steps.keywords.outputs.labels }}'.split(',').filter(l => l);
+
+            // Merge and dedupe labels
+            const allLabels = [...new Set([...aiLabels, ...keywordLabels])].filter(l => l);
+
+            if (allLabels.length > 0) {
+              // Ensure labels exist (create if not)
+              for (const label of allLabels) {
+                try {
+                  await github.rest.issues.getLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label
+                  });
+                } catch (e) {
+                  // Label doesn't exist, create it
+                  const colors = {
+                    'bug': 'd73a4a',
+                    'enhancement': 'a2eeef',
+                    'question': 'd876e3',
+                    'documentation': '0075ca',
+                    'security': 'b60205',
+                    'performance': 'fbca04',
+                    'frontend': '7057ff',
+                    'backend': '008672',
+                    'infrastructure': 'c5def5',
+                    'priority:high': 'b60205',
+                    'priority:low': 'c2e0c6'
+                  };
+
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label,
+                    color: colors[label] || '333333'
+                  }).catch(() => {});
+                }
+              }
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                labels: allLabels
+              });
+            }
+
+      - name: Welcome Response
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = '${{ steps.keywords.outputs.labels }}'.split(',').filter(l => l);
+            const priority = '${{ steps.ai.outputs.priority }}';
+
+            let response = `Thanks for opening this issue! 👋\n\n`;
+
+            // Add context based on type
+            if (labels.includes('bug')) {
+              response += `This has been identified as a **bug report**. `;
+              response += `To help us investigate:\n`;
+              response += `- What version are you using?\n`;
+              response += `- Can you provide steps to reproduce?\n`;
+              response += `- Any error messages or logs?\n\n`;
+            } else if (labels.includes('enhancement')) {
+              response += `This has been identified as a **feature request**. `;
+              response += `We'll review and prioritize accordingly.\n\n`;
+            } else if (labels.includes('question')) {
+              response += `This has been identified as a **question**. `;
+              response += `Check our [documentation](https://docs.blackroad.io) while you wait for a response.\n\n`;
+            }
+
+            if (priority === 'high') {
+              response += `⚠️ **High priority** - This will be reviewed soon.\n\n`;
+            }
+
+            response += `**Automated Labels Applied:** ${labels.length > 0 ? labels.map(l => '`' + l + '`').join(', ') : 'None'}\n\n`;
+            response += `---\n*Triaged by BlackRoad Autonomous Agent*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: response
+            });
+
+  # ============================================
+  # Stale Issue Cleanup
+  # ============================================
+  stale-cleanup:
+    name: "Stale Cleanup"
+    if: github.event_name == 'schedule' || github.event.inputs.action == 'cleanup_stale'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Find Stale Issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const staleDays = parseInt('${{ env.STALE_DAYS }}');
+            const closeDays = parseInt('${{ env.CLOSE_DAYS }}');
+            const now = new Date();
+
+            // Get open issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            for (const issue of issues.data) {
+              // Skip PRs
+              if (issue.pull_request) continue;
+
+              const updatedAt = new Date(issue.updated_at);
+              const daysSinceUpdate = Math.floor((now - updatedAt) / (1000 * 60 * 60 * 24));
+
+              const hasStaleLabel = issue.labels.some(l => l.name === 'stale');
+              const isProtected = issue.labels.some(l =>
+                ['pinned', 'security', 'priority:high', 'in-progress'].includes(l.name)
+              );
+
+              if (isProtected) continue;
+
+              // Already marked stale - check if should close
+              if (hasStaleLabel && daysSinceUpdate >= closeDays) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed',
+                  state_reason: 'not_planned'
+                });
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `This issue has been automatically closed due to inactivity.\n\nIf this is still relevant, please reopen it with additional context.\n\n---\n*Closed by BlackRoad Autonomous Agent*`
+                });
+
+                console.log(`Closed stale issue #${issue.number}`);
+              }
+              // Mark as stale
+              else if (!hasStaleLabel && daysSinceUpdate >= staleDays) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: ['stale']
+                });
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `This issue has been automatically marked as **stale** because it has not had recent activity.\n\nIt will be closed in ${closeDays} days if no further activity occurs.\n\n---\n*Marked by BlackRoad Autonomous Agent*`
+                });
+
+                console.log(`Marked issue #${issue.number} as stale`);
+              }
+            }
+
+  # ============================================
+  # Auto-Create Issues from Failures
+  # ============================================
+  failure-issue:
+    name: "Create Failure Issue"
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check for Existing Issue
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Search for existing issue about this workflow
+            const workflowName = '${{ github.event.workflow_run.name }}';
+            const searchQuery = `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open "[Automated] ${workflowName}" in:title`;
+
+            const results = await github.rest.search.issuesAndPullRequests({
+              q: searchQuery
+            });
+
+            core.setOutput('exists', results.data.total_count > 0);
+            if (results.data.total_count > 0) {
+              core.setOutput('issue_number', results.data.items[0].number);
+            }
+
+      - name: Create or Update Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflowName = '${{ github.event.workflow_run.name }}';
+            const runId = '${{ github.event.workflow_run.id }}';
+            const runUrl = '${{ github.event.workflow_run.html_url }}';
+            const exists = '${{ steps.check.outputs.exists }}' === 'true';
+            const existingNumber = '${{ steps.check.outputs.issue_number }}';
+
+            const body = `## Workflow Failure Detected
+
+            **Workflow:** ${workflowName}
+            **Run ID:** ${runId}
+            **Run URL:** ${runUrl}
+            **Time:** ${new Date().toISOString()}
+
+            ### Details
+            The autonomous orchestrator detected a failure in the ${workflowName} workflow.
+
+            ### Suggested Actions
+            1. Review the [workflow run logs](${runUrl})
+            2. Check recent commits for potential causes
+            3. Run the self-healer workflow if appropriate
+
+            ---
+            *Created by BlackRoad Autonomous Agent*`;
+
+            if (exists) {
+              // Add comment to existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(existingNumber),
+                body: `### New Failure Detected\n\n**Run:** ${runUrl}\n**Time:** ${new Date().toISOString()}`
+              });
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Automated] ${workflowName} Workflow Failure`,
+                body: body,
+                labels: ['bug', 'automated', 'ci-failure']
+              });
+            }
+
+  # ============================================
+  # Generate Report
+  # ============================================
+  report:
+    name: "Generate Issue Report"
+    if: github.event.inputs.action == 'generate_report'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Statistics
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get all issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100
+            });
+
+            const stats = {
+              total: issues.data.length,
+              open: issues.data.filter(i => i.state === 'open' && !i.pull_request).length,
+              closed: issues.data.filter(i => i.state === 'closed' && !i.pull_request).length,
+              bugs: issues.data.filter(i => i.labels.some(l => l.name === 'bug')).length,
+              enhancements: issues.data.filter(i => i.labels.some(l => l.name === 'enhancement')).length,
+              stale: issues.data.filter(i => i.labels.some(l => l.name === 'stale')).length
+            };
+
+            console.log('Issue Statistics:', stats);
+
+            // Create summary issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Report] Issue Statistics - ${new Date().toISOString().split('T')[0]}`,
+              body: `## Issue Statistics Report
+
+            | Metric | Count |
+            |--------|-------|
+            | Total Issues | ${stats.total} |
+            | Open | ${stats.open} |
+            | Closed | ${stats.closed} |
+            | Bugs | ${stats.bugs} |
+            | Enhancements | ${stats.enhancements} |
+            | Stale | ${stats.stale} |
+
+            ---
+            *Generated by BlackRoad Autonomous Agent*`,
+              labels: ['report', 'automated']
+            });

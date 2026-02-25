@@ -1,24 +1,38 @@
-# Pull Request
+## 📝 Description
 
-## Description
+<!-- Provide a brief description of your changes -->
 
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
-- [ ] Infrastructure/DevOps change
+## 🔗 Related Issue
 
-## Testing
-- [ ] Tested locally
-- [ ] Health checks pass
-- [ ] Railway deployment succeeds
+Fixes #(issue number)
 
-## Checklist
+## 🎯 Type of Change
+
+- [ ] 🐛 Bug fix
+- [ ] ✨ New feature
+- [ ] 💥 Breaking change
+- [ ] 📚 Documentation update
+- [ ] 🎨 Style/UI changes
+- [ ] ♻️ Code refactoring
+
+## 🧪 Testing
+
+- [ ] All existing tests pass
+- [ ] New tests added
+- [ ] Manual testing completed
+
+## ✅ Checklist
+
 - [ ] Code follows project style
-- [ ] Self-reviewed code
-- [ ] Updated documentation
-- [ ] Tests pass
+- [ ] Self-review completed
+- [ ] Documentation updated
+- [ ] Tests added/updated
+- [ ] No new warnings
 
----
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+## 🔱 BlackRoad OS Principles
+
+- [ ] Maintains user sovereignty
+- [ ] Preserves privacy
+- [ ] Works offline
+- [ ] No unnecessary external dependencies
+- [ ] Follows BlackRoad design system

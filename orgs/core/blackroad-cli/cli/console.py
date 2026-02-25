@@ -6,7 +6,6 @@ from datetime import datetime
 import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
-from typing import Optional, List
 
 import typer
 
@@ -625,16 +624,6 @@ def cmd_task_create(argv: List[str]) -> None:
     p.add_argument("--depends-on")
     p.add_argument("--at")
     args = p.parse_args(argv)
-from sales import catalog as sales_catalog, cpq, deal_desk, quote_pack, winloss
-from pricing import elasticity
-from analytics.cohorts import define_cohort, cohort_view
-from analytics.anomaly_rules import run_rules
-from analytics.decide import plan_actions
-from analytics.narrative import build_report
-from alerts.local import trigger, list_alerts
-
-app = typer.Typer()
-
     task = Task(
         id=args.id,
         goal=args.goal,
@@ -729,7 +718,6 @@ def task_create(
 ):
     if as_user:
         quotas_lib.check_and_consume(as_user, "tasks")
-):
     ctx = json.loads(storage.read(str(context))) if context else None
     task_id = _next_task_id()
     task = Task(id=task_id, goal=goal, context=ctx, created_at=datetime.utcnow())
@@ -744,6 +732,13 @@ def plm_eco_impact(id: str = typer.Option(..., "--id")):
 
 @app.command("plm:eco:approve")
 def plm_eco_approve(
+    id: str = typer.Option(..., "--id"),
+    as_user: str = typer.Option(..., "--as-user"),
+):
+    plm_eco.approve(id, as_user)
+    typer.echo("approved")
+
+
 @app.command("task:list")
 def task_list():
     for path in sorted(ARTIFACTS.glob("T*/task.json")):
@@ -753,10 +748,8 @@ def task_list():
 @app.command("task:route")
 def task_route(
     id: str = typer.Option(..., "--id"),
-    as_user: str = typer.Option(..., "--as-user"),
 ):
-    plm_eco.approve(id, as_user)
-    typer.echo("approved")
+    pass
 
 
 @app.command("plm:eco:release")
@@ -845,7 +838,7 @@ def learn_courses_load(dir: Path = typer.Option(..., "--dir", exists=True, file_
 @app.command("learn:courses:list")
 def learn_courses_list(role_track: str = typer.Option(..., "--role_track")):
     for c in en_courses.list_courses(role_track):
-        typer.echo(f"{c['id']}	{c['title']}")
+        typer.echo(f"{c['id']}    {c['title']}")
 
 
 @app.command("learn:path:new")
@@ -2305,13 +2298,6 @@ def alerts_trigger(
 def alerts_list(limit: int = typer.Option(20, "--limit")):
     for e in list_alerts(limit):
         typer.echo(json.dumps(e))
-    bot: str = typer.Option(..., "--bot"),
-):
-    task_data = json.loads(storage.read(str(ARTIFACTS / id / "task.json")))
-    task = Task(**task_data)
-    response = orchestrator.route(task, bot)
-    storage.write(str(ARTIFACTS / id / "response.json"), response.model_dump(mode="json"))
-    typer.echo(response.summary)
 
 
 @app.command("task:status")
@@ -2409,241 +2395,7 @@ def sem_query(
     parsed = _parse_filters(filters)
     rows = evaluate(metric, parsed, group_by)
     typer.echo(json.dumps(rows))
-from __future__ import annotations
-
-from pathlib import Path
-
-import typer
-
-from bots import BOT_REGISTRY
-from orchestrator.orchestrator import Orchestrator
-
-app = typer.Typer(add_completion=False)
-
-
-def _get_orchestrator() -> Orchestrator:
-    app_dir = Path(typer.get_app_dir("prism-console"))
-    app_dir.mkdir(parents=True, exist_ok=True)
-    memory_path = app_dir / "memory.jsonl"
-    state_path = app_dir / "orchestrator_state.json"
-    orch = Orchestrator(memory_path=memory_path, state_path=state_path)
-    for domain, BotCls in BOT_REGISTRY.items():
-        orch.register_bot(domain, BotCls())
-    return orch
-
-
-@app.command("bot:list")
-def bot_list() -> None:
-    """List available bots."""
-    for name in BOT_REGISTRY:
-        typer.echo(name)
-
-
-@app.command("task:create")
-def task_create(description: str, domain: str) -> None:
-    """Create a task."""
-    orch = _get_orchestrator()
-    task = orch.create_task(description, domain)
-    typer.echo(task.id)
-
-
-@app.command("task:route")
-def task_route(task_id: str) -> None:
-    """Route a task to its bot."""
-    orch = _get_orchestrator()
-    response = orch.route(task_id)
-    typer.echo(response.status)
-
-
-@app.command("task:status")
-def task_status(task_id: str) -> None:
-    """Check task status."""
-    orch = _get_orchestrator()
-    response = orch.get_status(task_id)
-    if response:
-        typer.echo(f"{response.status}: {response.data}")
-    else:
-        typer.echo("no status")
-
-
-@app.command("task:list")
-def task_list() -> None:
-    """List known tasks."""
-    orch = _get_orchestrator()
-    for task in orch.list_tasks():
-        typer.echo(f"{task.id} {task.description} ({task.domain})")
 
 
 if __name__ == "__main__":
     app()
-import argparse
-import json
-import sys
-import uuid
-
-from sdk import plugin_api
-from orchestrator import health
-from workflows import dsl
-from i18n.translate import t
-from docs.generate_bot_docs import discover_bots
-from tui import app as tui_app
-
-
-def cmd_health(args):
-    result = health.check()
-    print(json.dumps(result))
-    return 0 if result["overall_status"] == "ok" else 1
-
-
-def cmd_wf_run(args):
-    wf_id = str(uuid.uuid4())
-    out = dsl.run_workflow(args.file)
-    summary = "\n".join(
-        s.get("summary", s.get("content", "")) for s in out["steps"] if isinstance(s, dict)
-    )
-    dsl.write_summary(wf_id, summary)
-    return 0
-
-
-def cmd_bot_list(args):
-    plugin_api.get_settings().LANG = args.lang
-    lang = args.lang
-    bots = discover_bots().keys()
-    header = t("bot_list_header", lang=lang)
-    print(header)
-    if not bots:
-        print(t("no_bots", lang=lang))
-    else:
-        for b in bots:
-            print("-", b)
-    return 0
-
-
-def cmd_tui_run(args):
-    plugin_api.get_settings().THEME = args.theme
-    tui_app.run(args.theme)
-    return 0
-
-
-COMMANDS = {
-    "health:check": cmd_health,
-    "wf:run": cmd_wf_run,
-    "bot:list": cmd_bot_list,
-    "tui:run": cmd_tui_run,
-}
-
-
-def main(argv=None):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("command")
-    parser.add_argument("--file")
-    parser.add_argument("--lang", default="en")
-    parser.add_argument("--theme", default="light")
-    args = parser.parse_args(argv)
-    func = COMMANDS.get(args.command)
-    if not func:
-        print("unknown command")
-        return 1
-    return func(args)
-
-
-if __name__ == "__main__":  # pragma: no cover
-    sys.exit(main())
-from __future__ import annotations
-
-import argparse
-import json
-import subprocess
-
-from policy import loader
-from security import crypto
-from scripts import gen_docs
-from orchestrator import metrics
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('command')
-    parser.add_argument('--name')
-    args = parser.parse_args()
-
-    cmd = args.command
-    if cmd == 'policy:list':
-        for p in sorted(loader.PACKS_DIR.glob('*.yaml')):
-            pack = loader.load_pack(p.stem)
-            print(f"{pack.name}\t{pack.version}")
-    elif cmd == 'policy:apply':
-        if not args.name:
-            parser.error('--name required')
-        pack = loader.load_pack(args.name)
-        loader.apply_pack(pack)
-        print(f"applied {pack.name}")
-    elif cmd == 'crypto:keygen':
-        kid = crypto.generate_key()
-        print(kid)
-    elif cmd == 'crypto:status':
-        st = crypto.status()
-        print(json.dumps(st))
-    elif cmd == 'crypto:rotate':
-        crypto.rotate_key()
-        count = crypto.rotate_data()
-        metrics.inc(metrics.crypto_rotate)
-        print(count)
-    elif cmd == 'docs:generate':
-        gen_docs.main()
-        metrics.inc(metrics.docs_built)
-    elif cmd == 'docs:build':
-        subprocess.run(['mkdocs', 'build'], check=True)
-        metrics.inc(metrics.docs_built)
-    else:
-        parser.error('unknown command')
-
-
-if __name__ == '__main__':
-from __future__ import annotations
-
-import argparse
-import json
-from pathlib import Path
-
-from orchestrator.orchestrator import create_task, route_task
-from orchestrator.registry import list as list_bots
-
-
-def _cmd_list(_: argparse.Namespace) -> None:
-    for bot in list_bots():
-        intents = ", ".join(bot.SUPPORTED_TASKS)
-        print(f"{bot.NAME}\t{bot.MISSION}\t{intents}")
-
-
-def _cmd_run(args: argparse.Namespace) -> None:
-    context = {}
-    if args.context:
-        context = json.loads(Path(args.context).read_text())
-    task = create_task(goal=args.goal, context=context)
-    resp = route_task(task, args.bot)
-    print(resp.summary)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    sub = parser.add_subparsers(dest="command")
-
-    p_list = sub.add_parser("bot:list")
-    p_list.set_defaults(func=_cmd_list)
-
-    p_run = sub.add_parser("bot:run")
-    p_run.add_argument("--bot", required=True)
-    p_run.add_argument("--goal", required=True)
-    p_run.add_argument("--context")
-    p_run.set_defaults(func=_cmd_run)
-
-    args = parser.parse_args()
-    if not hasattr(args, "func"):
-        parser.print_help()
-        return
-    args.func(args)
-
-
-if __name__ == "__main__":
-    main()

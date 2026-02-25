@@ -1,0 +1,671 @@
+# .github/workflows/autonomous-orchestrator.yml
+# Master coordinator for all autonomous agents
+# Drop this in any repo for full autonomous operation
+
+name: "Autonomous Orchestrator"
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: '0 */4 * * *'  # Every 4 hours
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Operation mode'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - aggressive
+          - conservative
+          - audit-only
+      force_deploy:
+        description: 'Force deployment'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+  security-events: write
+  checks: write
+
+concurrency:
+  group: autonomous-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BLACKROAD_AGENT_API: https://blackroad-agents.amundsonalexa.workers.dev
+  MEMORY_ENABLED: true
+  AUTO_MERGE: true
+  AUTO_FIX: true
+
+jobs:
+  # ============================================
+  # Stage 1: Intelligence Gathering
+  # ============================================
+  analyze:
+    name: "Analyze Repository"
+    runs-on: ubuntu-latest
+    outputs:
+      project_type: ${{ steps.detect.outputs.type }}
+      has_tests: ${{ steps.detect.outputs.has_tests }}
+      has_build: ${{ steps.detect.outputs.has_build }}
+      health_score: ${{ steps.health.outputs.score }}
+      priority: ${{ steps.priority.outputs.level }}
+      action_plan: ${{ steps.plan.outputs.actions }}
+      memory_context: ${{ steps.memory.outputs.context }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect Project Type
+        id: detect
+        run: |
+          TYPE="unknown"
+          HAS_TESTS="false"
+          HAS_BUILD="false"
+
+          # Node.js
+          if [ -f "package.json" ]; then
+            TYPE="nodejs"
+            grep -q '"test"' package.json && HAS_TESTS="true"
+            grep -q '"build"' package.json && HAS_BUILD="true"
+          # Python
+          elif [ -f "pyproject.toml" ] || [ -f "requirements.txt" ] || [ -f "setup.py" ]; then
+            TYPE="python"
+            [ -d "tests" ] || [ -d "test" ] && HAS_TESTS="true"
+          # Go
+          elif [ -f "go.mod" ]; then
+            TYPE="go"
+            find . -name "*_test.go" | head -1 | grep -q . && HAS_TESTS="true"
+          # Rust
+          elif [ -f "Cargo.toml" ]; then
+            TYPE="rust"
+            HAS_TESTS="true"
+            HAS_BUILD="true"
+          # Salesforce
+          elif [ -f "sfdx-project.json" ]; then
+            TYPE="salesforce"
+          # Static site
+          elif [ -f "index.html" ]; then
+            TYPE="static"
+          # Cloudflare Worker
+          elif [ -f "wrangler.toml" ]; then
+            TYPE="cloudflare-worker"
+            HAS_BUILD="true"
+          fi
+
+          echo "type=$TYPE" >> $GITHUB_OUTPUT
+          echo "has_tests=$HAS_TESTS" >> $GITHUB_OUTPUT
+          echo "has_build=$HAS_BUILD" >> $GITHUB_OUTPUT
+          echo "Detected: $TYPE (tests=$HAS_TESTS, build=$HAS_BUILD)"
+
+      - name: Calculate Health Score
+        id: health
+        run: |
+          SCORE=100
+
+          # Check for common issues
+          [ ! -f "README.md" ] && SCORE=$((SCORE - 10))
+          [ ! -f ".gitignore" ] && SCORE=$((SCORE - 5))
+          [ ! -d ".github/workflows" ] && SCORE=$((SCORE - 15))
+
+          # Security checks
+          grep -rn "password\s*=" --include="*.js" --include="*.ts" --include="*.py" . 2>/dev/null | grep -v node_modules && SCORE=$((SCORE - 20))
+          grep -rn "api_key\s*=" --include="*.js" --include="*.ts" --include="*.py" . 2>/dev/null | grep -v node_modules && SCORE=$((SCORE - 20))
+
+          # Stale checks
+          LAST_COMMIT=$(git log -1 --format=%ct 2>/dev/null || echo 0)
+          NOW=$(date +%s)
+          DAYS_SINCE=$(( (NOW - LAST_COMMIT) / 86400 ))
+          [ $DAYS_SINCE -gt 90 ] && SCORE=$((SCORE - 10))
+
+          [ $SCORE -lt 0 ] && SCORE=0
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+          echo "Health Score: $SCORE/100"
+
+      - name: Determine Priority
+        id: priority
+        run: |
+          PRIORITY="normal"
+
+          # High priority triggers
+          if echo "${{ github.event.issue.labels.*.name }}" | grep -qE "critical|urgent|security"; then
+            PRIORITY="critical"
+          elif echo "${{ github.event.issue.labels.*.name }}" | grep -qE "high|important"; then
+            PRIORITY="high"
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            PRIORITY="background"
+          fi
+
+          echo "level=$PRIORITY" >> $GITHUB_OUTPUT
+          echo "Priority: $PRIORITY"
+
+      - name: Fetch Memory Context
+        id: memory
+        run: |
+          # Try to get memory from BlackRoad API
+          CONTEXT=$(curl -s -f "${{ env.BLACKROAD_AGENT_API }}/memory/${{ github.repository }}" 2>/dev/null || echo '{}')
+          echo "context=$CONTEXT" >> $GITHUB_OUTPUT
+
+      - name: Create Action Plan
+        id: plan
+        run: |
+          ACTIONS="[]"
+
+          # Build action list based on context
+          case "${{ github.event_name }}" in
+            push)
+              ACTIONS='["test","build","security_scan","quality_check"]'
+              ;;
+            pull_request)
+              ACTIONS='["test","build","code_review","security_scan","auto_merge"]'
+              ;;
+            issues)
+              ACTIONS='["triage","assign","respond"]'
+              ;;
+            schedule)
+              ACTIONS='["health_check","dependency_update","stale_cleanup","security_audit"]'
+              ;;
+            *)
+              ACTIONS='["analyze"]'
+              ;;
+          esac
+
+          echo "actions=$ACTIONS" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # Stage 2: Test & Build
+  # ============================================
+  test-and-build:
+    name: "Test & Build"
+    needs: analyze
+    runs-on: ubuntu-latest
+    if: needs.analyze.outputs.project_type != 'unknown'
+    outputs:
+      test_result: ${{ steps.test.outputs.result }}
+      build_result: ${{ steps.build.outputs.result }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Environment
+        run: |
+          case "${{ needs.analyze.outputs.project_type }}" in
+            nodejs)
+              echo "Setting up Node.js..."
+              ;;
+            python)
+              echo "Setting up Python..."
+              pip install pytest pytest-cov 2>/dev/null || true
+              ;;
+            go)
+              echo "Go is pre-installed"
+              ;;
+            rust)
+              echo "Installing Rust..."
+              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+              ;;
+          esac
+
+      - name: Install Dependencies
+        run: |
+          case "${{ needs.analyze.outputs.project_type }}" in
+            nodejs)
+              npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts 2>/dev/null || true
+              ;;
+            python)
+              [ -f "requirements.txt" ] && pip install -r requirements.txt 2>/dev/null || true
+              [ -f "pyproject.toml" ] && pip install -e . 2>/dev/null || true
+              ;;
+            go)
+              go mod download 2>/dev/null || true
+              ;;
+            rust)
+              cargo fetch 2>/dev/null || true
+              ;;
+          esac
+
+      - name: Run Tests
+        id: test
+        continue-on-error: true
+        run: |
+          RESULT="skipped"
+
+          if [ "${{ needs.analyze.outputs.has_tests }}" = "true" ]; then
+            case "${{ needs.analyze.outputs.project_type }}" in
+              nodejs)
+                npm test 2>&1 && RESULT="passed" || RESULT="failed"
+                ;;
+              python)
+                pytest -v 2>&1 && RESULT="passed" || python -m unittest discover 2>&1 && RESULT="passed" || RESULT="failed"
+                ;;
+              go)
+                go test ./... 2>&1 && RESULT="passed" || RESULT="failed"
+                ;;
+              rust)
+                cargo test 2>&1 && RESULT="passed" || RESULT="failed"
+                ;;
+            esac
+          fi
+
+          echo "result=$RESULT" >> $GITHUB_OUTPUT
+          echo "Test result: $RESULT"
+
+      - name: Run Build
+        id: build
+        continue-on-error: true
+        run: |
+          RESULT="skipped"
+
+          if [ "${{ needs.analyze.outputs.has_build }}" = "true" ]; then
+            case "${{ needs.analyze.outputs.project_type }}" in
+              nodejs)
+                npm run build 2>&1 && RESULT="passed" || RESULT="failed"
+                ;;
+              rust)
+                cargo build --release 2>&1 && RESULT="passed" || RESULT="failed"
+                ;;
+              cloudflare-worker)
+                npx wrangler build 2>/dev/null && RESULT="passed" || RESULT="skipped"
+                ;;
+            esac
+          fi
+
+          echo "result=$RESULT" >> $GITHUB_OUTPUT
+          echo "Build result: $RESULT"
+
+  # ============================================
+  # Stage 3: Security & Quality
+  # ============================================
+  security-scan:
+    name: "Security Scan"
+    needs: analyze
+    runs-on: ubuntu-latest
+    outputs:
+      vulnerabilities: ${{ steps.scan.outputs.vulns }}
+      severity: ${{ steps.scan.outputs.max_severity }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Security Scanners
+        id: scan
+        run: |
+          VULNS=0
+          MAX_SEVERITY="none"
+
+          # Scan for secrets
+          echo "Scanning for secrets..."
+          if grep -rn --include="*.js" --include="*.ts" --include="*.py" --include="*.json" \
+            -E "(password|secret|api_key|token)\s*[:=]\s*['\"][^'\"]+['\"]" . 2>/dev/null | \
+            grep -v node_modules | grep -v ".git" | head -5; then
+            VULNS=$((VULNS + 1))
+            MAX_SEVERITY="critical"
+          fi
+
+          # Check for common vulnerabilities
+          echo "Checking for common vulnerabilities..."
+          if [ -f "package.json" ]; then
+            npm audit --json 2>/dev/null | jq -r '.metadata.vulnerabilities | to_entries[] | select(.value > 0)' && VULNS=$((VULNS + 1))
+          fi
+
+          echo "vulns=$VULNS" >> $GITHUB_OUTPUT
+          echo "max_severity=$MAX_SEVERITY" >> $GITHUB_OUTPUT
+
+      - name: Auto-fix Security Issues
+        if: env.AUTO_FIX == 'true' && steps.scan.outputs.vulns != '0'
+        run: |
+          echo "Attempting auto-fix..."
+
+          # Try to fix npm vulnerabilities
+          if [ -f "package.json" ]; then
+            npm audit fix 2>/dev/null || true
+          fi
+
+          # Check if changes were made
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "BlackRoad Bot"
+            git config user.email "bot@blackroad.ai"
+            git add -A
+            git commit -m "fix(security): Auto-fix security vulnerabilities
+
+            Automated security fixes applied by BlackRoad Autonomous Agent.
+
+            Co-Authored-By: BlackRoad Bot <bot@blackroad.ai>"
+            git push || echo "Push failed - may need PR"
+          fi
+
+  # ============================================
+  # Stage 4: Code Review (PRs only)
+  # ============================================
+  code-review:
+    name: "AI Code Review"
+    needs: [analyze, test-and-build]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Changed Files
+        id: changed
+        run: |
+          FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} 2>/dev/null | head -50)
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: AI Code Analysis
+        id: ai_review
+        run: |
+          # Call BlackRoad AI for code review
+          REVIEW=$(curl -s -X POST "${{ env.BLACKROAD_AGENT_API }}/review" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repo": "${{ github.repository }}",
+              "pr_number": ${{ github.event.pull_request.number }},
+              "files": ${{ toJSON(steps.changed.outputs.files) }},
+              "test_result": "${{ needs.test-and-build.outputs.test_result }}",
+              "build_result": "${{ needs.test-and-build.outputs.build_result }}"
+            }' 2>/dev/null || echo "Review completed")
+
+          echo "AI Review: $REVIEW"
+
+      - name: Post Review Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const testResult = '${{ needs.test-and-build.outputs.test_result }}';
+            const buildResult = '${{ needs.test-and-build.outputs.build_result }}';
+            const healthScore = '${{ needs.analyze.outputs.health_score }}';
+
+            let status = '';
+            if (testResult === 'passed' && buildResult !== 'failed') {
+              status = '### Status: Ready to Merge';
+            } else if (testResult === 'failed') {
+              status = '### Status: Tests Failing - Needs Fix';
+            } else {
+              status = '### Status: Review Needed';
+            }
+
+            const body = `## Autonomous Agent Review
+
+            ${status}
+
+            | Check | Result |
+            |-------|--------|
+            | Tests | ${testResult === 'passed' ? 'Passed' : testResult === 'failed' ? 'Failed' : 'Skipped'} |
+            | Build | ${buildResult === 'passed' ? 'Passed' : buildResult === 'failed' ? 'Failed' : 'Skipped'} |
+            | Health Score | ${healthScore}/100 |
+
+            ---
+            *Autonomous review by BlackRoad Agent*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body
+            });
+
+  # ============================================
+  # Stage 5: Auto-Merge
+  # ============================================
+  auto-merge:
+    name: "Auto-Merge"
+    needs: [analyze, test-and-build, security-scan, code-review]
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.test-and-build.outputs.test_result != 'failed' &&
+      needs.test-and-build.outputs.build_result != 'failed' &&
+      needs.security-scan.outputs.severity != 'critical'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enable Auto-Merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Enabling auto-merge for PR #${{ github.event.pull_request.number }}"
+
+          # Try multiple merge strategies
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --auto \
+            --squash \
+            --delete-branch 2>/dev/null || \
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --squash 2>/dev/null || \
+          echo "Auto-merge queued - waiting for required checks"
+
+  # ============================================
+  # Stage 6: Auto-Deploy
+  # ============================================
+  auto-deploy:
+    name: "Auto-Deploy"
+    needs: [analyze, test-and-build, security-scan]
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.test-and-build.outputs.test_result != 'failed' &&
+      needs.security-scan.outputs.severity != 'critical'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine Deploy Target
+        id: target
+        run: |
+          TARGET="none"
+
+          # Check for deployment configs
+          [ -f "wrangler.toml" ] && TARGET="cloudflare"
+          [ -f "vercel.json" ] && TARGET="vercel"
+          [ -f "railway.toml" ] && TARGET="railway"
+          [ -f "Dockerfile" ] && TARGET="docker"
+
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
+
+      - name: Deploy to Cloudflare
+        if: steps.target.outputs.target == 'cloudflare'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            npx wrangler deploy 2>/dev/null || echo "Cloudflare deploy skipped"
+          fi
+
+      - name: Deploy to Vercel
+        if: steps.target.outputs.target == 'vercel'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            npx vercel --prod --token=$VERCEL_TOKEN 2>/dev/null || echo "Vercel deploy skipped"
+          fi
+
+  # ============================================
+  # Stage 7: Memory Persistence
+  # ============================================
+  persist-memory:
+    name: "Persist Memory"
+    needs: [test-and-build, security-scan]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Save Run Memory
+        run: |
+          curl -s -X POST "${{ env.BLACKROAD_AGENT_API }}/memory" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repo": "${{ github.repository }}",
+              "run_id": "${{ github.run_id }}",
+              "event": "${{ github.event_name }}",
+              "results": {
+                "test": "${{ needs.test-and-build.outputs.test_result }}",
+                "build": "${{ needs.test-and-build.outputs.build_result }}",
+                "security": "${{ needs.security-scan.outputs.severity }}"
+              },
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' 2>/dev/null || echo "Memory save queued"
+
+  # ============================================
+  # Stage 8: Issue Triage (Issues only)
+  # ============================================
+  issue-triage:
+    name: "Issue Triage"
+    needs: analyze
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: AI Issue Analysis
+        id: analyze
+        run: |
+          TITLE="${{ github.event.issue.title }}"
+          BODY="${{ github.event.issue.body }}"
+
+          # Determine labels based on content
+          LABELS=""
+
+          echo "$TITLE $BODY" | grep -qi "bug\|error\|broken\|fix" && LABELS="$LABELS,bug"
+          echo "$TITLE $BODY" | grep -qi "feature\|add\|new\|enhance" && LABELS="$LABELS,enhancement"
+          echo "$TITLE $BODY" | grep -qi "question\|how\|help" && LABELS="$LABELS,question"
+          echo "$TITLE $BODY" | grep -qi "security\|vulnerability\|cve" && LABELS="$LABELS,security"
+          echo "$TITLE $BODY" | grep -qi "urgent\|critical\|asap" && LABELS="$LABELS,priority:high"
+
+          LABELS=$(echo "$LABELS" | sed 's/^,//')
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+
+      - name: Apply Labels
+        if: steps.analyze.outputs.labels != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for label in $(echo "${{ steps.analyze.outputs.labels }}" | tr ',' ' '); do
+            gh issue edit ${{ github.event.issue.number }} --add-label "$label" 2>/dev/null || true
+          done
+
+      - name: Auto-Respond
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = '${{ steps.analyze.outputs.labels }}'.split(',').filter(l => l);
+
+            let response = `Thanks for opening this issue!\n\n`;
+            response += `**Automated Triage:**\n`;
+            if (labels.length > 0) {
+              response += `- Labels applied: ${labels.map(l => '`' + l + '`').join(', ')}\n`;
+            }
+            response += `\nA team member will review this shortly. In the meantime:\n`;
+            response += `- Check if there's a similar issue already open\n`;
+            response += `- Provide additional context if available\n\n`;
+            response += `*Triaged by BlackRoad Autonomous Agent*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: response
+            });
+
+  # ============================================
+  # Stage 9: Scheduled Maintenance
+  # ============================================
+  maintenance:
+    name: "Scheduled Maintenance"
+    needs: analyze
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update Dependencies
+        run: |
+          if [ -f "package.json" ]; then
+            # Check for outdated packages
+            npm outdated --json > outdated.json 2>/dev/null || true
+
+            # Auto-update patch versions
+            npm update 2>/dev/null || true
+
+            if [ -n "$(git status --porcelain package-lock.json)" ]; then
+              git config user.name "BlackRoad Bot"
+              git config user.email "bot@blackroad.ai"
+              git add package.json package-lock.json
+              git commit -m "chore(deps): Auto-update dependencies
+
+              Automated dependency updates by BlackRoad Agent.
+
+              Co-Authored-By: BlackRoad Bot <bot@blackroad.ai>"
+              git push || echo "Would create PR for updates"
+            fi
+          fi
+
+      - name: Clean Stale Branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # List merged branches older than 30 days
+          git fetch --all --prune
+          for branch in $(git branch -r --merged origin/main | grep -v main | grep -v HEAD); do
+            LAST_COMMIT=$(git log -1 --format=%ct "$branch" 2>/dev/null || echo 0)
+            NOW=$(date +%s)
+            DAYS_OLD=$(( (NOW - LAST_COMMIT) / 86400 ))
+
+            if [ $DAYS_OLD -gt 30 ]; then
+              BRANCH_NAME=$(echo "$branch" | sed 's|origin/||')
+              echo "Deleting stale branch: $BRANCH_NAME ($DAYS_OLD days old)"
+              git push origin --delete "$BRANCH_NAME" 2>/dev/null || true
+            fi
+          done
+
+      - name: Health Report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const healthScore = '${{ needs.analyze.outputs.health_score }}';
+
+            // Only create issue if health is poor
+            if (parseInt(healthScore) < 70) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Automated] Repository Health Alert (Score: ${healthScore}/100)`,
+                body: `## Repository Health Report
+
+                **Current Health Score:** ${healthScore}/100
+
+                The autonomous agent has detected potential issues with this repository.
+
+                ### Recommended Actions
+                - Review and address any security warnings
+                - Update outdated dependencies
+                - Add missing documentation
+
+                ---
+                *Generated by BlackRoad Autonomous Agent*`,
+                labels: ['maintenance', 'automated']
+              });
+            }

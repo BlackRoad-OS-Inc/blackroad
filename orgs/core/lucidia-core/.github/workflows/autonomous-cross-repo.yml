@@ -1,0 +1,324 @@
+# .github/workflows/autonomous-cross-repo.yml
+# Cross-repository coordination for synchronized changes
+
+name: "Autonomous Cross-Repo Coordinator"
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'shared/**'
+      - 'packages/**'
+      - 'lib/**'
+      - '*.config.*'
+  workflow_dispatch:
+    inputs:
+      sync_type:
+        description: 'Type of sync'
+        required: true
+        type: choice
+        options:
+          - config
+          - dependencies
+          - workflows
+          - all
+      target_repos:
+        description: 'Target repos (comma-separated, or "all")'
+        required: false
+        default: 'all'
+      dry_run:
+        description: 'Dry run (no actual changes)'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  BLACKROAD_AGENT_API: https://blackroad-agents.amundsonalexa.workers.dev
+
+jobs:
+  # ============================================
+  # Identify Affected Repositories
+  # ============================================
+  identify-repos:
+    name: "Identify Affected Repos"
+    runs-on: ubuntu-latest
+    outputs:
+      repos: ${{ steps.find.outputs.repos }}
+      sync_files: ${{ steps.changes.outputs.files }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get Changed Files
+        id: changes
+        run: |
+          FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -50 || echo "")
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Find Related Repositories
+        id: find
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Default BlackRoad repos that should stay in sync
+          CORE_REPOS='[
+            "BlackRoad-OS/blackroad-os-web",
+            "BlackRoad-OS/blackroad-os-docs",
+            "BlackRoad-OS/blackroad-cli",
+            "BlackRoad-OS/blackroad-agents",
+            "BlackRoad-OS/blackroad-os-mesh",
+            "BlackRoad-OS/blackroad-os-helper",
+            "BlackRoad-OS/blackroad-os-core"
+          ]'
+
+          if [ "${{ github.event.inputs.target_repos }}" = "all" ] || [ -z "${{ github.event.inputs.target_repos }}" ]; then
+            REPOS="$CORE_REPOS"
+          else
+            # Convert comma-separated to JSON array
+            REPOS=$(echo '${{ github.event.inputs.target_repos }}' | jq -R 'split(",") | map(gsub("^\\s+|\\s+$";""))')
+          fi
+
+          echo "repos=$REPOS" >> $GITHUB_OUTPUT
+          echo "Repos to sync: $REPOS"
+
+  # ============================================
+  # Sync Workflows
+  # ============================================
+  sync-workflows:
+    name: "Sync Workflows"
+    needs: identify-repos
+    if: github.event.inputs.sync_type == 'workflows' || github.event.inputs.sync_type == 'all' || contains(needs.identify-repos.outputs.sync_files, '.github/workflows')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ${{ fromJSON(needs.identify-repos.outputs.repos) }}
+      fail-fast: false
+      max-parallel: 5
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Checkout Target
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          path: target
+          token: ${{ secrets.CROSS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Sync Workflow Files
+        run: |
+          # Copy autonomous workflows
+          mkdir -p target/.github/workflows
+
+          # Copy the orchestrator and self-healer
+          for workflow in autonomous-orchestrator.yml autonomous-self-healer.yml blackroad-agents.yml; do
+            if [ -f "source/.github/workflows-autonomous/$workflow" ]; then
+              cp "source/.github/workflows-autonomous/$workflow" "target/.github/workflows/"
+            elif [ -f "source/.github/workflows/$workflow" ]; then
+              cp "source/.github/workflows/$workflow" "target/.github/workflows/"
+            fi
+          done
+
+          echo "Synced workflows to ${{ matrix.repo }}"
+
+      - name: Create PR
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: target
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            BRANCH="sync-workflows-$(date +%Y%m%d-%H%M%S)"
+            git config user.name "BlackRoad Cross-Repo Bot"
+            git config user.email "crossrepo@blackroad.ai"
+
+            git checkout -b "$BRANCH"
+            git add -A
+            git commit -m "chore(workflows): Sync autonomous workflows from central repo
+
+            Synced workflows:
+            - autonomous-orchestrator.yml
+            - autonomous-self-healer.yml
+            - blackroad-agents.yml
+
+            Source: ${{ github.repository }}
+
+            Co-Authored-By: BlackRoad Bot <bot@blackroad.ai>"
+
+            git push -u origin "$BRANCH"
+
+            gh pr create \
+              --title "chore(workflows): Sync autonomous workflows" \
+              --body "## Workflow Sync
+
+            Synced autonomous workflows from central repository.
+
+            **Source:** ${{ github.repository }}
+            **Sync Type:** workflows
+
+            ### Changes
+            - Updated autonomous-orchestrator.yml
+            - Updated autonomous-self-healer.yml
+            - Updated blackroad-agents.yml
+
+            ---
+            *Automated by BlackRoad Cross-Repo Coordinator*" \
+              --label "automated,infrastructure"
+          else
+            echo "No workflow changes needed for ${{ matrix.repo }}"
+          fi
+
+  # ============================================
+  # Sync Configurations
+  # ============================================
+  sync-config:
+    name: "Sync Configurations"
+    needs: identify-repos
+    if: github.event.inputs.sync_type == 'config' || github.event.inputs.sync_type == 'all'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ${{ fromJSON(needs.identify-repos.outputs.repos) }}
+      fail-fast: false
+      max-parallel: 5
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Checkout Target
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          path: target
+          token: ${{ secrets.CROSS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Sync Config Files
+        run: |
+          # Sync common configs that should be consistent
+          SYNC_FILES=(
+            ".eslintrc.js"
+            ".prettierrc"
+            ".editorconfig"
+            "tsconfig.base.json"
+            ".github/CODEOWNERS"
+            ".github/ISSUE_TEMPLATE/bug_report.yml"
+            ".github/ISSUE_TEMPLATE/feature_request.yml"
+          )
+
+          for file in "${SYNC_FILES[@]}"; do
+            if [ -f "source/$file" ]; then
+              mkdir -p "target/$(dirname $file)"
+              cp "source/$file" "target/$file"
+            fi
+          done
+
+      - name: Create PR
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: target
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            BRANCH="sync-config-$(date +%Y%m%d-%H%M%S)"
+            git config user.name "BlackRoad Cross-Repo Bot"
+            git config user.email "crossrepo@blackroad.ai"
+
+            git checkout -b "$BRANCH"
+            git add -A
+            git commit -m "chore(config): Sync configurations from central repo
+
+            Co-Authored-By: BlackRoad Bot <bot@blackroad.ai>"
+
+            git push -u origin "$BRANCH"
+
+            gh pr create \
+              --title "chore(config): Sync configurations" \
+              --body "## Configuration Sync
+
+            Synced common configurations from central repository.
+
+            ---
+            *Automated by BlackRoad Cross-Repo Coordinator*" \
+              --label "automated,config"
+          fi
+
+  # ============================================
+  # Sync Dependencies
+  # ============================================
+  sync-deps:
+    name: "Sync Dependencies"
+    needs: identify-repos
+    if: github.event.inputs.sync_type == 'dependencies' || github.event.inputs.sync_type == 'all'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Analyze Dependencies
+        id: deps
+        run: |
+          # Extract common dependencies and their versions
+          if [ -f "package.json" ]; then
+            DEPS=$(jq -r '.dependencies // {} | to_entries[] | "\(.key)@\(.value)"' package.json | head -20)
+            echo "deps<<EOF" >> $GITHUB_OUTPUT
+            echo "$DEPS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Report Dependencies
+        run: |
+          echo "## Dependencies to Sync"
+          echo "${{ steps.deps.outputs.deps }}"
+
+          # Log to coordination API
+          curl -s -X POST "${{ env.BLACKROAD_AGENT_API }}/coordinate" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "action": "sync_deps",
+              "source": "${{ github.repository }}",
+              "repos": ${{ needs.identify-repos.outputs.repos }},
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' 2>/dev/null || true
+
+  # ============================================
+  # Broadcast Changes
+  # ============================================
+  broadcast:
+    name: "Broadcast Changes"
+    needs: [sync-workflows, sync-config, sync-deps]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notify Coordination System
+        run: |
+          curl -s -X POST "${{ env.BLACKROAD_AGENT_API }}/broadcast" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "event": "cross_repo_sync_complete",
+              "source": "${{ github.repository }}",
+              "sync_type": "${{ github.event.inputs.sync_type || 'auto' }}",
+              "repos": ${{ needs.identify-repos.outputs.repos || '[]' }},
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' 2>/dev/null || echo "Broadcast queued"
+
+      - name: Summary
+        run: |
+          echo "## Cross-Repo Sync Complete"
+          echo "- Source: ${{ github.repository }}"
+          echo "- Sync Type: ${{ github.event.inputs.sync_type || 'auto' }}"
+          echo "- Dry Run: ${{ github.event.inputs.dry_run || 'false' }}"

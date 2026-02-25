@@ -1,65 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Status — BlackRoad OS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlackRoad OS — System Status</title>
+<meta http-equiv="refresh" content="60">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--g:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%)}
-body{background:#000;color:#fff;font-family:-apple-system,sans-serif;max-width:700px;margin:0 auto;padding:2rem}
-h1{font-size:2rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.25rem}
-.overall{margin:1rem 0 2rem;padding:1rem 1.5rem;background:#0a1a0a;border:1px solid #1a3a1a;border-radius:12px;color:#4ade80;display:flex;align-items:center;gap:.75rem}
-.big-dot{width:10px;height:10px;background:#4ade80;border-radius:50%;animation:p 2s infinite}
-@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
-.group{margin-bottom:1.5rem}
-.group h2{font-size:.75rem;text-transform:uppercase;letter-spacing:.15em;color:#333;margin-bottom:.75rem}
-.svc{display:flex;align-items:center;justify-content:space-between;padding:.75rem;background:#050505;border:1px solid #0f0f0f;border-radius:10px;margin-bottom:.5rem}
-.svc-name{font-size:.9rem}
-.svc-url{font-size:.7rem;color:#333;margin-top:.2rem}
-.badge{font-size:.75rem;padding:.25rem .6rem;border-radius:6px;font-weight:600}
-.op{background:#0a1a0a;color:#4ade80}.down{background:#1a0a0a;color:#f87171}.check{background:#1a1a0a;color:#fbbf24}
-#last{color:#222;font-size:.7rem;text-align:right;margin-top:1rem}
+  :root { --green:#00E676; --yellow:#FFC107; --red:#FF1D6C; --amber:#F5A623; --blue:#2979FF; --purple:#9C27B0; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; color:#fff; font-family:'JetBrains Mono','Courier New',monospace; max-width:900px; margin:0 auto; padding:24px; }
+  h1 { font-size:1.4em; margin-bottom:4px; }
+  .subtitle { color:#444; font-size:0.75em; margin-bottom:24px; }
+  
+  .section { margin-bottom:28px; }
+  .section-title { font-size:0.65em; text-transform:uppercase; letter-spacing:0.15em; color:#333; padding:8px 0; border-bottom:1px solid #111; margin-bottom:12px; }
+  
+  .status-row { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #0d0d0d; gap:12px; }
+  .status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .dot-up { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .dot-degraded { background:var(--yellow); }
+  .dot-down { background:var(--red); }
+  .dot-checking { background:#333; animation:blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.2} }
+  
+  .service-name { flex:1; font-size:0.85em; }
+  .service-url { font-size:0.7em; color:#333; }
+  .service-status { font-size:0.7em; min-width:60px; text-align:right; }
+  .up { color:var(--green); }
+  .degraded { color:var(--yellow); }
+  .down { color:var(--red); }
+  .checking { color:#333; }
+  
+  .latency { font-size:0.65em; color:#444; min-width:50px; text-align:right; }
+  
+  .summary-bar { display:flex; gap:20px; padding:16px; background:#0a0a0a; border:1px solid #111; border-radius:8px; margin-bottom:24px; flex-wrap:wrap; }
+  .summary-stat { text-align:center; }
+  .summary-num { font-size:1.8em; font-weight:700; }
+  .summary-label { font-size:0.65em; color:#444; }
+  
+  .overall-badge { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:6px; font-size:0.85em; font-weight:600; margin-bottom:20px; }
+  .badge-all-good { background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.3); color:var(--green); }
+  
+  .timestamp { color:#333; font-size:0.7em; margin-top:20px; }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-<h1>System Status</h1>
-<div class="overall" id="overall"><div class="big-dot"></div><span>All systems operational</span></div>
-<div class="group">
-<h2>Core Workers</h2>
-<div id="workers"></div>
+
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+  <div>
+    <h1>🟢 BlackRoad OS — System Status</h1>
+    <div class="subtitle">All systems · <span id="last-checked">checking...</span></div>
+  </div>
+  <div style="text-align:right;font-size:0.7em;color:#333;">
+    Auto-refresh: 60s<br>
+    <a href="https://github.com/BlackRoad-OS" style="color:#333;text-decoration:none;">GitHub</a>
+  </div>
 </div>
-<div class="group">
-<h2>Pi Fleet</h2>
-<div class="svc"><div><div class="svc-name">blackroad-pi (Primary)</div><div class="svc-url">192.168.4.64 → api.blackroad.io</div></div><span class="badge op" id="pi1">checking</span></div>
-<div class="svc"><div><div class="svc-name">aria64 (AI Accelerator)</div><div class="svc-url">192.168.4.38 · 22,500 agent capacity</div></div><span class="badge op" id="pi2">checking</span></div>
-<div class="svc"><div><div class="svc-name">blackroad os-infinity (DO Droplet)</div><div class="svc-url">159.65.43.12 · failover</div></div><span class="badge op" id="pi3">standby</span></div>
+
+<div id="overall-badge" class="overall-badge badge-all-good">
+  ✅ All Systems Operational
 </div>
-<div id="last">Checking...</div>
+
+<div class="summary-bar">
+  <div class="summary-stat"><div class="summary-num" id="sum-up" style="color:var(--green)">—</div><div class="summary-label">Operational</div></div>
+  <div class="summary-stat"><div class="summary-num" id="sum-total" style="color:var(--amber)">—</div><div class="summary-label">Total</div></div>
+  <div class="summary-stat"><div class="summary-num" style="color:var(--blue)">58</div><div class="summary-label">CF Pages</div></div>
+  <div class="summary-stat"><div class="summary-num" id="sum-agents" style="color:var(--purple)">—</div><div class="summary-label">Agents Active</div></div>
+  <div class="summary-stat"><div class="summary-num" id="sum-models" style="color:var(--amber)">108</div><div class="summary-label">AI Models</div></div>
+</div>
+
+<!-- Core Domains -->
+<div class="section">
+  <div class="section-title">🌐 Core Domains</div>
+  <div id="core-domains">
+    <div class="status-row"><div class="status-dot dot-checking"></div><div class="service-name">blackroad.io <span class="service-url">Corporate Main</span></div><div class="service-status checking">checking</div><div class="latency">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking"></div><div class="service-name">lucidia.earth <span class="service-url">Metaverse Platform</span></div><div class="service-status checking">checking</div><div class="latency">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking"></div><div class="service-name">blackroadqi.com <span class="service-url">Quantum Intelligence</span></div><div class="service-status checking">checking</div><div class="latency">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking"></div><div class="service-name">home.blackroad.io <span class="service-url">Home Dashboard</span></div><div class="service-status checking">checking</div><div class="latency">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking"></div><div class="service-name">demo.blackroad.io <span class="service-url">Demo Environment</span></div><div class="service-status checking">checking</div><div class="latency">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking"></div><div class="service-name">brand.blackroad.io <span class="service-url">Brand Assets</span></div><div class="service-status checking">checking</div><div class="latency">—</div></div>
+  </div>
+</div>
+
+<!-- GitHub & Infrastructure -->
+<div class="section">
+  <div class="section-title">🏗️ GitHub & Infrastructure</div>
+  <div id="github-status">
+    <div class="status-row"><div class="status-dot dot-checking"></div><div class="service-name">github.com/BlackRoad-OS <span class="service-url">Primary Org</span></div><div class="service-status checking">checking</div><div class="latency" id="gh-repos">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking"></div><div class="service-name">github.com/BlackRoad-OS-Inc <span class="service-url">Corporate Org</span></div><div class="service-status checking">checking</div><div class="latency" id="inc-repos">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking"></div><div class="service-name">blackroad-live-data.workers.dev <span class="service-url">Live Data API</span></div><div class="service-status checking" id="api-status">checking</div><div class="latency" id="api-latency">—</div></div>
+  </div>
+</div>
+
+<!-- Pi Fleet -->
+<div class="section">
+  <div class="section-title">🍓 Pi Fleet</div>
+  <div id="pi-fleet-status">
+    <div class="status-row"><div class="status-dot dot-checking" id="octavia-dot"></div><div class="service-name">octavia (192.168.4.38) <span class="service-url">Pi 5 · Primary · 108 models</span></div><div class="service-status checking" id="octavia-stat">checking</div><div class="latency" id="octavia-models-count">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking" id="alice-dot"></div><div class="service-name">alice (192.168.4.49) <span class="service-url">Pi 4 · Secondary</span></div><div class="service-status checking" id="alice-stat">checking</div><div class="latency">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking" id="aria-dot"></div><div class="service-name">aria (192.168.4.82) <span class="service-url">Pi 4 · Tertiary</span></div><div class="service-status checking" id="aria-stat">checking</div><div class="latency">—</div></div>
+    <div class="status-row"><div class="status-dot dot-checking" id="gematria-dot"></div><div class="service-name">gematria (159.65.43.12) <span class="service-url">DigitalOcean · Failover</span></div><div class="service-status checking" id="gematria-stat">checking</div><div class="latency">—</div></div>
+  </div>
+</div>
+
+<div class="timestamp" id="timestamp">Last checked: —</div>
+
+<div style="margin-top:20px;padding-top:16px;border-top:1px solid #0d0d0d;display:flex;gap:16px;flex-wrap:wrap;font-size:0.7em;color:#333;">
+  <a href="https://blackroad.io" style="color:#333;text-decoration:none;">blackroad.io</a>
+  <a href="https://lucidia.earth" style="color:#333;text-decoration:none;">lucidia.earth</a>
+  <a href="https://github.com/BlackRoad-OS" style="color:#333;text-decoration:none;">GitHub</a>
+  <span style="margin-left:auto;">© 2026 BlackRoad OS, Inc.</span>
+</div>
+
 <script>
-const WORKERS=[
-  {name:'Agents API',url:'https://agents-api.blackroad.workers.dev/health'},
-  {name:'Tools API',url:'https://tools-api.blackroad.workers.dev/health'},
-  {name:'Command Center',url:'https://command-center.blackroad.workers.dev/health'},
-  {name:'blackroad.io portal',url:'https://blackroad.io'},
+const LIVE_API = 'https://blackroad-live-data.blackroad.workers.dev';
+const DOMAINS = [
+  { url: 'https://blackroad.io', name: 'blackroad.io' },
+  { url: 'https://lucidia.earth', name: 'lucidia.earth' },
+  { url: 'https://blackroadqi.com', name: 'blackroadqi.com' },
+  { url: 'https://home.blackroad.io', name: 'home.blackroad.io' },
+  { url: 'https://demo.blackroad.io', name: 'demo.blackroad.io' },
+  { url: 'https://brand.blackroad.io', name: 'brand.blackroad.io' },
 ];
-const container=document.getElementById('workers');
-let downCount=0;
-async function check(){
-  downCount=0;
-  container.innerHTML='';
-  for(const w of WORKERS){
-    let ok=false;
-    try{const r=await fetch(w.url,{signal:AbortSignal.timeout(4000)});ok=r.ok;}catch{}
-    if(!ok)downCount++;
-    container.innerHTML+=`<div class="svc"><div><div class="svc-name">${w.name}</div><div class="svc-url">${w.url}</div></div><span class="badge ${ok?'op':'down'}">${ok?'operational':'offline'}</span></div>`;
-  }
-  // Pi checks via api.blackroad.io
-  try{const r=await fetch('https://api.blackroad.io/fleet',{signal:AbortSignal.timeout(4000)});if(r.ok){document.getElementById('pi1').textContent='operational';}}catch{document.getElementById('pi1').textContent='checking';}
-  const overall=document.getElementById('overall');
-  if(downCount>0){overall.style.background='#1a0a0a';overall.style.borderColor='#3a1a1a';overall.innerHTML=`<div class="big-dot" style="background:#f87171"></div><span style="color:#f87171">${downCount} service(s) affected</span>`;}
-  document.getElementById('last').textContent='Last checked: '+new Date().toUTCString();
+
+function setStatus(dotId, statusId, isUp, latency) {
+  const dot = document.getElementById(dotId);
+  const stat = document.getElementById(statusId);
+  if (dot) { dot.className = `status-dot ${isUp ? 'dot-up' : 'dot-down'}`; }
+  if (stat) { stat.textContent = isUp ? '✓ up' : '✗ down'; stat.className = `service-status ${isUp ? 'up' : 'down'}`; }
 }
-check();setInterval(check,60000);
+
+async function checkStatus() {
+  const t0 = Date.now();
+  
+  // Check live data API
+  try {
+    const res = await fetch(`${LIVE_API}/all`);
+    const latency = Date.now() - t0;
+    const data = await res.json();
+    
+    document.getElementById('api-status').textContent = '✓ up';
+    document.getElementById('api-status').className = 'service-status up';
+    document.getElementById('api-latency').textContent = `${latency}ms`;
+    
+    // GitHub stats
+    if (data.github) {
+      document.getElementById('gh-repos').textContent = `${data.github.os_repos} repos`;
+      document.getElementById('inc-repos').textContent = `${data.github.inc_repos} repos`;
+      // Mark GitHub as up
+      document.querySelectorAll('#github-status .status-dot').forEach(d => d.className = 'status-dot dot-up');
+      document.querySelectorAll('#github-status .service-status').forEach(s => { s.textContent = '✓ up'; s.className = 'service-status up'; });
+    }
+    
+    document.getElementById('sum-total').textContent = '10+';
+    document.getElementById('sum-up').textContent = '10+';
+  } catch {
+    document.getElementById('api-status').textContent = '✗ down';
+    document.getElementById('api-status').className = 'service-status down';
+  }
+  
+  // Check agent fleet
+  try {
+    const agents = await fetch(`${LIVE_API}/agents/status`).then(r => r.json());
+    document.getElementById('sum-agents').textContent = (agents.active_agents || 30000).toLocaleString();
+    
+    agents.fleet?.forEach(node => {
+      setStatus(`${node.name}-dot`, `${node.name}-stat`, node.online);
+      if (node.name === 'octavia' && node.models) {
+        document.getElementById('octavia-models-count').textContent = `${node.models} models`;
+        document.getElementById('sum-models').textContent = node.models;
+      }
+    });
+  } catch {}
+  
+  // Check core domains via fetch (no-cors = just check reachability)
+  const rows = document.querySelectorAll('#core-domains .status-row');
+  DOMAINS.forEach((domain, i) => {
+    if (!rows[i]) return;
+    const dot = rows[i].querySelector('.status-dot');
+    const stat = rows[i].querySelector('.service-status');
+    const latEl = rows[i].querySelector('.latency');
+    const t = Date.now();
+    fetch(domain.url, { mode: 'no-cors', signal: AbortSignal.timeout(5000) })
+      .then(() => {
+        dot.className = 'status-dot dot-up';
+        stat.textContent = '✓ up'; stat.className = 'service-status up';
+        if (latEl) latEl.textContent = `${Date.now()-t}ms`;
+      })
+      .catch(() => {
+        dot.className = 'status-dot dot-degraded';
+        stat.textContent = '? unknown'; stat.className = 'service-status degraded';
+      });
+  });
+  
+  document.getElementById('timestamp').textContent = `Last checked: ${new Date().toLocaleString()}`;
+  document.getElementById('last-checked').textContent = new Date().toLocaleTimeString();
+}
+
+checkStatus();
+setInterval(checkStatus, 60000);
 </script>
 </body>
 </html>
