@@ -1,93 +1,34 @@
 # Lucidia Core
 
-> AI reasoning engines - physicist, mathematician, chemist, geologist, and specialized domain agents
+> Part of the Lucidia AI platform
 
 ## Quick Reference
 
 | Property | Value |
 |----------|-------|
-| **Language** | Python 3.10+ |
-| **Framework** | FastAPI |
-| **Build** | Hatch |
-| **License** | MIT |
+| **Project** | Lucidia Core |
+| **Org** | BlackRoad-OS |
+| **Platform** | Lucidia AI |
 
-## Tech Stack
+## Overview
 
-```
-Python 3.10+
-├── FastAPI (API Server)
-├── Pydantic 2 (Data Validation)
-├── SymPy (Symbolic Math)
-├── NumPy (Numerical Computing)
-├── mpmath (Multi-precision Math)
-└── Uvicorn (ASGI Server)
-```
-
-## Installation
-
-```bash
-# Install with pip
-pip install lucidia-core
-
-# Development install
-pip install -e ".[dev]"
-```
+Lucidia Core is part of the Lucidia AI ecosystem — BlackRoad's reasoning and AI platform.
 
 ## Commands
 
 ```bash
-lucidia            # CLI entry point
-lucidia-api        # Start API server
+# If Node.js project
+npm install && npm run dev
 
-# Development
-pytest             # Run tests
-black .            # Format code
-ruff check .       # Lint code
-mypy .             # Type check
+# If Python project
+pip install -e . && python main.py
+
+# If Cloudflare Pages
+wrangler pages deploy .
 ```
 
-## Reasoning Engines
+## Related
 
-| Engine | Domain | Capabilities |
-|--------|--------|--------------|
-| **Physicist** | Physics | Mechanics, thermodynamics, quantum |
-| **Mathematician** | Mathematics | Algebra, calculus, proofs |
-| **Chemist** | Chemistry | Reactions, molecular analysis |
-| **Geologist** | Geology | Earth science, minerals |
-
-## Project Structure
-
-```
-lucidia_core/
-├── engines/        # Reasoning engines
-│   ├── physicist.py
-│   ├── mathematician.py
-│   ├── chemist.py
-│   └── geologist.py
-├── api.py          # FastAPI server
-├── cli.py          # Command line interface
-└── models/         # Pydantic models
-```
-
-## API Endpoints
-
-```
-GET  /health           # Health check
-POST /reason           # Submit reasoning task
-POST /solve            # Solve problem
-GET  /engines          # List available engines
-```
-
-## Environment Variables
-
-```env
-LUCIDIA_PORT=8000      # API port
-LUCIDIA_DEBUG=false    # Debug mode
-LUCIDIA_LOG_LEVEL=INFO # Logging level
-```
-
-## Related Repos
-
-- `blackroad-agents` - Agent orchestration
-- `blackroad-os-core` - Core platform
-- `lucidia-math` - Extended math library
+- [lucidia-core](https://github.com/BlackRoad-OS/lucidia-core) — Core reasoning engine
+- [lucidia-math](https://github.com/BlackRoad-OS/lucidia-math) — Mathematical operations
+- [BlackRoad OS](https://github.com/BlackRoad-OS/blackroad)

@@ -1,114 +1,37 @@
-# BlackRoad CLI
+# Blackroad Cli
 
-> Command-line interface for BlackRoad OS
+> BlackRoad OS — Blackroad Cli
 
 ## Quick Reference
 
 | Property | Value |
 |----------|-------|
-| **Runtime** | Node.js 18+ |
-| **Binary** | `br` / `blackroad` |
-| **Package** | @blackroad/cli |
-| **Type** | CLI Tool |
+| **Repo** | blackroad-cli |
+| **Org** | BlackRoad-OS |
+| **Stack** | Python |
 
-## Installation
+## Overview
 
-```bash
-# Global install
-npm install -g @blackroad/cli
-
-# Or run directly
-npx @blackroad/cli
-
-# Development
-npm install
-npm link
-```
+Blackroad Cli is part of the BlackRoad OS ecosystem.
 
 ## Commands
 
 ```bash
-br --help           # Show all commands
-br status           # System status
-br agents           # List agents
-br agents:wake      # Wake an agent
-br deploy           # Deploy to cloud
-br mesh             # Check infrastructure mesh
-br memory           # Memory operations
+# Setup
+cd blackroad-cli
+
+# Node.js
+npm install && npm run dev
+
+# Python
+pip install -e . && python main.py
+
+# Cloudflare Worker
+wrangler deploy
 ```
 
-## Project Structure
+## Related
 
-```
-bin/
-└── br.js           # Main entry point
-
-src/
-├── commands/       # CLI commands
-├── utils/          # Helpers
-├── config/         # Configuration
-└── api/            # API client
-
-lib/
-└── ...             # Compiled output
-```
-
-## Development
-
-```bash
-npm run dev         # Watch mode
-npm run build       # Build
-npm run test        # Run tests
-npm run lint        # Lint check
-```
-
-## Command Development
-
-Adding a new command:
-
-```javascript
-// src/commands/mycommand.js
-export default {
-  name: 'mycommand',
-  description: 'Does something cool',
-  options: [
-    { flag: '-v, --verbose', description: 'Verbose output' }
-  ],
-  action: async (options) => {
-    // Command logic
-  }
-}
-```
-
-## Configuration
-
-Config file: `~/.blackroadrc` or `~/.config/blackroad/config.json`
-
-```json
-{
-  "apiUrl": "https://api.blackroad.io",
-  "defaultOrg": "blackboxprogramming",
-  "theme": "dark"
-}
-```
-
-## Environment Variables
-
-```env
-BLACKROAD_API_KEY=     # API authentication
-BLACKROAD_ORG=         # Default organization
-BLACKROAD_DEBUG=1      # Enable debug logging
-```
-
-## Publishing
-
-```bash
-npm version patch
-npm publish --access public
-```
-
-## Related Repos
-
-- `blackroad-os-web` - Web interface
-- `blackroad-os-core` - Core engine
-- `blackroad-os-docs` - Documentation
+- [BlackRoad OS](https://github.com/BlackRoad-OS/blackroad)
+- [Documentation](https://docs.blackroad.io)
+- [CLAUDE.md (root)](https://github.com/BlackRoad-OS/blackroad/blob/main/CLAUDE.md)
