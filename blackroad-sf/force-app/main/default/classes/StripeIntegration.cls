@@ -37,9 +37,14 @@ public class StripeIntegration {
     }
     
     private static String getStripeKey() {
-        // TODO: Replace with Named Credential or Custom Setting
-        // Setup: Setup → Custom Settings → BlackRoad Config → Add STRIPE_SECRET_KEY
+        // Uses BlackRoad_Config__c custom setting for the Stripe key.
+        // Setup: Setup → Custom Settings → BlackRoad Config → Stripe_Secret_Key__c
         BlackRoad_Config__c config = BlackRoad_Config__c.getInstance();
-        return config?.Stripe_Secret_Key__c ?? 'sk_test_REPLACE_ME';
+        if (config == null || String.isBlank(config.Stripe_Secret_Key__c)) {
+            throw new AuraHandledException(
+                'Stripe API key not configured. Go to Setup → Custom Settings → BlackRoad Config and set Stripe_Secret_Key__c.'
+            );
+        }
+        return config.Stripe_Secret_Key__c;
     }
 }
