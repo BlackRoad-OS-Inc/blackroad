@@ -8,6 +8,7 @@ import { configCommand } from './config.js'
 import { gatewayCommand } from './gateway.js'
 import { invokeCommand } from './invoke.js'
 import { initCommand } from './init.js'
+import { stripeCommand } from './stripe.js'
 
 export const program = new Command()
   .name('br')
@@ -22,3 +23,4 @@ program.addCommand(configCommand)
 program.addCommand(gatewayCommand)
 program.addCommand(invokeCommand)
 program.addCommand(initCommand)
+program.addCommand(stripeCommand)

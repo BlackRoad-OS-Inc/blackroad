@@ -343,28 +343,35 @@ def generate_stripe_payment_page_html():
     </div>
 
     <script>
-        // Initialize Stripe
-        const stripe = Stripe('pk_live_YOUR_PUBLISHABLE_KEY_HERE');
+        // Checkout via pay.blackroad.io payment gateway
+        const PAY_GATEWAY = 'https://pay.blackroad.io';
 
-        // Stripe checkout URLs (replace with your actual Stripe product links)
-        const checkoutUrls = {
-            'one_time_10': 'https://buy.stripe.com/YOUR_LINK',
-            'one_time_50': 'https://buy.stripe.com/YOUR_LINK',
-            'one_time_500': 'https://buy.stripe.com/YOUR_LINK',
-            'monthly_5': 'https://buy.stripe.com/YOUR_LINK',
-            'monthly_25': 'https://buy.stripe.com/YOUR_LINK',
-            'monthly_100': 'https://buy.stripe.com/YOUR_LINK',
-            'license_startup': 'https://buy.stripe.com/YOUR_LINK',
-            'license_business': 'https://buy.stripe.com/YOUR_LINK',
-            'license_enterprise': 'mailto:blackroad.systems@gmail.com?subject=Enterprise%20License%20Inquiry'
+        const tierMap = {
+            'monthly_5': { tier: 'pro', interval: 'month' },
+            'monthly_25': { tier: 'pro', interval: 'month' },
+            'monthly_100': { tier: 'enterprise', interval: 'month' },
+            'license_startup': { tier: 'pro', interval: 'year' },
+            'license_business': { tier: 'enterprise', interval: 'year' },
+            'license_enterprise': null, // contact sales
         };
 
-        function checkout(priceId) {
-            const url = checkoutUrls[priceId];
-            if (url.startsWith('mailto:')) {
-                window.location.href = url;
-            } else {
-                window.location.href = url;
+        async function checkout(priceId) {
+            const mapping = tierMap[priceId];
+            if (!mapping) {
+                window.location.href = 'mailto:blackroad.systems@gmail.com?subject=Enterprise%20License%20Inquiry';
+                return;
+            }
+            try {
+                const res = await fetch(PAY_GATEWAY + '/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mapping),
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+                else alert(data.error || 'Checkout failed');
+            } catch (e) {
+                alert('Network error. Try again.');
             }
         }
     </script>

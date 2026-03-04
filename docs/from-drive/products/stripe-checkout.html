@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BlackRoad Stripe Checkout</title>
-    <script src="https://js.stripe.com/v3/"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -117,12 +116,19 @@
         <button class="checkout-btn" onclick="checkout()">Subscribe Now</button>
     </div>
     <script>
-        const stripe = Stripe('pk_test_YOUR_KEY_HERE'); // Replace with actual key
-        
-        function checkout() {
-            // This would call your backend to create a checkout session
-            console.log('Stripe checkout initiated');
-            alert('Stripe integration ready! Add your publishable key.');
+        async function checkout() {
+            try {
+                const res = await fetch('https://pay.blackroad.io/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tier: 'pro', interval: 'month' }),
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+                else alert(data.error || 'Checkout failed');
+            } catch (e) {
+                alert('Network error. Try again.');
+            }
         }
     </script>
 </body>
