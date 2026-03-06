@@ -7,17 +7,30 @@ on:
     branches: [ main, master ]
 
 jobs:
-  guard:
-    runs-on: [self-hosted, blackroad-fleet]
-    steps:
-      - name: Guardrail
-        run: echo "CORE repo guardrail active"
-
-  lint:
+  build-and-test:
+    name: Build, Lint & Test
     runs-on: [self-hosted, blackroad-fleet]
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: false
-      - name: Lint placeholder
-        run: echo "Add lint/test here"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint (Prettier)
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test

@@ -2,7 +2,7 @@ name: Pi Fleet Services Check
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -15,7 +15,21 @@ jobs:
       lucidia-pi-ok: ${{ steps.lucidia-pi.outputs.ok }}
       any-down: ${{ steps.evaluate.outputs.any_down }}
     steps:
+      - name: Verify network access
+        id: network-check
+        continue-on-error: true
+        run: |
+          if ping -c 1 -W 5 192.168.4.64 >/dev/null 2>&1; then
+            echo "reachable=true" >> $GITHUB_OUTPUT
+          else
+            echo "reachable=false" >> $GITHUB_OUTPUT
+            echo "::warning::Pi fleet network (192.168.4.x) is not reachable from this runner. Skipping checks."
+            echo "## Pi Fleet Check Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "The Pi fleet LAN (192.168.4.x) is not reachable from this GitHub Actions runner." >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Setup SSH key
+        if: steps.network-check.outputs.reachable == 'true'
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.PI_SSH_KEY }}" > ~/.ssh/pi_key
@@ -46,6 +60,7 @@ jobs:
       # ── blackroad-pi (192.168.4.64) ────────────────────────────────────────
       - name: Check blackroad-pi
         id: blackroad-pi
+        if: steps.network-check.outputs.reachable == 'true'
         continue-on-error: true
         run: |
           set +e
@@ -80,6 +95,7 @@ jobs:
       # ── aria64 (192.168.4.38) ──────────────────────────────────────────────
       - name: Check aria64
         id: aria64
+        if: steps.network-check.outputs.reachable == 'true'
         continue-on-error: true
         run: |
           set +e
@@ -114,6 +130,7 @@ jobs:
       # ── lucidia-pi (192.168.4.99) — also checks ollama ────────────────────
       - name: Check lucidia-pi
         id: lucidia-pi
+        if: steps.network-check.outputs.reachable == 'true'
         continue-on-error: true
         run: |
           set +e
@@ -153,6 +170,7 @@ jobs:
 
       - name: Evaluate fleet status
         id: evaluate
+        if: steps.network-check.outputs.reachable == 'true'
         run: |
           BP="${{ steps.blackroad-pi.outputs.ok }}"
           AR="${{ steps.aria64.outputs.ok }}"
@@ -171,7 +189,7 @@ jobs:
     name: "Open Pi Fleet Alert Issue"
     runs-on: [self-hosted, blackroad-fleet]
     needs: check-pis
-    if: needs.check-pis.outputs.any-down == 'true'
+    if: needs.check-pis.outputs.any-down == 'true' && needs.check-pis.result == 'success'
     steps:
       - name: Create alert issue
         uses: actions/github-script@v8
