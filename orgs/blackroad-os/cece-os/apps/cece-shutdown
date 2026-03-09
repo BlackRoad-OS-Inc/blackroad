@@ -1,0 +1,15 @@
+#!/bin/bash
+# CECE-SHUTDOWN v1.0 - Power Controls
+shutdown() { sudo shutdown -h now; }
+reboot() { sudo reboot; }
+sleep_mode() { sudo systemctl suspend 2>/dev/null || pmset sleepnow 2>/dev/null; }
+schedule() { sudo shutdown -h +"$1" && echo "Shutdown in $1 minutes"; }
+cancel() { sudo shutdown -c && echo "Shutdown cancelled"; }
+case "$1" in
+    now) shutdown ;;
+    reboot) reboot ;;
+    sleep) sleep_mode ;;
+    schedule) schedule "$2" ;;
+    cancel) cancel ;;
+    *) echo "CECE-SHUTDOWN: now | reboot | sleep | schedule <mins> | cancel" ;;
+esac

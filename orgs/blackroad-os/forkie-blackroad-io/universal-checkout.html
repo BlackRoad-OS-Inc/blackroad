@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Checkout Widget - BlackRoad OS</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff00;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .card h2 {
+            color: var(--accent-purple);
+            margin-bottom: 1.5rem;
+        }
+
+        .widget-demo {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .code-block {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--success);
+        }
+
+        .copy-btn {
+            padding: 0.5rem 1rem;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .copy-btn:hover {
+            background: #8800ff;
+        }
+
+        /* Universal Checkout Widget Styles */
+        .universal-checkout {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+        }
+
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .checkout-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .checkout-subtitle {
+            color: var(--text-muted);
+        }
+
+        .price-display {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .price-amount {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .price-period {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .features-list {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .features-list li {
+            padding: 0.75rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .features-list li:before {
+            content: "✓";
+            color: var(--success);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        #payment-element {
+            margin-bottom: 1.5rem;
+        }
+
+        .checkout-button {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .checkout-button:hover {
+            background: #8800ff;
+            transform: scale(1.02);
+        }
+
+        .checkout-button:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            color: #ff0000;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .success-message {
+            color: var(--success);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .plan-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .plan-option {
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .plan-option:hover {
+            border-color: var(--accent-purple);
+        }
+
+        .plan-option.selected {
+            border-color: var(--accent-purple);
+            background: rgba(119, 0, 255, 0.1);
+        }
+
+        .plan-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price {
+            font-size: 1.5rem;
+            color: var(--accent-purple);
+            margin-bottom: 0.25rem;
+        }
+
+        .embed-code {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .embed-code h3 {
+            color: var(--accent-purple);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Universal Checkout Widget</h1>
+            <p style="color: var(--text-muted); font-size: 1.1rem;">Embed Stripe checkout anywhere with one line of code</p>
+        </div>
+
+        <div class="grid">
+            <!-- Live Demo -->
+            <div class="card">
+                <h2>💳 Live Demo</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Try the checkout widget below:</p>
+
+                <div class="universal-checkout">
+                    <div class="checkout-header">
+                        <div class="checkout-title">Choose Your Plan</div>
+                        <div class="checkout-subtitle">Start building with BlackRoad OS</div>
+                    </div>
+
+                    <div class="plan-selector">
+                        <div class="plan-option" onclick="selectPlan('free', 0)">
+                            <div class="plan-name">Free</div>
+                            <div class="plan-price">$0</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">/mo</div>
+                        </div>
+                        <div class="plan-option selected" onclick="selectPlan('pro', 4900)">
+                            <div class="plan-name">Pro</div>
+                            <div class="plan-price">$49</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">/mo</div>
+                        </div>
+                        <div class="plan-option" onclick="selectPlan('enterprise', 49900)">
+                            <div class="plan-name">Enterprise</div>
+                            <div class="plan-price">$499</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">/mo</div>
+                        </div>
+                    </div>
+
+                    <ul class="features-list" id="featuresList">
+                        <li>Unlimited API requests</li>
+                        <li>Advanced analytics</li>
+                        <li>Priority support</li>
+                        <li>Custom integrations</li>
+                    </ul>
+
+                    <form id="checkout-form">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" placeholder="you@example.com" id="email" required>
+                        </div>
+
+                        <div id="payment-element"></div>
+                        <div id="error-message" class="error-message"></div>
+
+                        <button type="submit" class="checkout-button" id="submit-button">
+                            Subscribe Now
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Embed Code -->
+            <div class="card">
+                <h2>📋 Embed Code</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Copy this code to embed the checkout widget on any site:</p>
+
+                <div class="code-block">
+                    <pre id="embedCode">&lt;!-- BlackRoad Universal Checkout Widget --&gt;
+&lt;div id="blackroad-checkout"&gt;&lt;/div&gt;
+&lt;script src="https://forkie.blackroad.io/widget.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+BlackRoadCheckout.init({
+  targetElement: '#blackroad-checkout',
+  stripeKey: 'YOUR_STRIPE_PUBLISHABLE_KEY',
+  plans: [
+    { id: 'free', name: 'Free', price: 0 },
+    { id: 'pro', name: 'Pro', price: 49 },
+    { id: 'enterprise', name: 'Enterprise', price: 499 }
+  ],
+  features: [
+    'Unlimited API requests',
+    'Advanced analytics',
+    'Priority support',
+    'Custom integrations'
+  ],
+  onSuccess: (subscription) => {
+    console.log('Subscription created:', subscription);
+    window.location.href = '/success';
+  }
+});
+&lt;/script&gt;</pre>
+                </div>
+                <button class="copy-btn" onclick="copyEmbedCode()">Copy Code</button>
+
+                <div style="margin-top: 2rem;">
+                    <h3 style="color: var(--accent-purple); margin-bottom: 1rem;">Quick Setup</h3>
+                    <ol style="color: var(--text-muted); line-height: 1.8; margin-left: 1.5rem;">
+                        <li>Copy the embed code above</li>
+                        <li>Replace YOUR_STRIPE_PUBLISHABLE_KEY with your Stripe key</li>
+                        <li>Customize plans and features</li>
+                        <li>Paste into your HTML</li>
+                        <li>Done! Checkout is live</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Widget.js Source -->
+        <div class="card">
+            <h2>⚙️ Widget.js Source Code</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">This is the complete source for the universal checkout widget:</p>
+
+            <div class="code-block">
+                <pre>// blackroad-universal-checkout.js
+const BlackRoadCheckout = {
+  stripe: null,
+  elements: null,
+  paymentElement: null,
+  config: {},
+
+  init: function(config) {
+    this.config = {
+      targetElement: '#blackroad-checkout',
+      stripeKey: '',
+      plans: [],
+      features: [],
+      onSuccess: () => {},
+      onError: () => {},
+      ...config
+    };
+
+    // Load Stripe.js
+    if (!window.Stripe) {
+      const script = document.createElement('script');
+      script.src = 'https://js.stripe.com/v3/';
+      script.onload = () => this.render();
+      document.head.appendChild(script);
+    } else {
+      this.render();
+    }
+  },
+
+  render: function() {
+    this.stripe = Stripe(this.config.stripeKey);
+
+    const container = document.querySelector(this.config.targetElement);
+    if (!container) return;
+
+    // Build checkout UI
+    container.innerHTML = this.getCheckoutHTML();
+
+    // Initialize Stripe Elements
+    this.initializeStripeElements();
+
+    // Attach event listeners
+    this.attachEventListeners();
+  },
+
+  getCheckoutHTML: function() {
+    return `
+      &lt;div class="universal-checkout"&gt;
+        &lt;div class="checkout-header"&gt;
+          &lt;div class="checkout-title"&gt;Choose Your Plan&lt;/div&gt;
+          &lt;div class="checkout-subtitle"&gt;Start building with BlackRoad OS&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="plan-selector" id="plan-selector"&gt;
+          ${this.config.plans.map((plan, i) => `
+            &lt;div class="plan-option ${i === 1 ? 'selected' : ''}" data-plan="${plan.id}" data-price="${plan.price}"&gt;
+              &lt;div class="plan-name"&gt;${plan.name}&lt;/div&gt;
+              &lt;div class="plan-price"&gt;$${plan.price}&lt;/div&gt;
+              &lt;div&gt;/mo&lt;/div&gt;
+            &lt;/div&gt;
+          `).join('')}
+        &lt;/div&gt;
+        &lt;ul class="features-list"&gt;
+          ${this.config.features.map(f => `&lt;li&gt;${f}&lt;/li&gt;`).join('')}
+        &lt;/ul&gt;
+        &lt;form id="checkout-form"&gt;
+          &lt;div class="form-group"&gt;
+            &lt;label class="form-label"&gt;Email&lt;/label&gt;
+            &lt;input type="email" class="form-input" id="email" required&gt;
+          &lt;/div&gt;
+          &lt;div id="payment-element"&gt;&lt;/div&gt;
+          &lt;div id="error-message" class="error-message"&gt;&lt;/div&gt;
+          &lt;button type="submit" class="checkout-button"&gt;Subscribe Now&lt;/button&gt;
+        &lt;/form&gt;
+      &lt;/div&gt;
+    `;
+  },
+
+  initializeStripeElements: function() {
+    const options = {
+      mode: 'subscription',
+      amount: 4900,
+      currency: 'usd',
+      appearance: {
+        theme: 'night',
+        variables: {
+          colorPrimary: '#7700FF',
+          colorBackground: '#1a1a1a',
+          colorText: '#ffffff',
+          colorDanger: '#ff0000'
+        }
+      }
+    };
+
+    this.elements = this.stripe.elements(options);
+    this.paymentElement = this.elements.create('payment');
+    this.paymentElement.mount('#payment-element');
+  },
+
+  attachEventListeners: function() {
+    const form = document.getElementById('checkout-form');
+    form.addEventListener('submit', (e) => this.handleSubmit(e));
+
+    document.querySelectorAll('.plan-option').forEach(option => {
+      option.addEventListener('click', (e) => this.selectPlan(e.currentTarget));
+    });
+  },
+
+  selectPlan: function(element) {
+    document.querySelectorAll('.plan-option').forEach(opt => {
+      opt.classList.remove('selected');
+    });
+    element.classList.add('selected');
+  },
+
+  handleSubmit: async function(event) {
+    event.preventDefault();
+
+    const submitButton = document.getElementById('submit-button');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Processing...';
+
+    const {error} = await this.stripe.confirmPayment({
+      elements: this.elements,
+      confirmParams: {
+        return_url: window.location.origin + '/success',
+      }
+    });
+
+    if (error) {
+      document.getElementById('error-message').textContent = error.message;
+      submitButton.disabled = false;
+      submitButton.textContent = 'Subscribe Now';
+      this.config.onError(error);
+    }
+  }
+};
+
+// Auto-initialize if data attributes present
+document.addEventListener('DOMContentLoaded', () => {
+  const widget = document.querySelector('[data-blackroad-checkout]');
+  if (widget) {
+    BlackRoadCheckout.init({
+      targetElement: widget,
+      stripeKey: widget.dataset.stripeKey,
+      plans: JSON.parse(widget.dataset.plans || '[]'),
+      features: JSON.parse(widget.dataset.features || '[]')
+    });
+  }
+});</pre>
+            </div>
+            <button class="copy-btn" onclick="copyWidgetCode()">Copy Widget Code</button>
+        </div>
+
+        <!-- Deployment Instructions -->
+        <div class="card">
+            <h2>🚀 Deploy Everywhere</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">Deploy the universal checkout to all BlackRoad sites:</p>
+
+            <div class="code-block">
+                <pre># Deploy widget.js to CDN
+wrangler pages deploy widget.js --project-name=forkie-blackroad-io
+
+# Add to all sites
+sites=(
+  "blackroad.io"
+  "dashboard.blackroad.io"
+  "store.blackroad.io"
+  "pricing.blackroad.io"
+)
+
+for site in "${sites[@]}"; do
+  echo "Adding checkout to $site..."
+  # Add widget script to site
+done</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stripe, elements, paymentElement;
+        let selectedPlan = 'pro';
+        let selectedPrice = 4900;
+
+        // Initialize Stripe
+        if (window.Stripe) {
+            stripe = Stripe('pk_test_51QYourTestKeyHere');
+            initializeStripeElements();
+        }
+
+        function initializeStripeElements() {
+            const options = {
+                mode: 'subscription',
+                amount: selectedPrice,
+                currency: 'usd',
+                appearance: {
+                    theme: 'night',
+                    variables: {
+                        colorPrimary: '#7700FF',
+                        colorBackground: '#1a1a1a',
+                        colorText: '#ffffff',
+                        colorDanger: '#ff0000',
+                        borderRadius: '8px'
+                    }
+                }
+            };
+
+            elements = stripe.elements(options);
+            paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+        }
+
+        function selectPlan(plan, price) {
+            selectedPlan = plan;
+            selectedPrice = price;
+
+            document.querySelectorAll('.plan-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            // Update features based on plan
+            const features = {
+                free: ['Basic API access', 'Community support', 'Public repos only'],
+                pro: ['Unlimited API requests', 'Advanced analytics', 'Priority support', 'Custom integrations'],
+                enterprise: ['Everything in Pro', 'Dedicated support', 'SLA guarantee', 'Custom contracts', 'On-premise option']
+            };
+
+            const featuresList = document.getElementById('featuresList');
+            featuresList.innerHTML = features[plan].map(f => `<li>${f}</li>`).join('');
+
+            // Recreate elements with new price
+            if (elements) {
+                paymentElement.unmount();
+                initializeStripeElements();
+            }
+        }
+
+        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitButton = document.getElementById('submit-button');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+
+            const {error} = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                    return_url: window.location.origin + '/success',
+                    receipt_email: document.getElementById('email').value
+                }
+            });
+
+            if (error) {
+                document.getElementById('error-message').textContent = error.message;
+                submitButton.disabled = false;
+                submitButton.textContent = 'Subscribe Now';
+            }
+        });
+
+        function copyEmbedCode() {
+            const code = document.getElementById('embedCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                event.target.textContent = 'Copied!';
+                setTimeout(() => {
+                    event.target.textContent = 'Copy Code';
+                }, 2000);
+            });
+        }
+
+        function copyWidgetCode() {
+            const code = event.target.previousElementSibling.querySelector('pre').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                event.target.textContent = 'Copied!';
+                setTimeout(() => {
+                    event.target.textContent = 'Copy Widget Code';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

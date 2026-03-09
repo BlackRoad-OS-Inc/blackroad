@@ -1,0 +1,25 @@
+name = "blackroad-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Cloudflare Workers configuration
+workers_dev = true
+route = { pattern = "api.blackroad.io/*", zone_name = "blackroad.io" }
+
+# KV Namespace binding
+[[kv_namespaces]]
+binding = "BLACKROAD_KV"
+id = "your-kv-namespace-id"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "BLACKROAD_D1"
+database_name = "blackroad-memory"
+database_id = "your-d1-database-id"
+
+# Environment variables
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+vars = { ENVIRONMENT = "staging" }

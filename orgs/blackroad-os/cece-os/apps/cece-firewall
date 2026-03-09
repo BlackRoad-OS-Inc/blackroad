@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-FIREWALL v1.0 - Firewall Helper
+status() { sudo ufw status 2>/dev/null || sudo iptables -L 2>/dev/null | head -20; }
+allow() { sudo ufw allow "$1" 2>/dev/null && echo "Allowed: $1"; }
+deny() { sudo ufw deny "$1" 2>/dev/null && echo "Denied: $1"; }
+case "$1" in
+    status) status ;;
+    allow) allow "$2" ;;
+    deny) deny "$2" ;;
+    *) echo "CECE-FIREWALL: status | allow <port> | deny <port>" ;;
+esac

@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-XML v1.0 - XML Tools
+format() { xmllint --format "$1" 2>/dev/null || cat "$1"; }
+validate() { xmllint --noout "$1" 2>&1 && echo "✅ Valid XML" || echo "❌ Invalid XML"; }
+xpath() { xmllint --xpath "$2" "$1" 2>/dev/null; }
+case "$1" in
+    format) format "$2" ;;
+    validate) validate "$2" ;;
+    xpath) xpath "$2" "$3" ;;
+    *) echo "CECE-XML: format <file> | validate <file> | xpath <file> <expr>" ;;
+esac

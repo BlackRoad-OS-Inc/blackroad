@@ -1,0 +1,20 @@
+#!/bin/bash
+# CECE-CONTACT v1.0 - Contact Manager
+CONTACT_FILE=~/cece/contacts.jsonl
+add() {
+    NAME="$1"
+    EMAIL="$2"
+    PHONE="$3"
+    echo "{\"name\":\"$NAME\",\"email\":\"$EMAIL\",\"phone\":\"$PHONE\"}" >> "$CONTACT_FILE"
+    echo "Added: $NAME"
+}
+search() {
+    grep -i "$1" "$CONTACT_FILE" 2>/dev/null || echo "No matches"
+}
+list() { cat "$CONTACT_FILE" 2>/dev/null | head -20; }
+case "$1" in
+    add) add "$2" "$3" "$4" ;;
+    search) search "$2" ;;
+    list) list ;;
+    *) echo "CECE-CONTACT: add <name> <email> <phone> | search <query> | list" ;;
+esac

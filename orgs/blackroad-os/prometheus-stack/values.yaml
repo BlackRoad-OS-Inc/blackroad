@@ -1,0 +1,22 @@
+prometheus:
+  prometheusSpec:
+    retention: 30d
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    
+alertmanager:
+  config:
+    global:
+      slack_api_url: '${SLACK_WEBHOOK_URL}'
+    route:
+      receiver: 'blackroad-slack'
+      group_by: ['alertname', 'severity']
+    receivers:
+    - name: 'blackroad-slack'
+      slack_configs:
+      - channel: '#alerts'
+        send_resolved: true
+
+grafana:
+  enabled: true
+  adminPassword: ${GRAFANA_ADMIN_PASSWORD}

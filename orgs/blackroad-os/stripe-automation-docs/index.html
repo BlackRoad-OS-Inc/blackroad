@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Payment Automation - BlackRoad OS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff00;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+        }
+
+        .section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section h2 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-purple);
+        }
+
+        .section h3 {
+            font-size: 1.25rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--accent-blue);
+        }
+
+        .section p {
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        .code-block {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-label {
+            color: var(--accent-purple);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            padding: 0.25rem 0.75rem;
+            background: rgba(119, 0, 255, 0.2);
+            border: 1px solid var(--accent-purple);
+            border-radius: 4px;
+            color: var(--accent-purple);
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-purple);
+            color: #fff;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .feature-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .feature-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--accent-orange);
+        }
+
+        .feature-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-card li {
+            padding: 0.5rem 0;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-card li:before {
+            content: "✓";
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .workflow {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .workflow-step {
+            flex: 1;
+            min-width: 200px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .workflow-step .number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            color: #fff;
+            font-weight: bold;
+            line-height: 30px;
+            margin-bottom: 0.5rem;
+        }
+
+        .workflow-arrow {
+            font-size: 1.5rem;
+            color: var(--accent-purple);
+        }
+
+        .alert {
+            background: rgba(255, 157, 0, 0.1);
+            border-left: 4px solid var(--accent-orange);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .alert strong {
+            color: var(--accent-orange);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border);
+            color: var(--accent-purple);
+            font-size: 0.9rem;
+        }
+
+        table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge.required {
+            background: rgba(255, 0, 102, 0.2);
+            color: var(--accent-pink);
+        }
+
+        .badge.optional {
+            background: rgba(136, 136, 136, 0.2);
+            color: var(--text-muted);
+        }
+
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💳 Stripe Payment Automation</h1>
+            <p>Complete guide to implementing automated payment processing with Stripe</p>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2>📋 Overview</h2>
+            <p>This comprehensive guide covers everything you need to implement fully automated payment processing using Stripe across the BlackRoad ecosystem.</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🎯 What's Included</h4>
+                    <ul>
+                        <li>Subscription management</li>
+                        <li>One-time payments</li>
+                        <li>Webhook automation</li>
+                        <li>Customer portal</li>
+                        <li>Usage-based billing</li>
+                        <li>Invoice automation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>⚡ Key Features</h4>
+                    <ul>
+                        <li>Zero manual intervention</li>
+                        <li>Real-time updates</li>
+                        <li>Automatic provisioning</li>
+                        <li>Failed payment recovery</li>
+                        <li>Tax calculation</li>
+                        <li>Multi-currency support</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>🛠️ Tech Stack</h4>
+                    <ul>
+                        <li>Stripe.js v3</li>
+                        <li>Payment Elements</li>
+                        <li>Cloudflare Workers</li>
+                        <li>Stripe CLI</li>
+                        <li>Webhooks</li>
+                        <li>Customer Portal</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Setup -->
+        <div class="section">
+            <h2>🚀 Quick Setup</h2>
+
+            <h3>1. Install Stripe CLI</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-label">Terminal</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre># macOS
+brew install stripe/stripe-cli/stripe
+
+# Login to Stripe
+stripe login
+
+# Test webhook forwarding
+stripe listen --forward-to localhost:3000/webhook</pre>
+            </div>
+
+            <h3>2. Environment Variables</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-label">.env</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre># Stripe Keys
+STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
+STRIPE_SECRET_KEY=sk_test_your_secret_here
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+
+# Product IDs
+STRIPE_PRICE_FREE=price_free
+STRIPE_PRICE_PRO=price_1234567890
+STRIPE_PRICE_ENTERPRISE=price_0987654321
+
+# Configuration
+STRIPE_SUCCESS_URL=https://dashboard.blackroad.io/success
+STRIPE_CANCEL_URL=https://signup.blackroad.io</pre>
+            </div>
+
+            <h3>3. Frontend Integration</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-label">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre>&lt;script src="https://js.stripe.com/v3/"&gt;&lt;/script&gt;
+&lt;div id="payment-element"&gt;&lt;/div&gt;
+
+&lt;script&gt;
+const stripe = Stripe('pk_test_your_publishable_key');
+
+// Create Payment Element
+const elements = stripe.elements({
+    mode: 'subscription',
+    amount: 4900,
+    currency: 'usd',
+    appearance: { theme: 'night' }
+});
+
+const paymentElement = elements.create('payment');
+paymentElement.mount('#payment-element');
+
+// Handle submission
+async function handleSubmit(event) {
+    event.preventDefault();
+
+    const {error} = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+            return_url: 'https://dashboard.blackroad.io/success',
+        }
+    });
+
+    if (error) {
+        console.error(error.message);
+    }
+}
+&lt;/script&gt;</pre>
+            </div>
+        </div>
+
+        <!-- Payment Flow -->
+        <div class="section">
+            <h2>🔄 Automated Payment Flow</h2>
+
+            <div class="workflow">
+                <div class="workflow-step">
+                    <div class="number">1</div>
+                    <strong>User Signs Up</strong>
+                    <p>Enters details on signup.blackroad.io</p>
+                </div>
+                <span class="workflow-arrow">→</span>
+                <div class="workflow-step">
+                    <div class="number">2</div>
+                    <strong>Create Customer</strong>
+                    <p>Stripe Customer object created</p>
+                </div>
+                <span class="workflow-arrow">→</span>
+                <div class="workflow-step">
+                    <div class="number">3</div>
+                    <strong>Payment Method</strong>
+                    <p>Card attached to customer</p>
+                </div>
+                <span class="workflow-arrow">→</span>
+                <div class="workflow-step">
+                    <div class="number">4</div>
+                    <strong>Subscription</strong>
+                    <p>Subscription created & activated</p>
+                </div>
+                <span class="workflow-arrow">→</span>
+                <div class="workflow-step">
+                    <div class="number">5</div>
+                    <strong>Webhook</strong>
+                    <p>Account provisioned automatically</p>
+                </div>
+            </div>
+
+            <h3>Backend Implementation (Cloudflare Worker)</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-label">worker.js</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre>import Stripe from 'stripe';
+
+export default {
+  async fetch(request, env) {
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+
+    // Create Checkout Session
+    if (request.method === 'POST' && request.url.includes('/create-checkout-session')) {
+      const { priceId, customerEmail } = await request.json();
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        line_items: [{ price: priceId, quantity: 1 }],
+        customer_email: customerEmail,
+        success_url: env.STRIPE_SUCCESS_URL,
+        cancel_url: env.STRIPE_CANCEL_URL,
+        automatic_tax: { enabled: true },
+        billing_address_collection: 'auto',
+      });
+
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Handle Webhooks
+    if (request.method === 'POST' && request.url.includes('/webhook')) {
+      const signature = request.headers.get('stripe-signature');
+      const body = await request.text();
+
+      try {
+        const event = stripe.webhooks.constructEvent(
+          body,
+          signature,
+          env.STRIPE_WEBHOOK_SECRET
+        );
+
+        // Handle different event types
+        switch (event.type) {
+          case 'checkout.session.completed':
+            await handleCheckoutComplete(event.data.object, env);
+            break;
+          case 'customer.subscription.created':
+            await activateSubscription(event.data.object, env);
+            break;
+          case 'customer.subscription.deleted':
+            await deactivateSubscription(event.data.object, env);
+            break;
+          case 'invoice.payment_failed':
+            await handlePaymentFailure(event.data.object, env);
+            break;
+          case 'invoice.payment_succeeded':
+            await handlePaymentSuccess(event.data.object, env);
+            break;
+        }
+
+        return new Response('Webhook handled', { status: 200 });
+      } catch (err) {
+        return new Response('Webhook Error', { status: 400 });
+      }
+    }
+  }
+};
+
+async function handleCheckoutComplete(session, env) {
+  // Provision user account
+  const customerId = session.customer;
+  const subscriptionId = session.subscription;
+
+  // Store in D1 database
+  await env.DB.prepare(
+    'INSERT INTO users (stripe_customer_id, stripe_subscription_id, email, plan, status) VALUES (?, ?, ?, ?, ?)'
+  ).bind(customerId, subscriptionId, session.customer_email, 'pro', 'active').run();
+
+  // Send welcome email
+  await sendWelcomeEmail(session.customer_email);
+}
+
+async function activateSubscription(subscription, env) {
+  await env.DB.prepare(
+    'UPDATE users SET status = ?, plan = ? WHERE stripe_subscription_id = ?'
+  ).bind('active', subscription.items.data[0].price.id, subscription.id).run();
+}
+
+async function deactivateSubscription(subscription, env) {
+  await env.DB.prepare(
+    'UPDATE users SET status = ? WHERE stripe_subscription_id = ?'
+  ).bind('cancelled', subscription.id).run();
+}
+
+async function handlePaymentFailure(invoice, env) {
+  // Send dunning email
+  const customer = await stripe.customers.retrieve(invoice.customer);
+  await sendPaymentFailedEmail(customer.email, invoice.amount_due);
+}
+
+async function handlePaymentSuccess(invoice, env) {
+  // Update billing history
+  await env.DB.prepare(
+    'INSERT INTO invoices (stripe_invoice_id, customer_id, amount, status) VALUES (?, ?, ?, ?)'
+  ).bind(invoice.id, invoice.customer, invoice.amount_paid, 'paid').run();
+}</pre>
+            </div>
+        </div>
+
+        <!-- Webhook Events -->
+        <div class="section">
+            <h2>🔔 Webhook Events</h2>
+            <p>Configure these webhooks in your Stripe Dashboard to enable full automation:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Action</th>
+                        <th>Priority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>checkout.session.completed</code></td>
+                        <td>Provision new account, send welcome email</td>
+                        <td><span class="badge required">Required</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>customer.subscription.created</code></td>
+                        <td>Activate subscription, grant access</td>
+                        <td><span class="badge required">Required</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>customer.subscription.updated</code></td>
+                        <td>Update plan limits, modify features</td>
+                        <td><span class="badge required">Required</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>customer.subscription.deleted</code></td>
+                        <td>Revoke access, archive data</td>
+                        <td><span class="badge required">Required</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>invoice.payment_succeeded</code></td>
+                        <td>Update billing history, send receipt</td>
+                        <td><span class="badge required">Required</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>invoice.payment_failed</code></td>
+                        <td>Send dunning email, retry payment</td>
+                        <td><span class="badge required">Required</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>customer.created</code></td>
+                        <td>Create user record in database</td>
+                        <td><span class="badge optional">Optional</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>charge.refunded</code></td>
+                        <td>Process refund, notify user</td>
+                        <td><span class="badge optional">Optional</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alert">
+                <strong>⚠️ Important:</strong> Always verify webhook signatures to prevent unauthorized requests. Use <code>stripe.webhooks.constructEvent()</code> to validate signatures.
+            </div>
+        </div>
+
+        <!-- Customer Portal -->
+        <div class="section">
+            <h2>👤 Customer Portal</h2>
+            <p>Enable customers to manage their own subscriptions without admin intervention.</p>
+
+            <h3>Implementation</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-label">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre>// Create Customer Portal Session
+async function openCustomerPortal() {
+  const response = await fetch('/api/create-portal-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customerId: 'cus_xxx' // Get from user session
+    })
+  });
+
+  const { url } = await response.json();
+  window.location.href = url;
+}
+
+// Backend: Create Portal Session
+app.post('/api/create-portal-session', async (req, res) => {
+  const { customerId } = req.body;
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: customerId,
+    return_url: 'https://dashboard.blackroad.io',
+  });
+
+  res.json({ url: session.url });
+});</pre>
+            </div>
+
+            <h3>Customer Portal Features</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>💳 Payment Methods</h4>
+                    <ul>
+                        <li>Update credit card</li>
+                        <li>Add payment methods</li>
+                        <li>Set default payment</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>📊 Subscription</h4>
+                    <ul>
+                        <li>Upgrade/downgrade plan</li>
+                        <li>Cancel subscription</li>
+                        <li>View usage</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>📄 Billing</h4>
+                    <ul>
+                        <li>View invoices</li>
+                        <li>Download receipts</li>
+                        <li>Update billing info</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage-Based Billing -->
+        <div class="section">
+            <h2>📊 Usage-Based Billing</h2>
+            <p>Automatically charge customers based on their actual usage (API calls, compute time, storage, etc.)</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-label">worker.js</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre>// Report usage to Stripe
+async function reportUsage(subscriptionItemId, quantity, timestamp) {
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+
+  await stripe.subscriptionItems.createUsageRecord(
+    subscriptionItemId,
+    {
+      quantity: quantity,
+      timestamp: timestamp,
+      action: 'increment' // or 'set'
+    }
+  );
+}
+
+// Example: Track API requests
+async function handleAPIRequest(request, env) {
+  const userId = getUserFromRequest(request);
+  const user = await getUser(userId, env);
+
+  // Process API request
+  const response = await processRequest(request);
+
+  // Report usage (1 API call)
+  await reportUsage(
+    user.stripe_subscription_item_id,
+    1,
+    Math.floor(Date.now() / 1000)
+  );
+
+  return response;
+}
+
+// Batch reporting for better performance
+async function batchReportUsage(env) {
+  const usage = await env.KV.get('pending-usage', 'json');
+
+  for (const [itemId, quantity] of Object.entries(usage)) {
+    await reportUsage(itemId, quantity, Math.floor(Date.now() / 1000));
+  }
+
+  await env.KV.delete('pending-usage');
+}</pre>
+            </div>
+        </div>
+
+        <!-- Deployment -->
+        <div class="section">
+            <h2>🚀 Deployment</h2>
+
+            <h3>1. Deploy to Cloudflare Workers</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-label">Terminal</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre># Install Wrangler
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Configure secrets
+wrangler secret put STRIPE_SECRET_KEY
+wrangler secret put STRIPE_WEBHOOK_SECRET
+
+# Deploy
+wrangler deploy</pre>
+            </div>
+
+            <h3>2. Configure Stripe Webhooks</h3>
+            <ol style="color: var(--text-muted); margin-left: 2rem;">
+                <li>Go to Stripe Dashboard → Developers → Webhooks</li>
+                <li>Click "Add endpoint"</li>
+                <li>Enter your Worker URL: <code>https://your-worker.workers.dev/webhook</code></li>
+                <li>Select events to listen for</li>
+                <li>Copy webhook signing secret to environment variables</li>
+            </ol>
+
+            <h3>3. Test the Integration</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-label">Terminal</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre># Test with Stripe CLI
+stripe trigger checkout.session.completed
+
+# Monitor webhook events
+stripe listen
+
+# Test a real payment (test mode)
+# Use card: 4242 4242 4242 4242
+# Any future expiry, any CVC</pre>
+            </div>
+        </div>
+
+        <!-- Best Practices -->
+        <div class="section">
+            <h2>✨ Best Practices</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🔒 Security</h4>
+                    <ul>
+                        <li>Always verify webhook signatures</li>
+                        <li>Use environment variables for keys</li>
+                        <li>Never log sensitive data</li>
+                        <li>Implement rate limiting</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>⚡ Performance</h4>
+                    <ul>
+                        <li>Batch usage reporting</li>
+                        <li>Use Stripe.js v3 (not legacy)</li>
+                        <li>Cache product/price data</li>
+                        <li>Implement idempotency keys</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>📊 Monitoring</h4>
+                    <ul>
+                        <li>Track webhook delivery failures</li>
+                        <li>Monitor payment success rates</li>
+                        <li>Alert on failed payments</li>
+                        <li>Log all subscription changes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resources -->
+        <div class="section">
+            <h2>📚 Resources</h2>
+            <ul style="color: var(--text-muted); line-height: 2;">
+                <li><a href="https://stripe.com/docs" target="_blank">Stripe Documentation</a></li>
+                <li><a href="https://stripe.com/docs/api" target="_blank">Stripe API Reference</a></li>
+                <li><a href="https://stripe.com/docs/webhooks" target="_blank">Webhooks Guide</a></li>
+                <li><a href="https://stripe.com/docs/billing" target="_blank">Billing Documentation</a></li>
+                <li><a href="https://stripe.com/docs/testing" target="_blank">Testing Guide</a></li>
+                <li><a href="https://dashboard.stripe.com" target="_blank">Stripe Dashboard</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block');
+            const code = codeBlock.querySelector('pre').textContent;
+
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

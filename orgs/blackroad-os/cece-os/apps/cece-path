@@ -1,0 +1,16 @@
+#!/bin/bash
+# CECE-PATH v1.0 - PATH Manager
+show() { echo "$PATH" | tr ':' '\n' | nl; }
+check() { which "$1" 2>/dev/null || echo "Not found: $1"; }
+add() {
+    DIR="$1"
+    export PATH="$PATH:$DIR"
+    echo "Added: $DIR"
+    echo "export PATH=\"\$PATH:$DIR\"" >> ~/.bashrc
+}
+case "$1" in
+    show) show ;;
+    check) check "$2" ;;
+    add) add "$2" ;;
+    *) echo "CECE-PATH: show | check <cmd> | add <dir>" ;;
+esac

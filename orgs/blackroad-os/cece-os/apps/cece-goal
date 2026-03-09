@@ -1,0 +1,23 @@
+#!/bin/bash
+# CECE-GOAL v1.0 - Goal Tracker
+GOAL_DIR=~/cece/goals
+mkdir -p "$GOAL_DIR"
+add() {
+    GOAL="$1"
+    TARGET="$2"
+    echo "{\"goal\":\"$GOAL\",\"target\":\"$TARGET\",\"progress\":0,\"created\":\"$(date -Iseconds)\"}" >> "$GOAL_DIR/goals.jsonl"
+    echo "Goal added: $GOAL (target: $TARGET)"
+}
+progress() {
+    GOAL="$1"
+    AMOUNT="$2"
+    echo "[$(date -Iseconds)] $GOAL: +$AMOUNT" >> "$GOAL_DIR/progress.log"
+    echo "Progress: +$AMOUNT on $GOAL"
+}
+list() { cat "$GOAL_DIR/goals.jsonl" 2>/dev/null; }
+case "$1" in
+    add) add "$2" "$3" ;;
+    progress) progress "$2" "$3" ;;
+    list) list ;;
+    *) echo "CECE-GOAL: add <goal> <target> | progress <goal> <amount> | list" ;;
+esac

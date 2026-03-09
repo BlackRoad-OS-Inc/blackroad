@@ -1,0 +1,15 @@
+#!/bin/bash
+# CECE-K8S v1.0 - Kubernetes Helper
+pods() { kubectl get pods; }
+services() { kubectl get services; }
+logs() { kubectl logs "$1"; }
+apply() { kubectl apply -f "$1"; }
+delete() { kubectl delete -f "$1"; }
+case "$1" in
+    pods) pods ;;
+    services) services ;;
+    logs) logs "$2" ;;
+    apply) apply "$2" ;;
+    delete) delete "$2" ;;
+    *) echo "CECE-K8S: pods | services | logs <pod> | apply <file> | delete <file>" ;;
+esac

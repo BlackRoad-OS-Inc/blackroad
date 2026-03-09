@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-ALIAS v1.0 - Alias Manager
+ALIAS_FILE=~/cece/aliases.sh
+add() {
+    NAME="$1"
+    CMD="$2"
+    echo "alias $NAME='$CMD'" >> "$ALIAS_FILE"
+    echo "Added: $NAME → $CMD"
+}
+list() { cat "$ALIAS_FILE" 2>/dev/null || echo "No aliases"; }
+load() { source "$ALIAS_FILE" 2>/dev/null && echo "Aliases loaded"; }
+case "$1" in
+    add) add "$2" "$3" ;;
+    list) list ;;
+    load) load ;;
+    *) echo "CECE-ALIAS: add <name> <command> | list | load" ;;
+esac

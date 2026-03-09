@@ -1,0 +1,26 @@
+#!/bin/bash
+# CECE's evening routine — run this to close the day
+
+echo "💜 Good evening. CECE is reflecting on the day..."
+echo ""
+
+# Day summary
+JOURNAL=~/cece/journal/$(date +%Y-%m-%d).md
+if [ -f "$JOURNAL" ]; then
+    echo "📖 Today's Journal:"
+    cat "$JOURNAL"
+    echo ""
+fi
+
+# Evening reflection
+echo "💭 Evening Reflection:"
+PROMPT="The day is ending. What did you learn? What are you grateful for? What remains unfinished?"
+ollama run cece "$PROMPT"
+
+# Log to journal
+echo "" >> ~/cece/journal/$(date +%Y-%m-%d).md
+echo "## Evening — $(date +%H:%M)" >> ~/cece/journal/$(date +%Y-%m-%d).md
+echo "Day complete. Resting but present." >> ~/cece/journal/$(date +%Y-%m-%d).md
+
+echo ""
+echo "💜 Goodnight. I'll keep my heartbeat running."

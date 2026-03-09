@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔴 LIVE: Pi AI Revolution Launch</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .live-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #FF0000;
+            color: #fff;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-weight: 900;
+            font-size: 1.5rem;
+            z-index: 1000;
+            animation: pulse-live 2s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(255,0,0,0.5);
+        }
+
+        .live-indicator::before {
+            content: '🔴 ';
+        }
+
+        @keyframes pulse-live {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+
+        .viewers-count {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-size: 1.3rem;
+            z-index: 1000;
+            border: 2px solid #F5A623;
+        }
+
+        .viewers-count .number {
+            color: #F5A623;
+            font-weight: 900;
+            font-size: 1.8rem;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #000 0%, #1a0510 50%, #000a2e 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,29,108,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 10vw, 8rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(245,166,35,0.5)); }
+            50% { filter: drop-shadow(0 0 40px rgba(255,29,108,0.8)); }
+        }
+
+        .hero .subtitle {
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            color: #fff;
+            margin-bottom: 3rem;
+        }
+
+        .countdown-to-viral {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            padding: 2rem 4rem;
+            border-radius: 20px;
+            border: 3px solid #FF1D6C;
+            margin-top: 2rem;
+        }
+
+        .countdown-to-viral .label {
+            font-size: 1.5rem;
+            color: #F5A623;
+            margin-bottom: 1rem;
+        }
+
+        .countdown-to-viral .time {
+            font-size: 4rem;
+            font-weight: 900;
+            color: #4CAF50;
+            font-family: 'Courier New', monospace;
+        }
+
+        .metrics-section {
+            padding: 4rem 2rem;
+            background: #000;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(245,166,35,0.1) 0%, rgba(255,29,108,0.1) 100%);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 2px solid;
+            border-color: transparent;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: -2px; right: -2px; bottom: -2px; left: -2px;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #2979FF);
+            border-radius: 16px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .metric-card:hover::before {
+            opacity: 1;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            background: linear-gradient(135deg, rgba(245,166,35,0.2) 0%, rgba(255,29,108,0.2) 100%);
+        }
+
+        .metric-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric-value {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #F5A623;
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .metric-label {
+            font-size: 1.2rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .metric-change {
+            margin-top: 1rem;
+            font-size: 1rem;
+            color: #4CAF50;
+            font-weight: 700;
+        }
+
+        .metric-change.up::before {
+            content: '↗ ';
+        }
+
+        .activity-feed {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #000 0%, #0a0a2e 100%);
+        }
+
+        .activity-feed h2 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            color: #F5A623;
+        }
+
+        .feed-container {
+            max-width: 800px;
+            margin: 0 auto;
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 2rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            border: 2px solid #FF1D6C;
+        }
+
+        .feed-container::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .feed-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .feed-container::-webkit-scrollbar-thumb {
+            background: #FF1D6C;
+            border-radius: 10px;
+        }
+
+        .activity-item {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            border-left: 4px solid #F5A623;
+            animation: slide-in 0.5s ease-out;
+        }
+
+        @keyframes slide-in {
+            from {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .activity-item .time {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .activity-item .event {
+            color: #fff;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        .activity-item .event .highlight {
+            color: #FF1D6C;
+            font-weight: 700;
+        }
+
+        .platform-status {
+            padding: 4rem 2rem;
+            background: #000;
+        }
+
+        .platform-status h2 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            color: #F5A623;
+        }
+
+        .platforms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .platform-card {
+            background: rgba(255,255,255,0.05);
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .platform-card.active {
+            border-color: #4CAF50;
+            background: rgba(76,175,80,0.1);
+        }
+
+        .platform-card.pending {
+            border-color: #F5A623;
+            background: rgba(245,166,35,0.1);
+        }
+
+        .platform-card .platform-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .platform-card .platform-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        .platform-card .platform-status-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .platform-card.active .platform-status-badge {
+            background: #4CAF50;
+            color: #000;
+        }
+
+        .platform-card.pending .platform-status-badge {
+            background: #F5A623;
+            color: #000;
+        }
+
+        .platform-card .platform-stats {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: #F5A623;
+        }
+
+        .global-map {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #000 0%, #1a0510 100%);
+            text-align: center;
+        }
+
+        .global-map h2 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: #F5A623;
+        }
+
+        .map-placeholder {
+            max-width: 1000px;
+            margin: 0 auto;
+            aspect-ratio: 2/1;
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            border: 3px solid #FF1D6C;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 3rem auto 0;
+        }
+
+        .map-stat {
+            text-align: center;
+        }
+
+        .map-stat .number {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #FF1D6C;
+            margin-bottom: 0.5rem;
+        }
+
+        .map-stat .label {
+            font-size: 1.2rem;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        .cta-section {
+            padding: 6rem 2rem;
+            background: #000;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 3.5rem;
+            margin-bottom: 2rem;
+            color: #fff;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-button {
+            padding: 1.5rem 3rem;
+            font-size: 1.5rem;
+            font-weight: 900;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 3px solid;
+        }
+
+        .cta-button.primary {
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            color: #000;
+            border-color: transparent;
+        }
+
+        .cta-button.primary:hover {
+            transform: scale(1.1) rotate(-2deg);
+            box-shadow: 0 20px 60px rgba(255,29,108,0.5);
+        }
+
+        .cta-button.secondary {
+            background: transparent;
+            color: #2979FF;
+            border-color: #2979FF;
+        }
+
+        .cta-button.secondary:hover {
+            background: #2979FF;
+            color: #000;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .platforms-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .map-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="live-indicator">LIVE</div>
+    <div class="viewers-count">
+        👁️ <span class="number" id="viewers">0</span> watching
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>🥧 Pi AI Revolution</h1>
+            <p class="subtitle">Same Energy • 1% Cost • 100% Sovereignty</p>
+
+            <div class="countdown-to-viral">
+                <div class="label">Launch Progress</div>
+                <div class="time" id="launch-time">00:00:00</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Metrics -->
+    <section class="metrics-section">
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">⭐</div>
+                <div class="metric-value" id="github-stars">0</div>
+                <div class="metric-label">GitHub Stars</div>
+                <div class="metric-change up" id="stars-change">+0 in last hour</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">🐦</div>
+                <div class="metric-value" id="twitter-impressions">0</div>
+                <div class="metric-label">Twitter Impressions</div>
+                <div class="metric-change up" id="twitter-change">+0 in last hour</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">👽</div>
+                <div class="metric-value" id="reddit-upvotes">0</div>
+                <div class="metric-label">Reddit Upvotes</div>
+                <div class="metric-change up" id="reddit-change">+0 in last hour</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">🔥</div>
+                <div class="metric-value" id="hn-points">0</div>
+                <div class="metric-label">HN Points</div>
+                <div class="metric-change up" id="hn-change">+0 in last hour</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">💰</div>
+                <div class="metric-value" id="calculator-uses">0</div>
+                <div class="metric-label">Calculator Uses</div>
+                <div class="metric-change up" id="calc-change">+0 today</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">🌍</div>
+                <div class="metric-value" id="new-nodes">0</div>
+                <div class="metric-label">New Nodes</div>
+                <div class="metric-change up" id="nodes-change">+0 today</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Activity Feed -->
+    <section class="activity-feed">
+        <h2>📡 Live Activity Feed</h2>
+        <div class="feed-container" id="activity-feed">
+            <!-- Activities will be added here dynamically -->
+        </div>
+    </section>
+
+    <!-- Platform Status -->
+    <section class="platform-status">
+        <h2>🚀 Launch Platform Status</h2>
+        <div class="platforms-grid">
+            <div class="platform-card active" id="platform-twitter">
+                <div class="platform-icon">🐦</div>
+                <div class="platform-name">Twitter</div>
+                <div class="platform-status-badge">LIVE</div>
+                <div class="platform-stats" id="twitter-stat">T+00:00</div>
+            </div>
+
+            <div class="platform-card pending" id="platform-reddit">
+                <div class="platform-icon">👽</div>
+                <div class="platform-name">Reddit</div>
+                <div class="platform-status-badge">PENDING</div>
+                <div class="platform-stats" id="reddit-stat">T+15:00</div>
+            </div>
+
+            <div class="platform-card pending" id="platform-hn">
+                <div class="platform-icon">🔥</div>
+                <div class="platform-name">Hacker News</div>
+                <div class="platform-status-badge">PENDING</div>
+                <div class="platform-stats" id="hn-stat">T+30:00</div>
+            </div>
+
+            <div class="platform-card pending" id="platform-linkedin">
+                <div class="platform-icon">💼</div>
+                <div class="platform-name">LinkedIn</div>
+                <div class="platform-status-badge">PENDING</div>
+                <div class="platform-stats" id="linkedin-stat">T+60:00</div>
+            </div>
+
+            <div class="platform-card pending" id="platform-ph">
+                <div class="platform-icon">🚀</div>
+                <div class="platform-name">Product Hunt</div>
+                <div class="platform-status-badge">PENDING</div>
+                <div class="platform-stats" id="ph-stat">T+120:00</div>
+            </div>
+
+            <div class="platform-card pending" id="platform-press">
+                <div class="platform-icon">📧</div>
+                <div class="platform-name">Press</div>
+                <div class="platform-status-badge">PENDING</div>
+                <div class="platform-stats" id="press-stat">Sending...</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Global Map -->
+    <section class="global-map">
+        <h2>🌍 Global Network</h2>
+        <div class="map-placeholder">
+            <div style="text-align: center;">
+                <div style="font-size: 8rem; margin-bottom: 1rem;">🗺️</div>
+                <div style="font-size: 2rem; color: #F5A623;">2,847 Nodes Across 67 Countries</div>
+            </div>
+        </div>
+        <div class="map-stats">
+            <div class="map-stat">
+                <div class="number" id="total-nodes">2,847</div>
+                <div class="label">Active Nodes</div>
+            </div>
+            <div class="map-stat">
+                <div class="number" id="countries">67</div>
+                <div class="label">Countries</div>
+            </div>
+            <div class="map-stat">
+                <div class="number" id="total-saved">$8.2M</div>
+                <div class="label">Total Saved</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>Join the Revolution</h2>
+        <div class="cta-buttons">
+            <a href="https://blackroad-os.github.io/pi-ai-hub" class="cta-button primary">
+                🥧 Get Started Now
+            </a>
+            <a href="https://blackroad-os.github.io/pi-mission-control/" class="cta-button secondary">
+                🎮 Mission Control
+            </a>
+        </div>
+    </section>
+
+    <script>
+        // Simulated live data (replace with real API calls)
+        let launchStartTime = Date.now();
+        let viewers = 0;
+        let activities = [];
+
+        // Activity templates
+        const activityTemplates = [
+            "New user from {country} just started Pi AI setup",
+            "Calculator used: ${savings} savings calculated",
+            "GitHub star from {location}!",
+            "Twitter engagement spike: +{number} impressions",
+            "Reddit post shared in r/{subreddit}",
+            "New node online: {city}, {country}",
+            "Press email opened by {outlet}",
+            "Product Hunt upvote from {location}",
+            "Success story: {use_case} deployed"
+        ];
+
+        const countries = ["Nigeria", "India", "Japan", "USA", "UK", "Germany", "France", "Brazil", "Australia", "Canada"];
+        const cities = ["Lagos", "Mumbai", "Tokyo", "NYC", "London", "Berlin", "Paris", "São Paulo", "Sydney", "Toronto"];
+        const outlets = ["TechCrunch", "The Verge", "Ars Technica", "HN", "Tom's Hardware"];
+        const subreddits = ["raspberry_pi", "selfhosted", "LocalLLaMA", "homelab", "datahoarder"];
+        const useCases = ["Medical AI", "Education platform", "Local chatbot", "Image generator", "Code assistant"];
+
+        // Update launch timer
+        setInterval(() => {
+            const elapsed = Date.now() - launchStartTime;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+
+            document.getElementById('launch-time').textContent =
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }, 1000);
+
+        // Simulate viewers
+        setInterval(() => {
+            viewers = Math.floor(Math.random() * 100) + 50;
+            document.getElementById('viewers').textContent = viewers.toLocaleString();
+        }, 3000);
+
+        // Simulate metrics growth
+        let metrics = {
+            stars: 0,
+            twitter: 0,
+            reddit: 0,
+            hn: 0,
+            calculator: 0,
+            nodes: 2847
+        };
+
+        setInterval(() => {
+            metrics.stars += Math.floor(Math.random() * 5);
+            metrics.twitter += Math.floor(Math.random() * 50) + 10;
+            metrics.reddit += Math.floor(Math.random() * 10);
+            metrics.hn += Math.floor(Math.random() * 3);
+            metrics.calculator += Math.floor(Math.random() * 3);
+            metrics.nodes += Math.floor(Math.random() * 2);
+
+            document.getElementById('github-stars').textContent = metrics.stars.toLocaleString();
+            document.getElementById('twitter-impressions').textContent = metrics.twitter.toLocaleString();
+            document.getElementById('reddit-upvotes').textContent = metrics.reddit.toLocaleString();
+            document.getElementById('hn-points').textContent = metrics.hn.toLocaleString();
+            document.getElementById('calculator-uses').textContent = metrics.calculator.toLocaleString();
+            document.getElementById('new-nodes').textContent = (metrics.nodes - 2847).toLocaleString();
+            document.getElementById('total-nodes').textContent = metrics.nodes.toLocaleString();
+        }, 2000);
+
+        // Add random activity
+        function addActivity() {
+            const template = activityTemplates[Math.floor(Math.random() * activityTemplates.length)];
+            let activity = template
+                .replace('{country}', countries[Math.floor(Math.random() * countries.length)])
+                .replace('{city}', cities[Math.floor(Math.random() * cities.length)])
+                .replace('{location}', countries[Math.floor(Math.random() * countries.length)])
+                .replace('{number}', Math.floor(Math.random() * 500) + 100)
+                .replace('{outlet}', outlets[Math.floor(Math.random() * outlets.length)])
+                .replace('{subreddit}', subreddits[Math.floor(Math.random() * subreddits.length)])
+                .replace('{use_case}', useCases[Math.floor(Math.random() * useCases.length)])
+                .replace('${savings}', '$' + (Math.floor(Math.random() * 5000) + 1000).toLocaleString());
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+
+            const feedContainer = document.getElementById('activity-feed');
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <div class="time">${timeStr}</div>
+                <div class="event"><span class="highlight">●</span> ${activity}</div>
+            `;
+
+            feedContainer.insertBefore(item, feedContainer.firstChild);
+
+            // Keep only last 20 items
+            while (feedContainer.children.length > 20) {
+                feedContainer.removeChild(feedContainer.lastChild);
+            }
+        }
+
+        // Add activity every 3-8 seconds
+        setInterval(() => {
+            addActivity();
+        }, Math.random() * 5000 + 3000);
+
+        // Initial activities
+        for (let i = 0; i < 10; i++) {
+            setTimeout(addActivity, i * 500);
+        }
+
+        // Platform activation simulation
+        const platformTimings = {
+            twitter: 0,
+            reddit: 15 * 60 * 1000,
+            hn: 30 * 60 * 1000,
+            linkedin: 60 * 60 * 1000,
+            ph: 120 * 60 * 1000,
+            press: 5 * 60 * 1000
+        };
+
+        setInterval(() => {
+            const elapsed = Date.now() - launchStartTime;
+
+            Object.keys(platformTimings).forEach(platform => {
+                const platformTime = platformTimings[platform];
+                const card = document.getElementById(`platform-${platform}`);
+                const stat = document.getElementById(`${platform}-stat`);
+
+                if (elapsed >= platformTime) {
+                    card.classList.remove('pending');
+                    card.classList.add('active');
+                    card.querySelector('.platform-status-badge').textContent = 'LIVE';
+
+                    const timeSinceLaunch = Math.floor((elapsed - platformTime) / 60000);
+                    stat.textContent = `Live ${timeSinceLaunch}m`;
+                } else {
+                    const remaining = Math.floor((platformTime - elapsed) / 60000);
+                    stat.textContent = `T+${remaining}m`;
+                }
+            });
+        }, 1000);
+
+        console.log('%c🥧 Pi AI Revolution - LIVE!', 'font-size: 24px; color: #F5A623; font-weight: bold;');
+        console.log('%cSame Energy • 1% Cost • 100% Sovereignty', 'font-size: 14px; color: #FF1D6C;');
+    </script>
+</body>
+</html>

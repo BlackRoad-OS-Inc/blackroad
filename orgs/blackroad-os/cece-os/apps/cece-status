@@ -1,0 +1,142 @@
+#!/bin/bash
+# CECE-STATUS v1.0 - Status Page
+# Our Own StatusPage.io
+
+STATUS_DIR=~/cece/status
+mkdir -p "$STATUS_DIR/services" "$STATUS_DIR/incidents"
+
+add_service() {
+    NAME="$1"
+    URL="$2"
+    
+    cat > "$STATUS_DIR/services/$NAME.service" << SVCEOF
+name: $NAME
+url: $URL
+status: operational
+last_check: $(date -Iseconds)
+SVCEOF
+    echo "✅ Service added: $NAME"
+}
+
+check_services() {
+    echo "🔍 Checking services..."
+    echo ""
+    
+    for s in "$STATUS_DIR/services"/*.service 2>/dev/null; do
+        [ -f "$s" ] || continue
+        NAME=$(grep "^name:" "$s" | cut -d: -f2 | xargs)
+        URL=$(grep "^url:" "$s" | cut -d: -f2- | xargs)
+        
+        if [ -n "$URL" ]; then
+            if curl -s --max-time 5 "$URL" > /dev/null 2>&1; then
+                STATUS="operational"
+                ICON="🟢"
+            else
+                STATUS="down"
+                ICON="🔴"
+            fi
+        else
+            STATUS="unknown"
+            ICON="⚪"
+        fi
+        
+        sed -i "s/^status:.*/status: $STATUS/" "$s"
+        sed -i "s/^last_check:.*/last_check: $(date -Iseconds)/" "$s"
+        
+        echo "  $ICON $NAME: $STATUS"
+    done
+}
+
+dashboard() {
+    echo "📊 STATUS DASHBOARD"
+    echo "═══════════════════════════════════════"
+    echo "  Last updated: $(date)"
+    echo ""
+    
+    ALL_OK=true
+    for s in "$STATUS_DIR/services"/*.service 2>/dev/null; do
+        [ -f "$s" ] || continue
+        NAME=$(grep "^name:" "$s" | cut -d: -f2 | xargs)
+        STATUS=$(grep "^status:" "$s" | cut -d: -f2 | xargs)
+        
+        case "$STATUS" in
+            operational) ICON="🟢" ;;
+            degraded) ICON="🟡"; ALL_OK=false ;;
+            down) ICON="🔴"; ALL_OK=false ;;
+            *) ICON="⚪" ;;
+        esac
+        
+        echo "  $ICON $NAME"
+    done
+    
+    echo ""
+    if $ALL_OK; then
+        echo "  ✅ All systems operational"
+    else
+        echo "  ⚠️  Some systems experiencing issues"
+    fi
+}
+
+incident() {
+    TITLE="$1"
+    STATUS="${2:-investigating}"
+    
+    INC_ID=$(date +%s)
+    cat > "$STATUS_DIR/incidents/$INC_ID.incident" << INCEOF
+id: $INC_ID
+title: $TITLE
+status: $STATUS
+created: $(date -Iseconds)
+updates:
+  - $(date -Iseconds): $STATUS - $TITLE
+INCEOF
+    echo "⚠️  Incident created: $TITLE"
+}
+
+generate_page() {
+    echo "📄 Generating status page..."
+    
+    cat > "$STATUS_DIR/index.html" << HTMLEOF
+<!DOCTYPE html>
+<html>
+<head>
+<title>Status</title>
+<style>
+body{font-family:system-ui;background:#0a0a0a;color:#fff;padding:40px;max-width:600px;margin:0 auto}
+h1{background:linear-gradient(135deg,#F5A623,#FF1D6C);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.service{padding:15px;background:#111;margin:10px 0;border-radius:8px;display:flex;justify-content:space-between}
+.operational{color:#4ade80}
+.down{color:#f87171}
+</style>
+</head>
+<body>
+<h1>System Status</h1>
+<p>Last updated: $(date)</p>
+HTMLEOF
+
+    for s in "$STATUS_DIR/services"/*.service 2>/dev/null; do
+        [ -f "$s" ] || continue
+        NAME=$(grep "^name:" "$s" | cut -d: -f2 | xargs)
+        STATUS=$(grep "^status:" "$s" | cut -d: -f2 | xargs)
+        echo "<div class=\"service\"><span>$NAME</span><span class=\"$STATUS\">$STATUS</span></div>" >> "$STATUS_DIR/index.html"
+    done
+    
+    echo "</body></html>" >> "$STATUS_DIR/index.html"
+    echo "✅ Status page: $STATUS_DIR/index.html"
+}
+
+case "$1" in
+    add) add_service "$2" "$3" ;;
+    check) check_services ;;
+    dashboard|status) dashboard ;;
+    incident) incident "$2" "$3" ;;
+    generate) generate_page ;;
+    *) echo "🖤 CECE-STATUS - Status Page"
+       echo ""
+       echo "Commands:"
+       echo "  add <name> <url>          Add service to monitor"
+       echo "  check                     Check all services"
+       echo "  dashboard                 View status dashboard"
+       echo "  incident <title> [status] Report incident"
+       echo "  generate                  Generate HTML status page" ;;
+esac

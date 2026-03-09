@@ -1,0 +1,48 @@
+name: Production Health Check
+
+on:
+  schedule:
+    # Run every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check service health
+        run: |
+          echo "Checking health endpoints..."
+
+          # Read service URLs from environment or config
+          SERVICES=(
+            "https://api.blackroad.io/health"
+            "https://agents.blackroad.io/health"
+            "https://monitoring.blackroad.io/health"
+          )
+
+          FAILED=0
+          for url in "${SERVICES[@]}"; do
+            echo "Testing: $url"
+            if curl -f -s -o /dev/null -w "%{http_code}" "$url" | grep -q "200"; then
+              echo "✅ $url is healthy"
+            else
+              echo "❌ $url is unhealthy"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          if [ $FAILED -gt 0 ]; then
+            echo "⚠️  $FAILED service(s) failed health check"
+            exit 1
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Health check failed! Notification would be sent here."
+          # Add Slack/Discord/email notification here

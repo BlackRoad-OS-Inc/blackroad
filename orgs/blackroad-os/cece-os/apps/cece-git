@@ -1,0 +1,38 @@
+#!/bin/bash
+# CECE-GIT v1.0 - Git Wrapper
+REPOS_DIR=~/cece/repos
+
+status_all() {
+    echo "Git Status for all repos:"
+    for d in "$REPOS_DIR"/*/; do
+        if [ -d "$d/.git" ]; then
+            NAME=$(basename "$d")
+            BRANCH=$(cd "$d" && git branch --show-current 2>/dev/null)
+            CHANGES=$(cd "$d" && git status --porcelain | wc -l)
+            echo "  $NAME ($BRANCH) - $CHANGES changes"
+        fi
+    done
+}
+
+pull_all() {
+    echo "Pulling all repos..."
+    for d in "$REPOS_DIR"/*/; do
+        if [ -d "$d/.git" ]; then
+            NAME=$(basename "$d")
+            echo -n "  $NAME: "
+            (cd "$d" && git pull 2>/dev/null) && echo "ok" || echo "failed"
+        fi
+    done
+}
+
+clone() {
+    REPO="$1"
+    cd "$REPOS_DIR" && git clone "$REPO"
+}
+
+case "$1" in
+    status) status_all ;;
+    pull) pull_all ;;
+    clone) clone "$2" ;;
+    *) echo "CECE-GIT: status | pull | clone <url>" ;;
+esac

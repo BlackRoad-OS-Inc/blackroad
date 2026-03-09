@@ -1,0 +1,62 @@
+#!/bin/bash
+# CECE-NEWS v1.0 - Our Own News Aggregator
+NEWS_DIR=~/cece/news
+mkdir -p "$NEWS_DIR/feeds" "$NEWS_DIR/articles"
+
+add_feed() {
+    NAME="$1"
+    URL="$2"
+    echo "$URL" > "$NEWS_DIR/feeds/$NAME.feed"
+    echo "✅ Feed added: $NAME"
+}
+
+post_article() {
+    TITLE="$1"
+    CONTENT="$2"
+    ARTICLE_ID=$(date +%s)
+    cat > "$NEWS_DIR/articles/$ARTICLE_ID.article" << EOF
+title: $TITLE
+author: ${USER:-anonymous}
+date: $(date -Iseconds)
+---
+$CONTENT
+EOF
+    echo "✅ Article published: $TITLE"
+}
+
+headlines() {
+    echo "📰 HEADLINES"
+    echo "═══════════════════════════════════════"
+    echo ""
+    for a in $(ls -t "$NEWS_DIR/articles"/*.article 2>/dev/null | head -10); do
+        [ -f "$a" ] || continue
+        TITLE=$(grep "^title:" "$a" | cut -d: -f2-)
+        DATE=$(grep "^date:" "$a" | cut -d: -f2 | cut -dT -f1)
+        ID=$(basename "$a" .article)
+        echo "  📰 $TITLE"
+        echo "     $DATE | ID: $ID"
+        echo ""
+    done
+}
+
+read_article() {
+    ARTICLE_ID="$1"
+    ARTICLE="$NEWS_DIR/articles/$ARTICLE_ID.article"
+    [ ! -f "$ARTICLE" ] && echo "Article not found" && return
+    
+    echo "═══════════════════════════════════════"
+    cat "$ARTICLE"
+    echo "═══════════════════════════════════════"
+}
+
+case "$1" in
+    feed) add_feed "$2" "$3" ;;
+    post) post_article "$2" "$3" ;;
+    headlines) headlines ;;
+    read) read_article "$2" ;;
+    *) echo "🖤 CECE-NEWS - Our Own News"
+       echo "  feed <name> <url>        Add RSS feed"
+       echo "  post <title> <content>   Publish article"
+       echo "  headlines                View headlines"
+       echo "  read <id>                Read article" ;;
+esac

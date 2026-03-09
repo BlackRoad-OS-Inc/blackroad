@@ -1,0 +1,21 @@
+#!/bin/bash
+# CECE-LOREM v1.0 - Lorem Ipsum Generator
+WORDS="lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id est laborum"
+
+generate() {
+    COUNT="${1:-50}"
+    echo $WORDS | tr ' ' '\n' | shuf | head -$COUNT | tr '\n' ' '
+    echo ""
+}
+
+paragraph() {
+    generate 50
+    echo ""
+    generate 40
+}
+
+case "$1" in
+    words) generate "$2" ;;
+    paragraph) paragraph ;;
+    *) echo "CECE-LOREM: words [count] | paragraph" ;;
+esac

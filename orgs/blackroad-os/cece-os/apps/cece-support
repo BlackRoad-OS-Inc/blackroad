@@ -1,0 +1,66 @@
+#!/bin/bash
+# CECE-SUPPORT v1.0 - Our Own Zendesk/Intercom
+SUPPORT_DIR=~/cece/support
+mkdir -p "$SUPPORT_DIR/tickets" "$SUPPORT_DIR/kb"
+
+create_ticket() {
+    SUBJECT="$1"
+    DESC="$2"
+    TICKET_ID=$(date +%s | tail -c 6)
+    cat > "$SUPPORT_DIR/tickets/$TICKET_ID.ticket" << EOF
+id: $TICKET_ID
+subject: $SUBJECT
+description: $DESC
+status: open
+priority: normal
+created: $(date -Iseconds)
+EOF
+    echo "🎫 Ticket #$TICKET_ID created: $SUBJECT"
+}
+
+list_tickets() {
+    echo "🎫 SUPPORT TICKETS"
+    echo "═══════════════════════════════════════"
+    for t in "$SUPPORT_DIR/tickets"/*.ticket 2>/dev/null; do
+        [ -f "$t" ] || continue
+        ID=$(grep "^id:" "$t" | cut -d: -f2 | xargs)
+        SUBJ=$(grep "^subject:" "$t" | cut -d: -f2-)
+        STATUS=$(grep "^status:" "$t" | cut -d: -f2 | xargs)
+        echo "  #$ID [$STATUS]$SUBJ"
+    done
+}
+
+close_ticket() {
+    ID="$1"
+    TICKET="$SUPPORT_DIR/tickets/$ID.ticket"
+    [ ! -f "$TICKET" ] && echo "Not found" && return
+    sed -i "s/status: open/status: closed/" "$TICKET"
+    echo "✅ Ticket #$ID closed"
+}
+
+add_kb() {
+    TITLE="$1"
+    CONTENT="$2"
+    SLUG=$(echo "$TITLE" | tr " " "-" | tr "[:upper:]" "[:lower:]")
+    cat > "$SUPPORT_DIR/kb/$SLUG.md" << EOF
+# $TITLE
+
+$CONTENT
+
+---
+Last updated: $(date)
+EOF
+    echo "📚 KB article created: $TITLE"
+}
+
+case "$1" in
+    new) create_ticket "$2" "$3" ;;
+    list) list_tickets ;;
+    close) close_ticket "$2" ;;
+    kb) add_kb "$2" "$3" ;;
+    *) echo "🖤 CECE-SUPPORT - Our Own Zendesk"
+       echo "  new <subj> <desc>      Create ticket"
+       echo "  list                   List tickets"
+       echo "  close <id>             Close ticket"
+       echo "  kb <title> <content>   Add KB article" ;;
+esac

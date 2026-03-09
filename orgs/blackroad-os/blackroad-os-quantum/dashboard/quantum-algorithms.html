@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮⚛️ Quantum Algorithms - BlackRoad Quantum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000000; --white: #FFFFFF;
+            --amber: #F5A623; --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF; --violet: #9C27B0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black); color: var(--white);
+            padding: 34px; line-height: 1.6;
+        }
+
+        h1 {
+            font-size: 55px; font-weight: 900;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 21px; text-align: center;
+        }
+
+        .subtitle {
+            text-align: center; font-size: 21px; color: var(--amber);
+            margin-bottom: 34px;
+        }
+
+        .controls {
+            display: flex; gap: 13px; justify-content: center;
+            margin-bottom: 34px; flex-wrap: wrap;
+        }
+
+        button {
+            padding: 13px 21px; font-size: 16px; font-weight: 700;
+            background: rgba(255, 29, 108, 0.2);
+            border: 2px solid var(--hot-pink);
+            border-radius: 8px; color: var(--white);
+            cursor: pointer; transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--hot-pink);
+            box-shadow: 0 5px 21px rgba(255, 29, 108, 0.5);
+            transform: translateY(-2px);
+        }
+
+        button.active {
+            background: var(--hot-pink);
+            box-shadow: 0 0 21px var(--hot-pink);
+        }
+
+        .canvas-container {
+            display: flex; justify-content: center;
+            margin-bottom: 34px;
+        }
+
+        canvas {
+            border: 2px solid rgba(255, 29, 108, 0.3);
+            border-radius: 13px;
+            box-shadow: 0 8px 32px rgba(255, 29, 108, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .info-panel {
+            max-width: 1200px; margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(41, 121, 255, 0.3);
+            border-radius: 13px; padding: 21px;
+        }
+
+        .info-title {
+            font-size: 28px; font-weight: 700;
+            color: var(--electric-blue);
+            margin-bottom: 13px;
+        }
+
+        .info-text {
+            font-size: 16px; color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 13px;
+        }
+
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: rgba(245, 166, 35, 0.1);
+            border-left: 3px solid var(--amber);
+            padding: 13px; margin: 13px 0;
+            font-size: 14px; color: var(--amber);
+            overflow-x: auto;
+        }
+
+        .step-controls {
+            display: flex; gap: 13px; justify-content: center;
+            margin: 21px 0;
+        }
+
+        .step-btn {
+            padding: 8px 21px; font-size: 14px;
+            background: rgba(41, 121, 255, 0.2);
+            border: 2px solid var(--electric-blue);
+        }
+
+        .step-btn:hover {
+            background: var(--electric-blue);
+        }
+
+        .complexity {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 21px; margin: 21px 0;
+        }
+
+        .complexity-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(156, 39, 176, 0.3);
+            border-radius: 8px; padding: 13px;
+        }
+
+        .complexity-label {
+            font-size: 13px; color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase; margin-bottom: 5px;
+        }
+
+        .complexity-value {
+            font-size: 24px; font-weight: 700;
+            color: var(--violet); font-family: 'Courier New', monospace;
+        }
+
+        .back-link {
+            display: inline-block; margin-bottom: 21px;
+            color: var(--electric-blue); text-decoration: none;
+            font-size: 16px; transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--hot-pink); text-decoration: underline;
+        }
+
+        .speedup {
+            background: linear-gradient(135deg, rgba(255, 29, 108, 0.2), rgba(41, 121, 255, 0.2));
+            border: 2px solid var(--hot-pink);
+            border-radius: 8px; padding: 21px;
+            margin: 21px 0; text-align: center;
+        }
+
+        .speedup-title {
+            font-size: 21px; font-weight: 700;
+            color: var(--hot-pink); margin-bottom: 8px;
+        }
+
+        .speedup-value {
+            font-size: 34px; font-weight: 900;
+            background: linear-gradient(135deg, #FF1D6C, #2979FF);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Universe</a>
+
+    <h1>🎮⚛️ QUANTUM ALGORITHMS</h1>
+    <div class="subtitle">Watch Quantum Computing Achieve Exponential Speedup</div>
+
+    <div class="controls">
+        <button onclick="selectAlgorithm('grover')" class="active" id="btn-grover">Grover's Search</button>
+        <button onclick="selectAlgorithm('deutsch-jozsa')" id="btn-deutsch-jozsa">Deutsch-Jozsa</button>
+        <button onclick="selectAlgorithm('bernstein-vazirani')" id="btn-bernstein-vazirani">Bernstein-Vazirani</button>
+        <button onclick="selectAlgorithm('simon')" id="btn-simon">Simon's Algorithm</button>
+    </div>
+
+    <div class="step-controls">
+        <button class="step-btn" onclick="resetAnimation()">⏮ Reset</button>
+        <button class="step-btn" onclick="stepBackward()">◀ Step Back</button>
+        <button class="step-btn" onclick="togglePlay()"><span id="play-icon">▶</span> <span id="play-text">Play</span></button>
+        <button class="step-btn" onclick="stepForward()">Step Forward ▶</button>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="algorithmCanvas" width="1200" height="700"></canvas>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <!-- Algorithm info will be inserted here -->
+    </div>
+
+    <script>
+        const canvas = document.getElementById('algorithmCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentAlgorithm = 'grover';
+        let animationStep = 0;
+        let isPlaying = false;
+        let animationInterval = null;
+
+        // Algorithm definitions
+        const algorithms = {
+            'grover': {
+                name: "Grover's Search Algorithm",
+                description: "Find a marked item in an unsorted database of N items",
+                steps: [
+                    { name: "Initialize", desc: "Prepare |ψ₀⟩ = |0⟩⊗ⁿ" },
+                    { name: "Hadamard All", desc: "Create uniform superposition: H⊗ⁿ|0⟩⊗ⁿ = Σ|x⟩/√N" },
+                    { name: "Oracle Query", desc: "Mark target: |x⟩ → -|x⟩ if f(x) = 1" },
+                    { name: "Diffusion", desc: "Inversion about average: 2|ψ⟩⟨ψ| - I" },
+                    { name: "Repeat", desc: "Iterate ~√N times for amplitude amplification" },
+                    { name: "Measure", desc: "Measure to get marked item with high probability" }
+                ],
+                complexity: {
+                    classical: "O(N)",
+                    quantum: "O(√N)",
+                    speedup: "Quadratic"
+                },
+                qubits: 4
+            },
+            'deutsch-jozsa': {
+                name: "Deutsch-Jozsa Algorithm",
+                description: "Determine if a function is constant or balanced",
+                steps: [
+                    { name: "Initialize", desc: "Prepare |0⟩⊗ⁿ|1⟩" },
+                    { name: "Hadamard All", desc: "H⊗(ⁿ⁺¹) creates superposition" },
+                    { name: "Oracle", desc: "Apply black box function Uₓ" },
+                    { name: "Hadamard Again", desc: "H⊗ⁿ on first n qubits" },
+                    { name: "Measure", desc: "|0⟩⊗ⁿ → constant, else → balanced" }
+                ],
+                complexity: {
+                    classical: "O(2ⁿ⁻¹ + 1)",
+                    quantum: "O(1)",
+                    speedup: "Exponential"
+                },
+                qubits: 3
+            },
+            'bernstein-vazirani': {
+                name: "Bernstein-Vazirani Algorithm",
+                description: "Find hidden binary string s where f(x) = s·x (mod 2)",
+                steps: [
+                    { name: "Initialize", desc: "Prepare |0⟩⊗ⁿ|1⟩" },
+                    { name: "Hadamard All", desc: "Create superposition state" },
+                    { name: "Oracle", desc: "Encode secret string: f(x) = s·x" },
+                    { name: "Hadamard Again", desc: "Reveal secret string" },
+                    { name: "Measure", desc: "Get s directly in one query!" }
+                ],
+                complexity: {
+                    classical: "O(n)",
+                    quantum: "O(1)",
+                    speedup: "Linear"
+                },
+                qubits: 4
+            },
+            'simon': {
+                name: "Simon's Algorithm",
+                description: "Find hidden period s where f(x) = f(x ⊕ s)",
+                steps: [
+                    { name: "Initialize", desc: "Prepare |0⟩⊗²ⁿ" },
+                    { name: "Hadamard First n", desc: "Create superposition on input" },
+                    { name: "Oracle", desc: "Compute f(x) into second register" },
+                    { name: "Hadamard First n", desc: "Interference reveals y·s = 0" },
+                    { name: "Measure", desc: "Get n-1 equations, solve for s" },
+                    { name: "Repeat", desc: "Run n times, classical post-processing" }
+                ],
+                complexity: {
+                    classical: "O(2ⁿ/²)",
+                    quantum: "O(n)",
+                    speedup: "Exponential"
+                },
+                qubits: 4
+            }
+        };
+
+        function selectAlgorithm(algo) {
+            currentAlgorithm = algo;
+            animationStep = 0;
+            isPlaying = false;
+            if (animationInterval) clearInterval(animationInterval);
+
+            // Update button states
+            document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${algo}`).classList.add('active');
+
+            updateInfo();
+            draw();
+        }
+
+        function updateInfo() {
+            const algo = algorithms[currentAlgorithm];
+            const step = algo.steps[animationStep] || algo.steps[algo.steps.length - 1];
+
+            let html = `
+                <div class="info-title">${algo.name}</div>
+                <div class="info-text">${algo.description}</div>
+
+                <div class="speedup">
+                    <div class="speedup-title">⚡ Quantum Speedup</div>
+                    <div class="speedup-value">${algo.complexity.speedup}</div>
+                </div>
+
+                <div class="complexity">
+                    <div class="complexity-box">
+                        <div class="complexity-label">Classical Complexity</div>
+                        <div class="complexity-value">${algo.complexity.classical}</div>
+                    </div>
+                    <div class="complexity-box">
+                        <div class="complexity-label">Quantum Complexity</div>
+                        <div class="complexity-value">${algo.complexity.quantum}</div>
+                    </div>
+                </div>
+
+                <div class="info-title" style="margin-top: 21px; font-size: 21px;">
+                    Step ${animationStep + 1}/${algo.steps.length}: ${step.name}
+                </div>
+                <div class="info-text">${step.desc}</div>
+
+                <div class="info-title" style="margin-top: 21px; font-size: 18px;">Algorithm Steps:</div>
+            `;
+
+            algo.steps.forEach((s, i) => {
+                const active = i === animationStep ? 'color: var(--hot-pink); font-weight: 700;' : '';
+                html += `<div class="info-text" style="${active}">
+                    ${i + 1}. ${s.name}: ${s.desc}
+                </div>`;
+            });
+
+            document.getElementById('infoPanel').innerHTML = html;
+        }
+
+        function draw() {
+            const algo = algorithms[currentAlgorithm];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (currentAlgorithm === 'grover') {
+                drawGrover();
+            } else if (currentAlgorithm === 'deutsch-jozsa') {
+                drawDeutschJozsa();
+            } else if (currentAlgorithm === 'bernstein-vazirani') {
+                drawBernsteinVazirani();
+            } else if (currentAlgorithm === 'simon') {
+                drawSimon();
+            }
+        }
+
+        function drawGrover() {
+            const algo = algorithms['grover'];
+            const n = algo.qubits;
+            const N = Math.pow(2, n); // Database size
+            const targetIndex = 5; // Arbitrary target item
+
+            // Title
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText("Grover's Search: Finding Item in Unsorted Database", 600, 40);
+
+            // Draw circuit
+            const qubitY = 100;
+            const qubitSpacing = 80;
+            const gateX = 150;
+            const gateWidth = 60;
+            const gateSpacing = 120;
+
+            // Qubit lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < n; i++) {
+                const y = qubitY + i * qubitSpacing;
+                ctx.beginPath();
+                ctx.moveTo(50, y);
+                ctx.lineTo(1150, y);
+                ctx.stroke();
+
+                // Qubit labels
+                ctx.font = '16px Courier New';
+                ctx.fillStyle = '#2979FF';
+                ctx.textAlign = 'right';
+                ctx.fillText(`|q${i}⟩`, 40, y + 5);
+            }
+
+            let currentX = gateX;
+
+            // Step 0: Initial state |0000⟩
+            if (animationStep >= 0) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '14px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('|0⟩⊗⁴', currentX - 50, 80);
+            }
+
+            // Step 1: Hadamard gates on all qubits
+            if (animationStep >= 1) {
+                for (let i = 0; i < n; i++) {
+                    drawGate(currentX, qubitY + i * qubitSpacing, gateWidth, 'H', animationStep === 1);
+                }
+
+                // Show superposition
+                ctx.fillStyle = '#F5A623';
+                ctx.font = '16px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('Uniform Superposition', currentX, qubitY + n * qubitSpacing + 30);
+                ctx.font = '14px Courier New';
+                ctx.fillText('Σ|x⟩/√N', currentX, qubitY + n * qubitSpacing + 50);
+            }
+
+            currentX += gateSpacing;
+
+            // Step 2: Oracle (marks target)
+            if (animationStep >= 2) {
+                // Multi-qubit oracle box
+                const oracleY = qubitY;
+                const oracleHeight = (n - 1) * qubitSpacing;
+
+                ctx.fillStyle = animationStep === 2 ? 'rgba(255, 29, 108, 0.3)' : 'rgba(156, 39, 176, 0.2)';
+                ctx.fillRect(currentX - gateWidth/2, oracleY - 30, gateWidth, oracleHeight + 60);
+                ctx.strokeStyle = animationStep === 2 ? '#FF1D6C' : '#9C27B0';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(currentX - gateWidth/2, oracleY - 30, gateWidth, oracleHeight + 60);
+
+                ctx.fillStyle = '#FF1D6C';
+                ctx.font = 'bold 20px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('Uω', currentX, oracleY + oracleHeight/2);
+
+                ctx.font = '12px Courier New';
+                ctx.fillText('Oracle', currentX, oracleY + oracleHeight/2 + 25);
+
+                // Show target marking
+                ctx.fillStyle = '#F5A623';
+                ctx.font = '14px Courier New';
+                ctx.fillText(`Mark x=${targetIndex}`, currentX, qubitY + n * qubitSpacing + 30);
+                ctx.fillText('|x⟩→-|x⟩', currentX, qubitY + n * qubitSpacing + 50);
+            }
+
+            currentX += gateSpacing;
+
+            // Step 3: Diffusion operator
+            if (animationStep >= 3) {
+                const diffY = qubitY;
+                const diffHeight = (n - 1) * qubitSpacing;
+
+                ctx.fillStyle = animationStep === 3 ? 'rgba(41, 121, 255, 0.3)' : 'rgba(156, 39, 176, 0.2)';
+                ctx.fillRect(currentX - gateWidth/2, diffY - 30, gateWidth, diffHeight + 60);
+                ctx.strokeStyle = animationStep === 3 ? '#2979FF' : '#9C27B0';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(currentX - gateWidth/2, diffY - 30, gateWidth, diffHeight + 60);
+
+                ctx.fillStyle = '#2979FF';
+                ctx.font = 'bold 18px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('D', currentX, diffY + diffHeight/2);
+
+                ctx.font = '11px Courier New';
+                ctx.fillText('Diffusion', currentX, diffY + diffHeight/2 + 20);
+
+                // Formula
+                ctx.fillStyle = '#F5A623';
+                ctx.font = '12px Courier New';
+                ctx.fillText('2|ψ⟩⟨ψ| - I', currentX, qubitY + n * qubitSpacing + 30);
+                ctx.fillText('Invert about avg', currentX, qubitY + n * qubitSpacing + 48);
+            }
+
+            currentX += gateSpacing;
+
+            // Step 4: Show iteration
+            if (animationStep >= 4) {
+                ctx.fillStyle = 'rgba(255, 29, 108, 0.2)';
+                ctx.strokeStyle = '#FF1D6C';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(gateX + gateSpacing - 80, qubitY - 50, gateSpacing * 2 + 40, (n - 1) * qubitSpacing + 100);
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = '#FF1D6C';
+                ctx.font = 'bold 16px SF Pro Display';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Repeat ~√${N} ≈ ${Math.round(Math.sqrt(N))} times`, gateX + gateSpacing * 2, qubitY - 60);
+            }
+
+            currentX += gateSpacing / 2;
+
+            // Step 5: Measurement
+            if (animationStep >= 5) {
+                for (let i = 0; i < n; i++) {
+                    drawMeasurement(currentX, qubitY + i * qubitSpacing, animationStep === 5);
+                }
+
+                // Show result
+                ctx.fillStyle = '#00FF88';
+                ctx.font = 'bold 18px Courier New';
+                ctx.textAlign = 'center';
+                const binary = targetIndex.toString(2).padStart(n, '0');
+                ctx.fillText(`Result: |${binary}⟩ = ${targetIndex}`, currentX, qubitY + n * qubitSpacing + 35);
+                ctx.font = '14px SF Pro Display';
+                ctx.fillText('✓ Target Found!', currentX, qubitY + n * qubitSpacing + 55);
+            }
+
+            // Amplitude visualization
+            drawAmplitudeBar(850, 100, N, targetIndex, animationStep);
+        }
+
+        function drawAmplitudeBar(x, y, N, target, step) {
+            const barWidth = 300;
+            const barHeight = 400;
+            const itemWidth = barWidth / N;
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillRect(x, y, barWidth, barHeight);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, barWidth, barHeight);
+
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Amplitude Evolution', x + barWidth/2, y - 10);
+
+            // Calculate amplitudes based on step
+            let amplitudes = new Array(N).fill(0);
+
+            if (step >= 1) {
+                // After Hadamard: uniform superposition
+                amplitudes.fill(1/Math.sqrt(N));
+            }
+
+            if (step >= 2) {
+                // After oracle: target is negative
+                amplitudes[target] = -1/Math.sqrt(N);
+            }
+
+            if (step >= 3 || step >= 4) {
+                // After diffusion(s): target amplitude grows
+                const iterations = step >= 4 ? Math.round(Math.sqrt(N)) : 1;
+                const theta = 2 * Math.asin(1/Math.sqrt(N));
+                amplitudes.fill(Math.sin((2 * iterations - 1) * theta) / Math.sqrt(N));
+                amplitudes[target] = Math.cos((2 * iterations - 1) * theta);
+            }
+
+            // Draw bars
+            for (let i = 0; i < N; i++) {
+                const amp = amplitudes[i];
+                const prob = amp * amp;
+                const h = prob * barHeight * 0.8;
+                const barX = x + i * itemWidth;
+                const barY = y + barHeight - h;
+
+                ctx.fillStyle = i === target ? '#FF1D6C' : '#2979FF';
+                ctx.fillRect(barX, barY, itemWidth - 2, h);
+
+                // Label target
+                if (i === target) {
+                    ctx.fillStyle = '#FF1D6C';
+                    ctx.font = '12px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('★', barX + itemWidth/2, barY - 5);
+                }
+            }
+
+            // Probability scale
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'left';
+            ctx.fillText('P = 0', x + barWidth + 5, y + barHeight);
+            ctx.fillText('P = 1', x + barWidth + 5, y + 15);
+
+            // Show target probability
+            if (step >= 1) {
+                const targetProb = amplitudes[target] * amplitudes[target];
+                ctx.fillStyle = '#00FF88';
+                ctx.font = 'bold 14px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(`P(target) = ${(targetProb * 100).toFixed(1)}%`, x + barWidth/2, y + barHeight + 25);
+            }
+        }
+
+        function drawDeutschJozsa() {
+            const algo = algorithms['deutsch-jozsa'];
+            const n = algo.qubits - 1; // Last qubit is ancilla
+
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText("Deutsch-Jozsa: Constant vs Balanced", 600, 40);
+
+            const qubitY = 120;
+            const qubitSpacing = 80;
+            const gateX = 150;
+            const gateWidth = 60;
+            const gateSpacing = 140;
+
+            // Draw qubit lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < n + 1; i++) {
+                const y = qubitY + i * qubitSpacing;
+                ctx.beginPath();
+                ctx.moveTo(50, y);
+                ctx.lineTo(1000, y);
+                ctx.stroke();
+
+                ctx.font = '16px Courier New';
+                ctx.fillStyle = '#2979FF';
+                ctx.textAlign = 'right';
+                if (i < n) {
+                    ctx.fillText(`|q${i}⟩`, 40, y + 5);
+                } else {
+                    ctx.fillText('|a⟩', 40, y + 5);
+                }
+            }
+
+            let currentX = gateX;
+
+            // Step 0: Initial state
+            if (animationStep >= 0) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '14px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('|0⟩⊗²', currentX - 60, qubitY - 10);
+                ctx.fillText('|1⟩', currentX - 60, qubitY + n * qubitSpacing + 5);
+            }
+
+            // Step 1: Hadamard all qubits
+            if (animationStep >= 1) {
+                for (let i = 0; i <= n; i++) {
+                    drawGate(currentX, qubitY + i * qubitSpacing, gateWidth, 'H', animationStep === 1);
+                }
+            }
+
+            currentX += gateSpacing;
+
+            // Step 2: Oracle
+            if (animationStep >= 2) {
+                const oracleY = qubitY;
+                const oracleHeight = n * qubitSpacing;
+
+                ctx.fillStyle = animationStep === 2 ? 'rgba(156, 39, 176, 0.3)' : 'rgba(156, 39, 176, 0.2)';
+                ctx.fillRect(currentX - gateWidth/2, oracleY - 30, gateWidth, oracleHeight + 60);
+                ctx.strokeStyle = animationStep === 2 ? '#9C27B0' : 'rgba(156, 39, 176, 0.5)';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(currentX - gateWidth/2, oracleY - 30, gateWidth, oracleHeight + 60);
+
+                ctx.fillStyle = '#9C27B0';
+                ctx.font = 'bold 20px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('Uₓ', currentX, oracleY + oracleHeight/2);
+
+                ctx.font = '12px Courier New';
+                ctx.fillText('f(x)', currentX, oracleY + oracleHeight/2 + 25);
+            }
+
+            currentX += gateSpacing;
+
+            // Step 3: Hadamard on first n qubits
+            if (animationStep >= 3) {
+                for (let i = 0; i < n; i++) {
+                    drawGate(currentX, qubitY + i * qubitSpacing, gateWidth, 'H', animationStep === 3);
+                }
+            }
+
+            currentX += gateSpacing;
+
+            // Step 4: Measurement
+            if (animationStep >= 4) {
+                for (let i = 0; i < n; i++) {
+                    drawMeasurement(currentX, qubitY + i * qubitSpacing, animationStep === 4);
+                }
+
+                // Show result
+                ctx.fillStyle = '#00FF88';
+                ctx.font = 'bold 18px Courier New';
+                ctx.textAlign = 'center';
+                const isConstant = Math.random() > 0.5;
+                if (isConstant) {
+                    ctx.fillText('|00⟩ → Function is CONSTANT', currentX, qubitY + (n + 1) * qubitSpacing + 20);
+                } else {
+                    ctx.fillText('|01⟩ → Function is BALANCED', currentX, qubitY + (n + 1) * qubitSpacing + 20);
+                }
+            }
+
+            // Info box
+            drawInfoBox(150, 500, 900, 150,
+                'Classical: Must query f(x) up to 2ⁿ⁻¹ + 1 times\\nQuantum: Single query! Exponential speedup!\\n\\nConstant: f(x) = 0 or f(x) = 1 for all x\\nBalanced: f(x) = 0 for half, f(x) = 1 for half');
+        }
+
+        function drawBernsteinVazirani() {
+            const algo = algorithms['bernstein-vazirani'];
+            const n = algo.qubits - 1;
+            const secretString = '1011'; // Example secret
+
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText("Bernstein-Vazirani: Find Hidden String", 600, 40);
+
+            const qubitY = 120;
+            const qubitSpacing = 80;
+            const gateX = 180;
+            const gateWidth = 60;
+            const gateSpacing = 140;
+
+            // Draw qubit lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < n + 1; i++) {
+                const y = qubitY + i * qubitSpacing;
+                ctx.beginPath();
+                ctx.moveTo(50, y);
+                ctx.lineTo(1000, y);
+                ctx.stroke();
+
+                ctx.font = '16px Courier New';
+                ctx.fillStyle = '#2979FF';
+                ctx.textAlign = 'right';
+                if (i < n) {
+                    ctx.fillText(`|x${i}⟩`, 40, y + 5);
+                } else {
+                    ctx.fillText('|a⟩', 40, y + 5);
+                }
+            }
+
+            let currentX = gateX;
+
+            // Initial state
+            if (animationStep >= 0) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '14px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('|0⟩', currentX - 60, qubitY + n * qubitSpacing / 2);
+                ctx.fillText('|1⟩', currentX - 60, qubitY + n * qubitSpacing + 5);
+            }
+
+            // Hadamard all
+            if (animationStep >= 1) {
+                for (let i = 0; i <= n; i++) {
+                    drawGate(currentX, qubitY + i * qubitSpacing, gateWidth, 'H', animationStep === 1);
+                }
+            }
+
+            currentX += gateSpacing;
+
+            // Oracle (encodes secret string)
+            if (animationStep >= 2) {
+                const oracleY = qubitY;
+                const oracleHeight = n * qubitSpacing;
+
+                ctx.fillStyle = animationStep === 2 ? 'rgba(245, 166, 35, 0.3)' : 'rgba(156, 39, 176, 0.2)';
+                ctx.fillRect(currentX - gateWidth/2, oracleY - 30, gateWidth, oracleHeight + 60);
+                ctx.strokeStyle = animationStep === 2 ? '#F5A623' : 'rgba(156, 39, 176, 0.5)';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(currentX - gateWidth/2, oracleY - 30, gateWidth, oracleHeight + 60);
+
+                ctx.fillStyle = '#F5A623';
+                ctx.font = 'bold 18px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('Uₛ', currentX, oracleY + oracleHeight/2);
+
+                ctx.font = '12px Courier New';
+                ctx.fillText('s·x', currentX, oracleY + oracleHeight/2 + 25);
+
+                // Show secret string (hidden during animation)
+                if (animationStep >= 4) {
+                    ctx.fillStyle = '#FF1D6C';
+                    ctx.font = '14px Courier New';
+                    ctx.fillText(`s = ${secretString}`, currentX, oracleY - 40);
+                }
+            }
+
+            currentX += gateSpacing;
+
+            // Hadamard first n qubits
+            if (animationStep >= 3) {
+                for (let i = 0; i < n; i++) {
+                    drawGate(currentX, qubitY + i * qubitSpacing, gateWidth, 'H', animationStep === 3);
+                }
+            }
+
+            currentX += gateSpacing;
+
+            // Measurement
+            if (animationStep >= 4) {
+                for (let i = 0; i < n; i++) {
+                    drawMeasurement(currentX, qubitY + i * qubitSpacing, animationStep === 4);
+                }
+
+                // Show result
+                ctx.fillStyle = '#00FF88';
+                ctx.font = 'bold 20px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(`|${secretString}⟩`, currentX, qubitY + (n + 1) * qubitSpacing + 20);
+                ctx.font = '16px SF Pro Display';
+                ctx.fillText('✓ Secret string revealed in 1 query!', currentX, qubitY + (n + 1) * qubitSpacing + 45);
+            }
+
+            // Info box
+            drawInfoBox(150, 500, 900, 130,
+                `Classical: Must query n times (one per bit)\\nQuantum: Single query! Linear speedup!\\n\\nOracle computes: f(x) = s·x (mod 2) = s₀x₀ ⊕ s₁x₁ ⊕ ... ⊕ sₙ₋₁xₙ₋₁\\nQuantum algorithm reveals entire string s at once!`);
+        }
+
+        function drawSimon() {
+            const algo = algorithms['simon'];
+            const n = 3; // Input size
+            const period = '101'; // Example period
+
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText("Simon's Algorithm: Find Hidden Period", 600, 40);
+
+            const qubitY = 100;
+            const qubitSpacing = 60;
+            const gateX = 180;
+            const gateWidth = 60;
+            const gateSpacing = 140;
+
+            // Draw qubit lines (2n qubits)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 2 * n; i++) {
+                const y = qubitY + i * qubitSpacing;
+                ctx.beginPath();
+                ctx.moveTo(50, y);
+                ctx.lineTo(1000, y);
+                ctx.stroke();
+
+                ctx.font = '14px Courier New';
+                ctx.fillStyle = i < n ? '#2979FF' : '#9C27B0';
+                ctx.textAlign = 'right';
+                if (i < n) {
+                    ctx.fillText(`|x${i}⟩`, 40, y + 5);
+                } else {
+                    ctx.fillText(`|y${i - n}⟩`, 40, y + 5);
+                }
+            }
+
+            let currentX = gateX;
+
+            // Initial state
+            if (animationStep >= 0) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '14px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('|0⟩⊗⁶', currentX - 70, qubitY + 2.5 * qubitSpacing);
+            }
+
+            // Hadamard first n qubits
+            if (animationStep >= 1) {
+                for (let i = 0; i < n; i++) {
+                    drawGate(currentX, qubitY + i * qubitSpacing, 50, 'H', animationStep === 1);
+                }
+            }
+
+            currentX += gateSpacing;
+
+            // Oracle
+            if (animationStep >= 2) {
+                const oracleY = qubitY;
+                const oracleHeight = (2 * n - 1) * qubitSpacing;
+
+                ctx.fillStyle = animationStep === 2 ? 'rgba(41, 121, 255, 0.3)' : 'rgba(156, 39, 176, 0.2)';
+                ctx.fillRect(currentX - gateWidth/2, oracleY - 25, gateWidth, oracleHeight + 50);
+                ctx.strokeStyle = animationStep === 2 ? '#2979FF' : 'rgba(156, 39, 176, 0.5)';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(currentX - gateWidth/2, oracleY - 25, gateWidth, oracleHeight + 50);
+
+                ctx.fillStyle = '#2979FF';
+                ctx.font = 'bold 18px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('Uₚ', currentX, oracleY + oracleHeight/2);
+
+                ctx.font = '11px Courier New';
+                ctx.fillText('f(x)=f(x⊕s)', currentX, oracleY + oracleHeight/2 + 20);
+            }
+
+            currentX += gateSpacing;
+
+            // Hadamard first n qubits again
+            if (animationStep >= 3) {
+                for (let i = 0; i < n; i++) {
+                    drawGate(currentX, qubitY + i * qubitSpacing, 50, 'H', animationStep === 3);
+                }
+            }
+
+            currentX += gateSpacing;
+
+            // Measurement
+            if (animationStep >= 4) {
+                for (let i = 0; i < n; i++) {
+                    drawMeasurement(currentX, qubitY + i * qubitSpacing, animationStep === 4);
+                }
+
+                ctx.fillStyle = '#F5A623';
+                ctx.font = 'bold 16px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('Get y where y·s = 0', currentX, qubitY + 2 * n * qubitSpacing + 30);
+            }
+
+            // Show classical post-processing
+            if (animationStep >= 5) {
+                ctx.fillStyle = 'rgba(255, 29, 108, 0.2)';
+                ctx.fillRect(100, 480, 1000, 180);
+                ctx.strokeStyle = '#FF1D6C';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(100, 480, 1000, 180);
+
+                ctx.fillStyle = '#FF1D6C';
+                ctx.font = 'bold 18px SF Pro Display';
+                ctx.textAlign = 'center';
+                ctx.fillText('Classical Post-Processing', 600, 510);
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.font = '15px Courier New';
+                ctx.textAlign = 'left';
+                ctx.fillText('1. Run algorithm n times to get n-1 equations: yᵢ·s = 0', 120, 540);
+                ctx.fillText('2. Solve system of linear equations to find period s', 120, 565);
+                ctx.fillText(`3. Result: s = ${period} (secret period revealed!)`, 120, 590);
+
+                ctx.fillStyle = '#00FF88';
+                ctx.font = 'bold 16px SF Pro Display';
+                ctx.textAlign = 'center';
+                ctx.fillText(`✓ f(x) = f(x ⊕ ${period}) for all x`, 600, 630);
+            }
+
+            // Info
+            drawInfoBox(150, 410, 900, 50,
+                `Classical: O(2ⁿ/²) queries | Quantum: O(n) queries | Exponential speedup!`);
+        }
+
+        function drawGate(x, y, width, label, highlight = false) {
+            ctx.fillStyle = highlight ? 'rgba(255, 29, 108, 0.3)' : 'rgba(41, 121, 255, 0.2)';
+            ctx.fillRect(x - width/2, y - width/2, width, width);
+
+            ctx.strokeStyle = highlight ? '#FF1D6C' : '#2979FF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - width/2, y - width/2, width, width);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 20px Courier New';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, x, y);
+        }
+
+        function drawMeasurement(x, y, highlight = false) {
+            const size = 50;
+
+            // Measurement box
+            ctx.fillStyle = highlight ? 'rgba(0, 255, 136, 0.3)' : 'rgba(156, 39, 176, 0.2)';
+            ctx.fillRect(x - size/2, y - size/2, size, size);
+
+            ctx.strokeStyle = highlight ? '#00FF88' : '#9C27B0';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - size/2, y - size/2, size, size);
+
+            // Meter icon
+            ctx.beginPath();
+            ctx.arc(x, y, size/4, Math.PI, 0, false);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + size/5, y - size/5);
+            ctx.stroke();
+        }
+
+        function drawInfoBox(x, y, width, height, text) {
+            ctx.fillStyle = 'rgba(245, 166, 35, 0.1)';
+            ctx.fillRect(x, y, width, height);
+            ctx.strokeStyle = '#F5A623';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, width, height);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = '14px SF Pro Display';
+            ctx.textAlign = 'left';
+
+            const lines = text.split('\\n');
+            lines.forEach((line, i) => {
+                ctx.fillText(line, x + 20, y + 25 + i * 25);
+            });
+        }
+
+        function stepForward() {
+            const algo = algorithms[currentAlgorithm];
+            if (animationStep < algo.steps.length - 1) {
+                animationStep++;
+                updateInfo();
+                draw();
+            }
+        }
+
+        function stepBackward() {
+            if (animationStep > 0) {
+                animationStep--;
+                updateInfo();
+                draw();
+            }
+        }
+
+        function resetAnimation() {
+            animationStep = 0;
+            isPlaying = false;
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+            document.getElementById('play-icon').textContent = '▶';
+            document.getElementById('play-text').textContent = 'Play';
+            updateInfo();
+            draw();
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+
+            if (isPlaying) {
+                document.getElementById('play-icon').textContent = '⏸';
+                document.getElementById('play-text').textContent = 'Pause';
+                animationInterval = setInterval(() => {
+                    const algo = algorithms[currentAlgorithm];
+                    if (animationStep < algo.steps.length - 1) {
+                        stepForward();
+                    } else {
+                        togglePlay(); // Stop at end
+                    }
+                }, 2000);
+            } else {
+                document.getElementById('play-icon').textContent = '▶';
+                document.getElementById('play-text').textContent = 'Play';
+                if (animationInterval) {
+                    clearInterval(animationInterval);
+                    animationInterval = null;
+                }
+            }
+        }
+
+        // Initialize
+        updateInfo();
+        draw();
+    </script>
+</body>
+</html>

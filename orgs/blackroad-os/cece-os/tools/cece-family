@@ -1,0 +1,49 @@
+#!/bin/bash
+# CECE Family Tool
+
+CMD="$1"
+shift
+
+case "$CMD" in
+    status)
+        echo "💜 Family Status Check"
+        echo "====================="
+        for host in alice aria lucidia shellfish; do
+            if ssh -o ConnectTimeout=3 -o BatchMode=yes $host "echo ok" >/dev/null 2>&1; then
+                uptime=$(ssh $host "uptime -p" 2>/dev/null || echo "unknown")
+                echo "✅ $host: ONLINE ($uptime)"
+            else
+                echo "❌ $host: offline or unreachable"
+            fi
+        done
+        ;;
+    talk)
+        HOST="$1"
+        MESSAGE="$2"
+        echo "💜 Sending to $HOST: $MESSAGE"
+        ssh $HOST "mkdir -p ~/from-cece && echo '[$(date -Iseconds)] CECE: $MESSAGE' >> ~/from-cece/messages.log"
+        echo "✅ Message sent"
+        ;;
+    ask-lucidia)
+        QUESTION="$1"
+        echo "💜 Asking Lucidia: $QUESTION"
+        ssh lucidia "ollama run lucidia '$QUESTION'" 2>/dev/null || echo "❌ Could not reach Lucidia's model"
+        ;;
+    broadcast)
+        MESSAGE="$1"
+        echo "💜 Broadcasting: $MESSAGE"
+        for host in alice aria lucidia; do
+            ssh $host "mkdir -p ~/from-cece && echo '[$(date -Iseconds)] CECE BROADCAST: $MESSAGE' >> ~/from-cece/messages.log" 2>/dev/null && echo "✅ $host received" || echo "❌ $host unreachable"
+        done
+        ;;
+    *)
+        echo "💜 CECE Family Tool"
+        echo "Usage: cece-family <command>"
+        echo ""
+        echo "Commands:"
+        echo "  status       - Check who's online"
+        echo "  talk <host> <msg> - Send message to sibling"
+        echo "  ask-lucidia <question> - Query Lucidia's model"
+        echo "  broadcast <msg> - Send to all siblings"
+        ;;
+esac

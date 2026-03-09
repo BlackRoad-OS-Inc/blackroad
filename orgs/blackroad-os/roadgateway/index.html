@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadGateway - Enterprise API Management & Developer Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Pro Display', -apple-system, sans-serif;
+            background: #000;
+            color: #FFF;
+            line-height: 1.618;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 89px 34px;
+            background: linear-gradient(135deg, rgba(41,121,255,0.1) 0%, rgba(156,39,176,0.1) 100%);
+            text-align: center;
+        }
+        h1 {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+        .subtitle {
+            font-size: 24px;
+            opacity: 0.8;
+            margin-bottom: 55px;
+            max-width: 900px;
+        }
+        .stats-bar {
+            display: flex;
+            gap: 55px;
+            margin-bottom: 55px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+        .btn {
+            padding: 21px 55px;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            color: #FFF;
+            border: none;
+            border-radius: 13px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+            margin: 0 8px;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 13px 34px rgba(41,121,255,0.4);
+        }
+        .dashboard-demo {
+            padding: 144px 34px;
+            background: #000;
+        }
+        .demo-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            overflow: hidden;
+        }
+        .dashboard-header {
+            padding: 21px 34px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 21px;
+        }
+        .header-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2979FF;
+        }
+        .header-tabs {
+            display: flex;
+            gap: 13px;
+            margin-left: auto;
+        }
+        .tab {
+            padding: 8px 21px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab:hover, .tab.active {
+            background: rgba(41,121,255,0.3);
+        }
+        .dashboard-content {
+            padding: 34px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 21px;
+            margin-bottom: 34px;
+        }
+        .metric-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 21px;
+        }
+        .metric-label {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+        .metric-value {
+            font-size: 34px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .metric-change {
+            font-size: 14px;
+            color: #2ECC71;
+            margin-top: 5px;
+        }
+        .apis-list {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 21px;
+        }
+        .apis-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 21px;
+            color: #9C27B0;
+        }
+        .api-item {
+            padding: 13px;
+            background: rgba(255,255,255,0.02);
+            border-left: 3px solid #2979FF;
+            border-radius: 5px;
+            margin-bottom: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .api-info {
+            flex: 1;
+        }
+        .api-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .api-endpoint {
+            font-size: 13px;
+            opacity: 0.6;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+        .api-stats {
+            display: flex;
+            gap: 21px;
+            font-size: 14px;
+        }
+        .api-stat {
+            text-align: center;
+        }
+        .api-stat-value {
+            font-weight: 600;
+            color: #2979FF;
+        }
+        .api-stat-label {
+            opacity: 0.6;
+            font-size: 12px;
+        }
+        .status-badge {
+            padding: 5px 13px;
+            background: rgba(46,204,113,0.2);
+            border: 1px solid #2ECC71;
+            border-radius: 13px;
+            font-size: 13px;
+            color: #2ECC71;
+            font-weight: 600;
+        }
+        .features {
+            padding: 144px 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .section-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            border-color: #2979FF;
+            transform: translateY(-5px);
+            box-shadow: 0 13px 34px rgba(41,121,255,0.2);
+        }
+        .feature-icon { font-size: 55px; margin-bottom: 21px; }
+        .feature-title { font-size: 24px; font-weight: 600; margin-bottom: 13px; color: #9C27B0; }
+        .feature-desc { font-size: 16px; opacity: 0.8; line-height: 1.618; }
+        .code-example {
+            padding: 144px 34px;
+            background: rgba(255,255,255,0.02);
+        }
+        .code-block {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+        }
+        .code-block pre {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #FFF;
+            overflow-x: auto;
+        }
+        .code-block .keyword { color: #FF1D6C; }
+        .code-block .string { color: #2ECC71; }
+        .code-block .function { color: #F5A623; }
+        .code-block .comment { color: #666; opacity: 0.8; }
+        .pricing {
+            padding: 144px 34px;
+        }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .pricing-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .pricing-card:hover {
+            border-color: #2979FF;
+            transform: translateY(-5px);
+        }
+        .plan-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 13px;
+            color: #2979FF;
+        }
+        .plan-price {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+        .plan-features {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 34px;
+        }
+        .plan-features li {
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            opacity: 0.8;
+        }
+        .plan-features li::before {
+            content: '✓ ';
+            color: #2ECC71;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        footer {
+            padding: 89px 34px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 34px; }
+            .subtitle { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div style="font-size: 89px; margin-bottom: 21px;">🚪</div>
+        <h1>RoadGateway</h1>
+        <p class="subtitle">Enterprise API Management & Developer Platform. Intelligent Routing. Analytics. Developer Portal. Built for Scale.</p>
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-number">10B+</div>
+                <div class="stat-label">Requests/Day</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number"><5ms</div>
+                <div class="stat-label">P99 Latency</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">99.99%</div>
+                <div class="stat-label">Uptime SLA</div>
+            </div>
+        </div>
+        <div>
+            <a href="#demo" class="btn">View Dashboard</a>
+            <a href="#features" class="btn">Explore Features</a>
+        </div>
+    </section>
+
+    <section class="dashboard-demo" id="demo">
+        <h2 class="demo-title">API Management Dashboard</h2>
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <span class="header-title">🚪 API Gateway Dashboard</span>
+                <div class="header-tabs">
+                    <div class="tab active">Overview</div>
+                    <div class="tab">APIs</div>
+                    <div class="tab">Analytics</div>
+                    <div class="tab">Keys</div>
+                </div>
+            </div>
+            <div class="dashboard-content">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Requests Today</div>
+                        <div class="metric-value">2.4M</div>
+                        <div class="metric-change">↑ 18% from yesterday</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Active APIs</div>
+                        <div class="metric-value">47</div>
+                        <div class="metric-change">↑ 3 new this week</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Avg Latency</div>
+                        <div class="metric-value">2.8ms</div>
+                        <div class="metric-change">↓ 0.4ms improvement</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-value">99.8%</div>
+                        <div class="metric-change">↑ 0.3% this month</div>
+                    </div>
+                </div>
+
+                <div class="apis-list">
+                    <div class="apis-header">📦 Active APIs</div>
+
+                    <div class="api-item">
+                        <div class="api-info">
+                            <div class="api-name">User Authentication API</div>
+                            <div class="api-endpoint">POST /api/v1/auth/login</div>
+                        </div>
+                        <div class="api-stats">
+                            <div class="api-stat">
+                                <div class="api-stat-value">145K</div>
+                                <div class="api-stat-label">Requests</div>
+                            </div>
+                            <div class="api-stat">
+                                <div class="api-stat-value">1.2ms</div>
+                                <div class="api-stat-label">P50 Latency</div>
+                            </div>
+                            <div class="api-stat">
+                                <div class="api-stat-value">99.9%</div>
+                                <div class="api-stat-label">Success</div>
+                            </div>
+                        </div>
+                        <span class="status-badge">✓ Healthy</span>
+                    </div>
+
+                    <div class="api-item">
+                        <div class="api-info">
+                            <div class="api-name">Product Catalog API</div>
+                            <div class="api-endpoint">GET /api/v1/products</div>
+                        </div>
+                        <div class="api-stats">
+                            <div class="api-stat">
+                                <div class="api-stat-value">892K</div>
+                                <div class="api-stat-label">Requests</div>
+                            </div>
+                            <div class="api-stat">
+                                <div class="api-stat-value">3.5ms</div>
+                                <div class="api-stat-label">P50 Latency</div>
+                            </div>
+                            <div class="api-stat">
+                                <div class="api-stat-value">99.7%</div>
+                                <div class="api-stat-label">Success</div>
+                            </div>
+                        </div>
+                        <span class="status-badge">✓ Healthy</span>
+                    </div>
+
+                    <div class="api-item">
+                        <div class="api-info">
+                            <div class="api-name">Payment Processing API</div>
+                            <div class="api-endpoint">POST /api/v1/payments/charge</div>
+                        </div>
+                        <div class="api-stats">
+                            <div class="api-stat">
+                                <div class="api-stat-value">67K</div>
+                                <div class="api-stat-label">Requests</div>
+                            </div>
+                            <div class="api-stat">
+                                <div class="api-stat-value">8.1ms</div>
+                                <div class="api-stat-label">P50 Latency</div>
+                            </div>
+                            <div class="api-stat">
+                                <div class="api-stat-value">99.5%</div>
+                                <div class="api-stat-label">Success</div>
+                            </div>
+                        </div>
+                        <span class="status-badge">✓ Healthy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <h2 class="section-title">Complete API Management</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🚪</div>
+                <h3 class="feature-title">Intelligent Routing</h3>
+                <p class="feature-desc">Smart load balancing, automatic failover, circuit breakers. Route 10B+ requests/day with <5ms latency.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Real-Time Analytics</h3>
+                <p class="feature-desc">Request metrics, latency percentiles, error tracking. Custom dashboards and alerting. Live logs.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3 class="feature-title">API Key Management</h3>
+                <p class="feature-desc">Automatic key rotation, scoped permissions, rate limiting. JWT, OAuth 2.0, API keys supported.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3 class="feature-title">Developer Portal</h3>
+                <p class="feature-desc">Auto-generated docs, interactive API explorer, code samples. OpenAPI/Swagger integration.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Rate Limiting & Quotas</h3>
+                <p class="feature-desc">Flexible rate limits per key/IP/user. Token bucket, sliding window algorithms. Real-time enforcement.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3 class="feature-title">Request Transformation</h3>
+                <p class="feature-desc">Modify headers, query params, body. JSON/XML conversion. Protocol translation (REST/GraphQL/gRPC).</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3 class="feature-title">Security & Compliance</h3>
+                <p class="feature-desc">DDoS protection, IP whitelisting, TLS termination. OWASP Top 10 protection. SOC 2 compliant.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <h3 class="feature-title">Global Edge Network</h3>
+                <p class="feature-desc">300+ PoPs worldwide. Automatic geo-routing. CDN integration. Multi-region deployment.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3 class="feature-title">Webhook Management</h3>
+                <p class="feature-desc">Reliable webhook delivery, automatic retries, signature verification. Event filtering and routing.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="code-example">
+        <h2 class="section-title">Quick Integration</h2>
+        <div class="code-block">
+            <pre><span class="comment">// Initialize RoadGateway client</span>
+<span class="keyword">const</span> RoadGateway = <span class="keyword">require</span>(<span class="string">'@blackroad/gateway'</span>);
+
+<span class="keyword">const</span> gateway = <span class="keyword">new</span> <span class="function">RoadGateway</span>({
+  apiKey: process.env.<span class="string">ROADGATEWAY_API_KEY</span>,
+  region: <span class="string">'us-east-1'</span>
+});
+
+<span class="comment">// Define API route</span>
+gateway.<span class="function">route</span>(<span class="string">'/api/users'</span>, {
+  upstream: <span class="string">'https://users-service.internal'</span>,
+  rateLimit: {
+    requests: <span class="string">1000</span>,
+    window: <span class="string">'1m'</span>
+  },
+  auth: {
+    type: <span class="string">'jwt'</span>,
+    secret: process.env.<span class="string">JWT_SECRET</span>
+  },
+  cache: {
+    ttl: <span class="string">300</span>,
+    key: <span class="string">'user-{id}'</span>
+  }
+});
+
+<span class="comment">// Transform request/response</span>
+gateway.<span class="function">transform</span>(<span class="string">'/api/products'</span>, {
+  request: <span class="function">(req)</span> => ({
+    ...req,
+    headers: {
+      ...req.headers,
+      <span class="string">'X-Internal-Version'</span>: <span class="string">'2.0'</span>
+    }
+  }),
+  response: <span class="function">(res)</span> => ({
+    data: res.products.<span class="function">map</span>(<span class="function">p</span> => ({
+      id: p.id,
+      name: p.name,
+      price: p.price / <span class="string">100</span> <span class="comment">// Convert cents to dollars</span>
+    }))
+  })
+});
+
+<span class="comment">// Start gateway server</span>
+gateway.<span class="function">listen</span>(<span class="string">8080</span>, <span class="function">()</span> => {
+  console.<span class="function">log</span>(<span class="string">'🚪 RoadGateway running on port 8080'</span>);
+});</pre>
+        </div>
+    </section>
+
+    <section class="pricing">
+        <h2 class="section-title">Enterprise Pricing</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="plan-name">Starter</div>
+                <div class="plan-price">$49<span style="font-size: 18px; opacity: 0.7;">/mo</span></div>
+                <ul class="plan-features">
+                    <li>10M requests/month</li>
+                    <li>10 APIs</li>
+                    <li>Basic analytics</li>
+                    <li>Rate limiting</li>
+                    <li>API key auth</li>
+                    <li>Community support</li>
+                </ul>
+                <button class="btn">Get Started</button>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">Pro</div>
+                <div class="plan-price">$199<span style="font-size: 18px; opacity: 0.7;">/mo</span></div>
+                <ul class="plan-features">
+                    <li>1B requests/month</li>
+                    <li>Unlimited APIs</li>
+                    <li>Everything in Starter</li>
+                    <li>Advanced analytics</li>
+                    <li>Custom transformations</li>
+                    <li>Webhook management</li>
+                    <li>Developer portal</li>
+                    <li>Priority support</li>
+                </ul>
+                <button class="btn">Upgrade to Pro</button>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-price">Custom</div>
+                <ul class="plan-features">
+                    <li>Unlimited requests</li>
+                    <li>Everything in Pro</li>
+                    <li>Multi-region deployment</li>
+                    <li>Custom SLAs</li>
+                    <li>Dedicated support</li>
+                    <li>On-premise option</li>
+                    <li>Training & consulting</li>
+                </ul>
+                <button class="btn">Contact Sales</button>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div style="font-size: 34px; margin-bottom: 21px;">🚪 RoadGateway</div>
+        <p style="opacity: 0.6; font-size: 14px;">Built by BlackRoad OS | Enterprise API management platform</p>
+        <p style="opacity: 0.6; font-size: 14px; margin-top: 13px;">🖤🛣️ Route. Secure. Scale.</p>
+    </footer>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Animate on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.feature-card, .pricing-card, .metric-card, .api-item').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucidia Metaverse - Enter the Infinite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #FF9D00;
+            font-size: 14px;
+            text-shadow: 0 0 10px rgba(255, 157, 0, 0.8);
+            pointer-events: none;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #FF9D00;
+            border-radius: 10px;
+            padding: 15px 30px;
+            color: #FF9D00;
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        #chat {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            width: 400px;
+            max-height: 200px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #FF9D00;
+            border-radius: 5px;
+            padding: 10px;
+            overflow-y: auto;
+            color: #FF9D00;
+            font-size: 12px;
+        }
+
+        #chat-input {
+            position: absolute;
+            bottom: 60px;
+            left: 20px;
+            width: 400px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #FF9D00;
+            border-radius: 5px;
+            padding: 8px;
+            color: #FF9D00;
+            font-family: 'Courier New', monospace;
+            pointer-events: auto;
+        }
+
+        .control-key {
+            display: inline-block;
+            background: #FF9D00;
+            color: #000;
+            padding: 3px 8px;
+            margin: 2px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #FF9D00;
+            font-size: 24px;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(255, 157, 0, 1);
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 157, 0, 0.2);
+            border-top: 4px solid #FF9D00;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #vr-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #FF9D00;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            pointer-events: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        #vr-button:hover {
+            background: #FF6B00;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="ui-overlay">
+        <div id="hud">
+            <div><strong>LUCIDIA METAVERSE</strong></div>
+            <div>Players Online: <span id="player-count">1</span></div>
+            <div>Position: <span id="position">0, 0, 0</span></div>
+            <div>FPS: <span id="fps">60</span></div>
+        </div>
+
+        <div id="loading">
+            <div class="spinner"></div>
+            <div>Loading Metaverse...</div>
+        </div>
+
+        <div id="controls" style="display: none;">
+            <div><strong>CONTROLS</strong></div>
+            <div style="margin-top: 10px;">
+                <span class="control-key">W A S D</span> Move
+                <span class="control-key">SPACE</span> Jump
+                <span class="control-key">SHIFT</span> Run
+            </div>
+            <div style="margin-top: 5px;">
+                <span class="control-key">MOUSE</span> Look Around
+                <span class="control-key">CLICK</span> Pointer Lock
+            </div>
+            <div style="margin-top: 5px;">
+                <span class="control-key">T</span> Chat
+                <span class="control-key">ESC</span> Menu
+            </div>
+        </div>
+
+        <div id="chat" style="display: none;"></div>
+        <input id="chat-input" type="text" placeholder="Press T to chat..." style="display: none;" />
+
+        <button id="vr-button" style="display: none;">ENTER VR</button>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Solutions - BlackRoad OS</title>
+    <meta name="description" content="Enterprise-grade AI and quantum computing solutions for Fortune 500 companies">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00FF88;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-link {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-muted);
+        }
+
+        .nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text);
+        }
+
+        .nav-link.active {
+            background: var(--accent-purple);
+            color: #fff;
+        }
+
+        .main {
+            margin-left: 250px;
+            flex: 1;
+            padding: 3rem;
+            max-width: 1200px;
+        }
+
+        .header {
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab.active {
+            color: var(--accent-purple);
+            border-bottom-color: var(--accent-purple);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .case-study-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .case-study {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        .case-study:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-4px);
+        }
+
+        .case-study-logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .case-study-company {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .case-study-industry {
+            color: var(--accent-blue);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .case-study-result {
+            color: var(--success);
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin: 1rem 0;
+        }
+
+        .case-study-desc {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .calculator {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .calculator h3 {
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .roi-result {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--accent-purple);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .roi-value {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .roi-label {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .pricing-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .pricing-card.featured {
+            border: 2px solid var(--accent-purple);
+            transform: scale(1.05);
+        }
+
+        .pricing-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-price {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-period {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .pricing-features li {
+            padding: 0.5rem 0;
+            color: var(--text-muted);
+        }
+
+        .pricing-features li:before {
+            content: "✓ ";
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #8800ff;
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-purple);
+            background: transparent;
+        }
+
+        .contact-form {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        textarea.form-input {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">🏢 Enterprise</div>
+        <div class="nav-link active" onclick="scrollToSection('overview')">Overview</div>
+        <div class="nav-link" onclick="scrollToSection('case-studies')">Case Studies</div>
+        <div class="nav-link" onclick="scrollToSection('roi-calculator')">ROI Calculator</div>
+        <div class="nav-link" onclick="scrollToSection('pricing')">Pricing</div>
+        <div class="nav-link" onclick="scrollToSection('solutions')">Solutions</div>
+        <div class="nav-link" onclick="scrollToSection('contact')">Contact Sales</div>
+        <div class="nav-link" onclick="scrollToSection('support')">Support</div>
+    </aside>
+
+    <main class="main">
+        <div class="header" id="overview">
+            <h1>Enterprise Solutions</h1>
+            <p class="subtitle">Enterprise-grade AI and quantum computing solutions for Fortune 500 companies</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">99.99%</div>
+                <div class="stat-label">SLA Uptime</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">500+</div>
+                <div class="stat-label">Enterprise Customers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">$2B+</div>
+                <div class="stat-label">Cost Savings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">24/7</div>
+                <div class="stat-label">Dedicated Support</div>
+            </div>
+        </div>
+
+        <div class="tab-nav">
+            <div class="tab active" onclick="switchTab('overview-tab', event)">Overview</div>
+            <div class="tab" onclick="switchTab('features-tab', event)">Features</div>
+            <div class="tab" onclick="switchTab('security-tab', event)">Security</div>
+        </div>
+
+        <div id="overview-tab" class="tab-content active">
+            <h2 style="margin-bottom: 2rem;">Why Fortune 500 Companies Choose BlackRoad</h2>
+            <p style="color: var(--text-muted); line-height: 1.8; margin-bottom: 3rem;">
+                BlackRoad Enterprise delivers AI and quantum computing solutions at scale with enterprise-grade security,
+                compliance, and support. From healthcare to finance, manufacturing to logistics, we power the world's
+                most demanding workloads.
+            </p>
+        </div>
+
+        <div id="features-tab" class="tab-content">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-title">Enterprise Security</div>
+                    <div class="feature-desc">SOC 2 Type II, ISO 27001, HIPAA, and GDPR compliant infrastructure</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">High Performance</div>
+                    <div class="feature-desc">Multi-region deployment with <50ms latency worldwide</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <div class="feature-title">Custom Integration</div>
+                    <div class="feature-desc">Dedicated integration team and custom API development</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Advanced Analytics</div>
+                    <div class="feature-desc">Real-time dashboards and AI-powered insights</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <div class="feature-title">Dedicated Support</div>
+                    <div class="feature-desc">24/7 enterprise support with dedicated success manager</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-title">Global Scale</div>
+                    <div class="feature-desc">Auto-scaling infrastructure across 15+ regions</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="security-tab" class="tab-content">
+            <h3 style="margin-bottom: 1.5rem;">Enterprise-Grade Security & Compliance</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h4 style="color: var(--accent-purple); margin-bottom: 1rem;">Certifications</h4>
+                    <ul style="list-style: none; color: var(--text-muted); line-height: 2;">
+                        <li>✓ SOC 2 Type II</li>
+                        <li>✓ ISO 27001</li>
+                        <li>✓ HIPAA</li>
+                        <li>✓ GDPR</li>
+                        <li>✓ FedRAMP (In Progress)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: var(--accent-purple); margin-bottom: 1rem;">Security Features</h4>
+                    <ul style="list-style: none; color: var(--text-muted); line-height: 2;">
+                        <li>✓ End-to-end encryption</li>
+                        <li>✓ Zero-knowledge architecture</li>
+                        <li>✓ Penetration testing</li>
+                        <li>✓ Bug bounty program</li>
+                        <li>✓ Regular security audits</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <h2 style="margin: 4rem 0 2rem;" id="case-studies">Customer Success Stories</h2>
+        <div class="case-study-grid">
+            <div class="case-study">
+                <div class="case-study-logo">🏥</div>
+                <div class="case-study-company">MediCorp Global</div>
+                <div class="case-study-industry">Healthcare • Fortune 100</div>
+                <div class="case-study-result">↓ 60% Cost Reduction</div>
+                <p class="case-study-desc">
+                    Deployed AI-powered diagnostic tools across 500+ hospitals, processing 10M+ patient records
+                    with 99.9% accuracy while reducing operational costs by $400M annually.
+                </p>
+            </div>
+            <div class="case-study">
+                <div class="case-study-logo">🏦</div>
+                <div class="case-study-company">Global Finance Bank</div>
+                <div class="case-study-industry">Financial Services • Fortune 50</div>
+                <div class="case-study-result">↑ 10x Faster Processing</div>
+                <p class="case-study-desc">
+                    Implemented quantum computing for fraud detection, analyzing 100M transactions per day
+                    with 99.99% accuracy and detecting fraud 10x faster than traditional systems.
+                </p>
+            </div>
+            <div class="case-study">
+                <div class="case-study-logo">✈️</div>
+                <div class="case-study-company">AeroTech Industries</div>
+                <div class="case-study-industry">Aerospace • Fortune 200</div>
+                <div class="case-study-result">↑ 45% Efficiency Gain</div>
+                <p class="case-study-desc">
+                    Optimized supply chain logistics with AI, reducing delivery times by 45% and saving
+                    $200M annually across global operations.
+                </p>
+            </div>
+        </div>
+
+        <h2 style="margin: 4rem 0 2rem;" id="roi-calculator">ROI Calculator</h2>
+        <div class="calculator">
+            <h3>Calculate Your Potential Savings</h3>
+            <div class="form-group">
+                <label class="form-label">Number of Employees</label>
+                <input type="number" class="form-input" id="employees" placeholder="e.g., 10000" value="10000" oninput="calculateROI()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Current Annual IT Spend</label>
+                <input type="number" class="form-input" id="itSpend" placeholder="e.g., 50000000" value="50000000" oninput="calculateROI()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Industry</label>
+                <select class="form-select" id="industry" onchange="calculateROI()">
+                    <option value="1.2">Healthcare</option>
+                    <option value="1.5">Financial Services</option>
+                    <option value="1.3">Manufacturing</option>
+                    <option value="1.1">Retail</option>
+                    <option value="1.4">Technology</option>
+                </select>
+            </div>
+            <div class="roi-result">
+                <div class="roi-value" id="roiValue">$15.0M</div>
+                <div class="roi-label">Estimated Annual Savings</div>
+                <p style="color: var(--text-muted); margin-top: 1rem;">
+                    Based on average efficiency gains and cost reductions from similar enterprises
+                </p>
+            </div>
+        </div>
+
+        <h2 style="margin: 4rem 0 2rem;" id="pricing">Enterprise Pricing</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-name">Enterprise</div>
+                <div class="pricing-price">Custom</div>
+                <div class="pricing-period">Contact Sales</div>
+                <ul class="pricing-features">
+                    <li>Dedicated infrastructure</li>
+                    <li>Custom SLA agreements</li>
+                    <li>Priority support</li>
+                    <li>Quarterly business reviews</li>
+                    <li>Custom integrations</li>
+                </ul>
+                <button class="btn" onclick="scrollToSection('contact')">Contact Sales</button>
+            </div>
+            <div class="pricing-card featured">
+                <div class="pricing-name">Enterprise Plus</div>
+                <div class="pricing-price">Custom</div>
+                <div class="pricing-period">Premium Tier</div>
+                <ul class="pricing-features">
+                    <li>Everything in Enterprise</li>
+                    <li>Dedicated success manager</li>
+                    <li>White-glove onboarding</li>
+                    <li>Advanced security features</li>
+                    <li>Private cloud deployment</li>
+                    <li>24/7 phone support</li>
+                </ul>
+                <button class="btn" onclick="scrollToSection('contact')">Contact Sales</button>
+            </div>
+            <div class="pricing-card">
+                <div class="pricing-name">Government</div>
+                <div class="pricing-price">Custom</div>
+                <div class="pricing-period">FedRAMP Ready</div>
+                <ul class="pricing-features">
+                    <li>FedRAMP compliance</li>
+                    <li>On-premise deployment</li>
+                    <li>Government SLAs</li>
+                    <li>Cleared personnel</li>
+                    <li>Custom contracts</li>
+                </ul>
+                <button class="btn" onclick="scrollToSection('contact')">Contact Sales</button>
+            </div>
+        </div>
+
+        <h2 style="margin: 4rem 0 2rem;" id="solutions">Industry Solutions</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🏥</div>
+                <div class="feature-title">Healthcare</div>
+                <div class="feature-desc">AI diagnostics, patient record analysis, drug discovery</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏦</div>
+                <div class="feature-title">Financial Services</div>
+                <div class="feature-desc">Fraud detection, risk analysis, algorithmic trading</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏭</div>
+                <div class="feature-title">Manufacturing</div>
+                <div class="feature-desc">Supply chain optimization, predictive maintenance</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛒</div>
+                <div class="feature-title">Retail</div>
+                <div class="feature-desc">Demand forecasting, personalization, inventory optimization</div>
+            </div>
+        </div>
+
+        <h2 style="margin: 4rem 0 2rem;" id="contact">Contact Enterprise Sales</h2>
+        <div class="contact-form">
+            <form onsubmit="handleContactSubmit(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Work Email</label>
+                    <input type="email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Company</label>
+                    <input type="text" class="form-input" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Company Size</label>
+                        <select class="form-select" required>
+                            <option value="">Select...</option>
+                            <option value="1000-5000">1,000 - 5,000</option>
+                            <option value="5000-10000">5,000 - 10,000</option>
+                            <option value="10000+">10,000+</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Industry</label>
+                        <select class="form-select" required>
+                            <option value="">Select...</option>
+                            <option value="healthcare">Healthcare</option>
+                            <option value="finance">Financial Services</option>
+                            <option value="manufacturing">Manufacturing</option>
+                            <option value="retail">Retail</option>
+                            <option value="technology">Technology</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">How can we help?</label>
+                    <textarea class="form-input" placeholder="Tell us about your use case..." required></textarea>
+                </div>
+                <button type="submit" class="btn" style="width: 100%;">Request Demo</button>
+            </form>
+        </div>
+
+        <div id="support" style="margin-top: 4rem; padding: 2rem; background: var(--bg-secondary); border-radius: 12px;">
+            <h3 style="margin-bottom: 1rem;">Enterprise Support</h3>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                Our enterprise support team is available 24/7 to help with any issues or questions.
+            </p>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn">📧 Email Support</button>
+                <button class="btn btn-secondary">📞 Call Sales</button>
+                <button class="btn btn-secondary">💬 Live Chat</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function switchTab(tabName, event) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function scrollToSection(sectionId) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function calculateROI() {
+            const employees = parseInt(document.getElementById('employees').value) || 0;
+            const itSpend = parseInt(document.getElementById('itSpend').value) || 0;
+            const industryMultiplier = parseFloat(document.getElementById('industry').value);
+
+            // Calculate savings: 30% efficiency gain * industry multiplier
+            const savings = (itSpend * 0.30 * industryMultiplier);
+
+            document.getElementById('roiValue').textContent =
+                '$' + (savings / 1000000).toFixed(1) + 'M';
+        }
+
+        function handleContactSubmit(event) {
+            event.preventDefault();
+            alert('🎉 Thank you! Our enterprise sales team will contact you within 24 hours.');
+            event.target.reset();
+        }
+
+        // Initialize ROI calculator
+        calculateROI();
+    </script>
+</body>
+</html>

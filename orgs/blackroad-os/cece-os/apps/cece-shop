@@ -1,0 +1,176 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════════
+#  🖤 CECE-SHOP v1.0 - Our Own Shopify
+#═══════════════════════════════════════════════════════════════════
+#  E-commerce. Products. Orders. Your store.
+#═══════════════════════════════════════════════════════════════════
+
+SHOP_DIR=~/cece/shop
+mkdir -p "$SHOP_DIR"/{products,orders,cart}
+
+PINK="\033[38;5;205m"
+AMBER="\033[38;5;214m"
+WHITE="\033[1;37m"
+GREEN="\033[38;5;82m"
+RESET="\033[0m"
+
+add_product() {
+    NAME="$1"
+    PRICE="$2"
+    STOCK="${3:-10}"
+    
+    PROD_ID=$(echo "$NAME" | tr " " "-" | tr "[:upper:]" "[:lower:]")
+    
+    cat > "$SHOP_DIR/products/$PROD_ID.product" << EOF
+id: $PROD_ID
+name: $NAME
+price: $PRICE
+stock: $STOCK
+created: $(date -Iseconds)
+EOF
+    
+    echo -e "${GREEN}✅ Product added: $NAME (\$$PRICE)${RESET}"
+}
+
+list_products() {
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo -e "${WHITE}  🛍️  PRODUCTS${RESET}"
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo ""
+    
+    for p in "$SHOP_DIR/products"/*.product 2>/dev/null; do
+        [ -f "$p" ] || continue
+        NAME=$(grep "^name:" "$p" | cut -d: -f2-)
+        PRICE=$(grep "^price:" "$p" | cut -d: -f2 | xargs)
+        STOCK=$(grep "^stock:" "$p" | cut -d: -f2 | xargs)
+        ID=$(grep "^id:" "$p" | cut -d: -f2 | xargs)
+        echo -e "  ${WHITE}$NAME${RESET}"
+        echo -e "    \$$PRICE | Stock: $STOCK | ID: $ID"
+        echo ""
+    done
+}
+
+add_to_cart() {
+    PROD_ID="$1"
+    QTY="${2:-1}"
+    
+    PROD_FILE="$SHOP_DIR/products/$PROD_ID.product"
+    if [ ! -f "$PROD_FILE" ]; then
+        echo "Product not found"
+        return
+    fi
+    
+    echo "$PROD_ID:$QTY" >> "$SHOP_DIR/cart/current.cart"
+    
+    NAME=$(grep "^name:" "$PROD_FILE" | cut -d: -f2-)
+    echo -e "${GREEN}✅ Added $QTY x$NAME to cart${RESET}"
+}
+
+view_cart() {
+    CART_FILE="$SHOP_DIR/cart/current.cart"
+    
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo -e "${WHITE}  🛒 YOUR CART${RESET}"
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo ""
+    
+    TOTAL=0
+    while IFS=: read -r PROD_ID QTY; do
+        PROD_FILE="$SHOP_DIR/products/$PROD_ID.product"
+        if [ -f "$PROD_FILE" ]; then
+            NAME=$(grep "^name:" "$PROD_FILE" | cut -d: -f2-)
+            PRICE=$(grep "^price:" "$PROD_FILE" | cut -d: -f2 | xargs)
+            SUBTOTAL=$((PRICE * QTY))
+            TOTAL=$((TOTAL + SUBTOTAL))
+            echo "  $QTY x$NAME @ \$$PRICE = \$$SUBTOTAL"
+        fi
+    done < "$CART_FILE" 2>/dev/null
+    
+    echo ""
+    echo -e "  ${AMBER}TOTAL: \$$TOTAL${RESET}"
+}
+
+checkout() {
+    CART_FILE="$SHOP_DIR/cart/current.cart"
+    
+    if [ ! -f "$CART_FILE" ]; then
+        echo "Cart is empty"
+        return
+    fi
+    
+    ORDER_ID=$(date +%s)
+    ORDER_FILE="$SHOP_DIR/orders/$ORDER_ID.order"
+    
+    TOTAL=0
+    echo "order_id: $ORDER_ID" > "$ORDER_FILE"
+    echo "created: $(date -Iseconds)" >> "$ORDER_FILE"
+    echo "status: paid" >> "$ORDER_FILE"
+    echo "items:" >> "$ORDER_FILE"
+    
+    while IFS=: read -r PROD_ID QTY; do
+        PROD_FILE="$SHOP_DIR/products/$PROD_ID.product"
+        if [ -f "$PROD_FILE" ]; then
+            NAME=$(grep "^name:" "$PROD_FILE" | cut -d: -f2-)
+            PRICE=$(grep "^price:" "$PROD_FILE" | cut -d: -f2 | xargs)
+            SUBTOTAL=$((PRICE * QTY))
+            TOTAL=$((TOTAL + SUBTOTAL))
+            echo "  - $QTY x $NAME @ \$$PRICE" >> "$ORDER_FILE"
+            
+            # Update stock
+            STOCK=$(grep "^stock:" "$PROD_FILE" | cut -d: -f2 | xargs)
+            NEW_STOCK=$((STOCK - QTY))
+            sed -i "s/^stock:.*/stock: $NEW_STOCK/" "$PROD_FILE"
+        fi
+    done < "$CART_FILE"
+    
+    echo "total: $TOTAL" >> "$ORDER_FILE"
+    
+    rm "$CART_FILE"
+    
+    echo -e "${GREEN}═══════════════════════════════════════${RESET}"
+    echo -e "${WHITE}  ✅ ORDER COMPLETE!${RESET}"
+    echo -e "${GREEN}═══════════════════════════════════════${RESET}"
+    echo ""
+    echo "  Order #$ORDER_ID"
+    echo "  Total: \$$TOTAL"
+    echo ""
+    echo "  Thank you for shopping with CECE!"
+}
+
+case "$1" in
+    add)
+        add_product "$2" "$3" "$4"
+        ;;
+    list)
+        list_products
+        ;;
+    cart-add)
+        add_to_cart "$2" "$3"
+        ;;
+    cart)
+        view_cart
+        ;;
+    checkout)
+        checkout
+        ;;
+    orders)
+        echo -e "${PINK}🛍️  ORDERS${RESET}"
+        for o in "$SHOP_DIR/orders"/*.order 2>/dev/null; do
+            [ -f "$o" ] || continue
+            ID=$(grep "^order_id:" "$o" | cut -d: -f2 | xargs)
+            TOTAL=$(grep "^total:" "$o" | cut -d: -f2 | xargs)
+            echo "  Order #$ID - \$$TOTAL"
+        done
+        ;;
+    *)
+        echo -e "${PINK}🖤 CECE-SHOP - Our Own Shopify${RESET}"
+        echo ""
+        echo "Commands:"
+        echo "  add <name> <price> [stock]  Add product"
+        echo "  list                        List products"
+        echo "  cart-add <id> [qty]         Add to cart"
+        echo "  cart                        View cart"
+        echo "  checkout                    Complete order"
+        echo "  orders                      View orders"
+        ;;
+esac

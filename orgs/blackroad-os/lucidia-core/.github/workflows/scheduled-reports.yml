@@ -1,0 +1,121 @@
+# ============================================================================
+# BlackRoad OS - Scheduled Reports
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Generates weekly reports on repository activity.
+# ============================================================================
+
+name: Weekly Report
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Monday 9 AM UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  report:
+    name: Generate Weekly Report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const since = oneWeekAgo.toISOString();
+
+            // Get commits
+            const commits = await github.rest.repos.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              since: since,
+              per_page: 100
+            });
+
+            // Get closed issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+              since: since,
+              per_page: 100
+            });
+
+            // Get merged PRs
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+              sort: 'updated',
+              direction: 'desc',
+              per_page: 50
+            });
+
+            const mergedPRs = prs.data.filter(pr =>
+              pr.merged_at && new Date(pr.merged_at) > oneWeekAgo
+            );
+
+            // Get open issues
+            const openIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            // Build report
+            let report = `# Weekly Activity Report\n\n`;
+            report += `**Period:** ${oneWeekAgo.toISOString().split('T')[0]} to ${new Date().toISOString().split('T')[0]}\n\n`;
+
+            report += `## Summary\n\n`;
+            report += `| Metric | Count |\n`;
+            report += `|--------|-------|\n`;
+            report += `| Commits | ${commits.data.length} |\n`;
+            report += `| Merged PRs | ${mergedPRs.length} |\n`;
+            report += `| Closed Issues | ${issues.data.filter(i => !i.pull_request).length} |\n`;
+            report += `| Open Issues | ${openIssues.data.filter(i => !i.pull_request).length} |\n\n`;
+
+            if (mergedPRs.length > 0) {
+              report += `## Merged Pull Requests\n\n`;
+              for (const pr of mergedPRs.slice(0, 10)) {
+                report += `- #${pr.number} ${pr.title} (@${pr.user.login})\n`;
+              }
+              report += '\n';
+            }
+
+            if (commits.data.length > 0) {
+              report += `## Top Contributors\n\n`;
+              const contributors = {};
+              for (const commit of commits.data) {
+                const author = commit.author?.login || commit.commit.author.name;
+                contributors[author] = (contributors[author] || 0) + 1;
+              }
+              const sorted = Object.entries(contributors).sort((a, b) => b[1] - a[1]);
+              for (const [name, count] of sorted.slice(0, 5)) {
+                report += `- @${name}: ${count} commits\n`;
+              }
+              report += '\n';
+            }
+
+            // Create issue with report
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Weekly Report: ${new Date().toISOString().split('T')[0]}`,
+              body: report,
+              labels: ['report', 'automated']
+            });
+
+            console.log('Weekly report created');

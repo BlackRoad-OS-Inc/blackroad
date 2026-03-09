@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-REST v1.0 - REST Client
+get() { curl -s "$1"; }
+post() { curl -s -X POST -H "Content-Type: application/json" -d "$2" "$1"; }
+put() { curl -s -X PUT -H "Content-Type: application/json" -d "$2" "$1"; }
+delete() { curl -s -X DELETE "$1"; }
+case "$1" in
+    get) get "$2" ;;
+    post) post "$2" "$3" ;;
+    put) put "$2" "$3" ;;
+    delete) delete "$2" ;;
+    *) echo "CECE-REST: get <url> | post <url> <json> | put <url> <json> | delete <url>" ;;
+esac

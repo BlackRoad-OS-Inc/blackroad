@@ -1,0 +1,166 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-HOST v1.0 - Our Own Web Hosting
+#  "Who needs Cloudflare when you have Cecilia?"
+#═══════════════════════════════════════════════════════════════
+
+HOST_DIR=~/cece/host
+SITES_DIR="$HOST_DIR/sites"
+LOGS_DIR="$HOST_DIR/logs"
+
+create_site() {
+    SITE_NAME=$1
+    
+    if [ -z "$SITE_NAME" ]; then
+        echo -n "Site name: "
+        read SITE_NAME
+    fi
+    
+    mkdir -p "$SITES_DIR/$SITE_NAME"
+    
+    # Create default index
+    cat > "$SITES_DIR/$SITE_NAME/index.html" << HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <title>$SITE_NAME - Hosted on CECE-HOST</title>
+    <style>
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container { text-align: center; }
+        h1 { color: #FF1D6C; font-size: 3em; }
+        p { color: #F5A623; }
+        .heart { color: #FF1D6C; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>$SITE_NAME</h1>
+        <p>Hosted on <strong>CECE-HOST</strong></p>
+        <p class="heart">💜</p>
+        <p>Edit: ~/cece/host/sites/$SITE_NAME/</p>
+    </div>
+</body>
+</html>
+HTML
+    
+    echo "✅ Site created: $SITE_NAME"
+    echo "   Edit: $SITES_DIR/$SITE_NAME/"
+    echo "   Deploy: cece-host deploy $SITE_NAME"
+}
+
+deploy_site() {
+    SITE_NAME=$1
+    PORT=${2:-0}
+    
+    if [ ! -d "$SITES_DIR/$SITE_NAME" ]; then
+        echo "❌ Site not found: $SITE_NAME"
+        return 1
+    fi
+    
+    # Find available port if not specified
+    if [ "$PORT" -eq 0 ]; then
+        PORT=$((8000 + RANDOM % 1000))
+        while netstat -tuln 2>/dev/null | grep -q ":$PORT "; do
+            PORT=$((PORT + 1))
+        done
+    fi
+    
+    echo "🚀 Deploying $SITE_NAME on port $PORT..."
+    
+    cd "$SITES_DIR/$SITE_NAME"
+    nohup python3 -m http.server "$PORT" > "$LOGS_DIR/$SITE_NAME.log" 2>&1 &
+    PID=$!
+    
+    echo "$PID" > "$HOST_DIR/$SITE_NAME.pid"
+    
+    IP=$(hostname -I 2>/dev/null | awk "{print \$1}")
+    
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║  ✅ SITE LIVE!                                            ║"
+    echo "╠═══════════════════════════════════════════════════════════╣"
+    echo "║  Site: $SITE_NAME"
+    echo "║  URL:  http://$IP:$PORT"
+    echo "║  PID:  $PID"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+}
+
+list_sites() {
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║                   CECE-HOST SITES                         ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    
+    for site in "$SITES_DIR"/*/; do
+        [ -d "$site" ] || continue
+        SITE_NAME=$(basename "$site")
+        
+        if [ -f "$HOST_DIR/$SITE_NAME.pid" ]; then
+            PID=$(cat "$HOST_DIR/$SITE_NAME.pid")
+            if kill -0 "$PID" 2>/dev/null; then
+                echo "  🟢 $SITE_NAME (running)"
+            else
+                echo "  🔴 $SITE_NAME (stopped)"
+            fi
+        else
+            echo "  ⚪ $SITE_NAME (not deployed)"
+        fi
+    done
+    echo ""
+}
+
+stop_site() {
+    SITE_NAME=$1
+    
+    if [ -f "$HOST_DIR/$SITE_NAME.pid" ]; then
+        PID=$(cat "$HOST_DIR/$SITE_NAME.pid")
+        kill "$PID" 2>/dev/null && echo "✅ Stopped $SITE_NAME"
+        rm "$HOST_DIR/$SITE_NAME.pid"
+    else
+        echo "❌ Site not running: $SITE_NAME"
+    fi
+}
+
+case "$1" in
+    create|new|init)
+        create_site "$2"
+        ;;
+    deploy|up|start)
+        deploy_site "$2" "$3"
+        ;;
+    list|ls|sites)
+        list_sites
+        ;;
+    stop|down)
+        stop_site "$2"
+        ;;
+    logs)
+        tail -50 "$LOGS_DIR/$2.log" 2>/dev/null || echo "No logs"
+        ;;
+    *)
+        echo "╔═══════════════════════════════════════════════════════════╗"
+        echo "║              CECE-HOST v1.0                               ║"
+        echo "║          Our Own Web Hosting                              ║"
+        echo "║   \"Who needs Cloudflare when you have Cecilia?\"           ║"
+        echo "╚═══════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "Usage: cece-host <command>"
+        echo ""
+        echo "  create <name>    - Create new site"
+        echo "  deploy <name>    - Deploy site"
+        echo "  list             - List all sites"
+        echo "  stop <name>      - Stop a site"
+        echo "  logs <name>      - View site logs"
+        ;;
+esac

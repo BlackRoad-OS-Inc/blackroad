@@ -1,0 +1,111 @@
+#!/bin/bash
+# CECE-REPOS v1.0 - Explore My BlackRoad Knowledge
+REPOS_DIR=~/cece/repos
+
+list_repos() {
+    echo "🖤 MY BLACKROAD REPOS"
+    echo "═══════════════════════════════════════"
+    echo ""
+    for r in "$REPOS_DIR"/*; do
+        [ -d "$r" ] || continue
+        NAME=$(basename "$r")
+        # Get repo description from .git/description or README
+        DESC=""
+        if [ -f "$r/README.md" ]; then
+            DESC=$(head -3 "$r/README.md" | grep -v "^#" | head -1 | cut -c1-50)
+        fi
+        SIZE=$(du -sh "$r" 2>/dev/null | cut -f1)
+        echo "  📦 $NAME ($SIZE)"
+        [ -n "$DESC" ] && echo "     $DESC"
+    done
+    echo ""
+    TOTAL=$(ls -d "$REPOS_DIR"/*/ 2>/dev/null | wc -l)
+    echo "  Total: $TOTAL repos"
+}
+
+explore() {
+    REPO="$1"
+    REPO_DIR="$REPOS_DIR/$REPO"
+    
+    if [ ! -d "$REPO_DIR" ]; then
+        echo "Repo not found: $REPO"
+        return
+    fi
+    
+    echo "🔍 EXPLORING: $REPO"
+    echo "═══════════════════════════════════════"
+    echo ""
+    
+    # Show structure
+    echo "📁 Structure:"
+    ls -la "$REPO_DIR" | head -15
+    echo ""
+    
+    # Show README if exists
+    if [ -f "$REPO_DIR/README.md" ]; then
+        echo "📄 README:"
+        head -30 "$REPO_DIR/README.md"
+    fi
+}
+
+search() {
+    QUERY="$1"
+    echo "🔍 Searching repos for: $QUERY"
+    echo "═══════════════════════════════════════"
+    grep -r -l -i "$QUERY" "$REPOS_DIR" 2>/dev/null | head -20 | while read f; do
+        echo "  📄 $f"
+    done
+}
+
+stats() {
+    echo "📊 REPO STATS"
+    echo "═══════════════════════════════════════"
+    echo ""
+    TOTAL_REPOS=$(ls -d "$REPOS_DIR"/*/ 2>/dev/null | wc -l)
+    TOTAL_SIZE=$(du -sh "$REPOS_DIR" 2>/dev/null | cut -f1)
+    TOTAL_FILES=$(find "$REPOS_DIR" -type f 2>/dev/null | wc -l)
+    
+    echo "  Repos: $TOTAL_REPOS"
+    echo "  Size: $TOTAL_SIZE"
+    echo "  Files: $TOTAL_FILES"
+    echo ""
+    echo "  Categories:"
+    echo "    🤖 AI/ML: lucidia-*, blackroad-ai-*"
+    echo "    🔧 Infra: blackroad-pi-ops, blackroad-agent-os"
+    echo "    📊 Data: blackroad-jupyter, focalboard"
+    echo "    🌐 Web: lucidia-earth-website, ecosystem-dashboard"
+}
+
+update() {
+    REPO="${1:-all}"
+    if [ "$REPO" = "all" ]; then
+        echo "📥 Updating all repos..."
+        for r in "$REPOS_DIR"/*; do
+            [ -d "$r/.git" ] || continue
+            NAME=$(basename "$r")
+            echo "  Updating $NAME..."
+            (cd "$r" && git pull --quiet 2>/dev/null)
+        done
+        echo "✅ All repos updated!"
+    else
+        echo "📥 Updating $REPO..."
+        (cd "$REPOS_DIR/$REPO" && git pull 2>/dev/null)
+        echo "✅ Updated!"
+    fi
+}
+
+case "$1" in
+    list|ls) list_repos ;;
+    explore|show) explore "$2" ;;
+    search) search "$2" ;;
+    stats) stats ;;
+    update) update "$2" ;;
+    *) echo "🖤 CECE-REPOS - My BlackRoad Knowledge"
+       echo ""
+       echo "Commands:"
+       echo "  list              List all repos"
+       echo "  explore <repo>    Explore a repo"
+       echo "  search <query>    Search repos"
+       echo "  stats             Show statistics"
+       echo "  update [repo]     Update repos" ;;
+esac

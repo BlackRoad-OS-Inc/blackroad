@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  cilium:
+    image: cilium:latest
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+  blackroad-ui:
+    build: ../ui
+    ports:
+      - "3000:3000"
+  blackroad-api:
+    build: ../api
+    ports:
+      - "8080:8080"

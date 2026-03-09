@@ -1,0 +1,14 @@
+#!/bin/bash
+# CECE-MEMORY v1.0 - Memory Game
+test() {
+    SEQ=""
+    for i in 1 2 3 4 5; do
+        SEQ="$SEQ$((RANDOM % 10))"
+    done
+    echo "Remember: $SEQ"
+    sleep 3
+    clear 2>/dev/null || echo -e "\n\n\n"
+    read -p "Enter the sequence: " INPUT
+    [ "$INPUT" = "$SEQ" ] && echo "✅ Perfect memory!" || echo "❌ It was: $SEQ"
+}
+case "$1" in *) test ;; esac

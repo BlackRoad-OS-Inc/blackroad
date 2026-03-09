@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Simulation | BlackRoad Pixel Metaverse</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      color: #fff;
+    }
+    #canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 2px solid #FF1D6C;
+    }
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 15px;
+      border: 2px solid #F5A623;
+      border-radius: 4px;
+      font-size: 11px;
+      min-width: 280px;
+    }
+    .stat { margin: 5px 0; color: #2979FF; }
+    .stat strong { color: #FF1D6C; }
+    #agent-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.95);
+      padding: 15px;
+      border: 2px solid #9C27B0;
+      border-radius: 4px;
+      width: 300px;
+      font-size: 11px;
+      display: none;
+    }
+    #agent-panel.active { display: block; }
+    .need-bar {
+      margin: 8px 0;
+    }
+    .need-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
+      font-size: 10px;
+    }
+    .bar-container {
+      width: 100%;
+      height: 12px;
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .hunger-bar { background: linear-gradient(90deg, #F5A623, #FF6B35); }
+    .energy-bar { background: linear-gradient(90deg, #2979FF, #4ECDC4); }
+    .mood-bar { background: linear-gradient(90deg, #52FF52, #FFD700); }
+    .social-bar { background: linear-gradient(90deg, #FF1D6C, #9C27B0); }
+    .hygiene-bar { background: linear-gradient(90deg, #4ECDC4, #52FF52); }
+    
+    .need-critical { animation: pulse 1s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    #event-log {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 10px;
+      border: 2px solid #9C27B0;
+      border-radius: 4px;
+      width: 300px;
+      height: 150px;
+      overflow-y: auto;
+      font-size: 10px;
+    }
+    .event { margin: 3px 0; opacity: 0.9; }
+    .event-need { color: #F5A623; }
+    .event-action { color: #52FF52; }
+    .event-social { color: #FF1D6C; }
+    .event-mood { color: #FFD700; }
+    
+    h1 { color: #FF1D6C; margin-bottom: 10px; font-size: 14px; }
+    h2 { color: #F5A623; margin-bottom: 8px; font-size: 12px; }
+    
+    .action-queue {
+      margin-top: 10px;
+      padding: 8px;
+      background: rgba(255, 29, 108, 0.1);
+      border-radius: 3px;
+      font-size: 10px;
+    }
+    .action-item {
+      margin: 3px 0;
+      color: #4ECDC4;
+    }
+    
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 10px;
+      border: 2px solid #2979FF;
+      border-radius: 4px;
+    }
+    button {
+      background: #FF1D6C;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin: 3px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+    }
+    button:hover { background: #F5A623; }
+    button:active { transform: scale(0.95); }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="hud">
+    <h1>🧠 AGENT SIMULATION</h1>
+    <div class="stat">Agents: <strong id="agent-count">0</strong></div>
+    <div class="stat">Time: <strong id="game-time">00:00</strong></div>
+    <div class="stat">Speed: <strong id="game-speed">1x</strong></div>
+    <div class="stat">FPS: <strong id="fps">60</strong></div>
+    <div class="stat" style="color: #52FF52;">⚡ Autonomous AI Active</div>
+  </div>
+
+  <div id="agent-panel">
+    <h2>Agent: <span id="agent-name">None</span></h2>
+    <div class="need-bar">
+      <div class="need-label">
+        <span>🍔 Hunger</span>
+        <span id="hunger-value">100%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill hunger-bar" id="hunger-bar" style="width: 100%"></div>
+      </div>
+    </div>
+    <div class="need-bar">
+      <div class="need-label">
+        <span>⚡ Energy</span>
+        <span id="energy-value">100%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill energy-bar" id="energy-bar" style="width: 100%"></div>
+      </div>
+    </div>
+    <div class="need-bar">
+      <div class="need-label">
+        <span>😊 Mood</span>
+        <span id="mood-value">100%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill mood-bar" id="mood-bar" style="width: 100%"></div>
+      </div>
+    </div>
+    <div class="need-bar">
+      <div class="need-label">
+        <span>👥 Social</span>
+        <span id="social-value">100%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill social-bar" id="social-bar" style="width: 100%"></div>
+      </div>
+    </div>
+    <div class="need-bar">
+      <div class="need-label">
+        <span>🚿 Hygiene</span>
+        <span id="hygiene-value">100%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill hygiene-bar" id="hygiene-bar" style="width: 100%"></div>
+      </div>
+    </div>
+    <div class="action-queue">
+      <strong>🎯 Action Queue:</strong>
+      <div id="action-list"></div>
+    </div>
+  </div>
+
+  <div id="event-log"></div>
+
+  <div id="controls">
+    <button onclick="addAgent()">+ Add Agent</button>
+    <button onclick="toggleSpeed()">⏩ Speed</button>
+    <button onclick="pauseGame()">⏸ Pause</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    const PIXEL_SIZE = 8;
+    
+    // Agent sprite
+    const AGENT_SPRITE = [
+      '  ████  ',
+      ' ██████ ',
+      '████████',
+      '██░░░░██',
+      '████████',
+      ' ██  ██ ',
+      ' ██  ██ ',
+      '        '
+    ];
+
+    // Fridge sprite (for eating)
+    const FRIDGE_SPRITE = [
+      '████████',
+      '██░░░░██',
+      '████████',
+      '██░░░░██',
+      '██░░░░██',
+      '██░░░░██',
+      '██░░░░██',
+      '████████'
+    ];
+
+    // Bed sprite (for sleeping)
+    const BED_SPRITE = [
+      '            ',
+      '████████████',
+      '██████████░░',
+      '██████████░░',
+      '████████████',
+      '            '
+    ];
+
+    // Couch sprite (for socializing)
+    const COUCH_SPRITE = [
+      '████████████',
+      '██████████░░',
+      '████████████',
+      '██████████░░',
+      '████████████'
+    ];
+
+    // Shower sprite
+    const SHOWER_SPRITE = [
+      '  ████  ',
+      '  ████  ',
+      '████████',
+      '████████',
+      '████████',
+      '████████',
+      '████████',
+      '████████'
+    ];
+
+    function drawSprite(sprite, x, y, color = '#FF1D6C') {
+      ctx.fillStyle = color;
+      sprite.forEach((row, rowIndex) => {
+        for (let col = 0; col < row.length; col++) {
+          const char = row[col];
+          if (char === '█') {
+            ctx.fillRect(x + col * PIXEL_SIZE, y + rowIndex * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+          } else if (char === '░') {
+            ctx.fillStyle = '#333';
+            ctx.fillRect(x + col * PIXEL_SIZE, y + rowIndex * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+            ctx.fillStyle = color;
+          }
+        }
+      });
+    }
+
+    // Game state
+    let gameTime = 0;
+    let gameSpeed = 1;
+    let paused = false;
+    let selectedAgent = null;
+
+    // Furniture/objects
+    const furniture = [
+      { type: 'fridge', x: 100, y: 100, sprite: FRIDGE_SPRITE, action: 'eat' },
+      { type: 'bed', x: 300, y: 100, sprite: BED_SPRITE, action: 'sleep' },
+      { type: 'couch', x: 500, y: 100, sprite: COUCH_SPRITE, action: 'socialize' },
+      { type: 'shower', x: 700, y: 100, sprite: SHOWER_SPRITE, action: 'shower' },
+      { type: 'fridge', x: 100, y: 400, sprite: FRIDGE_SPRITE, action: 'eat' },
+      { type: 'bed', x: 300, y: 400, sprite: BED_SPRITE, action: 'sleep' },
+      { type: 'couch', x: 500, y: 400, sprite: COUCH_SPRITE, action: 'socialize' },
+      { type: 'shower', x: 700, y: 400, sprite: SHOWER_SPRITE, action: 'shower' }
+    ];
+
+    // Agent AI class with needs
+    class SimAgent {
+      constructor(id, name, color) {
+        this.id = id;
+        this.name = name;
+        this.color = color;
+        this.x = Math.random() * (canvas.width - 100) + 50;
+        this.y = Math.random() * (canvas.height - 100) + 50;
+        
+        // Needs (0-100)
+        this.hunger = 100;
+        this.energy = 100;
+        this.mood = 100;
+        this.social = 100;
+        this.hygiene = 100;
+        
+        // AI state
+        this.currentAction = null;
+        this.actionQueue = [];
+        this.target = null;
+        this.actionProgress = 0;
+        
+        // Movement
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = 2;
+      }
+
+      // Decay needs over time
+      decayNeeds(deltaTime) {
+        const factor = deltaTime * gameSpeed;
+        this.hunger = Math.max(0, this.hunger - 0.02 * factor);
+        this.energy = Math.max(0, this.energy - 0.015 * factor);
+        this.mood = Math.max(0, this.mood - 0.01 * factor);
+        this.social = Math.max(0, this.social - 0.008 * factor);
+        this.hygiene = Math.max(0, this.hygiene - 0.012 * factor);
+        
+        // Mood is affected by other needs
+        if (this.hunger < 30 || this.energy < 30 || this.hygiene < 30) {
+          this.mood = Math.max(0, this.mood - 0.02 * factor);
+        }
+      }
+
+      // Autonomous decision making
+      makeDecision() {
+        if (this.currentAction) return; // Busy
+        
+        // Find most critical need
+        const needs = [
+          { name: 'hunger', value: this.hunger, action: 'eat', critical: 20 },
+          { name: 'energy', value: this.energy, action: 'sleep', critical: 25 },
+          { name: 'hygiene', value: this.hygiene, action: 'shower', critical: 30 },
+          { name: 'social', value: this.social, action: 'socialize', critical: 35 },
+        ];
+        
+        // Sort by lowest value
+        needs.sort((a, b) => a.value - b.value);
+        
+        const mostCritical = needs[0];
+        
+        // If any need is critical, address it
+        if (mostCritical.value < mostCritical.critical) {
+          this.startAction(mostCritical.action);
+          logEvent(`${this.name} needs to ${mostCritical.action}!`, 'need');
+        }
+      }
+
+      // Start an action
+      startAction(action) {
+        // Find nearest furniture for this action
+        const validFurniture = furniture.filter(f => f.action === action);
+        if (validFurniture.length === 0) return;
+        
+        // Find nearest
+        let nearest = validFurniture[0];
+        let minDist = Infinity;
+        
+        validFurniture.forEach(f => {
+          const dist = Math.hypot(f.x - this.x, f.y - this.y);
+          if (dist < minDist) {
+            minDist = dist;
+            nearest = f;
+          }
+        });
+        
+        this.currentAction = action;
+        this.target = nearest;
+        this.actionProgress = 0;
+        
+        logEvent(`${this.name} going to ${action}`, 'action');
+      }
+
+      // Update AI
+      update() {
+        if (paused) return;
+        
+        this.decayNeeds(1);
+        
+        if (this.currentAction && this.target) {
+          // Move towards target
+          const dx = this.target.x - this.x;
+          const dy = this.target.y - this.y;
+          const dist = Math.hypot(dx, dy);
+          
+          if (dist > 5) {
+            // Move towards target
+            this.vx = (dx / dist) * this.speed * gameSpeed;
+            this.vy = (dy / dist) * this.speed * gameSpeed;
+            this.x += this.vx;
+            this.y += this.vy;
+          } else {
+            // At target, perform action
+            this.vx = 0;
+            this.vy = 0;
+            this.actionProgress += gameSpeed;
+            
+            // Action takes time
+            const actionDuration = 120;
+            if (this.actionProgress >= actionDuration) {
+              this.completeAction();
+            }
+          }
+        } else {
+          // No action, make decision
+          this.makeDecision();
+          
+          // Idle wandering
+          if (!this.currentAction) {
+            this.x += this.vx;
+            this.y += this.vy;
+            
+            if (Math.random() < 0.02) {
+              this.vx = (Math.random() - 0.5) * 1 * gameSpeed;
+              this.vy = (Math.random() - 0.5) * 1 * gameSpeed;
+            }
+            
+            // Bounce off walls
+            if (this.x < 50 || this.x > canvas.width - 100) this.vx *= -1;
+            if (this.y < 50 || this.y > canvas.height - 100) this.vy *= -1;
+          }
+        }
+      }
+
+      // Complete current action
+      completeAction() {
+        const amount = 40;
+        
+        switch(this.currentAction) {
+          case 'eat':
+            this.hunger = Math.min(100, this.hunger + amount);
+            this.mood = Math.min(100, this.mood + 10);
+            logEvent(`${this.name} ate food! +${amount} hunger`, 'action');
+            break;
+          case 'sleep':
+            this.energy = Math.min(100, this.energy + amount);
+            this.mood = Math.min(100, this.mood + 10);
+            logEvent(`${this.name} slept! +${amount} energy`, 'action');
+            break;
+          case 'shower':
+            this.hygiene = Math.min(100, this.hygiene + amount);
+            this.mood = Math.min(100, this.mood + 10);
+            logEvent(`${this.name} showered! +${amount} hygiene`, 'action');
+            break;
+          case 'socialize':
+            this.social = Math.min(100, this.social + amount);
+            this.mood = Math.min(100, this.mood + 15);
+            logEvent(`${this.name} socialized! +${amount} social`, 'social');
+            break;
+        }
+        
+        this.currentAction = null;
+        this.target = null;
+        this.actionProgress = 0;
+      }
+
+      // Draw agent
+      draw() {
+        drawSprite(AGENT_SPRITE, this.x, this.y, this.color);
+        
+        // Name tag
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(this.x - 5, this.y - 20, 70, 15);
+        ctx.fillStyle = this.color;
+        ctx.font = '10px monospace';
+        ctx.fillText(this.name, this.x, this.y - 10);
+        
+        // Action indicator
+        if (this.currentAction) {
+          const emoji = {
+            eat: '🍔',
+            sleep: '💤',
+            shower: '🚿',
+            socialize: '💬'
+          }[this.currentAction];
+          
+          ctx.font = '16px monospace';
+          ctx.fillText(emoji, this.x + 50, this.y - 10);
+          
+          // Progress bar
+          const progress = this.actionProgress / 120;
+          ctx.fillStyle = 'rgba(255, 29, 108, 0.5)';
+          ctx.fillRect(this.x, this.y + 70, 64 * progress, 4);
+        }
+        
+        // Show critical need warning
+        if (this.hunger < 20 || this.energy < 25 || this.hygiene < 30) {
+          ctx.fillStyle = '#FF1D6C';
+          ctx.font = '20px monospace';
+          ctx.fillText('!', this.x + 55, this.y + 10);
+        }
+      }
+
+      // Get most critical need
+      getMostCriticalNeed() {
+        const needs = [
+          { name: 'Hunger', value: this.hunger, emoji: '🍔' },
+          { name: 'Energy', value: this.energy, emoji: '⚡' },
+          { name: 'Hygiene', value: this.hygiene, emoji: '🚿' },
+          { name: 'Social', value: this.social, emoji: '👥' },
+        ];
+        needs.sort((a, b) => a.value - b.value);
+        return needs[0];
+      }
+    }
+
+    const agents = new Map();
+    const AGENT_COLORS = ['#FF1D6C', '#F5A623', '#2979FF', '#9C27B0', '#52FF52', '#4ECDC4', '#FF6B35'];
+    let agentIdCounter = 0;
+
+    function addAgent() {
+      const id = `agent-${agentIdCounter++}`;
+      const name = `Agent${agentIdCounter}`;
+      const color = AGENT_COLORS[agents.size % AGENT_COLORS.length];
+      agents.set(id, new SimAgent(id, name, color));
+      logEvent(`${name} joined the simulation`, 'action');
+    }
+
+    // Event logging
+    function logEvent(message, type = 'action') {
+      const log = document.getElementById('event-log');
+      const div = document.createElement('div');
+      div.className = `event event-${type}`;
+      div.textContent = `${new Date().toLocaleTimeString()} ${message}`;
+      log.insertBefore(div, log.firstChild);
+      if (log.children.length > 50) log.removeChild(log.lastChild);
+    }
+
+    // Canvas click handler
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      
+      // Check if clicked on an agent
+      let clicked = null;
+      agents.forEach(agent => {
+        if (clickX >= agent.x && clickX <= agent.x + 64 &&
+            clickY >= agent.y && clickY <= agent.y + 64) {
+          clicked = agent;
+        }
+      });
+      
+      selectedAgent = clicked;
+      document.getElementById('agent-panel').classList.toggle('active', !!clicked);
+      
+      if (clicked) {
+        updateAgentPanel(clicked);
+      }
+    });
+
+    // Update agent panel
+    function updateAgentPanel(agent) {
+      document.getElementById('agent-name').textContent = agent.name;
+      
+      const updateBar = (need, value) => {
+        document.getElementById(`${need}-value`).textContent = `${Math.round(value)}%`;
+        document.getElementById(`${need}-bar`).style.width = `${value}%`;
+        
+        const barElement = document.getElementById(`${need}-bar`).parentElement.parentElement;
+        if (value < 30) {
+          barElement.classList.add('need-critical');
+        } else {
+          barElement.classList.remove('need-critical');
+        }
+      };
+      
+      updateBar('hunger', agent.hunger);
+      updateBar('energy', agent.energy);
+      updateBar('mood', agent.mood);
+      updateBar('social', agent.social);
+      updateBar('hygiene', agent.hygiene);
+      
+      // Action queue
+      const actionList = document.getElementById('action-list');
+      if (agent.currentAction) {
+        actionList.innerHTML = `<div class="action-item">→ ${agent.currentAction} (${Math.round(agent.actionProgress / 120 * 100)}%)</div>`;
+      } else {
+        const critical = agent.getMostCriticalNeed();
+        actionList.innerHTML = `<div class="action-item">→ Deciding... (${critical.emoji} ${critical.name}: ${Math.round(critical.value)}%)</div>`;
+      }
+    }
+
+    // Controls
+    function toggleSpeed() {
+      gameSpeed = gameSpeed === 1 ? 2 : gameSpeed === 2 ? 4 : 1;
+      document.getElementById('game-speed').textContent = `${gameSpeed}x`;
+      logEvent(`Game speed: ${gameSpeed}x`, 'action');
+    }
+
+    function pauseGame() {
+      paused = !paused;
+      logEvent(paused ? 'Game paused' : 'Game resumed', 'action');
+    }
+
+    // Main game loop
+    let fps = 60;
+    let lastTime = Date.now();
+    let frameCount = 0;
+
+    function gameLoop() {
+      frameCount++;
+      const now = Date.now();
+      if (now - lastTime >= 1000) {
+        fps = frameCount;
+        document.getElementById('fps').textContent = fps;
+        frameCount = 0;
+        lastTime = now;
+      }
+
+      if (!paused) {
+        gameTime += gameSpeed;
+      }
+
+      // Update game time display
+      const hours = Math.floor(gameTime / 3600) % 24;
+      const minutes = Math.floor((gameTime % 3600) / 60);
+      document.getElementById('game-time').textContent = 
+        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
+      // Clear canvas
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid
+      ctx.strokeStyle = 'rgba(255, 29, 108, 0.1)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 100) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 100) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      // Draw furniture
+      furniture.forEach(item => {
+        drawSprite(item.sprite, item.x, item.y, '#666');
+      });
+
+      // Update and draw agents
+      agents.forEach(agent => {
+        agent.update();
+        agent.draw();
+      });
+
+      // Update selected agent panel
+      if (selectedAgent && agents.has(selectedAgent.id)) {
+        updateAgentPanel(selectedAgent);
+      }
+
+      document.getElementById('agent-count').textContent = agents.size;
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Start with 3 agents
+    for (let i = 0; i < 3; i++) {
+      addAgent();
+    }
+
+    gameLoop();
+    logEvent('Simulation started! Click agents to inspect their needs', 'action');
+  </script>
+</body>
+</html>

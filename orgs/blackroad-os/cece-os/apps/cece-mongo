@@ -1,0 +1,9 @@
+#!/bin/bash
+# CECE-MONGO v1.0 - MongoDB Helper
+insert() { mongosh --eval "db.$1.insertOne($2)" 2>/dev/null || echo "MongoDB not available"; }
+find_docs() { mongosh --eval "db.$1.find().pretty()" 2>/dev/null || echo "MongoDB not available"; }
+case "$1" in
+    insert) insert "$2" "$3" ;;
+    find) find_docs "$2" ;;
+    *) echo "CECE-MONGO: insert <collection> <json> | find <collection>" ;;
+esac

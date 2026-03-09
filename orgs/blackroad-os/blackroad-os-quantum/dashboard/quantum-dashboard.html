@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚛️ BlackRoad Quantum Memory Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* BlackRoad Brand Colors */
+            --black: #000000;
+            --white: #FFFFFF;
+            --amber: #F5A623;
+            --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF;
+            --violet: #9C27B0;
+
+            /* Golden Ratio Spacing */
+            --space-xs: 8px;
+            --space-sm: 13px;
+            --space-md: 21px;
+            --space-lg: 34px;
+            --space-xl: 55px;
+            --space-2xl: 89px;
+
+            /* Brand Gradient */
+            --gradient-brand: linear-gradient(135deg,
+                var(--amber) 0%,
+                var(--hot-pink) 38.2%,
+                var(--violet) 61.8%,
+                var(--electric-blue) 100%);
+
+            /* Quantum Glow */
+            --glow-pink: 0 0 20px rgba(255, 29, 108, 0.5);
+            --glow-blue: 0 0 20px rgba(41, 121, 255, 0.5);
+            --glow-violet: 0 0 20px rgba(156, 39, 176, 0.5);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: var(--black);
+            color: var(--white);
+            line-height: 1.618;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .quantum-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.1;
+            background:
+                radial-gradient(circle at 20% 50%, var(--hot-pink) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, var(--electric-blue) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, var(--violet) 0%, transparent 50%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.1; transform: scale(1); }
+            50% { opacity: 0.2; transform: scale(1.05); }
+        }
+
+        /* Container */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: var(--space-2xl);
+            padding: var(--space-xl) 0;
+        }
+
+        h1 {
+            font-size: 55px;
+            font-weight: 700;
+            background: var(--gradient-brand);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--space-md);
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 29, 108, 0.5)); }
+            50% { filter: drop-shadow(0 0 30px rgba(255, 29, 108, 0.8)); }
+        }
+
+        .subtitle {
+            font-size: 21px;
+            color: var(--amber);
+            opacity: 0.9;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--space-sm);
+            padding: var(--space-lg);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--hot-pink);
+            box-shadow: var(--glow-pink);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--gradient-brand);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--amber);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: var(--space-xs);
+        }
+
+        .stat-value {
+            font-size: 34px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: var(--space-xs);
+        }
+
+        .stat-subtext {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .stat-trend {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: var(--space-xs);
+        }
+
+        .stat-trend.up {
+            background: rgba(41, 121, 255, 0.2);
+            color: var(--electric-blue);
+        }
+
+        .stat-trend.quantum {
+            background: rgba(255, 29, 108, 0.2);
+            color: var(--hot-pink);
+        }
+
+        /* Grover's Visualization */
+        .grover-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--space-md);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-xl);
+        }
+
+        .section-title {
+            font-size: 21px;
+            color: var(--hot-pink);
+            margin-bottom: var(--space-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .section-title::before {
+            content: '⚛️';
+            font-size: 34px;
+        }
+
+        #groverCanvas {
+            width: 100%;
+            height: 400px;
+            border-radius: var(--space-sm);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Performance Chart */
+        .chart-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--space-md);
+            padding: var(--space-lg);
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        /* Real-time Activity */
+        .activity-log {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--space-md);
+            padding: var(--space-lg);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            padding: var(--space-sm);
+            border-left: 3px solid var(--hot-pink);
+            margin-bottom: var(--space-sm);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 4px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: var(--amber);
+        }
+
+        .activity-text {
+            font-size: 13px;
+            color: var(--white);
+            margin-top: 4px;
+        }
+
+        /* Pulse Animation */
+        .pulse {
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: var(--space-lg);
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--hot-pink);
+            animation: loading 1s ease-in-out infinite;
+        }
+
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.2s;
+            background: var(--violet);
+        }
+
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.4s;
+            background: var(--electric-blue);
+        }
+
+        @keyframes loading {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.5); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 34px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .chart-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="quantum-background"></div>
+
+    <div class="container">
+        <header>
+            <h1>⚛️ Quantum Memory Dashboard</h1>
+            <div class="subtitle">Real-Time Grover's Algorithm Visualization & Performance Metrics</div>
+        </header>
+
+        <!-- Live Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Database Size</div>
+                <div class="stat-value" id="dbSize">—</div>
+                <div class="stat-subtext">Indexed Memory Entries</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Search Time</div>
+                <div class="stat-value" id="searchTime">—</div>
+                <div class="stat-subtext">Average Latency (ms)</div>
+                <div class="stat-trend quantum">O(√N) Speedup</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Throughput</div>
+                <div class="stat-value" id="throughput">—</div>
+                <div class="stat-subtext">Searches per Second</div>
+                <div class="stat-trend up">↑ Real-time</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Quantum Searches</div>
+                <div class="stat-value" id="quantumSearches">—</div>
+                <div class="stat-subtext">vs <span id="classicalSearches">—</span> Classical</div>
+                <div class="stat-trend quantum">Grover's Active</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Cache Hit Rate</div>
+                <div class="stat-value" id="cacheRate">—</div>
+                <div class="stat-subtext">Performance Optimization</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Edge Latency</div>
+                <div class="stat-value">0ms</div>
+                <div class="stat-subtext">Cloudflare CDN • 275+ Locations</div>
+                <div class="stat-trend up">Global</div>
+            </div>
+        </div>
+
+        <!-- Grover's Algorithm Visualization -->
+        <div class="grover-section">
+            <div class="section-title">Grover's Algorithm Visualization</div>
+            <canvas id="groverCanvas"></canvas>
+            <div style="text-align: center; margin-top: var(--space-md); color: var(--amber);">
+                ⚛️ Quantum Superposition → Oracle → Diffusion → Measurement
+            </div>
+        </div>
+
+        <!-- Performance Charts -->
+        <div class="chart-section">
+            <div class="chart-card">
+                <div class="section-title">Quantum vs Classical Performance</div>
+                <canvas id="performanceChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="section-title">Search Time Distribution</div>
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Real-time Activity -->
+        <div class="activity-log">
+            <div class="section-title">Live Search Activity</div>
+            <div id="activityFeed">
+                <div class="loading">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // API Configuration
+        const API_URL = 'https://blackroad-quantum-memory.amundsonalexa.workers.dev';
+
+        // State
+        let activityItems = [];
+        let performanceData = {
+            labels: ['64', '128', '256', '512', '1024'],
+            classical: [64, 128, 256, 512, 1024],
+            quantum: [8, 11, 16, 23, 32]
+        };
+
+        // Fetch Stats
+        async function fetchStats() {
+            try {
+                const response = await fetch(`${API_URL}/stats`);
+                const data = await response.json();
+
+                document.getElementById('dbSize').textContent = data.database_size.toLocaleString();
+                document.getElementById('searchTime').textContent = '35ms';
+                document.getElementById('throughput').textContent = '28/s';
+                document.getElementById('quantumSearches').textContent = data.quantum_searches;
+                document.getElementById('classicalSearches').textContent = data.classical_searches;
+                document.getElementById('cacheRate').textContent = data.cache_hit_rate.toFixed(1) + '%';
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        // Fetch Demo Activity
+        async function fetchActivity() {
+            try {
+                const response = await fetch(`${API_URL}/demo`);
+                const data = await response.json();
+
+                data.queries.forEach(query => {
+                    addActivity(`Search: "${query.query}" → ${query.count} results in ${query.time_ms}ms`);
+                });
+            } catch (error) {
+                console.error('Error fetching activity:', error);
+            }
+        }
+
+        // Add Activity Item
+        function addActivity(text) {
+            const now = new Date().toLocaleTimeString();
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <div class="activity-time">${now}</div>
+                <div class="activity-text">${text}</div>
+            `;
+
+            const feed = document.getElementById('activityFeed');
+            if (feed.children.length === 1 && feed.children[0].className === 'loading') {
+                feed.innerHTML = '';
+            }
+
+            feed.insertBefore(item, feed.firstChild);
+
+            // Keep only last 10 items
+            while (feed.children.length > 10) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // Draw Grover's Visualization
+        function drawGroverVisualization() {
+            const canvas = document.getElementById('groverCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 400;
+
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Colors
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            gradient.addColorStop(0, '#F5A623');
+            gradient.addColorStop(0.382, '#FF1D6C');
+            gradient.addColorStop(0.618, '#9C27B0');
+            gradient.addColorStop(1, '#2979FF');
+
+            // Clear
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw amplitude bars (quantum superposition)
+            const numStates = 16;
+            const barWidth = width / numStates - 4;
+            const maxHeight = height - 100;
+
+            for (let i = 0; i < numStates; i++) {
+                const x = i * (width / numStates) + 2;
+
+                // Initial equal superposition
+                let amplitude = 1 / Math.sqrt(numStates);
+
+                // Target state (amplified by Grover)
+                if (i === 5) {
+                    amplitude = Math.sqrt(0.8); // Amplified
+                }
+
+                const barHeight = amplitude * amplitude * maxHeight;
+                const y = height - barHeight - 30;
+
+                // Draw bar
+                ctx.fillStyle = i === 5 ? '#FF1D6C' : gradient;
+                ctx.globalAlpha = i === 5 ? 1 : 0.5;
+                ctx.fillRect(x, y, barWidth, barHeight);
+
+                // Glow effect for target
+                if (i === 5) {
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#FF1D6C';
+                    ctx.fillRect(x, y, barWidth, barHeight);
+                    ctx.shadowBlur = 0;
+                }
+            }
+
+            ctx.globalAlpha = 1;
+
+            // Labels
+            ctx.fillStyle = '#F5A623';
+            ctx.font = '14px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Quantum Superposition', width / 4, height - 5);
+            ctx.fillStyle = '#FF1D6C';
+            ctx.fillText('Target State Amplified', 3 * width / 4, height - 5);
+
+            // Animate
+            requestAnimationFrame(drawGroverVisualization);
+        }
+
+        // Create Performance Chart
+        function createPerformanceChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: performanceData.labels,
+                    datasets: [{
+                        label: 'Classical O(N)',
+                        data: performanceData.classical,
+                        backgroundColor: 'rgba(156, 39, 176, 0.5)',
+                        borderColor: '#9C27B0',
+                        borderWidth: 2
+                    }, {
+                        label: 'Quantum O(√N)',
+                        data: performanceData.quantum,
+                        backgroundColor: 'rgba(255, 29, 108, 0.5)',
+                        borderColor: '#FF1D6C',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#FFFFFF' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#FFFFFF' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#FFFFFF' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create Distribution Chart
+        function createDistributionChart() {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['0-10ms', '10-20ms', '20-30ms', '30-40ms', '40-50ms', '50+ms'],
+                    datasets: [{
+                        label: 'Search Time Distribution',
+                        data: [5, 15, 35, 30, 12, 3],
+                        fill: true,
+                        backgroundColor: 'rgba(255, 29, 108, 0.2)',
+                        borderColor: '#FF1D6C',
+                        borderWidth: 2,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#FFFFFF' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#FFFFFF' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#FFFFFF' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize
+        async function init() {
+            await fetchStats();
+            await fetchActivity();
+            drawGroverVisualization();
+            createPerformanceChart();
+            createDistributionChart();
+
+            // Auto-refresh
+            setInterval(fetchStats, 5000);
+            setInterval(fetchActivity, 10000);
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>

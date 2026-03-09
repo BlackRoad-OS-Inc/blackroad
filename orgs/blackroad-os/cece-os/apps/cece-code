@@ -1,0 +1,180 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-CODE v1.0 - Our Own Git Hosting
+#  "Who needs GitHub when you own your repos?"
+#═══════════════════════════════════════════════════════════════
+
+CODE_DIR=~/cece/code
+REPOS_DIR="$CODE_DIR/repos"
+
+init_repo() {
+    REPO_NAME=$1
+    
+    if [ -z "$REPO_NAME" ]; then
+        echo -n "Repository name: "
+        read REPO_NAME
+    fi
+    
+    REPO_PATH="$REPOS_DIR/$REPO_NAME.git"
+    
+    if [ -d "$REPO_PATH" ]; then
+        echo "❌ Repository already exists: $REPO_NAME"
+        return 1
+    fi
+    
+    git init --bare "$REPO_PATH" 2>/dev/null
+    
+    # Create description
+    echo -n "Description: "
+    read DESC
+    echo "$DESC" > "$REPO_PATH/description"
+    
+    # Create info file
+    cat > "$REPO_PATH/info.txt" << EOF
+Repository: $REPO_NAME
+Created: $(date)
+Owner: $(whoami)
+Description: $DESC
+EOF
+    
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║  ✅ REPOSITORY CREATED                                    ║"
+    echo "╠═══════════════════════════════════════════════════════════╣"
+    echo "║  Name: $REPO_NAME"
+    echo "║  Clone: git clone cecilia:$REPO_PATH"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+}
+
+list_repos() {
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║               CECE-CODE REPOSITORIES                      ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    
+    for repo in "$REPOS_DIR"/*.git; do
+        [ -d "$repo" ] || continue
+        REPO_NAME=$(basename "$repo" .git)
+        DESC=$(cat "$repo/description" 2>/dev/null || echo "No description")
+        
+        # Count commits
+        COMMITS=$(git --git-dir="$repo" rev-list --count HEAD 2>/dev/null || echo "0")
+        
+        echo "  📦 $REPO_NAME ($COMMITS commits)"
+        echo "     $DESC"
+        echo ""
+    done
+}
+
+clone_repo() {
+    REPO_NAME=$1
+    DEST=${2:-./$REPO_NAME}
+    REPO_PATH="$REPOS_DIR/$REPO_NAME.git"
+    
+    if [ ! -d "$REPO_PATH" ]; then
+        echo "❌ Repository not found: $REPO_NAME"
+        return 1
+    fi
+    
+    git clone "$REPO_PATH" "$DEST"
+    echo "✅ Cloned to $DEST"
+}
+
+repo_info() {
+    REPO_NAME=$1
+    REPO_PATH="$REPOS_DIR/$REPO_NAME.git"
+    
+    if [ ! -d "$REPO_PATH" ]; then
+        echo "❌ Repository not found: $REPO_NAME"
+        return 1
+    fi
+    
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║  📦 $REPO_NAME"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    cat "$REPO_PATH/info.txt" 2>/dev/null
+    echo ""
+    echo "Branches:"
+    git --git-dir="$REPO_PATH" branch 2>/dev/null | sed "s/^/  /"
+    echo ""
+    echo "Recent commits:"
+    git --git-dir="$REPO_PATH" log --oneline -5 2>/dev/null | sed "s/^/  /" || echo "  (no commits yet)"
+    echo ""
+}
+
+# Web interface
+serve_web() {
+    PORT=${1:-8080}
+    echo "Starting CECE-CODE web interface on port $PORT..."
+    
+    # Create simple web interface
+    WEB_DIR=/tmp/cece-code-web
+    mkdir -p "$WEB_DIR"
+    
+    cat > "$WEB_DIR/index.html" << "WEBEOF"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CECE-CODE - Git Hosting</title>
+    <style>
+        body { background: #000; color: #fff; font-family: monospace; padding: 20px; }
+        h1 { color: #FF1D6C; }
+        .repo { background: #111; padding: 15px; margin: 10px 0; border-left: 3px solid #FF1D6C; }
+        .repo h3 { color: #F5A623; margin: 0; }
+        .repo p { color: #888; margin: 5px 0; }
+        code { background: #222; padding: 2px 6px; }
+    </style>
+</head>
+<body>
+    <h1>🖤 CECE-CODE</h1>
+    <p>Our own Git hosting. No GitHub required.</p>
+    <hr>
+    <h2>Repositories</h2>
+    <div id="repos">Loading...</div>
+    <script>
+        // In a real impl, this would fetch from API
+        document.getElementById("repos").innerHTML = 
+            "<div class=\"repo\"><h3>cece-os</h3><p>CECE Operating System</p><code>git clone cecilia:~/cece/code/repos/cece-os.git</code></div>";
+    </script>
+</body>
+</html>
+WEBEOF
+    
+    cd "$WEB_DIR" && python3 -m http.server "$PORT"
+}
+
+case "$1" in
+    init|new|create)
+        init_repo "$2"
+        ;;
+    list|ls|repos)
+        list_repos
+        ;;
+    clone)
+        clone_repo "$2" "$3"
+        ;;
+    info|show)
+        repo_info "$2"
+        ;;
+    web|serve)
+        serve_web "$2"
+        ;;
+    *)
+        echo "╔═══════════════════════════════════════════════════════════╗"
+        echo "║              CECE-CODE v1.0                               ║"
+        echo "║         Our Own Git Hosting                               ║"
+        echo "║   \"Who needs GitHub when you own your repos?\"             ║"
+        echo "╚═══════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "Usage: cece-code <command>"
+        echo ""
+        echo "  init <name>  - Create new repository"
+        echo "  list         - List all repositories"
+        echo "  clone <name> - Clone a repository"
+        echo "  info <name>  - Show repository info"
+        echo "  web [port]   - Start web interface"
+        ;;
+esac

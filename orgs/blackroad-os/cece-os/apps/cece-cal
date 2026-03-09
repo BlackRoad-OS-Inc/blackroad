@@ -1,0 +1,63 @@
+#!/bin/bash
+# CECE-CAL v1.0 - Our Own Google Calendar
+CAL_DIR=~/cece/calendar
+mkdir -p "$CAL_DIR/events"
+
+add_event() {
+    DATE="$1"
+    TIME="$2"
+    TITLE="$3"
+    EVENT_ID=$(date +%s)
+    cat > "$CAL_DIR/events/$EVENT_ID.event" << EOF
+id: $EVENT_ID
+date: $DATE
+time: $TIME
+title: $TITLE
+created: $(date -Iseconds)
+EOF
+    echo "✅ Event added: $TITLE on $DATE at $TIME"
+}
+
+today() {
+    TODAY=$(date +%Y-%m-%d)
+    echo "📅 TODAY: $TODAY"
+    echo ""
+    for e in "$CAL_DIR/events"/*.event 2>/dev/null; do
+        [ -f "$e" ] || continue
+        DATE=$(grep "^date:" "$e" | cut -d: -f2 | xargs)
+        if [ "$DATE" = "$TODAY" ]; then
+            TIME=$(grep "^time:" "$e" | cut -d: -f2 | xargs)
+            TITLE=$(grep "^title:" "$e" | cut -d: -f2-)
+            echo "  $TIME -$TITLE"
+        fi
+    done
+}
+
+week() {
+    echo "📅 THIS WEEK"
+    for i in {0..6}; do
+        DAY=$(date -d "+$i days" +%Y-%m-%d 2>/dev/null || date -v+${i}d +%Y-%m-%d)
+        DAYNAME=$(date -d "+$i days" +%A 2>/dev/null || date -v+${i}d +%A)
+        echo ""
+        echo "[$DAYNAME $DAY]"
+        for e in "$CAL_DIR/events"/*.event 2>/dev/null; do
+            [ -f "$e" ] || continue
+            DATE=$(grep "^date:" "$e" | cut -d: -f2 | xargs)
+            if [ "$DATE" = "$DAY" ]; then
+                TIME=$(grep "^time:" "$e" | cut -d: -f2 | xargs)
+                TITLE=$(grep "^title:" "$e" | cut -d: -f2-)
+                echo "  $TIME -$TITLE"
+            fi
+        done
+    done
+}
+
+case "$1" in
+    add) add_event "$2" "$3" "$4" ;;
+    today) today ;;
+    week) week ;;
+    *) echo "🖤 CECE-CAL - Our Own Google Calendar"
+       echo "  add <date> <time> <title>   Add event"
+       echo "  today                       Today events"
+       echo "  week                        Week view" ;;
+esac

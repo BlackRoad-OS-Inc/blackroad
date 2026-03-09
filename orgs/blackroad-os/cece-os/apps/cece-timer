@@ -1,0 +1,33 @@
+#!/bin/bash
+# CECE-TIMER v1.0 - Pomodoro & Time Tracking
+TIMER_DIR=~/cece/timers
+mkdir -p "$TIMER_DIR"
+
+pomodoro() {
+    TASK="$1"
+    MINS="${2:-25}"
+    echo "Starting $MINS min pomodoro: $TASK"
+    echo "{\"task\":\"$TASK\",\"start\":\"$(date -Iseconds)\",\"duration\":$MINS}" >> "$TIMER_DIR/sessions.jsonl"
+    
+    sleep $((MINS * 60)) && echo "POMODORO COMPLETE: $TASK" && echo -e '\a'
+}
+
+track() {
+    PROJECT="$1"
+    ACTION="$2"
+    echo "{\"project\":\"$PROJECT\",\"action\":\"$ACTION\",\"time\":\"$(date -Iseconds)\"}" >> "$TIMER_DIR/tracking.jsonl"
+    echo "Tracked: $ACTION on $PROJECT"
+}
+
+report() {
+    echo "Time Report"
+    echo "==========="
+    cat "$TIMER_DIR/sessions.jsonl" 2>/dev/null | tail -10
+}
+
+case "$1" in
+    pomodoro) pomodoro "$2" "$3" ;;
+    track) track "$2" "$3" ;;
+    report) report ;;
+    *) echo "CECE-TIMER: pomodoro <task> [mins] | track <project> <action> | report" ;;
+esac

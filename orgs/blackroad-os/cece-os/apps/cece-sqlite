@@ -1,0 +1,15 @@
+#!/bin/bash
+# CECE-SQLITE v1.0 - SQLite Manager
+DB_DIR=~/cece/databases
+mkdir -p "$DB_DIR"
+create() { sqlite3 "$DB_DIR/$1.db" "SELECT 1;" && echo "Created: $1.db"; }
+query() { sqlite3 "$DB_DIR/$1.db" "$2"; }
+tables() { sqlite3 "$DB_DIR/$1.db" ".tables"; }
+schema() { sqlite3 "$DB_DIR/$1.db" ".schema"; }
+case "$1" in
+    create) create "$2" ;;
+    query) query "$2" "$3" ;;
+    tables) tables "$2" ;;
+    schema) schema "$2" ;;
+    *) echo "CECE-SQLITE: create <db> | query <db> <sql> | tables <db> | schema <db>" ;;
+esac

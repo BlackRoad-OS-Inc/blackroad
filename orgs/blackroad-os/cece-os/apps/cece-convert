@@ -1,0 +1,43 @@
+#!/bin/bash
+# CECE-CONVERT v1.0 - Unit Converter
+convert_temp() {
+    VALUE="$1"
+    FROM="$2"
+    case "$FROM" in
+        c|celsius)
+            F=$(echo "scale=2; ($VALUE * 9/5) + 32" | bc)
+            echo "$VALUE°C = $F°F"
+            ;;
+        f|fahrenheit)
+            C=$(echo "scale=2; ($VALUE - 32) * 5/9" | bc)
+            echo "$VALUE°F = $C°C"
+            ;;
+    esac
+}
+
+convert_length() {
+    VALUE="$1"
+    FROM="$2"
+    case "$FROM" in
+        km) echo "$VALUE km = $(echo "scale=2; $VALUE * 0.621371" | bc) miles" ;;
+        miles) echo "$VALUE miles = $(echo "scale=2; $VALUE * 1.60934" | bc) km" ;;
+        m) echo "$VALUE m = $(echo "scale=2; $VALUE * 3.28084" | bc) feet" ;;
+        feet) echo "$VALUE feet = $(echo "scale=2; $VALUE * 0.3048" | bc) m" ;;
+    esac
+}
+
+convert_weight() {
+    VALUE="$1"
+    FROM="$2"
+    case "$FROM" in
+        kg) echo "$VALUE kg = $(echo "scale=2; $VALUE * 2.20462" | bc) lbs" ;;
+        lbs) echo "$VALUE lbs = $(echo "scale=2; $VALUE * 0.453592" | bc) kg" ;;
+    esac
+}
+
+case "$1" in
+    temp) convert_temp "$2" "$3" ;;
+    length) convert_length "$2" "$3" ;;
+    weight) convert_weight "$2" "$3" ;;
+    *) echo "CECE-CONVERT: temp <val> <c|f> | length <val> <km|miles|m|feet> | weight <val> <kg|lbs>" ;;
+esac

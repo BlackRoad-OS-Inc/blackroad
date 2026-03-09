@@ -1,0 +1,9 @@
+#!/bin/bash
+# CECE-LATEX v1.0 - LaTeX Tools
+compile() { pdflatex "$1" 2>/dev/null || echo "Install texlive"; }
+clean() { rm -f *.aux *.log *.out && echo "Cleaned LaTeX files"; }
+case "$1" in
+    compile) compile "$2" ;;
+    clean) clean ;;
+    *) echo "CECE-LATEX: compile <file.tex> | clean" ;;
+esac

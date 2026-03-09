@@ -1,0 +1,15 @@
+#!/bin/bash
+# CECE-PACKAGE v1.0 - Package Manager
+search() { apt search "$1" 2>/dev/null || brew search "$1" 2>/dev/null; }
+install() { sudo apt install -y "$1" 2>/dev/null || brew install "$1" 2>/dev/null; }
+remove() { sudo apt remove -y "$1" 2>/dev/null || brew uninstall "$1" 2>/dev/null; }
+update() { sudo apt update && sudo apt upgrade -y 2>/dev/null || brew update && brew upgrade 2>/dev/null; }
+installed() { dpkg -l 2>/dev/null | head -30 || brew list 2>/dev/null; }
+case "$1" in
+    search) search "$2" ;;
+    install) install "$2" ;;
+    remove) remove "$2" ;;
+    update) update ;;
+    installed) installed ;;
+    *) echo "CECE-PACKAGE: search <pkg> | install <pkg> | remove <pkg> | update | installed" ;;
+esac

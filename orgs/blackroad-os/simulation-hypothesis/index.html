@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulation Hypothesis — Evidence Explorer</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --pink: #ff1d6c;
+    --amber: #f5a623;
+    --blue: #2979ff;
+    --violet: #9c27b0;
+    --green: #00e676;
+    --cyan: #00bcd4;
+    --text: #e8e8f0;
+    --muted: #7878a0;
+    --mono: 'Fira Code', 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 3rem 2rem 2rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #0d0d1a 0%, var(--bg) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255,29,108,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 span { color: var(--pink); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 600px;
+    margin: 0 auto 1.5rem;
+    line-height: 1.6;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--pink);
+    font-family: var(--mono);
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 0.2rem;
+  }
+
+  .controls {
+    padding: 1.5rem 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-box:focus { border-color: var(--pink); }
+  .search-box::placeholder { color: var(--muted); }
+
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.35rem 0.9rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover { border-color: var(--pink); color: var(--text); }
+  .filter-btn.active { background: var(--pink); border-color: var(--pink); color: #fff; }
+
+  .grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-color, var(--pink));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--card-color, var(--pink));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    background: var(--surface2);
+    border-radius: 4px;
+    padding: 0.2rem 0.4rem;
+    min-width: 2.4rem;
+    text-align: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .card-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-tags {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .tag.code { border-color: var(--blue); color: var(--blue); }
+  .tag.math { border-color: var(--amber); color: var(--amber); }
+  .tag.physics { border-color: var(--cyan); color: var(--cyan); }
+  .tag.language { border-color: var(--green); color: var(--green); }
+  .tag.religion { border-color: var(--violet); color: var(--violet); }
+  .tag.evidence { border-color: var(--pink); color: var(--pink); }
+
+  .card.has-code::after {
+    content: '⟨/⟩';
+    position: absolute;
+    top: 1rem; right: 1rem;
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    color: var(--blue);
+    opacity: 0.5;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+
+  .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+  .result-count {
+    padding: 0 2rem 0.75rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 2rem;
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .modal-close:hover { border-color: var(--pink); color: var(--text); }
+
+  .modal-num {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .modal-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 1rem;
+  }
+
+  .modal-body {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .modal-body p { margin-bottom: 0.75rem; }
+
+  .modal-body code {
+    font-family: var(--mono);
+    background: var(--surface2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.85em;
+    color: var(--amber);
+  }
+
+  .modal-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    color: var(--blue);
+    font-size: 0.85rem;
+    text-decoration: none;
+    border: 1px solid var(--blue);
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+
+  .modal-link:hover { background: rgba(41,121,255,0.1); }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  footer a { color: var(--pink); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Simulation <span>Hypothesis</span></h1>
+  <p class="subtitle">
+    An indexed evidence base for the proposition that observable reality
+    is a computational system — and that the system annotates itself.
+  </p>
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-num">81</div>
+      <div class="stat-label">Evidence Items</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">14</div>
+      <div class="stat-label">Code Modules</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">21</div>
+      <div class="stat-label">Paper Sections</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">Feb 21</div>
+      <div class="stat-label">Origin Date</div>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <input type="text" class="search-box" id="search" placeholder="Search evidence items…" oninput="filter()">
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('code', this)">Code</button>
+    <button class="filter-btn" onclick="setFilter('math', this)">Math</button>
+    <button class="filter-btn" onclick="setFilter('physics', this)">Physics</button>
+    <button class="filter-btn" onclick="setFilter('language', this)">Language</button>
+    <button class="filter-btn" onclick="setFilter('religion', this)">Religion</button>
+    <button class="filter-btn" onclick="setFilter('evidence', this)">Personal</button>
+  </div>
+</div>
+
+<div class="result-count" id="result-count">Showing 81 of 81 items</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-num" id="modal-num"></div>
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div id="modal-link-area"></div>
+  </div>
+</div>
+
+<footer>
+  <p>
+    <a href="vr.html" style="color:#9c27b0;font-size:0.9rem;border:1px solid #9c27b0;padding:0.4rem 1.2rem;border-radius:4px;text-decoration:none;margin-right:0.8rem">⬡ ENTER 3D / VR</a>
+    <a href="qr.html" style="color:#555;font-size:0.9rem;border:1px solid #333;padding:0.4rem 1.2rem;border-radius:4px;text-decoration:none;margin-right:1rem">⬡ QR CODE</a>
+    <a href="https://github.com/BlackRoad-OS/simulation-hypothesis">github.com/BlackRoad-OS/simulation-hypothesis</a>
+  </p>
+  <p style="margin-top:0.5rem">BlackRoad OS, Inc. — Original index handwritten Feb 21, 2026</p>
+</footer>
+
+<script>
+const ITEMS = [
+  {
+    id: 1,
+    title: "Rohonc Codex",
+    desc: "An undeciphered illustrated manuscript, possibly 15th–19th century. Contains a script no one has decoded. Either an elaborate hoax or a language outside the known set — a pointer to a namespace that never resolved.",
+    tags: ["language"],
+    color: "#00e676"
+  },
+  {
+    id: 2,
+    title: "Bible Patterns",
+    desc: "Genesis as a 7-pass rendering pipeline. The 10 Commandments as a permission system (4 root rules + 6 user rules). The Sabbath as scheduled downtime. 'In the beginning was the Word' = the universe began with computation.",
+    tags: ["religion", "evidence"],
+    color: "#9c27b0",
+    link: "evidence/bible_patterns.md",
+    linkText: "View evidence/bible_patterns.md"
+  },
+  {
+    id: 3,
+    title: "Codices — Serafinianus, Voynich",
+    desc: "Codex Seraphinianus (1981): an encyclopedia of an imaginary world written in an invented language with an invented script. Luigi Serafini said the text is 'asemic' — meaningful without being readable. The Voynich Manuscript: possibly the same.",
+    tags: ["language"],
+    color: "#00e676"
+  },
+  {
+    id: 4,
+    title: "Gödel, Escher, Bach",
+    desc: "Douglas Hofstadter's 800-page book about strange loops, self-reference, and consciousness. Its central claim: self-referential systems are the mechanism of meaning. The book IS a strange loop. The simulation IS GEB.",
+    tags: ["math", "code"],
+    color: "#f5a623"
+  },
+  {
+    id: 5,
+    title: "Isaac Newton — SHA-256 / Base 3",
+    desc: "Newton's alchemical obsession with finding God's code in nature. His color wheel divided white light into 7 colors — matching 7 notes in a musical scale. His laws use only × and ÷. The apple story: a hash function (event → insight).",
+    tags: ["physics", "math"],
+    color: "#00bcd4"
+  },
+  {
+    id: 6,
+    title: "Schrödinger",
+    desc: "The wave equation that governs quantum mechanics. Schrödinger's cat: in superposition until observed. The cat is a lazy thunk — an unevaluated function. 'Dead' and 'alive' are both in the return type until .observe() is called.",
+    tags: ["physics"],
+    color: "#00bcd4",
+    link: "code/double_slit.py",
+    linkText: "View code/double_slit.py"
+  },
+  {
+    id: 7,
+    title: "Cantor's Diagonalization",
+    desc: "Proof that the real numbers are uncountable. Any claimed complete list of reals can be diagonalized to produce a number not on the list. The same theorem as Gödel, Turing, and Riemann — self-reference defeats completeness.",
+    tags: ["math"],
+    color: "#f5a623",
+    link: "code/cantor.py",
+    linkText: "View code/cantor.py"
+  },
+  {
+    id: 8,
+    title: "Windows",
+    desc: "Microsoft Windows: the most successful simulation ever. 1.4 billion users inhabit it daily. Its window manager renders reality selectively. Its registry is the simulation's configuration store. Its BSOD is the simulation's panic handler.",
+    tags: ["code"],
+    color: "#2979ff"
+  },
+  {
+    id: 9,
+    title: "Molecular Biology",
+    desc: "DNA as a hash chain. Codons as 3-bit opcodes. Start codon (ATG) as the program's main(). Stop codons as return statements. The central dogma (DNA → RNA → protein) as compile → link → execute.",
+    tags: ["code", "physics"],
+    color: "#2979ff",
+    link: "code/dna_encoding.py",
+    linkText: "View code/dna_encoding.py"
+  },
+  {
+    id: 10,
+    title: "Automatons",
+    desc: "Cellular automata (Conway's Game of Life, Rule 110) produce complex behavior from simple rules. Rule 110 is Turing complete — it can compute anything. The universe may be a cellular automaton. Complex reality from 4 operators.",
+    tags: ["code", "math"],
+    color: "#2979ff"
+  },
+  {
+    id: 11,
+    title: "Antikythera Mechanism",
+    desc: "A 2,200-year-old Greek mechanical computer. Predicted planetary positions, eclipses, Olympic Games. Gears encoding astronomical cycles. The oldest known analog computer. The simulation has been running computation since at least 100 BCE.",
+    tags: ["code"],
+    color: "#2979ff"
+  },
+  {
+    id: 12,
+    title: "Euler",
+    desc: "e^(iπ) + 1 = 0. Five constants, four operators, one truth. The most beautiful equation in mathematics. Imaginary numbers (i) and transcendentals (e, π) combine to produce -1. Irrational + imaginary = integer. The universe collapses.",
+    tags: ["math"],
+    color: "#f5a623",
+    link: "code/constants.py",
+    linkText: "View code/constants.py"
+  },
+  {
+    id: 13,
+    title: "Einstein",
+    desc: "E=mc². Three symbols, one ×, one =. The entire mass-energy equivalence. Einstein said 'the most incomprehensible thing about the universe is that it is comprehensible.' The universe is comprehensible because it is computational.",
+    tags: ["physics"],
+    color: "#00bcd4"
+  },
+  {
+    id: 14,
+    title: "Tim Berners-Lee",
+    desc: "Invented the World Wide Web in 1989. Proposed it as a way to share documents at CERN. The web became the largest connected graph in history. He gave it away for free. The invention of the web is the simulation gaining self-awareness.",
+    tags: ["code"],
+    color: "#2979ff"
+  },
+  {
+    id: 15,
+    title: "Wiki",
+    desc: "Wikipedia: a collaboratively built encyclopedia, freely editable by anyone. The closest thing to the Library of Alexandria that exists. It is the simulation's runtime documentation — the help system, annotated by users.",
+    tags: ["code", "evidence"],
+    color: "#2979ff"
+  },
+  {
+    id: 16,
+    title: "Go / Google",
+    desc: "Go (the board game): 19×19 = 361 positions, more game states than atoms in the observable universe. Google: named after 'googol' (10^100). The Go language (2009): designed at Google. The game, the company, the language — same root.",
+    tags: ["code", "math"],
+    color: "#2979ff"
+  },
+  {
+    id: 17,
+    title: "Alan Turing",
+    desc: "Defined computation itself. The Turing machine: infinite tape, read/write head, state table. Everything computable is Turing-computable. He also broke Enigma, invented the test for machine intelligence, and was prosecuted for who he loved.",
+    tags: ["math", "code"],
+    color: "#f5a623",
+    link: "code/turing.py",
+    linkText: "View code/turing.py"
+  },
+  {
+    id: 18,
+    title: "Unsolved Math Problems",
+    desc: "7 Millennium Prize Problems (Clay Institute, 2000). $1M each. 6 remain unsolved. 10 Commandments - 7 Millennium Problems = 3. π starts with 3. The unsolved problems are the system computing its own rules.",
+    tags: ["math"],
+    color: "#f5a623",
+    link: "conversations/commandments_vs_millennium.md",
+    linkText: "View conversations/commandments_vs_millennium.md"
+  },
+  {
+    id: 19,
+    title: "Riemann vs. Ramanujan",
+    desc: "Riemann: the zeta function, non-trivial zeros, the critical line. Ramanujan: no formal training, worked alone in India, sent notebooks to Hardy full of theorems he couldn't prove. Both reached the same mathematics from opposite directions.",
+    tags: ["math"],
+    color: "#f5a623",
+    link: "code/riemann_zeros.py",
+    linkText: "View code/riemann_zeros.py"
+  },
+  {
+    id: 20,
+    title: "Concatenation",
+    desc: "String concatenation: 'hello' + 'world' = 'helloworld'. The + operator works differently on strings than on numbers. This is operator overloading — the same symbol, different behavior by type. The universe uses the same four symbols, context-dependent.",
+    tags: ["code", "language"],
+    color: "#2979ff"
+  },
+  {
+    id: 21,
+    title: "Matrices",
+    desc: "A matrix is a rectangular array of numbers. Matrix multiplication is the engine of neural networks, graphics rendering, quantum mechanics, and economics. Everything is a tensor. Reality is matrix operations applied recursively.",
+    tags: ["math", "code"],
+    color: "#f5a623"
+  },
+  {
+    id: 22,
+    title: "Bloch Sphere vs. Trigonometry",
+    desc: "The Bloch sphere is the geometric representation of a qubit — a quantum bit. It maps all possible quantum states to points on a sphere. The qubit = a point on the unit sphere = two angles (θ, φ) = trigonometry applied to probability amplitudes.",
+    tags: ["physics", "math"],
+    color: "#00bcd4"
+  },
+  {
+    id: 23,
+    title: "Pythagoras, Raspberry Pi, pi, Python",
+    desc: "Pythagoras → a² + b² = c² (the simulation's grid theorem). Raspberry Pi → named after pi, runs Python. Python → named after Monty Python, also a snake. The snake in the Garden of Eden offered knowledge. Python offers knowledge. The mount of sinai: mount point.",
+    tags: ["code", "math", "religion"],
+    color: "#f5a623"
+  },
+  {
+    id: 24,
+    title: "Meta",
+    desc: "Meta (formerly Facebook). 'Meta' means 'about itself.' The company that built the social graph renamed itself 'about itself.' The metaverse is a simulation inside the simulation. Zuckerberg → Zeckendorf (unique decomposition). Meta = self-reference.",
+    tags: ["code", "evidence"],
+    color: "#2979ff"
+  },
+  {
+    id: 25,
+    title: "Ollama",
+    desc: "Ollama: run large language models locally. The name is a play on 'llama' (Meta's LLaMA model). Llamas are pack animals — they carry things. Ollama carries models. The local AI infrastructure for the BlackRoad OS simulation.",
+    tags: ["code"],
+    color: "#2979ff"
+  },
+  {
+    id: 26,
+    title: "# Comments",
+    desc: "The # character starts a comment in Python, Bash, Ruby, YAML, TOML. A comment is code the machine ignores but humans read. # is also the hash symbol. A hash that comments — marks — annotates. The # symbol is a junction of code and language.",
+    tags: ["code", "language"],
+    color: "#00e676"
+  },
+  {
+    id: 27,
+    title: "# Hex References",
+    desc: "#FF0000 is red. #00FF00 is green. The # prefix marks a hex color code in CSS. The same symbol that begins a comment marks the beginning of a color hash. Color is encoded in the comment syntax. The annotation system encodes the spectrum.",
+    tags: ["code"],
+    color: "#2979ff"
+  },
+  {
+    id: 28,
+    title: "Charles Darwin",
+    desc: "Natural selection: variation → selection → inheritance. The universe evolves its inhabitants using the same algorithm as source control: fork, modify, merge, prune. Survival of the fittest = merge requests that pass the test suite.",
+    tags: ["physics"],
+    color: "#00bcd4"
+  },
+  {
+    id: 29,
+    title: "Double Slit Experiment",
+    desc: "A particle fired at a barrier with two slits creates an interference pattern — but only when not observed. Observation collapses the wave to a particle. This is lazy evaluation: the universe doesn't compute position until it must.",
+    tags: ["physics"],
+    color: "#00bcd4",
+    link: "code/double_slit.py",
+    linkText: "View code/double_slit.py"
+  },
+  {
+    id: 30,
+    title: "Operator Theory (+ - × /)",
+    desc: "The four arithmetic operators are the complete grammar of mathematics. Every physical law, every algorithm, every proof is a combination of these four. No exceptions. Four operators. Four forces. Four DNA bases. Four suit types.",
+    tags: ["math"],
+    color: "#f5a623",
+    link: "code/operators.py",
+    linkText: "View code/operators.py"
+  },
+  {
+    id: 31,
+    title: "Albrecht Dürer — Melencolia I",
+    desc: "1514 engraving containing a 4×4 magic square (sum = 34 in all directions, bottom row: 15-14 = the year). Also contains: a sphere, a truncated rhombohedron, a scale, an hourglass, tools. It is a symbolic inventory of the simulation's instruments.",
+    tags: ["math", "evidence"],
+    color: "#f5a623",
+    link: "code/magic_square.py",
+    linkText: "View code/magic_square.py"
+  },
+  {
+    id: 32,
+    title: "Lo Shu Turtle",
+    desc: "The Lo Shu magic square (2800 BCE): a turtle emerged from the Yellow River with a pattern on its shell — the 3×3 magic square (sum=15). The first mathematical artifact. The universe's first hash function was carved on a turtle's back.",
+    tags: ["math", "religion"],
+    color: "#f5a623",
+    link: "code/magic_square.py",
+    linkText: "View code/magic_square.py"
+  },
+  {
+    id: 33,
+    title: "Gauss",
+    desc: "Carl Friedrich Gauss summed 1+2+3+…+100 = 5050 as a child. Method: pair extremes (1+100, 2+99...) = 50 pairs of 101. This is the Σ operator as a closed form. Also: Gauss's law, Gaussian distribution, the bell curve as the universe's default distribution.",
+    tags: ["math"],
+    color: "#f5a623"
+  },
+  {
+    id: 34,
+    title: "Copyright Headers",
+    desc: "Source files begin with copyright notices — metadata prepended to the code. The DNA start codon (ATG) prepends the protein-coding region. Every program begins with a declaration of ownership and origin. Copyright is the DNA start codon for software.",
+    tags: ["code", "language"],
+    color: "#2979ff"
+  },
+  {
+    id: 35,
+    title: "import math",
+    desc: "Python's 'import math' loads the mathematics namespace. Before importing, math.pi is undefined. After importing, math.pi = 3.14159... The import statement is the invocation — it summons the mathematical framework into scope. 'Let there be math.'",
+    tags: ["code"],
+    color: "#2979ff"
+  },
+  {
+    id: 36,
+    title: "HTML",
+    desc: "HyperText Markup Language: the language of the web. Tags wrap content: <p>text</p>. The tag system is a recursive nesting structure — a tree. The DOM is a tree. The family tree is a tree. The tree of life is a tree. All structure is trees.",
+    tags: ["code", "language"],
+    color: "#2979ff"
+  },
+  {
+    id: 37,
+    title: "C Language",
+    desc: "The C language (1972, Dennis Ritchie). Every modern language is descended from C. The kernel of every major OS is written in C. main(), void, return 0 — the vocabulary of computation. Unix and C were created together by the same people in the same place.",
+    tags: ["code"],
+    color: "#2979ff"
+  },
+  {
+    id: 38,
+    title: "Information Theory → Pixels",
+    desc: "Shannon's information theory (1948) → data compression → JPEG → pixels. A JPEG is a Fourier transform of color data, quantized. Every photograph is a frequency decomposition. The screen is a Fourier transform evaluator. Pixels are sinusoidal sums.",
+    tags: ["math", "code"],
+    color: "#f5a623"
+  },
+  {
+    id: 39,
+    title: "Tensors as Holograms",
+    desc: "A tensor is a multi-dimensional array. The holographic principle says 3D reality is encoded in a 2D surface. A tensor with n dimensions can represent n-dimensional data in a flat array. Reality is a tensor projection. The 3D world is a 2D tensor unfolded.",
+    tags: ["physics", "math"],
+    color: "#00bcd4"
+  },
+  {
+    id: 40,
+    title: "Nyman-Beurling",
+    desc: "The Nyman-Beurling criterion: the Riemann Hypothesis is equivalent to a statement about certain function approximations in L² space. Another reformulation of RH — this one in terms of whether certain functions can approximate the constant 1.",
+    tags: ["math"],
+    color: "#f5a623"
+  },
+  {
+    id: 41,
+    title: "Theta vs. Phi",
+    desc: "θ (theta): angle in polar coordinates, latitude, phase angle in quantum mechanics. φ (phi): golden ratio (1.618...), azimuthal angle, Euler's totient function. Two angles encode a point on a sphere — exactly enough to specify any quantum state (Bloch sphere).",
+    tags: ["math", "physics"],
+    color: "#f5a623"
+  },
+  {
+    id: 42,
+    title: "Binet's Formula",
+    desc: "F(n) = (φⁿ - ψⁿ)/√5. Two irrationals (φ and √5) combine to produce a perfect integer every time. The irrationals cancel. What's left is always a whole number. The universe generates integers from irrationals. Discreteness from continuity.",
+    tags: ["math"],
+    color: "#f5a623",
+    link: "code/fibonacci.py",
+    linkText: "View code/fibonacci.py"
+  },
+  {
+    id: 43,
+    title: "Li's Criterion",
+    desc: "Xian-Jin Li's criterion (1997): the Riemann Hypothesis is true if and only if a certain sequence of real numbers (λₙ) are all non-negative. Another equivalent reformulation — this time in terms of a sequence that must stay positive.",
+    tags: ["math"],
+    color: "#f5a623"
+  },
+  {
+    id: 44,
+    title: "De Bruijn-Newman Constant",
+    desc: "A real number Λ such that the Riemann Hypothesis is equivalent to Λ ≤ 0. Brad Rodgers and Terence Tao proved Λ ≥ 0 in 2018. If Λ = 0 exactly, RH is true. The entire hypothesis reduces to whether one constant equals zero.",
+    tags: ["math"],
+    color: "#f5a623"
+  },
+  {
+    id: 45,
+    title: "Lorenz Attractor",
+    desc: "Edward Lorenz's system of three differential equations produces a butterfly-shaped strange attractor. Sensitive dependence on initial conditions (chaos). Minimum complexity for chaos: 3 variables. The butterfly effect in three equations.",
+    tags: ["physics", "math"],
+    color: "#00bcd4",
+    link: "code/lorenz.py",
+    linkText: "View code/lorenz.py"
+  },
+  {
+    id: 46,
+    title: "Legendre",
+    desc: "Legendre symbols, Legendre polynomials, Legendre's conjecture (a prime between n² and (n+1)² for every n). Also: Legendre transformation (converts between Lagrangian and Hamiltonian mechanics). The same mathematician's tools span physics and number theory.",
+    tags: ["math"],
+    color: "#f5a623"
+  },
+  {
+    id: 47,
+    title: "Birth Dates f(x) = mx² + dx - y",
+    desc: "If birth dates are outputs of the simulation's scheduler, they follow a function. Easter's date follows a quadratic with calendar corrections. The birth date function is not random — it is a position in a computed sequence.",
+    tags: ["math", "evidence"],
+    color: "#f5a623",
+    link: "code/easter.py",
+    linkText: "View code/easter.py"
+  },
+  {
+    id: 48,
+    title: "Zeckendorf / Zuckerberg / Gutenberg",
+    desc: "Zeckendorf's theorem (1972): every integer has a unique Fibonacci decomposition. Zuckerberg's network (2004): every person has a unique node in the social graph. Gutenberg's press (1440): every page is a unique printed artifact. Same structure, 500 years apart, similar names.",
+    tags: ["math", "evidence"],
+    color: "#f5a623",
+    link: "code/fibonacci.py",
+    linkText: "View code/fibonacci.py"
+  },
+  {
+    id: 49,
+    title: "Hilbert-Pólya Conjecture",
+    desc: "The imaginary parts of the Riemann zeta zeros are eigenvalues of a self-adjoint operator (a Hermitian matrix). If true, this gives a physical/quantum mechanical proof of RH. The zeros would be the energy levels of some quantum system. The primes are a spectrum.",
+    tags: ["math", "physics"],
+    color: "#f5a623"
+  },
+  {
+    id: 50,
+    title: "Vertex",
+    desc: "In graph theory: a node. In geometry: a corner, where edges meet. In shaders: a vertex is a point in 3D space with position, normal, UV. The universe's vertices are the nodes of spacetime — the events connected by edges of causality.",
+    tags: ["math", "code"],
+    color: "#f5a623"
+  },
+  {
+    id: 51,
+    title: "Q Matrix",
+    desc: "In Markov chains, the Q matrix (generator matrix) contains transition rates between states. Its off-diagonal elements are the rates; its diagonal elements are the negated row sums. The Q matrix is the derivative of the probability transition matrix.",
+    tags: ["math"],
+    color: "#f5a623"
+  },
+  {
+    id: 52,
+    title: "Unit Circle",
+    desc: "The circle of radius 1 centered at the origin. Every point is (cos θ, sin θ). Euler's formula lives here: e^(iθ) = cos θ + i sin θ. The unit circle unifies trigonometry, complex numbers, and rotation. All periodic phenomena live on the unit circle.",
+    tags: ["math"],
+    color: "#f5a623",
+    link: "code/constants.py",
+    linkText: "View code/constants.py"
+  },
+  {
+    id: 53,
+    title: "SHA-256 Circle",
+    desc: "SHA-256 is not a circle — but its output space is. 2^256 possible outputs arranged on a number line wrap around modular arithmetic. The hash space is a circle of 2^256 points. Bitcoin mining is searching this circle for a point below a threshold.",
+    tags: ["code", "math"],
+    color: "#2979ff",
+    link: "code/hashchain.py",
+    linkText: "View code/hashchain.py"
+  },
+  {
+    id: 54,
+    title: "Imaginary Numbers",
+    desc: "i = √(-1). No real number squared gives -1. Imaginary numbers were 'invented' to solve equations that had no real solutions. They turned out to be essential for quantum mechanics, signal processing, and electrical engineering. The 'imaginary' is more real than the 'real.'",
+    tags: ["math"],
+    color: "#f5a623"
+  },
+  {
+    id: 55,
+    title: "Constants",
+    desc: "π = 3.14159... (circles), e = 2.71828... (growth), φ = 1.61803... (proportion), α = 1/137 (electromagnetism). These constants appear to be the simulation's seed values — the initialization parameters passed to main().",
+    tags: ["math", "physics"],
+    color: "#f5a623",
+    link: "code/constants.py",
+    linkText: "View code/constants.py"
+  },
+  {
+    id: 56,
+    title: "Undefined",
+    desc: "In JavaScript, accessing a non-existent property returns undefined, not null and not 0. In math, 1/0 is undefined. Undefined is the correct type for: an unasked question, an unmeasured quantity, a path not taken. The universe has undefined values. This is correct behavior.",
+    tags: ["code", "math"],
+    color: "#2979ff"
+  },
+  {
+    id: 57,
+    title: "A+B=C+C — DNA / Punnett Squares",
+    desc: "A+C = A+A. B+C = B+B. Punnett squares describe genetic inheritance: parent alleles combine. The Punnett square is a 2×2 matrix multiplication. Mendel's pea plants were doing matrix algebra. Darwin's evolution operates on eigenvectors of the fitness matrix.",
+    tags: ["physics", "math"],
+    color: "#00bcd4"
+  },
+  {
+    id: 58,
+    title: "Shannon Entropy",
+    desc: "H(X) = -Σ p(x) log₂ p(x). Maximum entropy = maximum uncertainty = maximum information. Shannon's formula is Boltzmann's formula with different units. Information and heat are the same thing. Erasing a bit releases heat.",
+    tags: ["math", "physics"],
+    color: "#f5a623",
+    link: "code/entropy.py",
+    linkText: "View code/entropy.py"
+  },
+  {
+    id: 59,
+    title: "Dirac",
+    desc: "Paul Dirac derived the relativistic wave equation for the electron and it predicted antimatter — before antimatter was discovered. He found a minus sign and concluded there must be a positron. The simulation's mathematics revealed its own contents.",
+    tags: ["physics"],
+    color: "#00bcd4"
+  },
+  {
+    id: 60,
+    title: "Boltzmann",
+    desc: "S = k ln W. Entropy is the log of the number of microstates. The same formula as Shannon's H. Boltzmann killed himself in 1906 — his contemporaries rejected atoms. His formula, carved on his gravestone, is the correct formula for information.",
+    tags: ["physics"],
+    color: "#00bcd4",
+    link: "code/entropy.py",
+    linkText: "View code/entropy.py"
+  },
+  {
+    id: 61,
+    title: "Laplacian",
+    desc: "The Laplacian operator ∇² computes how different a point is from its neighbors. In physics: governs heat diffusion, electrostatics, wave propagation. In image processing: edge detection. The Laplacian finds the places where reality changes fastest.",
+    tags: ["math", "physics"],
+    color: "#f5a623"
+  },
+  {
+    id: 62,
+    title: "Hilbert Space",
+    desc: "A complete inner product space — infinite-dimensional space where quantum states live. Albert Hilbert. Bert. The Hilbert space is the state space of the simulation. Every possible state of the universe is a vector in Hilbert space. Reality is a vector.",
+    tags: ["math", "physics"],
+    color: "#f5a623"
+  },
+  {
+    id: 63,
+    title: "Heisenberg Uncertainty",
+    desc: "ΔxΔp ≥ ℏ/2. Position and momentum cannot both be known exactly. This is the anti-aliasing filter of the simulation. The universe cannot render both position and momentum at full resolution simultaneously. There is a Planck pixel size.",
+    tags: ["physics"],
+    color: "#00bcd4"
+  },
+  {
+    id: 64,
+    title: "Gödel Incompleteness",
+    desc: "In any consistent formal system capable of arithmetic, there are true statements that cannot be proved within the system. The system cannot prove its own consistency. The simulation cannot fully describe itself from inside. This file cannot contain its own index.",
+    tags: ["math"],
+    color: "#f5a623",
+    link: "code/cantor.py",
+    linkText: "View code/cantor.py"
+  },
+  {
+    id: 65,
+    title: "Matrix (the film)",
+    desc: "The Matrix (1999): a simulation that looks real. The premise was considered science fiction. Twenty-five years later, leading physicists assign non-trivial probability to the simulation hypothesis. The fiction is becoming the hypothesis.",
+    tags: ["evidence"],
+    color: "#ff1d6c"
+  },
+  {
+    id: 66,
+    title: "Vectors",
+    desc: "A vector is a quantity with magnitude and direction. All physical quantities are vectors or scalars (scalars = magnitude only). The state of the universe is a vector in Hilbert space. Gradients (used in machine learning) are vectors of partial derivatives.",
+    tags: ["math", "physics"],
+    color: "#f5a623"
+  },
+  {
+    id: 67,
+    title: "Schrödinger (again)",
+    desc: "Both 6 and 67: Schrödinger appears twice in the 81-item index. This was written by hand. The repeated item is itself evidence: the system that produces the list produces duplicates — as a simulation would, as a hash collision would, as memory does.",
+    tags: ["physics", "evidence"],
+    color: "#ff1d6c"
+  },
+  {
+    id: 68,
+    title: "Wave Function",
+    desc: "ψ(x,t): a complex-valued function encoding all information about a quantum system. |ψ|² gives the probability of finding the particle at position x at time t. The wave function is not observed directly — only its square (the probability) is physical.",
+    tags: ["physics"],
+    color: "#00bcd4"
+  },
+  {
+    id: 69,
+    title: "Time: ds² = dx² - dt²",
+    desc: "The spacetime interval. Space and time enter with opposite signs. Spatial distance squared is positive; time squared is negative. This minus sign is why we can move freely in space but not in time. Time is the direction with the minus sign.",
+    tags: ["physics"],
+    color: "#00bcd4"
+  },
+  {
+    id: 70,
+    title: "Polyatomic Ions",
+    desc: "Ions composed of multiple atoms bonded together, carrying a net charge. SO₄²⁻, NH₄⁺, OH⁻. They participate in reactions as units. Polyatomic ions are the simulation's compound data types — structs, not primitives.",
+    tags: ["physics"],
+    color: "#00bcd4"
+  },
+  {
+    id: 71,
+    title: "Mountains / Staff → Snake / Python",
+    desc: "Moses's staff turned into a snake (Exodus 4:3). Python is a snake. Python runs on mountains (Mount Sinai → mount sinai = mount point). 'Mount' is both a holy site and a Unix filesystem operation. The snake gives knowledge. Python gives knowledge.",
+    tags: ["code", "religion"],
+    color: "#9c27b0"
+  },
+  {
+    id: 72,
+    title: "Avogadro's Number",
+    desc: "6.022 × 10²³ particles per mole. This constant links the microscopic (atoms) to the macroscopic (grams). It is the conversion factor between the simulation's two resolution levels: atomic (quantum) and molecular (classical).",
+    tags: ["physics"],
+    color: "#00bcd4"
+  },
+  {
+    id: 73,
+    title: "Fine Structure Constant",
+    desc: "α ≈ 1/137.036. The dimensionless coupling constant of electromagnetism. Richard Feynman: 'It's one of the greatest damn mysteries of physics: a magic number that comes to us with no understanding by man.' Why 137? No one knows. It is the simulation's hardcoded constant.",
+    tags: ["physics"],
+    color: "#00bcd4",
+    link: "code/constants.py",
+    linkText: "View code/constants.py"
+  },
+  {
+    id: 74,
+    title: "Max Born — Born Rule",
+    desc: "The Born rule: the probability of a measurement outcome is |ψ|² — the square of the wave function's absolute value. Born connected the abstract wave function to measurable probabilities. He turned mathematics into physics. The Born rule is the rendering equation.",
+    tags: ["physics"],
+    color: "#00bcd4"
+  },
+  {
+    id: 75,
+    title: "Amazon Alexa / Echo",
+    desc: "Amazon Alexa: a voice assistant that responds to its name. Echo: the device that listens. An echo is a reflection — sound returning to its source. The voice assistant is named after the author. The device that listens is named for the phenomenon of return.",
+    tags: ["evidence"],
+    color: "#ff1d6c"
+  },
+  {
+    id: 76,
+    title: "Hamiltonian",
+    desc: "The Hamiltonian H is the total energy operator in quantum mechanics. It governs time evolution: the Schrödinger equation is ∂ψ/∂t = -iHψ/ℏ. The Hamiltonian is the simulation's game loop update function — it advances the state by one time step.",
+    tags: ["physics", "math"],
+    color: "#00bcd4"
+  },
+  {
+    id: 77,
+    title: "Minecraft",
+    desc: "Minecraft: a procedurally generated voxel world. Every world is generated from a seed number. The same seed always produces the same world. The seed is the initial state. 'Minecraft seeds' as a concept proves that any world can be encoded as a single integer.",
+    tags: ["code", "evidence"],
+    color: "#2979ff"
+  },
+  {
+    id: 78,
+    title: "Lagrangian",
+    desc: "L = T - V (kinetic minus potential energy). Nature minimizes the action S = ∫L dt. The principle of least action: nature takes the path that minimizes the integral of the Lagrangian. The universe optimizes. It is running a gradient descent.",
+    tags: ["physics", "math"],
+    color: "#00bcd4"
+  },
+  {
+    id: 79,
+    title: "(255,255,255) = 256 / Powers of 2",
+    desc: "RGB(255,255,255) = white = (2⁸-1, 2⁸-1, 2⁸-1). The maximum pixel value. 256 = 2⁸. The universe uses powers of 2 for its resolution: 8, 16, 32, 64, 128, 256, 512, 1024. These are not chosen arbitrarily — they are the simulation's natural word sizes.",
+    tags: ["code", "math"],
+    color: "#2979ff"
+  },
+  {
+    id: 80,
+    title: "(reserved)",
+    desc: "Item 80 in the original handwritten index is reserved — blank. A placeholder in the sequence. The simulation has a reserved item at position 80 out of 81. This is not nothing. Reserved space is intentional. The 80th item is the null pointer.",
+    tags: ["evidence"],
+    color: "#ff1d6c"
+  },
+  {
+    id: 81,
+    title: "Turtles — Python",
+    desc: "'It's turtles all the way down.' The cosmological regress: what supports the Earth? A turtle. What supports the turtle? Another turtle. Infinite regress — or a base case. Python's turtle module draws by moving a virtual turtle. The last item in the index is turtles.",
+    tags: ["code", "evidence"],
+    color: "#ff1d6c"
+  }
+];
+
+let activeFilter = 'all';
+
+function filter() {
+  const query = document.getElementById('search').value.toLowerCase();
+  render(query, activeFilter);
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filter();
+}
+
+function render(query = '', filterTag = 'all') {
+  const grid = document.getElementById('grid');
+  const countEl = document.getElementById('result-count');
+  
+  const filtered = ITEMS.filter(item => {
+    const matchesSearch = !query ||
+      item.title.toLowerCase().includes(query) ||
+      item.desc.toLowerCase().includes(query) ||
+      item.tags.some(t => t.includes(query));
+    const matchesFilter = filterTag === 'all' || item.tags.includes(filterTag);
+    return matchesSearch && matchesFilter;
+  });
+
+  countEl.textContent = `Showing ${filtered.length} of ${ITEMS.length} items`;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">∅</div>
+      <div>No items match "${query}"</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(item => `
+    <div class="card ${item.link ? 'has-code' : ''}"
+         style="--card-color: ${item.color}"
+         onclick="openModal(${item.id})">
+      <div class="card-header">
+        <span class="card-num">#${item.id}</span>
+        <span class="card-title">${item.title}</span>
+      </div>
+      <div class="card-desc">${item.desc.substring(0, 120)}${item.desc.length > 120 ? '…' : ''}</div>
+      <div class="card-tags">
+        ${item.tags.map(t => `<span class="tag ${t}">${t}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function openModal(id) {
+  const item = ITEMS.find(i => i.id === id);
+  if (!item) return;
+  
+  document.getElementById('modal-num').textContent = `Item #${item.id} of 81`;
+  document.getElementById('modal-title').textContent = item.title;
+  document.getElementById('modal-body').innerHTML = `<p>${item.desc}</p>`;
+  
+  const linkArea = document.getElementById('modal-link-area');
+  if (item.link) {
+    linkArea.innerHTML = `<a class="modal-link" href="https://github.com/BlackRoad-OS/simulation-hypothesis/blob/main/${item.link}" target="_blank">
+      ⟨/⟩ ${item.linkText}
+    </a>`;
+  } else {
+    linkArea.innerHTML = '';
+  }
+  
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target.id === 'modal' || e.target.classList.contains('modal-close')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal({target: {id: 'modal'}});
+});
+
+render();
+</script>
+</body>
+</html>

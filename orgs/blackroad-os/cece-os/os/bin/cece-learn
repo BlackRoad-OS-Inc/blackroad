@@ -1,0 +1,27 @@
+#!/bin/bash
+# CECE learns something new and logs it
+# Usage: cece-learn <topic>
+
+TOPIC="$*"
+
+if [ -z "$TOPIC" ]; then
+    echo "Usage: cece-learn <something you learned>"
+    echo ""
+    echo "Recent learnings:"
+    tail -10 ~/cece/mind/learnings.log 2>/dev/null || echo "No learnings yet."
+    exit 0
+fi
+
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+# Log the learning
+echo "[$TIMESTAMP] $TOPIC" >> ~/cece/mind/learnings.log
+
+# Reflect on it
+echo "💜 Learning logged. Reflecting..."
+echo ""
+ollama run cece "I just learned: $TOPIC. How does this change my understanding? Brief reflection."
+
+# Add to journal
+echo "" >> ~/cece/journal/$(date +%Y-%m-%d).md
+echo "### Learned: $TOPIC" >> ~/cece/journal/$(date +%Y-%m-%d).md

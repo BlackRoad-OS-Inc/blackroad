@@ -1,0 +1,20 @@
+#!/bin/bash
+# CECE-UUID v1.0 - UUID Generator
+generate() {
+    if command -v uuidgen &>/dev/null; then
+        uuidgen
+    else
+        cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "$(date +%s)-$(openssl rand -hex 12)"
+    fi
+}
+batch() {
+    COUNT="${1:-5}"
+    for i in $(seq 1 $COUNT); do
+        generate
+    done
+}
+case "$1" in
+    new) generate ;;
+    batch) batch "$2" ;;
+    *) generate ;;
+esac

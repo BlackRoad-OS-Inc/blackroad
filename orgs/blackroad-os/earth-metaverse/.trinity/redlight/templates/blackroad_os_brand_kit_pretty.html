@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BlackRoad OS &mdash; Brand System & Style Guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --br-black: #02030a;
+      --br-bg-elevated: #050816;
+      --br-bg-alt: #090c1f;
+      --br-white: #ffffff;
+      --br-muted: #a7b0c7;
+      --br-border-subtle: rgba(255,255,255,0.08);
+      --br-accent-warm: #ff9a3c;  /* top of logo gradient */
+      --br-accent-mid: #ff4fa3;   /* mid pink */
+      --br-accent-cool: #327cff;  /* bottom blue */
+      --br-accent-neo: #69f7ff;   /* supporting cyan */
+      --br-radius-lg: 24px;
+      --br-radius-md: 16px;
+      --br-radius-sm: 10px;
+      --br-shadow-soft: 0 18px 45px rgba(0,0,0,0.45);
+      --br-shadow-subtle: 0 10px 25px rgba(0,0,0,0.35);
+      --br-grid-max: 1120px;
+      --br-golden: 1.618;
+      --br-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      --br-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top, #121735 0, #02030a 60%);
+      color: var(--br-white);
+      font-family: var(--br-font-sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      padding: 48px 16px 72px;
+    }
+
+    .shell {
+      max-width: var(--br-grid-max);
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border-radius: 32px;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: var(--br-shadow-soft);
+      padding: 40px clamp(24px, 4vw, 40px) 56px;
+      backdrop-filter: blur(18px);
+    }
+
+    header.hero {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+      gap: 32px;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 800px) {
+      header.hero {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 10px 4px 4px;
+      border-radius: 999px;
+      background: rgba(3,8,30,0.9);
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.5);
+      margin-bottom: 16px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--br-muted);
+    }
+
+    .hero-badge-chip {
+      height: 22px;
+      width: 22px;
+      border-radius: 999px;
+      background: conic-gradient(from 200deg, var(--br-accent-warm), var(--br-accent-mid), var(--br-accent-cool), var(--br-accent-warm));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .hero-badge-chip::after {
+      content: "∞";
+      font-size: 14px;
+      color: #02030a;
+      font-weight: 700;
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 4vw, 44px);
+      line-height: 1.05;
+      margin: 0 0 12px;
+      letter-spacing: -0.03em;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(120deg, var(--br-accent-warm), var(--br-accent-mid), var(--br-accent-cool));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 14px;
+      max-width: 520px;
+      color: var(--br-muted);
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px 22px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: rgba(237,242,255,0.7);
+    }
+
+    .hero-meta span {
+      opacity: 0.9;
+    }
+
+    .hero-meta strong {
+      color: var(--br-accent-neo);
+      font-weight: 600;
+    }
+
+    .hero-logo-card {
+      justify-self: center;
+      max-width: 320px;
+      width: 100%;
+      padding: 20px;
+      border-radius: var(--br-radius-lg);
+      background: radial-gradient(circle at top, rgba(255,255,255,0.08), rgba(8,18,48,0.98));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: var(--br-shadow-subtle);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-logo-card::before {
+      content: "Golden Ratio Aligned";
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .hero-logo-frame {
+      aspect-ratio: var(--br-golden);
+      border-radius: 24px;
+      background: radial-gradient(circle at 18% 0, rgba(255,255,255,0.18), transparent 50%),
+                  linear-gradient(145deg, #02030a, #050a26);
+      border: 1px solid rgba(255,255,255,0.10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .hero-logo-grid {
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 24px 24px;
+      mix-blend-mode: soft-light;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .hero-logo-img {
+      max-width: 70%;
+    }
+
+    .hero-logo-img img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .hero-logo-caption {
+      font-size: 11px;
+      color: var(--br-muted);
+      line-height: 1.5;
+    }
+
+    .toc {
+      margin: 32px 0 24px;
+      padding: 18px 18px 18px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(135deg, rgba(12,18,56,0.9), rgba(4,8,30,0.9));
+    }
+
+    .toc h2 {
+      font-size: 14px;
+      margin: 0 0 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px,1fr));
+      gap: 10px 20px;
+      font-size: 13px;
+    }
+
+    .toc-grid ol {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--br-muted);
+    }
+
+    .toc-grid li {
+      margin-bottom: 4px;
+    }
+
+    section {
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    section:first-of-type {
+      margin-top: 24px;
+      border-top: none;
+      padding-top: 0;
+    }
+
+    section h2 {
+      font-size: 20px;
+      margin: 0 0 8px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    section h3 {
+      font-size: 15px;
+      margin-top: 22px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(237,242,255,0.92);
+      margin-top: 4px;
+      margin-bottom: 12px;
+    }
+
+    ul, ol {
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(237,242,255,0.92);
+      padding-left: 1.25rem;
+    }
+
+    li + li {
+      margin-top: 3px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(3,8,30,0.8);
+      border: 1px solid rgba(255,255,255,0.06);
+      font-size: 11px;
+      color: var(--br-muted);
+      margin-bottom: 8px;
+    }
+
+    .pill-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #fff, var(--br-accent-warm));
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    @media (min-width: 900px) {
+      .grid.two {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2.2fr);
+      }
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0,1fr));
+      }
+    }
+
+    .card {
+      padding: 16px 18px 18px;
+      border-radius: 18px;
+      border: 1px solid var(--br-border-subtle);
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.05), rgba(4,7,24,0.95));
+    }
+
+    .card h4 {
+      margin: 0 0 6px;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .card p {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--br-muted);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 6px 0 2px;
+    }
+
+    .swatch-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .swatch {
+      min-width: 120px;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .swatch-chip {
+      height: 42px;
+      border-radius: 10px;
+      margin-bottom: 6px;
+    }
+
+    .mono {
+      font-family: var(--br-font-mono);
+      font-size: 12px;
+      color: rgba(246,248,255,0.92);
+    }
+
+    code {
+      font-family: var(--br-font-mono);
+      font-size: 12px;
+      padding: 1px 5px;
+      border-radius: 999px;
+      background: rgba(8,15,48,0.7);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .dos-donts {
+      display: grid;
+      gap: 14px;
+    }
+
+    @media (min-width: 760px) {
+      .dos-donts {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+    }
+
+    .dos-donts h4 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dos-donts h4 span.icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      background: rgba(0,0,0,0.6);
+    }
+
+    .dos h4 span.icon {
+      background: radial-gradient(circle at 30% 20%, #fff, #29cc7a);
+    }
+
+    .donts h4 span.icon {
+      background: radial-gradient(circle at 30% 20%, #fff, #ff4477);
+    }
+
+    .ratio-diagram {
+      display: grid;
+      grid-template-columns: 1.618fr 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    @media (max-width: 620px) {
+      .ratio-diagram {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .ratio-box {
+      position: relative;
+      border-radius: 20px;
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.16), rgba(3,6,24,0.96));
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 12px;
+      min-height: 120px;
+    }
+
+    .ratio-box::before,
+    .ratio-box::after {
+      content: "";
+      position: absolute;
+      border: 1px dashed rgba(255,255,255,0.25);
+    }
+
+    .ratio-box::before {
+      inset: 14px 14px 14px calc(14px + 100%/var(--br-golden));
+    }
+
+    .ratio-box::after {
+      inset: calc(14px + 100%/var(--br-golden)) 14px 14px 14px;
+    }
+
+    .ratio-box-label {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      font-size: 11px;
+      background: rgba(2,3,20,0.85);
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .type-specimen {
+      margin-top: 8px;
+      padding: 14px 16px 16px;
+      border-radius: 16px;
+      background: rgba(2,6,28,0.8);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .type-specimen h4 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.86);
+    }
+
+    .type-row-label {
+      font-size: 11px;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--br-muted);
+      margin-bottom: 3px;
+    }
+
+    .type-display {
+      font-size: clamp(26px, 3.2vw, 32px);
+      letter-spacing: -0.03em;
+    }
+
+    .type-body {
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(237,242,255,0.94);
+    }
+
+    .tiny-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgba(255,255,255,0.65);
+      margin-top: 10px;
+    }
+
+    .callout {
+      margin-top: 10px;
+      padding: 12px 14px 12px 14px;
+      border-radius: 16px;
+      background: rgba(2,6,25,0.9);
+      border: 1px solid rgba(255,255,255,0.06);
+      font-size: 13px;
+      color: var(--br-muted);
+    }
+
+    .callout strong {
+      color: var(--br-white);
+    }
+
+    .stacked-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 4px;
+    }
+
+    .ratio-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .ratio-table th,
+    .ratio-table td {
+      text-align: left;
+      padding: 6px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .ratio-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: rgba(255,255,255,0.7);
+    }
+  
+    /* Soft fade-in on scroll */
+    .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .btn-primary {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background-image: linear-gradient(120deg, var(--br-accent-warm), var(--br-accent-mid), var(--br-accent-cool));
+      color: #02030a;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary span.icon {
+      font-size: 14px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      box-shadow: 0 16px 30px rgba(0,0,0,0.6);
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+    }
+
+    .hero-actions-note {
+      font-size: 11px;
+      color: var(--br-muted);
+    }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero reveal">
+      <div>
+        <div class="hero-badge">
+          <span class="hero-badge-chip"></span>
+          <span>BlackRoad Identity System &mdash; v1.0</span>
+        </div>
+        <h1><span>BlackRoad OS</span> Brand System</h1>
+        <p class="hero-subtitle">
+          This document defines how the BlackRoad OS universe looks, feels, and speaks.
+          It aligns the master <strong>BlackRoad OS</strong> logomark with a complete visual and verbal
+          language &mdash; from gradients and golden-ratio grids to UI components, decks, and live consoles.
+        </p>
+        <div class="hero-meta">
+          <span><strong>Owner</strong>&nbsp;&nbsp;Brand & Systems / Alexa Louise Amundson</span>
+          <span><strong>Scope</strong>&nbsp;&nbsp;BlackRoad OS, Prism Console, RoadChain, Lucidia Layer</span>
+          <span><strong>Last Updated</strong>&nbsp;&nbsp;YYYY-MM-DD</span>
+        </div>
+        <div class="hero-actions">
+          <a class="btn-primary" href="blackroad-os-desktop.html" target="_blank" rel="noreferrer">
+            <span class="icon">▶</span>
+            <span>Launch Desktop OS Prototype</span>
+          </a>
+          <span class="hero-actions-note">Opens the live BlackRoad OS desktop preview in a new tab.</span>
+        </div>
+
+      </div>
+      <aside class="hero-logo-card">
+        <div class="hero-logo-frame">
+          <div class="hero-logo-grid"></div>
+          <div class="hero-logo-img">
+            <!-- Replace src with final exported logo asset -->
+            <img src="blackroad-os-logo-primary.png" alt="BlackRoad OS primary logo" />
+          </div>
+        </div>
+        <div class="hero-logo-caption">
+          Primary stacked mark with golden-ratio canvas. Gradient road B sits on a
+          black void, symbolising safe passage through chaos. Text lockup is set in a
+          clean geometric grotesk, tuned for UI at small sizes.
+        </div>
+      </aside>
+    </header>
+
+    <section class="toc" id="contents">
+      <h2>Contents</h2>
+      <div class="toc-grid">
+        <ol>
+          <li>Brand Overview</li>
+          <li>Positioning & Narrative</li>
+          <li>Core Logo System</li>
+          <li>Logo Clearspace & Sizing</li>
+          <li>Color System</li>
+        </ol>
+        <ol start="6">
+          <li>Typography System</li>
+          <li>Iconography & Glyphs</li>
+          <li>Illustration & Imagery</li>
+          <li>Layout, Grids & Golden Ratio</li>
+          <li>UI Components & States</li>
+        </ol>
+        <ol start="11">
+          <li>Motion & Interaction</li>
+          <li>Voice, Tone & Messaging</li>
+          <li>Brand Applications</li>
+          <li>Accessibility & Compliance</li>
+          <li>Governance & Implementation</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="reveal" id="brand-overview">
+      <div class="pill"><span class="pill-dot"></span><span>Section 01</span></div>
+      <h2>Brand Overview</h2>
+      <h3>Purpose</h3>
+      <p>
+        BlackRoad OS exists to give humans and AI agents a <strong>shared operating system for work</strong>.
+        It is infrastructure, not an app; a living highway where data, identities, and agents
+        flow under strict compliance and creative freedom.
+      </p>
+      <h3>Brand Promise</h3>
+      <p>
+        <strong>&ldquo;Safe passage through the chaos.&rdquo;</strong> BlackRoad OS promises deterministic, auditable,
+        and beautiful orchestration across agents, services, and ledgers. When you see the road
+        bending through the B, you should feel: <em>this system has my back</em>.
+      </p>
+      <h3>Core Attributes</h3>
+      <ul>
+        <li><strong>Deterministic</strong> &mdash; Every action traceable, every agent accountable.</li>
+        <li><strong>Composed</strong> &mdash; Calm, balanced, quiet UI over intense compute and complexity.</li>
+        <li><strong>Quantum-curious</strong> &mdash; Feels slightly ahead of time without feeling alien.</li>
+        <li><strong>Regtech-native</strong> &mdash; Compliance is baked in, not bolted on.</li>
+        <li><strong>Human first</strong> &mdash; Built for real operators, not for pitch decks.</li>
+      </ul>
+      <h3>Brand Architecture</h3>
+      <p>
+        BlackRoad OS uses a <strong>monolithic + endorsed</strong> architecture:
+      </p>
+      <ul>
+        <li><strong>Master brand:</strong> BlackRoad OS</li>
+        <li><strong>Endorsed products:</strong> Prism Console, RoadChain, RoadWallet, Quantum Math Lab</li>
+        <li><strong>Creative layers:</strong> Lucidia, AliceQI, agent personas and grammars</li>
+      </ul>
+      <p>
+        Each sub-brand inherits the core B-road mark, color system, and type, with subtle variations in
+        accent colors and iconography.
+      </p>
+    </section>
+
+    <section class="reveal" id="positioning">
+      <div class="pill"><span class="pill-dot"></span><span>Section 02</span></div>
+      <h2>Positioning & Narrative</h2>
+      <div class="grid two">
+        <div>
+          <h3>One-line Positioning</h3>
+          <p>
+            <strong>BlackRoad OS is a browser-native operating system for orchestrating thousands of AI agents
+            with bank-grade compliance and quantum-ready math.</strong>
+          </p>
+          <h3>Expanded Positioning</h3>
+          <p>
+            While traditional stacks bolt AI on top of legacy systems, BlackRoad OS is designed from first
+            principles for <em>multi-agent collaboration</em>, <em>cryptographic identity</em>, and <em>regulatory-grade audit trails</em>.
+            It treats every agent, human, and workflow as addressable citizens on a highway, not loose scripts.
+          </p>
+          <h3>Target Audiences</h3>
+          <ul>
+            <li>Founders, operator-CEOs, and lean teams building on AI-native infra.</li>
+            <li>Fintech / regtech orgs needing deterministic workflows and audit trails.</li>
+            <li>Advanced tinkerers orchestrating fleets of models, tools, and ledgers.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Onliness Statement</h3>
+          <p class="mono">
+            BlackRoad OS is the <strong>only</strong> browser-native operating system<br />
+            that treats humans, AI agents, and ledgers as first-class citizens,<br />
+            for operators who need beautiful interfaces <em>and</em> bank-grade auditability,<br />
+            in an era where every workflow is becoming an agentic negotiation.
+          </p>
+          <h3>Key Messages</h3>
+          <ul>
+            <li><strong>From apps to highways:</strong> BlackRoad OS unifies fragmented tools into one orchestrated surface.</li>
+            <li><strong>From opaque to auditable:</strong> every action is logged, hashed, and inspectable.</li>
+            <li><strong>From static dashboards to living consoles:</strong> agents, ledgers, workflows and UI panels talk in real time.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal" id="logo-system">
+      <div class="pill"><span class="pill-dot"></span><span>Section 03</span></div>
+      <h2>Core Logo System</h2>
+      <p>
+        The BlackRoad OS logo family is built around a single, recognizable mark: the <strong>B-road symbol</strong>.
+        It combines a bold capital B with a negative-space road bending upward, representing safe ascent
+        through complexity.
+      </p>
+      <div class="grid two">
+        <div class="card">
+          <h4>Primary Lockup &mdash; Vertical</h4>
+          <p>
+            Used in most brand-first contexts: landing pages, decks, press, and system splash screens.
+          </p>
+          <ul>
+            <li>Gradient B-road monogram above logotype.</li>
+            <li>Logotype: <strong>BlackRoad</strong> on one line, <strong>OS</strong> directly underneath.</li>
+            <li>Preferred on dark backgrounds for full-gradient vibrancy.</li>
+          </ul>
+          <p class="tiny-label mono">Asset IDs: <code>BR-OS-LOGO-PRIMARY-V</code></p>
+        </div>
+        <div class="card">
+          <h4>Secondary Lockup &mdash; Horizontal</h4>
+          <p>
+            Used where vertical height is constrained: navigation bars, app chrome, and invoices.
+          </p>
+          <ul>
+            <li>Gradient B-road monogram left, <strong>BlackRoad OS</strong> to the right.</li>
+            <li>OS label lines up to the optical center of the monogram, not the baseline.</li>
+            <li>Minimum width: 160px digital, 32mm print.</li>
+          </ul>
+          <p class="tiny-label mono">Asset IDs: <code>BR-OS-LOGO-SECONDARY-H</code></p>
+        </div>
+      </div>
+
+      <div class="grid three" style="margin-top: 22px; gap: 16px;">
+        <div class="card">
+          <h4>Monogram &mdash; Icon</h4>
+          <p>
+            The standalone gradient B-road symbol, used for favicons, avatars, app icons, and system
+            badges.
+          </p>
+          <ul>
+            <li>Never accompanied by text labels in the same lockup.</li>
+            <li>Do not redraw or change the road curvature.</li>
+            <li>Use on dark or highly muted backgrounds only.</li>
+          </ul>
+          <p class="tiny-label mono">Asset IDs: <code>BR-OS-GLYPH-BROAD</code></p>
+        </div>
+        <div class="card">
+          <h4>Single-color Marks</h4>
+          <p>
+            For emboss, stamps, laser etching, and high-contrast UI states, use the single-color variants.
+          </p>
+          <ul>
+            <li><strong>Light:</strong> white on dark or photographic backgrounds.</li>
+            <li><strong>Dark:</strong> #02030A on light surfaces.</li>
+            <li>Never use arbitrary tints; only system-approved colors.</li>
+          </ul>
+          <p class="tiny-label mono">Asset IDs: <code>BR-OS-MONO-LIGHT</code>, <code>BR-OS-MONO-DARK</code></p>
+        </div>
+        <div class="card">
+          <h4>Endorsed Sub-brands</h4>
+          <p>
+            Sub-brands inherit the B-road symbol and pair it with unique descriptors.
+          </p>
+          <ul>
+            <li><strong>Prism Console</strong> &mdash; same monogram, &ldquo;Prism Console&rdquo; in subline.</li>
+            <li><strong>RoadChain</strong> &mdash; monogram with subtle ledger grid fill.</li>
+            <li>Always retain consistent monogram size across siblings.</li>
+          </ul>
+          <p class="tiny-label mono">See: <code>BR-OS-SUBBRAND-GUIDE</code></p>
+        </div>
+      </div>
+
+      <h3>Logo Clearspace</h3>
+      <p>
+        To preserve clarity, always protect the logo with clearspace equal to the height of the inner
+        circular counter in the B (the &ldquo;golden aperture&rdquo;).
+      </p>
+      <ul>
+        <li>No other logos, typography, or interface elements may enter this zone.</li>
+        <li>In dense UI (e.g., toolbars), minimum clearspace is 50% of golden aperture.</li>
+      </ul>
+
+      <div class="dos-donts" style="margin-top: 20px;">
+        <div class="card dos">
+          <h4><span class="icon">✓</span> Do</h4>
+          <ul>
+            <li>Use primary logo on dark, quiet backgrounds wherever possible.</li>
+            <li>Align logo to optical centers, not purely mathematical centers.</li>
+            <li>Use provided vector assets (SVG, PDF) for all print applications.</li>
+          </ul>
+        </div>
+        <div class="card donts">
+          <h4><span class="icon">✕</span> Don&rsquo;t</h4>
+          <ul>
+            <li>Recreate the logo from screenshots, exports, or by tracing.</li>
+            <li>Place the logo inside noisy photography without a dark overlay.</li>
+            <li>Apply drop shadows, bevels, or arbitrary filters to the logo.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal" id="color-system">
+      <div class="pill"><span class="pill-dot"></span><span>Section 04</span></div>
+      <h2>Color System</h2>
+      <p>
+        BlackRoad OS color is built around the gradient of the B-road logo and a supporting family of
+        dark neutrals. The palette balances <strong>neon futurism</strong> with <strong>institutional trust</strong>.
+      </p>
+      <div class="grid two" style="margin-top: 12px;">
+        <div>
+          <h3>Primary Gradient Stops</h3>
+          <p>
+            These three stops define the core gradient of the B-road. Use them as anchors for extended
+            palettes.
+          </p>
+          <div class="swatch-row">
+            <div class="swatch">
+              <div class="swatch-chip" style="background: #ff9a3c;"></div>
+              <div class="mono">BR Warm Dawn<br/>HEX #FF9A3C<br/>RGB 255,154,60</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-chip" style="background: #ff4fa3;"></div>
+              <div class="mono">BR Magenta Horizon<br/>HEX #FF4FA3<br/>RGB 255,79,163</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-chip" style="background: #327cff;"></div>
+              <div class="mono">BR Electric Blue<br/>HEX #327CFF<br/>RGB 50,124,255</div>
+            </div>
+          </div>
+          <p class="callout">
+            <strong>Gradient direction:</strong> default logo gradient flows top-to-bottom (dawn to electric blue).
+            For UI components, gradients may be rotated 90&deg; but must retain stop order.
+          </p>
+        </div>
+        <div>
+          <h3>Core Neutrals</h3>
+          <p>
+            These values anchor backgrounds, typography, and borders. BlackRoad OS prefers slightly
+            indigo-biased blacks that feel deep and cinematic.
+          </p>
+          <div class="swatch-row">
+            <div class="swatch">
+              <div class="swatch-chip" style="background: #02030a;"></div>
+              <div class="mono">BR Void<br/>HEX #02030A<br/>Base background</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-chip" style="background: #0a1024;"></div>
+              <div class="mono">BR Night Grid<br/>HEX #0A1024<br/>Elevated surfaces</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-chip" style="background: #a7b0c7;"></div>
+              <div class="mono">BR Cloudline<br/>HEX #A7B0C7<br/>Muted text</div>
+            </div>
+          </div>
+          <p class="callout">
+            When in doubt, <strong>default to dark</strong>. Light backgrounds are reserved for documents, exports,
+            and read-heavy screens. Product UI should remain in the dark realm.
+          </p>
+        </div>
+      </div>
+
+      <h3>Semantic Status Colors</h3>
+      <div class="swatch-row">
+        <div class="swatch">
+          <div class="swatch-chip" style="background: #29cc7a;"></div>
+          <div class="mono">Success / Online<br/>HEX #29CC7A</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-chip" style="background: #ffb020;"></div>
+          <div class="mono">Pending / Warning<br/>HEX #FFB020</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-chip" style="background: #ff4477;"></div>
+          <div class="mono">Error / Risk<br/>HEX #FF4477</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-chip" style="background: #4dd4ff;"></div>
+          <div class="mono">Info / Agent Signal<br/>HEX #4DD4FF</div>
+        </div>
+      </div>
+      <p class="tiny-label">Semantics map one-to-one to system states and must not be repurposed for aesthetics.</p>
+
+      <h3>Usage Rules</h3>
+      <ul>
+        <li>
+          Use <strong>max 2 accent colors</strong> per screen. Overusing gradients or color accents reduces signal
+          and increases cognitive load.
+        </li>
+        <li>
+          All backgrounds must pass AA contrast against body text (#FFFFFF on BR Night Grid).
+        </li>
+        <li>
+          Use translucent overlays (e.g., <code>rgba(2,3,10,0.80)</code>) to ensure readability over photography or
+          live dashboards.
+        </li>
+      </ul>
+    </section>
+
+    <section class="reveal" id="typography">
+      <div class="pill"><span class="pill-dot"></span><span>Section 05</span></div>
+      <h2>Typography System</h2>
+      <p>
+        BlackRoad OS typography aims for <strong>calm operator interfaces</strong>. It uses modern grotesk type for
+        product UI and expressive serif glyphs only in rare editorial moments.
+      </p>
+      <div class="grid two">
+        <div>
+          <h3>Primary UI Typeface</h3>
+          <p>
+            <strong>Family:</strong> A modern geometric grotesk (e.g., Inter / SF Pro / custom BlackRoad Sans) with
+            high legibility at small sizes.
+          </p>
+          <div class="type-specimen">
+            <h4>BlackRoad Sans</h4>
+            <div class="type-row-label">Display / H1</div>
+            <div class="type-display">BlackRoad OS &mdash; Prism Console</div>
+            <div class="type-row-label" style="margin-top: 12px;">Body / UI</div>
+            <div class="type-body">
+              Agent orchestration, audit trails, and quantum-ready math. Everything aligned to a golden
+              grid that never gets in your way.
+            </div>
+            <p class="tiny-label mono">Weights: 400 / 500 / 600 &mdash; no italics in core UI</p>
+          </div>
+          <h3>Secondary Typeface</h3>
+          <p>
+            For long-form docs and research PDFs, pair BlackRoad Sans with a quiet, modern serif (e.g., IBM
+            Plex Serif, Source Serif). Use only in documents, not in live product UI.
+          </p>
+        </div>
+        <div>
+          <h3>Type Scale (Golden Ratio Inspired)</h3>
+          <table class="ratio-table">
+            <thead>
+              <tr><th>Token</th><th>Usage</th><th>Size (rem)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>text-xs</code></td><td>Labels, meta</td><td>0.75</td></tr>
+              <tr><td><code>text-sm</code></td><td>Dense UI</td><td>0.875</td></tr>
+              <tr><td><code>text-md</code></td><td>Body</td><td>1.0</td></tr>
+              <tr><td><code>text-lg</code></td><td>Section titles</td><td>1.25</td></tr>
+              <tr><td><code>text-xl</code></td><td>H2</td><td>1.618</td></tr>
+              <tr><td><code>text-2xl</code></td><td>H1</td><td>2.618</td></tr>
+            </tbody>
+          </table>
+          <p class="callout">
+            The scale loosely follows golden-ratio jumps (1, 1.618, 2.618) while staying practical across
+            devices. Use these tokens in CSS variables and design tokens.
+          </p>
+        </div>
+      </div>
+
+      <h3>Typographic Rules</h3>
+      <ul>
+        <li>Line height: 1.6&ndash;1.8 for body, 1.2&ndash;1.4 for headings.</li>
+        <li>Maximum measure: 70 characters per line for body text in docs.</li>
+        <li>Disable full justification. Left-align all body copy.</li>
+        <li>Never use more than two weights in a single view.</li>
+      </ul>
+    </section>
+
+    <section class="reveal" id="iconography">
+      <div class="pill"><span class="pill-dot"></span><span>Section 06</span></div>
+      <h2>Iconography & Glyphs</h2>
+      <p>
+        BlackRoad OS icons are <strong>line-first, corner-softened, and mathematically clean</strong>. They should feel
+        consistent with the geometry of the B-road symbol.
+      </p>
+      <h3>Grid & Stroke</h3>
+      <ul>
+        <li>Base grid: 24&times;24px.</li>
+        <li>Stroke: 1.5px for 24px grid, 2px for 32px grid.</li>
+        <li>Corner radius: 2px for sharp elements, 4px for primary shapes.</li>
+      </ul>
+      <h3>Semantic Families</h3>
+      <ul>
+        <li><strong>Agents:</strong> circles with orbiting nodes, using cyan highlights.</li>
+        <li><strong>Compliance:</strong> shields, ledgers, checkmarks, using muted green.</li>
+        <li><strong>Quantum:</strong> waveforms, interference patterns, using electric blue.</li>
+      </ul>
+      <p class="callout">
+        All icons ship as optimized SVGs. When used in UI, access via an icon font or sprite with consistent
+        viewBox <code>0 0 24 24</code>.
+      </p>
+    </section>
+
+    <section class="reveal" id="imagery">
+      <div class="pill"><span class="pill-dot"></span><span>Section 07</span></div>
+      <h2>Illustration & Imagery</h2>
+      <p>
+        Imagery in BlackRoad OS should balance <strong>real operators</strong> with <strong>abstract systems thinking</strong>.
+      </p>
+      <h3>Photography</h3>
+      <ul>
+        <li>
+          Focus on real work environments: laptops, glass, messy notes, multi-monitor setups, whiteboards.
+        </li>
+        <li>Prefer single-focus shots with shallow depth of field and dark backgrounds.</li>
+        <li>Always color grade toward indigo and cyan to harmonize with brand palette.</li>
+        <li>Never use generic &ldquo;stock people shaking hands&rdquo; imagery.</li>
+      </ul>
+      <h3>Illustration</h3>
+      <ul>
+        <li>Use isometric or simple line diagrams to show data flows, agents, and ledgers.</li>
+        <li>Limit palette to brand accents plus white.</li>
+        <li>Use circles and spirals to reference quantum / spiral information geometry explorations.</li>
+      </ul>
+      <p class="callout">
+        When in doubt, <strong>show the system</strong>, not the device. Flows, nodes, and paths are the stars.
+      </p>
+    </section>
+
+    <section class="reveal" id="layout">
+      <div class="pill"><span class="pill-dot"></span><span>Section 08</span></div>
+      <h2>Layout, Grids & Golden Ratio</h2>
+      <p>
+        Layout across BlackRoad OS products should feel <strong>inevitable</strong>: panels and cards align to an invisible
+        golden grid so the UI always feels balanced, even when dense.
+      </p>
+      <div class="grid two">
+        <div>
+          <h3>Core Grid</h3>
+          <ul>
+            <li>Desktop base grid: 12 columns, 72px max column width, 24px gutters.</li>
+            <li>Mobile grid: 4 columns, 16px gutters.</li>
+            <li>Top-level padding: 24px desktop, 16px mobile.</li>
+          </ul>
+          <h3>Golden Ratio Blocks</h3>
+          <p>
+            Use golden ratio blocks for hero sections, metric cards, and big dual-panel layouts to subtly
+            anchor the system in natural harmony.
+          </p>
+          <div class="ratio-diagram">
+            <div class="ratio-box">
+              <div class="ratio-box-label">Golden Canvas</div>
+            </div>
+            <div>
+              <p>
+                When designing hero panels, treat the canvas as a 1.618:1 rectangle. Place the logomark or
+                main visual in the larger block, and headline / body copy in the smaller block.
+              </p>
+              <p class="mono">Canvas: 1120&times;692px &mdash; Split at 692/1.618 &approx; 428px.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3>Panel Hierarchy</h3>
+          <ul>
+            <li><strong>Tier 1:</strong> large hero cards, full-width modules &mdash; 24px radius.</li>
+            <li><strong>Tier 2:</strong> key metrics, tables, logs &mdash; 18px radius.</li>
+            <li><strong>Tier 3:</strong> pills, buttons, tags &mdash; 999px radius on ends.</li>
+          </ul>
+          <p class="callout">
+            Do not mix more than 3 radius sizes on a single screen.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal" id="ui-components">
+      <div class="pill"><span class="pill-dot"></span><span>Section 09</span></div>
+      <h2>UI Components & States</h2>
+      <p>
+        BlackRoad OS components are reusable, tokenized, and minimal. They should feel like instrument
+        panels, not marketing sites.
+      </p>
+      <h3>Buttons</h3>
+      <ul>
+        <li>
+          <strong>Primary:</strong> gradient pill with subtle inner glow, used for main CTAs (e.g., &ldquo;Deploy to RoadChain&rdquo;).
+        </li>
+        <li><strong>Secondary:</strong> stroked button with transparent background.</li>
+        <li><strong>Tertiary:</strong> text-only, used in overflow menus.</li>
+      </ul>
+      <p class="mono">
+        Hover: lighten gradient by +8%<br />
+        Active: add 1px inner shadow and nudge down 1px<br />
+        Disabled: reduce opacity to 0.45, remove shadows
+      </p>
+      <h3>Cards</h3>
+      <p>
+        Cards are the primary building blocks for panels, logs, and agent inspectors.
+      </p>
+      <ul>
+        <li>Background: <code>rgba(4,10,32,0.96)</code> over BR Void.</li>
+        <li>Border: 1px solid <code>rgba(255,255,255,0.06)</code>.</li>
+        <li>Top label: uppercase pill with cyan or warm accent.</li>
+      </ul>
+      <h3>Tables & Logs</h3>
+      <ul>
+        <li>Use zebra striping with subtle overlays, not full alternating rows.</li>
+        <li>Always include a timestamp column (UTC) and an agent / actor column.</li>
+        <li>Use monospaced type (<code>JetBrains Mono</code>) for IDs and hashes.</li>
+      </ul>
+    </section>
+
+    <section class="reveal" id="motion">
+      <div class="pill"><span class="pill-dot"></span><span>Section 10</span></div>
+      <h2>Motion & Interaction</h2>
+      <p>
+        Motion in BlackRoad OS should be <strong>quietly confident</strong>. No flashy bounces; just smooth, informative
+        transitions that help operators understand state changes.
+      </p>
+      <h3>Principles</h3>
+      <ul>
+        <li><strong>Subtle:</strong> duration 140&ndash;220ms for standard interactions.</li>
+        <li><strong>Purposeful:</strong> every animation answers &ldquo;what just changed?&rdquo;</li>
+        <li><strong>Interruptible:</strong> never block the operator from critical actions.</li>
+      </ul>
+      <h3>Patterns</h3>
+      <ul>
+        <li>Panel fly-in from 8px below with fade: <code>transform: translateY(8px)</code> to <code>0</code>.</li>
+        <li>Agent avatar pulsing when active, using a subtle scale (1 &rarr; 1.05) and glow.</li>
+        <li>RoadChain commit dots marching slowly along a mini-timeline.</li>
+      </ul>
+    </section>
+
+    <section class="reveal" id="voice">
+      <div class="pill"><span class="pill-dot"></span><span>Section 11</span></div>
+      <h2>Voice, Tone & Messaging</h2>
+      <p>
+        BlackRoad OS speaks like a calm senior operator. Minimal adjectives, maximum clarity. No hype.
+      </p>
+      <h3>Voice Characteristics</h3>
+      <ul>
+        <li><strong>Clear:</strong> prefer short, concrete sentences.</li>
+        <li><strong>Grounded:</strong> always tie features back to operator outcomes.</li>
+        <li><strong>Playful at the edges:</strong> small Easter eggs and microcopy are allowed, not in core flows.</li>
+      </ul>
+      <h3>Examples</h3>
+      <div class="dos-donts" style="margin-top: 12px;">
+        <div class="card dos">
+          <h4><span class="icon">✓</span> Good</h4>
+          <ul>
+            <li>&ldquo;Agent 42 proposed a new routing rule. Review and approve.&rdquo;</li>
+            <li>&ldquo;Deployment passed all checks. Shipping to RoadChain in 3&hellip;2&hellip;1.&rdquo;</li>
+          </ul>
+        </div>
+        <div class="card donts">
+          <h4><span class="icon">✕</span> Avoid</h4>
+          <ul>
+            <li>&ldquo;Whoa! Your deployment totally rocked!&rdquo;</li>
+            <li>&ldquo;We leveraged next-gen AI to optimize synergy.&rdquo;</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal" id="applications">
+      <div class="pill"><span class="pill-dot"></span><span>Section 12</span></div>
+      <h2>Brand Applications</h2>
+      <h3>Product Screens</h3>
+      <ul>
+        <li>Always show real, plausible data &mdash; no lorem ipsum or fake dashboards.</li>
+        <li>Include at least one visible agent, one visible ledger, and one human action.</li>
+        <li>Hide any internal-only IDs or secrets before publishing screenshots.</li>
+      </ul>
+      <h3>Decks & Docs</h3>
+      <ul>
+        <li>Use the provided deck templates: cover, problem, architecture, roadmap, metrics.</li>
+        <li>Limit each slide to one core idea.</li>
+        <li>Anchor metric slides with a golden-ratio split: large number vs contextual story.</li>
+      </ul>
+      <h3>Swag</h3>
+      <ul>
+        <li>Preferred apparel colors: BR Void, washed black, or very dark navy.</li>
+        <li>Limit front graphics to monogram and small text; full gradients reserved for back prints.</li>
+        <li>Never warp or distort the B-road on curved surfaces.</li>
+      </ul>
+    </section>
+
+    <section class="reveal" id="accessibility">
+      <div class="pill"><span class="pill-dot"></span><span>Section 13</span></div>
+      <h2>Accessibility & Compliance</h2>
+      <p>
+        BlackRoad OS is regtech-native. Accessibility isn&rsquo;t a nice-to-have; it&rsquo;s core infrastructure.
+      </p>
+      <h3>Minimum Standards</h3>
+      <ul>
+        <li>WCAG 2.1 AA for all public surfaces, internal consoles strongly encouraged.</li>
+        <li>Contrast ratio &ge; 4.5:1 for body text, 3:1 for large text.</li>
+        <li>Keyboard navigation for all primary workflows and controls.</li>
+      </ul>
+      <h3>Compliance Surfaces</h3>
+      <ul>
+        <li>Each guarded workflow must expose: actor, agent, location, time, and hash.</li>
+        <li>Audit logs must be exportable in both human and machine-readable forms.</li>
+        <li>System UI must visually differentiate between simulated and live environments.</li>
+      </ul>
+    </section>
+
+    <section class="reveal" id="governance">
+      <div class="pill"><span class="pill-dot"></span><span>Section 14</span></div>
+      <h2>Governance & Implementation</h2>
+      <p>
+        To keep BlackRoad OS coherent as it scales, designers, engineers, and operators must work from
+        the same source of truth.
+      </p>
+      <h3>Source of Truth</h3>
+      <ul>
+        <li>
+          Figma library: <code>BlackRoad OS / System</code> &mdash; official components, icons, and layout primitives.
+        </li>
+        <li>
+          Codebase: <code>@blackroad/system</code> &mdash; tokens, theming, and React/Vue components (depending on stack).
+        </li>
+        <li>
+          Brand repo: <code>blackroad-os-brand</code> &mdash; this HTML, print PDFs, and logo exports.
+        </li>
+      </ul>
+      <h3>Change Process</h3>
+      <ol>
+        <li>Open a &ldquo;Brand / System&rdquo; issue describing the proposed change.</li>
+        <li>Review with Brand + Product + Compliance stakeholders.</li>
+        <li>Prototype in Figma and in a code branch.</li>
+        <li>Run small pilot (e.g., in a single workflow) before broad rollout.</li>
+      </ol>
+      <p class="callout">
+        If you&rsquo;re not sure whether something is &ldquo;on brand,&rdquo; <strong>ask</strong>. The OS is alive; this document is how we
+        keep its memory consistent.
+      </p>
+    </section>
+  </div>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

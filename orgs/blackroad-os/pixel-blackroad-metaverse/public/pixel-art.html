@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Art Metaverse | BlackRoad OS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      color: #fff;
+    }
+    #canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 2px solid #FF1D6C;
+    }
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border: 2px solid #F5A623;
+      border-radius: 4px;
+      font-size: 12px;
+      min-width: 250px;
+    }
+    .stat { margin: 5px 0; color: #2979FF; }
+    .stat strong { color: #FF1D6C; }
+    #event-log {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 10px;
+      border: 2px solid #9C27B0;
+      border-radius: 4px;
+      width: 300px;
+      height: 150px;
+      overflow-y: auto;
+      font-size: 10px;
+    }
+    .event { margin: 3px 0; opacity: 0.9; }
+    .event-init { color: #FF1D6C; }
+    .event-memory { color: #F5A623; }
+    .event-session { color: #2979FF; }
+    .event-file { color: #9C27B0; }
+    h1 { color: #FF1D6C; margin-bottom: 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="hud">
+    <h1>🎮 PIXEL METAVERSE</h1>
+    <div class="stat">Agents: <strong id="agent-count">0</strong></div>
+    <div class="stat">Sessions: <strong id="session-count">0</strong></div>
+    <div class="stat">Events: <strong id="event-count">0</strong></div>
+    <div class="stat">FPS: <strong id="fps">60</strong></div>
+    <div class="stat" style="color: #52FF52;">⚡ Connected</div>
+  </div>
+  <div id="event-log"></div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas to full window
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Pixel art sprite system
+    const PIXEL_SIZE = 8;
+    
+    // Agent pixel art sprites (8x8 pixels)
+    const AGENT_SPRITES = {
+      idle: [
+        '  ████  ',
+        ' ██████ ',
+        '████████',
+        '██░░░░██',
+        '████████',
+        ' ██  ██ ',
+        ' ██  ██ ',
+        '        '
+      ],
+      walking: [
+        '  ████  ',
+        ' ██████ ',
+        '████████',
+        '██░░░░██',
+        '████████',
+        '  ████  ',
+        ' ██  ██ ',
+        '        '
+      ],
+      thinking: [
+        '  ████  ',
+        ' ██████ ',
+        '████████',
+        '██▓▓▓▓██',
+        '████████',
+        ' ██  ██ ',
+        ' ██  ██ ',
+        '   ??   '
+      ]
+    };
+
+    // Building/structure sprites
+    const BUILDING_SPRITE = [
+      '████████████',
+      '██░░░░░░░░██',
+      '██░██░░██░██',
+      '██░░░░░░░░██',
+      '██░██░░██░██',
+      '██░░░░░░░░██',
+      '██░██░░██░██',
+      '████████████'
+    ];
+
+    // Tree sprite
+    const TREE_SPRITE = [
+      '  ████  ',
+      ' ██████ ',
+      '████████',
+      '████████',
+      '  ████  ',
+      '  ████  ',
+      '  ████  ',
+      '        '
+    ];
+
+    // Particle sprite for effects
+    const PARTICLE_SPRITE = [
+      '  ██  ',
+      '██████',
+      '██████',
+      '██████',
+      '  ██  '
+    ];
+
+    // Draw a sprite at position
+    function drawSprite(sprite, x, y, color = '#FF1D6C') {
+      ctx.fillStyle = color;
+      sprite.forEach((row, rowIndex) => {
+        for (let col = 0; col < row.length; col++) {
+          const char = row[col];
+          if (char === '█') {
+            ctx.fillRect(x + col * PIXEL_SIZE, y + rowIndex * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+          } else if (char === '▓') {
+            ctx.fillStyle = '#666';
+            ctx.fillRect(x + col * PIXEL_SIZE, y + rowIndex * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+            ctx.fillStyle = color;
+          } else if (char === '░') {
+            ctx.fillStyle = '#333';
+            ctx.fillRect(x + col * PIXEL_SIZE, y + rowIndex * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+            ctx.fillStyle = color;
+          } else if (char === '?') {
+            ctx.fillStyle = '#F5A623';
+            ctx.fillRect(x + col * PIXEL_SIZE, y + rowIndex * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+            ctx.fillStyle = color;
+          }
+        }
+      });
+    }
+
+    // Agent colors
+    const AGENT_COLORS = ['#FF1D6C', '#F5A623', '#2979FF', '#9C27B0', '#52FF52', '#FF6B35', '#4ECDC4'];
+
+    // Agent class
+    class PixelAgent {
+      constructor(id, name, color) {
+        this.id = id;
+        this.name = name;
+        this.color = color;
+        this.x = Math.random() * (canvas.width - 100) + 50;
+        this.y = Math.random() * (canvas.height - 100) + 50;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.state = 'idle';
+        this.animFrame = 0;
+        this.animTimer = 0;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Bounce off walls
+        if (this.x < 0 || this.x > canvas.width - 64) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas.height - 64) this.vy *= -1;
+
+        // Animation
+        this.animTimer++;
+        if (this.animTimer > 15) {
+          this.animTimer = 0;
+          this.state = this.state === 'idle' ? 'walking' : 'idle';
+        }
+      }
+
+      draw() {
+        const sprite = AGENT_SPRITES[this.state];
+        drawSprite(sprite, this.x, this.y, this.color);
+        
+        // Draw name tag
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(this.x - 5, this.y - 20, 70, 15);
+        ctx.fillStyle = this.color;
+        ctx.font = '10px monospace';
+        ctx.fillText(this.name.substring(0, 8), this.x, this.y - 10);
+      }
+    }
+
+    // Particle class
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.life = 60;
+        this.maxLife = 60;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+      }
+
+      draw() {
+        const alpha = this.life / this.maxLife;
+        ctx.globalAlpha = alpha;
+        drawSprite(PARTICLE_SPRITE, this.x, this.y, this.color);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Game state
+    const agents = new Map();
+    const particles = [];
+    const buildings = [];
+    let eventCount = 0;
+    let fps = 60;
+    let lastTime = Date.now();
+    let frameCount = 0;
+
+    // Generate buildings
+    for (let i = 0; i < 8; i++) {
+      buildings.push({
+        x: Math.random() * (canvas.width - 150),
+        y: Math.random() * (canvas.height - 150),
+        color: i % 2 === 0 ? '#444' : '#555'
+      });
+    }
+
+    // WebSocket connection
+    const ws = new WebSocket('ws://localhost:8765');
+    
+    ws.onopen = () => {
+      console.log('🎮 Connected to BlackRoad Pixel Metaverse');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      handleEvent(data);
+    };
+
+    function handleEvent(data) {
+      eventCount++;
+      document.getElementById('event-count').textContent = eventCount;
+
+      // Add to event log
+      const log = document.getElementById('event-log');
+      const div = document.createElement('div');
+      div.className = `event event-${data.type.split('-')[0]}`;
+      div.textContent = `${new Date().toLocaleTimeString()} [${data.type}]`;
+      log.insertBefore(div, log.firstChild);
+      if (log.children.length > 50) log.removeChild(log.lastChild);
+
+      // Handle agent-specific events
+      if (data.agent) {
+        const agentId = data.agent.id || data.sessionId;
+        if (!agents.has(agentId)) {
+          const color = AGENT_COLORS[agents.size % AGENT_COLORS.length];
+          agents.set(agentId, new PixelAgent(agentId, data.agent.name || 'Agent', color));
+        }
+
+        // Spawn particles at agent location
+        const agent = agents.get(agentId);
+        for (let i = 0; i < 5; i++) {
+          particles.push(new Particle(agent.x + 32, agent.y + 32, agent.color));
+        }
+
+        // Make agent think
+        agent.state = 'thinking';
+        setTimeout(() => agent.state = 'idle', 1000);
+      }
+
+      document.getElementById('agent-count').textContent = agents.size;
+    }
+
+    // Draw pixel grid background
+    function drawBackground() {
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid
+      ctx.strokeStyle = 'rgba(255, 29, 108, 0.1)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    // Main game loop
+    function gameLoop() {
+      // FPS counter
+      frameCount++;
+      const now = Date.now();
+      if (now - lastTime >= 1000) {
+        fps = frameCount;
+        document.getElementById('fps').textContent = fps;
+        frameCount = 0;
+        lastTime = now;
+      }
+
+      // Draw
+      drawBackground();
+
+      // Draw buildings
+      buildings.forEach(building => {
+        drawSprite(BUILDING_SPRITE, building.x, building.y, building.color);
+      });
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+
+      // Update and draw agents
+      agents.forEach(agent => {
+        agent.update();
+        agent.draw();
+      });
+
+      document.getElementById('session-count').textContent = agents.size;
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Start
+    gameLoop();
+
+    // Add some test agents if WebSocket fails
+    setTimeout(() => {
+      if (agents.size === 0) {
+        for (let i = 0; i < 3; i++) {
+          const color = AGENT_COLORS[i];
+          agents.set(`test-${i}`, new PixelAgent(`test-${i}`, `Agent${i}`, color));
+        }
+      }
+    }, 2000);
+  </script>
+</body>
+</html>

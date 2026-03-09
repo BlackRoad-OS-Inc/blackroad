@@ -1,0 +1,71 @@
+#!/bin/bash
+# CECE-FOOD v1.0 - Our Own DoorDash/UberEats
+FOOD_DIR=~/cece/food
+mkdir -p "$FOOD_DIR/restaurants" "$FOOD_DIR/orders"
+
+add_restaurant() {
+    NAME="$1"
+    CUISINE="$2"
+    mkdir -p "$FOOD_DIR/restaurants/$NAME"
+    echo "cuisine: $CUISINE" > "$FOOD_DIR/restaurants/$NAME/info"
+    echo "✅ Restaurant added: $NAME ($CUISINE)"
+}
+
+add_menu_item() {
+    RESTAURANT="$1"
+    ITEM="$2"
+    PRICE="$3"
+    echo "$ITEM:$PRICE" >> "$FOOD_DIR/restaurants/$RESTAURANT/menu"
+    echo "✅ Added $ITEM to $RESTAURANT menu"
+}
+
+browse_restaurants() {
+    echo "🍔 RESTAURANTS"
+    echo "═══════════════════════════════════════"
+    for r in "$FOOD_DIR/restaurants"/*; do
+        [ -d "$r" ] || continue
+        NAME=$(basename "$r")
+        CUISINE=$(cat "$r/info" 2>/dev/null | grep "cuisine:" | cut -d: -f2)
+        ITEMS=$(wc -l < "$r/menu" 2>/dev/null || echo 0)
+        echo "  🍽️  $NAME -$CUISINE ($ITEMS items)"
+    done
+}
+
+view_menu() {
+    RESTAURANT="$1"
+    echo "📋 MENU: $RESTAURANT"
+    echo "═══════════════════════════════════════"
+    cat "$FOOD_DIR/restaurants/$RESTAURANT/menu" 2>/dev/null | while IFS=: read -r item price; do
+        echo "  · $item - \$$price"
+    done
+}
+
+order() {
+    RESTAURANT="$1"
+    ITEM="$2"
+    ORDER_ID=$(date +%s | tail -c 6)
+    cat > "$FOOD_DIR/orders/$ORDER_ID.order" << EOF
+id: $ORDER_ID
+restaurant: $RESTAURANT
+item: $ITEM
+ordered: $(date -Iseconds)
+status: preparing
+EOF
+    echo "✅ Order #$ORDER_ID placed!"
+    echo "   $ITEM from $RESTAURANT"
+    echo "   Status: Preparing..."
+}
+
+case "$1" in
+    add-restaurant) add_restaurant "$2" "$3" ;;
+    add-item) add_menu_item "$2" "$3" "$4" ;;
+    restaurants) browse_restaurants ;;
+    menu) view_menu "$2" ;;
+    order) order "$2" "$3" ;;
+    *) echo "🖤 CECE-FOOD - Our Own DoorDash"
+       echo "  add-restaurant <name> <cuisine>  Add restaurant"
+       echo "  add-item <rest> <item> <price>   Add menu item"
+       echo "  restaurants                      Browse"
+       echo "  menu <restaurant>                View menu"
+       echo "  order <restaurant> <item>        Place order" ;;
+esac

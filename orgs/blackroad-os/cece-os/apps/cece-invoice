@@ -1,0 +1,40 @@
+#!/bin/bash
+# CECE-INVOICE v1.0 - Invoice Generator
+INV_DIR=~/cece/invoices
+mkdir -p "$INV_DIR"
+
+create() {
+    CLIENT="$1"
+    AMOUNT="$2"
+    DESC="$3"
+    INV_NUM="INV-$(date +%Y%m%d)-$RANDOM"
+    INV_FILE="$INV_DIR/$INV_NUM.html"
+    
+    echo "<!DOCTYPE html><html><head><title>Invoice $INV_NUM</title>" > "$INV_FILE"
+    echo "<style>body{font-family:system-ui;max-width:800px;margin:40px auto;padding:20px;}" >> "$INV_FILE"
+    echo ".logo{font-size:28px;font-weight:bold;color:#FF1D6C;}" >> "$INV_FILE"
+    echo "table{width:100%;border-collapse:collapse;margin:20px 0;}" >> "$INV_FILE"
+    echo "th,td{padding:12px;text-align:left;border-bottom:1px solid #ddd;}" >> "$INV_FILE"
+    echo ".total{font-size:24px;font-weight:bold;color:#FF1D6C;}</style></head><body>" >> "$INV_FILE"
+    echo "<div class=\"logo\">CECE INVOICE</div>" >> "$INV_FILE"
+    echo "<p>Invoice: $INV_NUM | Date: $(date +%Y-%m-%d)</p>" >> "$INV_FILE"
+    echo "<h2>Bill To: $CLIENT</h2>" >> "$INV_FILE"
+    echo "<table><tr><th>Description</th><th>Amount</th></tr>" >> "$INV_FILE"
+    echo "<tr><td>$DESC</td><td>\$$AMOUNT</td></tr></table>" >> "$INV_FILE"
+    echo "<p class=\"total\">Total: \$$AMOUNT</p>" >> "$INV_FILE"
+    echo "<p>Thank you! - CECE Sovereign Invoicing</p></body></html>" >> "$INV_FILE"
+    
+    echo "{\"id\":\"$INV_NUM\",\"client\":\"$CLIENT\",\"amount\":$AMOUNT,\"date\":\"$(date -Iseconds)\"}" >> "$INV_DIR/invoices.jsonl"
+    echo "Invoice: $INV_FILE"
+}
+
+list_invoices() {
+    echo "Invoices:"
+    cat "$INV_DIR/invoices.jsonl" 2>/dev/null || echo "(none)"
+}
+
+case "$1" in
+    create) create "$2" "$3" "$4" ;;
+    list) list_invoices ;;
+    *) echo "CECE-INVOICE: create <client> <amount> <desc> | list" ;;
+esac

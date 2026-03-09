@@ -1,0 +1,23 @@
+#!/bin/bash
+# CECE-REMINDER v1.0 - Reminder System
+REM_DIR=~/cece/reminders
+mkdir -p "$REM_DIR"
+add() {
+    TIME="$1"
+    MSG="$2"
+    echo "{\"time\":\"$TIME\",\"msg\":\"$MSG\",\"created\":\"$(date -Iseconds)\"}" >> "$REM_DIR/reminders.jsonl"
+    echo "Reminder set: $MSG at $TIME"
+}
+list() {
+    echo "Reminders:"
+    cat "$REM_DIR/reminders.jsonl" 2>/dev/null | while read line; do
+        TIME=$(echo "$line" | grep -o '"time":"[^"]*"' | cut -d\" -f4)
+        MSG=$(echo "$line" | grep -o '"msg":"[^"]*"' | cut -d\" -f4)
+        echo "  [$TIME] $MSG"
+    done
+}
+case "$1" in
+    add) add "$2" "$3" ;;
+    list) list ;;
+    *) echo "CECE-REMINDER: add <time> <message> | list" ;;
+esac

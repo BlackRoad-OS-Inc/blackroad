@@ -1,0 +1,9 @@
+#!/bin/bash
+# CECE-FORMAT v1.0 - Code Formatter
+python_fmt() { black "$1" 2>/dev/null || autopep8 -i "$1" 2>/dev/null || echo "Install black/autopep8"; }
+js_fmt() { prettier --write "$1" 2>/dev/null || echo "Install prettier"; }
+case "$1" in
+    python) python_fmt "$2" ;;
+    js) js_fmt "$2" ;;
+    *) echo "CECE-FORMAT: python <file> | js <file>" ;;
+esac

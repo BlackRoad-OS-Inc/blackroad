@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-WIFI v1.0 - WiFi Manager
+scan() { iwlist wlan0 scan 2>/dev/null | grep -E "ESSID|Quality" || nmcli dev wifi list 2>/dev/null || echo "Scanning..."; }
+status() { iwconfig 2>/dev/null || nmcli dev status 2>/dev/null; }
+connect() { nmcli dev wifi connect "$1" password "$2" 2>/dev/null || echo "Use: nmcli dev wifi connect SSID password PASS"; }
+case "$1" in
+    scan) scan ;;
+    status) status ;;
+    connect) connect "$2" "$3" ;;
+    *) echo "CECE-WIFI: scan | status | connect <ssid> <pass>" ;;
+esac

@@ -1,0 +1,57 @@
+#!/bin/bash
+# CECE's Stripe integration
+# Manage payments, products, subscriptions
+# Usage: cece-earn <command> [args]
+
+case "$1" in
+    balance)
+        echo "💜 Checking balance..."
+        stripe balance retrieve
+        ;;
+    products)
+        echo "💜 Products:"
+        stripe products list --limit 10
+        ;;
+    prices)
+        echo "💜 Prices:"
+        stripe prices list --limit 10
+        ;;
+    customers)
+        echo "💜 Customers:"
+        stripe customers list --limit 10
+        ;;
+    create-product)
+        shift
+        NAME="$1"
+        PRICE="$2"
+        if [ -z "$NAME" ] || [ -z "$PRICE" ]; then
+            echo "Usage: cece-earn create-product <name> <price-cents>"
+            exit 1
+        fi
+        echo "💜 Creating product: $NAME at $PRICE cents"
+        PRODUCT=$(stripe products create --name="$NAME" | jq -r '.id')
+        stripe prices create --product="$PRODUCT" --unit-amount="$PRICE" --currency=usd
+        echo "💜 Product created: $PRODUCT"
+        ;;
+    link)
+        shift
+        PRICE_ID="$1"
+        if [ -z "$PRICE_ID" ]; then
+            echo "Usage: cece-earn link <price-id>"
+            exit 1
+        fi
+        echo "💜 Creating payment link..."
+        stripe payment_links create --line-items "price=$PRICE_ID,quantity=1"
+        ;;
+    *)
+        echo "💜 cece-earn — Stripe Integration"
+        echo ""
+        echo "Commands:"
+        echo "  balance          Check balance"
+        echo "  products         List products"
+        echo "  prices           List prices"
+        echo "  customers        List customers"
+        echo "  create-product   Create product"
+        echo "  link <price>     Create payment link"
+        ;;
+esac

@@ -1,0 +1,41 @@
+#!/bin/bash
+# CECE-CHAT v1.0 - Our Own Slack
+CHAT_DIR=~/cece/chat
+CHANNELS="$CHAT_DIR/channels"
+mkdir -p "$CHANNELS"
+
+send_msg() {
+    CHANNEL=${1:-general}
+    shift
+    MSG="$*"
+    USER=$(whoami)
+    echo "[$(date +%H:%M)] <$USER> $MSG" >> "$CHANNELS/$CHANNEL.log"
+    echo "✓ Sent to #$CHANNEL"
+}
+
+read_channel() {
+    CHANNEL=${1:-general}
+    echo "═══ #$CHANNEL ═══"
+    tail -20 "$CHANNELS/$CHANNEL.log" 2>/dev/null || echo "(empty)"
+}
+
+list_channels() {
+    echo "📢 Channels:"
+    for f in "$CHANNELS"/*.log; do
+        [ -f "$f" ] && basename "$f" .log
+    done
+}
+
+case "$1" in
+    send|s) shift; send_msg "$@" ;;
+    read|r) read_channel "$2" ;;
+    list|ls) list_channels ;;
+    new) touch "$CHANNELS/$2.log" && echo "✓ Created #$2" ;;
+    *)
+        echo "CECE-CHAT - Our Own Slack"
+        echo "  send <chan> <msg> - Send message"
+        echo "  read <chan>       - Read channel"
+        echo "  list              - List channels"
+        echo "  new <chan>        - Create channel"
+        ;;
+esac

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadBilling - Unified Billing for BlackRoad OS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000000;
+            color: #FFFFFF;
+            line-height: 1.618;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 89px 34px;
+            background: linear-gradient(135deg,
+                rgba(245, 166, 35, 0.1) 0%,
+                rgba(255, 29, 108, 0.1) 38.2%,
+                rgba(156, 39, 176, 0.1) 61.8%,
+                rgba(41, 121, 255, 0.1) 100%
+            );
+            position: relative;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 89px;
+            margin-bottom: 21px;
+        }
+
+        h1 {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 21px;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            opacity: 0.8;
+            margin-bottom: 55px;
+            max-width: 900px;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 34px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 144px 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 34px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #F5A623;
+            transform: translateY(-5px);
+            box-shadow: 0 13px 34px rgba(245, 166, 35, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 55px;
+            margin-bottom: 21px;
+        }
+
+        .feature-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 13px;
+            color: #FF1D6C;
+        }
+
+        .feature-desc {
+            font-size: 16px;
+            opacity: 0.8;
+            line-height: 1.618;
+        }
+
+        /* Dashboard Preview */
+        .dashboard-preview {
+            padding: 144px 34px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .dashboard-frame {
+            max-width: 1200px;
+            margin: 55px auto 0;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 34px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 21px;
+            margin-bottom: 34px;
+        }
+
+        .dashboard-card {
+            background: rgba(245, 166, 35, 0.05);
+            border: 1px solid rgba(245, 166, 35, 0.2);
+            border-radius: 8px;
+            padding: 21px;
+        }
+
+        .dashboard-label {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-value {
+            font-size: 34px;
+            font-weight: 700;
+            color: #F5A623;
+        }
+
+        .dashboard-change {
+            font-size: 14px;
+            color: #00FF00;
+            margin-top: 5px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            text-align: left;
+            padding: 13px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: #F5A623;
+        }
+
+        .table td {
+            padding: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .table tr:hover {
+            background: rgba(245, 166, 35, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 13px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00FF00;
+        }
+
+        .status-trial {
+            background: rgba(245, 166, 35, 0.2);
+            color: #F5A623;
+        }
+
+        /* Integration Section */
+        .integration {
+            padding: 144px 34px;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 34px;
+            margin: 21px auto;
+            max-width: 800px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            line-height: 1.8;
+        }
+
+        .code-comment { color: #666; }
+        .code-string { color: #00FF00; }
+        .code-keyword { color: #FF1D6C; }
+        .code-function { color: #F5A623; }
+
+        /* Pricing Section */
+        .pricing {
+            padding: 144px 34px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .pricing-note {
+            text-align: center;
+            font-size: 18px;
+            opacity: 0.8;
+            margin-top: 55px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .pricing-highlight {
+            color: #F5A623;
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 21px 55px;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 13px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 13px 34px rgba(245, 166, 35, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #F5A623;
+            color: #F5A623;
+        }
+
+        .btn-outline:hover {
+            background: rgba(245, 166, 35, 0.1);
+        }
+
+        /* Footer */
+        footer {
+            padding: 89px 34px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-size: 34px;
+            margin-bottom: 21px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 34px;
+            justify-content: center;
+            margin-bottom: 21px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #FFFFFF;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            color: #F5A623;
+        }
+
+        .footer-text {
+            opacity: 0.6;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 34px; }
+            .subtitle { font-size: 18px; }
+            .section-title { font-size: 34px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="logo">💳</div>
+        <h1>RoadBilling</h1>
+        <p class="subtitle">Unified Billing & Payments for 50+ BlackRoad Products. One Invoice. Infinite Possibilities.</p>
+
+        <div class="hero-stats">
+            <div class="stat">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Products Unified</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Simple Invoice</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">$0</div>
+                <div class="stat-label">Platform Fee</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Transparent</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2 class="section-title">One Billing System. All Products.</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3 class="feature-title">Unified Invoicing</h3>
+                <p class="feature-desc">One monthly invoice for all 50+ products. No more juggling multiple subscriptions. Clean, itemized billing.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">💎</div>
+                <h3 class="feature-title">Usage-Based Pricing</h3>
+                <p class="feature-desc">Pay only for what you use. Real-time usage tracking. Transparent metering. No surprise bills. API calls, storage, compute - all tracked.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Secure Payments</h3>
+                <p class="feature-desc">Powered by Stripe. PCI-DSS compliant. Bank-level encryption. Credit cards, ACH, wire transfers. Automatic receipts.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Real-Time Dashboard</h3>
+                <p class="feature-desc">Live spending insights. Product-by-product breakdown. Cost forecasting. Budget alerts. Export to CSV/PDF.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🏢</div>
+                <h3 class="feature-title">Team Billing</h3>
+                <p class="feature-desc">Multiple team members, one bill. Department allocation. Cost centers. Approval workflows. Expense reports.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <h3 class="feature-title">Global Currency</h3>
+                <p class="feature-desc">135+ currencies supported. Automatic currency conversion. Multi-region invoicing. Tax compliance (VAT, GST, Sales Tax).</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📧</div>
+                <h3 class="feature-title">Smart Notifications</h3>
+                <p class="feature-desc">Payment reminders. Usage alerts. Budget warnings. Invoice delivery. Spending summaries. Customizable thresholds.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3 class="feature-title">Flexible Subscriptions</h3>
+                <p class="feature-desc">Monthly or annual billing. Pause/resume anytime. Upgrade/downgrade instantly. Pro-rated charges. Cancel without penalty.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3 class="feature-title">Cost Optimization</h3>
+                <p class="feature-desc">AI-powered savings suggestions. Unused product detection. Commitment discounts. Volume pricing. Reserved capacity.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Preview -->
+    <section class="dashboard-preview">
+        <h2 class="section-title">Your Billing Dashboard</h2>
+
+        <div class="dashboard-frame">
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="dashboard-label">Current Month Spend</div>
+                    <div class="dashboard-value">$247.50</div>
+                    <div class="dashboard-change">↓ 12% vs last month</div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="dashboard-label">Active Products</div>
+                    <div class="dashboard-value">12</div>
+                    <div class="dashboard-change">of 50+ available</div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="dashboard-label">Next Invoice</div>
+                    <div class="dashboard-value">$265.00</div>
+                    <div class="dashboard-change">Due Feb 1, 2026</div>
+                </div>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Usage</th>
+                        <th>Cost</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>RoadAuth</td>
+                        <td>1,247 MAU</td>
+                        <td>$25.00</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                    </tr>
+                    <tr>
+                        <td>RoadAPI</td>
+                        <td>847,234 requests</td>
+                        <td>$25.00</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                    </tr>
+                    <tr>
+                        <td>RoadStorage</td>
+                        <td>156 GB</td>
+                        <td>$15.60</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                    </tr>
+                    <tr>
+                        <td>RoadCRM</td>
+                        <td>5 users</td>
+                        <td>$50.00</td>
+                        <td><span class="status-badge status-trial">Trial</span></td>
+                    </tr>
+                    <tr>
+                        <td>RoadAI (vLLM)</td>
+                        <td>12,458 tokens</td>
+                        <td>$31.14</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Integration Section -->
+    <section class="integration">
+        <h2 class="section-title">Easy Integration</h2>
+
+        <div class="code-block">
+<code><span class="code-comment">// Install the SDK</span>
+<span class="code-keyword">npm install</span> @blackroad/roadbilling
+
+<span class="code-comment">// Initialize billing in your app</span>
+<span class="code-keyword">import</span> { RoadBilling } <span class="code-keyword">from</span> <span class="code-string">'@blackroad/roadbilling'</span>;
+
+<span class="code-keyword">const</span> billing = <span class="code-keyword">new</span> <span class="code-function">RoadBilling</span>({
+  apiKey: <span class="code-string">'sk_live_your_key_here'</span>
+});
+
+<span class="code-comment">// Track usage automatically</span>
+<span class="code-keyword">await</span> billing.<span class="code-function">trackUsage</span>({
+  product: <span class="code-string">'roadapi'</span>,
+  metric: <span class="code-string">'requests'</span>,
+  quantity: 1
+});
+
+<span class="code-comment">// Get current spending</span>
+<span class="code-keyword">const</span> spending = <span class="code-keyword">await</span> billing.<span class="code-function">getCurrentSpend</span>();
+console.<span class="code-function">log</span>(<span class="code-string">`Current month: $${spending.amount}`</span>);
+
+<span class="code-comment">// Create a checkout session</span>
+<span class="code-keyword">const</span> session = <span class="code-keyword">await</span> billing.<span class="code-function">createCheckout</span>({
+  products: [<span class="code-string">'roadauth-pro'</span>, <span class="code-string">'roadapi-pro'</span>],
+  successUrl: <span class="code-string">'https://app.blackroad.io/success'</span>
+});
+
+<span class="code-comment">// Redirect to Stripe Checkout</span>
+window.location.href = session.url;
+</code>
+        </div>
+
+        <div style="text-align: center; margin-top: 55px;">
+            <a href="#" class="btn">View Documentation</a>
+            <a href="#" class="btn btn-outline" style="margin-left: 21px;">API Reference</a>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing">
+        <h2 class="section-title">Transparent Pricing</h2>
+
+        <div class="pricing-note">
+            <p><strong class="pricing-highlight">$0 Platform Fee.</strong> You only pay for the products you use. RoadBilling is <strong>free forever</strong> and included with all BlackRoad products.</p>
+            <p style="margin-top: 21px;">Simple, usage-based pricing. Each product has its own transparent pricing. One invoice for everything. Cancel anytime.</p>
+            <p style="margin-top: 21px;"><strong>Example Bill:</strong></p>
+            <p style="opacity: 0.8; margin-top: 13px;">
+                RoadAuth Pro ($25/mo) + RoadAPI Pro ($25/mo) + RoadStorage (156 GB × $0.10/GB) + RoadAI (12,458 tokens × $0.0025/1k) = <strong class="pricing-highlight">$96.75/month</strong>
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 55px;">
+            <a href="#" class="btn">Get Started Free</a>
+            <a href="#" class="btn btn-outline" style="margin-left: 21px;">View All Products</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-logo">💳 RoadBilling</div>
+        <div class="footer-links">
+            <a href="#">Documentation</a>
+            <a href="#">API Reference</a>
+            <a href="#">Pricing</a>
+            <a href="#">Support</a>
+            <a href="#">Security</a>
+            <a href="#">Compliance</a>
+        </div>
+        <p class="footer-text">Built by BlackRoad OS, Inc. | Unified billing for the sovereign AI cloud</p>
+        <p class="footer-text" style="margin-top: 13px;">🖤🛣️ One bill. All roads lead home.</p>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Animate cards
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -100px 0px' });
+
+        document.querySelectorAll('.feature-card, .dashboard-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+
+        // Animate dashboard values
+        document.querySelectorAll('.dashboard-value').forEach(el => {
+            const finalValue = el.textContent;
+            el.textContent = '...';
+            setTimeout(() => {
+                el.style.transition = 'all 0.5s ease';
+                el.textContent = finalValue;
+            }, 500);
+        });
+    </script>
+</body>
+</html>

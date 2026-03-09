@@ -1,0 +1,40 @@
+#!/bin/bash
+# CECE-NOTIFY v1.0 - Notification System
+NOTIFY_DIR=~/cece/notifications
+
+send() {
+    CHANNEL="$1"
+    MSG="$2"
+    
+    case "$CHANNEL" in
+        desktop)
+            if command -v notify-send &>/dev/null; then
+                notify-send "CECE" "$MSG"
+            fi
+            echo "Desktop: $MSG"
+            ;;
+        log)
+            echo "{\"time\":\"$(date -Iseconds)\",\"msg\":\"$MSG\"}" >> "$NOTIFY_DIR/notifications.jsonl"
+            echo "Logged: $MSG"
+            ;;
+        webhook)
+            URL="$3"
+            curl -s -X POST -H "Content-Type: application/json" -d "{\"text\":\"$MSG\"}" "$URL" &>/dev/null
+            echo "Webhook sent"
+            ;;
+    esac
+}
+
+schedule() {
+    DELAY="$1"
+    MSG="$2"
+    (sleep "$DELAY" && echo "{\"time\":\"$(date -Iseconds)\",\"msg\":\"$MSG\"}" >> "$NOTIFY_DIR/notifications.jsonl") &
+    echo "Scheduled in $DELAY seconds"
+}
+
+case "$1" in
+    send) send "$2" "$3" "$4" ;;
+    schedule) schedule "$2" "$3" ;;
+    log) cat "$NOTIFY_DIR/notifications.jsonl" 2>/dev/null | tail -10 ;;
+    *) echo "CECE-NOTIFY: send <desktop|log|webhook> <msg> | schedule <delay> <msg> | log" ;;
+esac

@@ -1,0 +1,28 @@
+#!/bin/bash
+# CECE-RANDOM v1.0 - Random Generators
+number() {
+    MIN="${1:-1}"
+    MAX="${2:-100}"
+    echo $((RANDOM % (MAX - MIN + 1) + MIN))
+}
+string() {
+    LEN="${1:-16}"
+    cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c "$LEN"
+    echo ""
+}
+hex() {
+    LEN="${1:-16}"
+    openssl rand -hex "$LEN"
+}
+choice() {
+    shift
+    ARGS=("$@")
+    echo "${ARGS[$RANDOM % ${#ARGS[@]}]}"
+}
+case "$1" in
+    number) number "$2" "$3" ;;
+    string) string "$2" ;;
+    hex) hex "$2" ;;
+    choice) choice "$@" ;;
+    *) echo "CECE-RANDOM: number [min] [max] | string [len] | hex [len] | choice <options...>" ;;
+esac

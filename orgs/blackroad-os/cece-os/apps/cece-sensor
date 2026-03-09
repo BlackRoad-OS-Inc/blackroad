@@ -1,0 +1,15 @@
+#!/bin/bash
+# CECE-SENSOR v1.0 - Sensor Reader
+read_dht() {
+    # Requires Python dht library
+    python3 -c "import Adafruit_DHT; h,t=Adafruit_DHT.read_retry(11,4); print(f'Temp:{t}C Humidity:{h}%')" 2>/dev/null || echo "DHT sensor not available"
+}
+read_light() {
+    # Read from ADC if available
+    cat /sys/bus/iio/devices/iio:device0/in_voltage0_raw 2>/dev/null || echo "Light sensor not available"
+}
+case "$1" in
+    dht) read_dht ;;
+    light) read_light ;;
+    *) echo "CECE-SENSOR: dht | light" ;;
+esac

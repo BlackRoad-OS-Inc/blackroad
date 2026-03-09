@@ -1,0 +1,22 @@
+#!/bin/bash
+# CECE-DAILY v1.0 - Daily Challenges
+DAILY_DIR=~/cece/daily
+mkdir -p "$DAILY_DIR"
+challenge() {
+    CHALLENGES=("Write 100 lines of code" "Fix 3 bugs" "Learn something new" "Help a teammate" "Document your code" "Review a PR" "Optimize something")
+    TODAY=$(date +%Y-%m-%d)
+    if [ ! -f "$DAILY_DIR/$TODAY" ]; then
+        echo "${CHALLENGES[$RANDOM % ${#CHALLENGES[@]}]}" > "$DAILY_DIR/$TODAY"
+    fi
+    echo "📋 Today's Challenge: $(cat $DAILY_DIR/$TODAY)"
+}
+complete() {
+    TODAY=$(date +%Y-%m-%d)
+    echo "completed" >> "$DAILY_DIR/$TODAY"
+    echo "✅ Challenge completed!"
+}
+case "$1" in
+    show) challenge ;;
+    complete) complete ;;
+    *) challenge ;;
+esac

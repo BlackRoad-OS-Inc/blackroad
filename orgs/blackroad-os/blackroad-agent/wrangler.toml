@@ -1,0 +1,20 @@
+name = "blackroad-watcher"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+# KV for agent state persistence
+[[kv_namespaces]]
+binding = "AGENT_STATE"
+id = "21cbbabc19eb443aa2bee83ce0f0e96f"
+
+# Cron trigger - runs every 5 minutes
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Custom domain
+routes = [
+  { pattern = "watcher.blackroad.io", custom_domain = true }
+]

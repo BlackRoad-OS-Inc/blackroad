@@ -1,0 +1,198 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-CLOUD v1.0 - Our Own Deployment Platform
+#  "Who needs Railway when you have Raspberry Pis?"
+#═══════════════════════════════════════════════════════════════
+
+CLOUD_DIR=~/cece/cloud
+APPS_DIR="$CLOUD_DIR/apps"
+DEPLOY_DIR="$CLOUD_DIR/deployments"
+LOGS_DIR="$CLOUD_DIR/logs"
+
+init_app() {
+    APP_NAME=$1
+    
+    if [ -z "$APP_NAME" ]; then
+        echo -n "App name: "
+        read APP_NAME
+    fi
+    
+    mkdir -p "$APPS_DIR/$APP_NAME"
+    cat > "$APPS_DIR/$APP_NAME/cece.yaml" << EOF
+name: $APP_NAME
+created: $(date -Iseconds)
+runtime: auto
+port: auto
+env: {}
+EOF
+    
+    echo "✨ App initialized: $APP_NAME"
+    echo "   Add your code to: $APPS_DIR/$APP_NAME/"
+    echo "   Then run: cece-cloud deploy $APP_NAME"
+}
+
+deploy_app() {
+    APP_NAME=$1
+    APP_PATH="$APPS_DIR/$APP_NAME"
+    
+    if [ ! -d "$APP_PATH" ]; then
+        echo "❌ App not found: $APP_NAME"
+        return 1
+    fi
+    
+    echo "🚀 Deploying $APP_NAME..."
+    
+    # Detect runtime
+    if [ -f "$APP_PATH/package.json" ]; then
+        RUNTIME="node"
+        echo "   Detected: Node.js"
+    elif [ -f "$APP_PATH/requirements.txt" ]; then
+        RUNTIME="python"
+        echo "   Detected: Python"
+    elif [ -f "$APP_PATH/index.html" ]; then
+        RUNTIME="static"
+        echo "   Detected: Static site"
+    elif [ -f "$APP_PATH/main.sh" ]; then
+        RUNTIME="bash"
+        echo "   Detected: Bash app"
+    else
+        RUNTIME="static"
+        echo "   Defaulting to: Static"
+    fi
+    
+    # Find available port
+    PORT=$((3000 + RANDOM % 1000))
+    while netstat -tuln 2>/dev/null | grep -q ":$PORT "; do
+        PORT=$((PORT + 1))
+    done
+    
+    # Deploy based on runtime
+    DEPLOY_ID=$(date +%s)
+    mkdir -p "$DEPLOY_DIR/$APP_NAME"
+    
+    case $RUNTIME in
+        node)
+            echo "   Installing dependencies..."
+            cd "$APP_PATH" && npm install --silent 2>/dev/null
+            echo "   Starting on port $PORT..."
+            PORT=$PORT nohup node "$APP_PATH/index.js" > "$LOGS_DIR/$APP_NAME.log" 2>&1 &
+            ;;
+        python)
+            echo "   Installing dependencies..."
+            pip3 install -q -r "$APP_PATH/requirements.txt" 2>/dev/null
+            echo "   Starting on port $PORT..."
+            PORT=$PORT nohup python3 "$APP_PATH/app.py" > "$LOGS_DIR/$APP_NAME.log" 2>&1 &
+            ;;
+        static)
+            echo "   Starting static server on port $PORT..."
+            cd "$APP_PATH" && nohup python3 -m http.server $PORT > "$LOGS_DIR/$APP_NAME.log" 2>&1 &
+            ;;
+        bash)
+            echo "   Starting bash app on port $PORT..."
+            PORT=$PORT nohup bash "$APP_PATH/main.sh" > "$LOGS_DIR/$APP_NAME.log" 2>&1 &
+            ;;
+    esac
+    
+    PID=$!
+    
+    # Save deployment info
+    cat > "$DEPLOY_DIR/$APP_NAME/current.json" << EOF
+{
+    "id": "$DEPLOY_ID",
+    "app": "$APP_NAME",
+    "runtime": "$RUNTIME",
+    "port": $PORT,
+    "pid": $PID,
+    "deployed": "$(date -Iseconds)",
+    "status": "running"
+}
+EOF
+    
+    IP=$(hostname -I 2>/dev/null | awk "{print \$1}")
+    
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║  ✅ DEPLOYED!                                             ║"
+    echo "╠═══════════════════════════════════════════════════════════╣"
+    echo "║  App:  $APP_NAME"
+    echo "║  URL:  http://$IP:$PORT"
+    echo "║  PID:  $PID"
+    echo "║  Logs: cece-cloud logs $APP_NAME"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+}
+
+list_apps() {
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║               CECE-CLOUD APPLICATIONS                     ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    
+    for app in "$APPS_DIR"/*/; do
+        [ -d "$app" ] || continue
+        APP_NAME=$(basename "$app")
+        
+        if [ -f "$DEPLOY_DIR/$APP_NAME/current.json" ]; then
+            PORT=$(grep port "$DEPLOY_DIR/$APP_NAME/current.json" | grep -o "[0-9]*")
+            PID=$(grep pid "$DEPLOY_DIR/$APP_NAME/current.json" | grep -o "[0-9]*")
+            
+            if kill -0 "$PID" 2>/dev/null; then
+                echo "  🟢 $APP_NAME (port $PORT)"
+            else
+                echo "  🔴 $APP_NAME (stopped)"
+            fi
+        else
+            echo "  ⚪ $APP_NAME (not deployed)"
+        fi
+    done
+    echo ""
+}
+
+stop_app() {
+    APP_NAME=$1
+    
+    if [ -f "$DEPLOY_DIR/$APP_NAME/current.json" ]; then
+        PID=$(grep pid "$DEPLOY_DIR/$APP_NAME/current.json" | grep -o "[0-9]*")
+        kill "$PID" 2>/dev/null && echo "✅ Stopped $APP_NAME" || echo "⚠️  App not running"
+    else
+        echo "❌ App not deployed: $APP_NAME"
+    fi
+}
+
+show_logs() {
+    APP_NAME=$1
+    tail -50 "$LOGS_DIR/$APP_NAME.log" 2>/dev/null || echo "No logs for $APP_NAME"
+}
+
+case "$1" in
+    init|new|create)
+        init_app "$2"
+        ;;
+    deploy|up)
+        deploy_app "$2"
+        ;;
+    list|ls|apps)
+        list_apps
+        ;;
+    stop|down)
+        stop_app "$2"
+        ;;
+    logs|log)
+        show_logs "$2"
+        ;;
+    *)
+        echo "╔═══════════════════════════════════════════════════════════╗"
+        echo "║             CECE-CLOUD v1.0                               ║"
+        echo "║      Our Own Deployment Platform                          ║"
+        echo "║   \"Who needs Railway when you have Pis?\"                  ║"
+        echo "╚═══════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "Usage: cece-cloud <command>"
+        echo ""
+        echo "  init <name>   - Create new app"
+        echo "  deploy <name> - Deploy an app"
+        echo "  list          - List all apps"
+        echo "  stop <name>   - Stop an app"
+        echo "  logs <name>   - View app logs"
+        ;;
+esac

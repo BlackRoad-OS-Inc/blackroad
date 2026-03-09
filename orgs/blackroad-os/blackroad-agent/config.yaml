@@ -1,0 +1,66 @@
+# br-agent configuration for MacBook
+# This agent handles builds and Cloudflare Worker deployments
+
+agent_id: mac-main
+machine_id: alexa-macbook
+
+operator_url: https://blackroad-cece-operator-production.up.railway.app
+heartbeat_interval: 30
+reconnect_delay: 5
+
+# Optional: Bearer token for auth (or set BR_AUTH_TOKEN env var)
+# auth_token: your-token-here
+
+capabilities:
+  - build_web
+  - build_api
+  - deploy_workers
+  - run_tests
+  - git_pull
+
+actions:
+  build_web:
+    cwd: ~/blackroad-os-operator
+    timeout: 300
+    steps:
+      - git pull origin main
+      - npm install
+      - npm run build
+
+  build_api:
+    cwd: ~/blackroad-os-operator
+    timeout: 300
+    steps:
+      - git pull origin main
+      - pip install -r requirements.txt
+      - pytest tests/ -v --tb=short
+
+  deploy_workers:
+    cwd: ~/blackroad-os-operator/workers
+    timeout: 600
+    steps:
+      - cd router && wrangler deploy
+      - cd ../api-gateway && wrangler deploy
+      - cd ../cece && wrangler deploy
+      - cd ../status && wrangler deploy
+      - cd ../identity && wrangler deploy
+
+  run_tests:
+    cwd: ~/blackroad-os-operator
+    timeout: 180
+    steps:
+      - pytest tests/ -v
+
+  git_pull:
+    cwd: ~/blackroad-os-operator
+    timeout: 60
+    steps:
+      - git fetch origin
+      - git pull origin main
+
+  health_check:
+    cwd: ~/blackroad-os-operator
+    timeout: 60
+    steps:
+      - curl -s https://blackroad-cece-operator-production.up.railway.app/health
+      - curl -s https://blackroad-router.amundsonalexa.workers.dev/

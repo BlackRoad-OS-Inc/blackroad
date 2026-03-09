@@ -1,0 +1,154 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-AI v1.0 - Our Own AI Platform
+#  "Who needs OpenAI when you have Ollama?"
+#═══════════════════════════════════════════════════════════════
+
+AI_DIR=~/cece/ai
+
+check_ollama() {
+    if ! pgrep -x "ollama" > /dev/null; then
+        echo "Starting Ollama..."
+        ollama serve &>/dev/null &
+        sleep 2
+    fi
+}
+
+chat() {
+    MODEL=${1:-llama3.2}
+    check_ollama
+    
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║          CECE-AI Chat ($MODEL)                            ║"
+    echo "║          Type \"quit\" to exit                              ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    
+    while true; do
+        echo -n "You: "
+        read INPUT
+        
+        [ "$INPUT" = "quit" ] || [ "$INPUT" = "exit" ] && break
+        
+        echo -n "AI: "
+        echo "$INPUT" | ollama run "$MODEL" 2>/dev/null
+        echo ""
+    done
+}
+
+complete() {
+    PROMPT="$*"
+    MODEL=${CECE_MODEL:-llama3.2}
+    check_ollama
+    
+    echo "$PROMPT" | ollama run "$MODEL" 2>/dev/null
+}
+
+list_models() {
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║                 AVAILABLE MODELS                          ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    ollama list 2>/dev/null || echo "  Ollama not available"
+    echo ""
+}
+
+pull_model() {
+    MODEL=$1
+    echo "📥 Downloading $MODEL..."
+    ollama pull "$MODEL"
+}
+
+create_agent() {
+    AGENT_NAME=$1
+    
+    echo -n "Agent personality: "
+    read PERSONALITY
+    
+    cat > "$AI_DIR/agents/$AGENT_NAME.agent" << EOF
+name: $AGENT_NAME
+personality: $PERSONALITY
+created: $(date)
+model: llama3.2
+EOF
+    
+    echo "✅ Agent created: $AGENT_NAME"
+}
+
+run_agent() {
+    AGENT_NAME=$1
+    shift
+    PROMPT="$*"
+    
+    if [ ! -f "$AI_DIR/agents/$AGENT_NAME.agent" ]; then
+        echo "❌ Agent not found: $AGENT_NAME"
+        return 1
+    fi
+    
+    PERSONALITY=$(grep "personality:" "$AI_DIR/agents/$AGENT_NAME.agent" | cut -d: -f2-)
+    MODEL=$(grep "model:" "$AI_DIR/agents/$AGENT_NAME.agent" | cut -d: -f2- | tr -d " ")
+    
+    check_ollama
+    echo "You are $AGENT_NAME. $PERSONALITY. Respond as this character. User says: $PROMPT" | ollama run "$MODEL" 2>/dev/null
+}
+
+api_server() {
+    PORT=${1:-8000}
+    echo "Starting CECE-AI API server on port $PORT..."
+    
+    # Simple API endpoint
+    while true; do
+        echo -e "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"ok\",\"engine\":\"cece-ai\"}" | nc -l -p "$PORT" -q 1
+    done
+}
+
+case "$1" in
+    chat|c)
+        chat "$2"
+        ;;
+    complete|ask|run)
+        shift
+        complete "$*"
+        ;;
+    models|list)
+        list_models
+        ;;
+    pull|download)
+        pull_model "$2"
+        ;;
+    agent-create|new-agent)
+        create_agent "$2"
+        ;;
+    agent|a)
+        run_agent "$2" "${@:3}"
+        ;;
+    agents)
+        echo "Agents:"
+        ls "$AI_DIR/agents/"*.agent 2>/dev/null | while read f; do
+            basename "$f" .agent
+        done
+        ;;
+    api)
+        api_server "$2"
+        ;;
+    *)
+        echo "╔═══════════════════════════════════════════════════════════╗"
+        echo "║               CECE-AI v1.0                                ║"
+        echo "║          Our Own AI Platform                              ║"
+        echo "║   \"Who needs OpenAI when you have Ollama?\"                ║"
+        echo "╚═══════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "Usage: cece-ai <command>"
+        echo ""
+        echo "  chat [model]       - Interactive chat"
+        echo "  complete <prompt>  - One-shot completion"
+        echo "  models             - List available models"
+        echo "  pull <model>       - Download a model"
+        echo "  agent-create <n>   - Create custom agent"
+        echo "  agent <n> <prompt> - Run agent"
+        echo "  agents             - List agents"
+        echo ""
+        echo "Environment: CECE_MODEL=llama3.2"
+        ;;
+esac

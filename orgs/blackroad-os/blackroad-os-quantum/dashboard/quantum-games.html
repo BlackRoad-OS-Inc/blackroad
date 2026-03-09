@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮⚛️ Quantum Games - BlackRoad Quantum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000000; --white: #FFFFFF;
+            --amber: #F5A623; --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF; --violet: #9C27B0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black); color: var(--white);
+            padding: 34px; line-height: 1.6;
+        }
+
+        h1 {
+            font-size: 55px; font-weight: 900;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 21px; text-align: center;
+        }
+
+        .subtitle {
+            text-align: center; font-size: 21px; color: var(--amber);
+            margin-bottom: 34px;
+        }
+
+        .game-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 21px;
+            max-width: 1200px;
+            margin: 0 auto 34px;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 29, 108, 0.3);
+            border-radius: 13px;
+            padding: 21px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--hot-pink);
+            box-shadow: 0 13px 34px rgba(255, 29, 108, 0.4);
+        }
+
+        .game-card.active {
+            border-color: var(--hot-pink);
+            box-shadow: 0 0 21px var(--hot-pink);
+            background: rgba(255, 29, 108, 0.1);
+        }
+
+        .game-icon {
+            font-size: 55px;
+            text-align: center;
+            margin-bottom: 13px;
+        }
+
+        .game-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--hot-pink);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .game-description {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+        }
+
+        .game-container {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 29, 108, 0.3);
+            border-radius: 13px;
+            padding: 34px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .game-board {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+            margin-bottom: 34px;
+        }
+
+        button {
+            padding: 13px 21px;
+            font-size: 16px;
+            font-weight: 700;
+            background: rgba(255, 29, 108, 0.2);
+            border: 2px solid var(--hot-pink);
+            border-radius: 8px;
+            color: var(--white);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--hot-pink);
+            box-shadow: 0 5px 21px rgba(255, 29, 108, 0.5);
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .controls {
+            display: flex;
+            gap: 13px;
+            justify-content: center;
+            margin-bottom: 21px;
+            flex-wrap: wrap;
+        }
+
+        .score-display {
+            background: rgba(41, 121, 255, 0.1);
+            border: 2px solid var(--electric-blue);
+            border-radius: 8px;
+            padding: 21px;
+            margin-bottom: 21px;
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .score-value {
+            font-size: 34px;
+            font-weight: 900;
+            color: var(--electric-blue);
+            font-family: 'Courier New', monospace;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 21px;
+            color: var(--electric-blue);
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--hot-pink);
+            text-decoration: underline;
+        }
+
+        .coin {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 5px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 55px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            animation: spin 2s linear infinite;
+        }
+
+        .coin.superposition {
+            animation: superpositionGlow 1s ease-in-out infinite;
+            border-color: var(--hot-pink);
+            background: linear-gradient(135deg, rgba(255, 29, 108, 0.3), rgba(41, 121, 255, 0.3));
+        }
+
+        .coin.heads {
+            border-color: var(--electric-blue);
+            background: rgba(41, 121, 255, 0.2);
+            animation: none;
+        }
+
+        .coin.tails {
+            border-color: var(--violet);
+            background: rgba(156, 39, 176, 0.2);
+            animation: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        @keyframes superpositionGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 29, 108, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 29, 108, 0.8); }
+        }
+
+        .grid-3x3 {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 13px;
+        }
+
+        .cell {
+            background: rgba(255, 255, 255, 0.05);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 55px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cell:hover:not(.taken) {
+            background: rgba(255, 29, 108, 0.2);
+            border-color: var(--hot-pink);
+        }
+
+        .cell.taken {
+            cursor: not-allowed;
+        }
+
+        .cell.superposition {
+            background: linear-gradient(135deg, rgba(255, 29, 108, 0.2), rgba(41, 121, 255, 0.2));
+            animation: cellGlow 1s ease-in-out infinite;
+        }
+
+        @keyframes cellGlow {
+            0%, 100% { border-color: rgba(255, 29, 108, 0.5); }
+            50% { border-color: rgba(255, 29, 108, 1); }
+        }
+
+        .message-box {
+            background: linear-gradient(135deg, rgba(255, 29, 108, 0.2), rgba(41, 121, 255, 0.2));
+            border: 2px solid var(--hot-pink);
+            border-radius: 13px;
+            padding: 21px;
+            margin-top: 21px;
+            text-align: center;
+        }
+
+        .message-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--hot-pink);
+            margin-bottom: 8px;
+        }
+
+        .message-text {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .quantum-state {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: var(--amber);
+            margin: 13px 0;
+        }
+
+        .probability-bar {
+            height: 30px;
+            background: linear-gradient(90deg, var(--electric-blue), var(--violet));
+            border-radius: 8px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .entangled-pair {
+            display: flex;
+            gap: 89px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qubit-display {
+            width: 150px;
+            height: 150px;
+            border: 5px solid var(--electric-blue);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(41, 121, 255, 0.1);
+            position: relative;
+        }
+
+        .qubit-label {
+            font-size: 18px;
+            color: var(--electric-blue);
+            margin-bottom: 8px;
+        }
+
+        .qubit-state {
+            font-size: 34px;
+            font-weight: 900;
+            font-family: 'Courier New', monospace;
+        }
+
+        .entanglement-line {
+            width: 89px;
+            height: 5px;
+            background: var(--hot-pink);
+            position: relative;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; box-shadow: 0 0 21px var(--hot-pink); }
+        }
+
+        .measurement-btn {
+            margin-top: 21px;
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00FF88;
+        }
+
+        .measurement-btn:hover {
+            background: #00FF88;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Universe</a>
+
+    <h1>🎮⚛️ QUANTUM GAMES</h1>
+    <div class="subtitle">Experience Quantum Mechanics Through Play!</div>
+
+    <div class="game-selector" id="gameSelector">
+        <div class="game-card active" onclick="selectGame('coin')" id="card-coin">
+            <div class="game-icon">🪙</div>
+            <div class="game-title">Quantum Coin Flip</div>
+            <div class="game-description">
+                Flip a coin in superposition! Experience the randomness of quantum measurement.
+            </div>
+        </div>
+
+        <div class="game-card" onclick="selectGame('tictactoe')" id="card-tictactoe">
+            <div class="game-icon">⭕❌</div>
+            <div class="game-title">Quantum Tic-Tac-Toe</div>
+            <div class="game-description">
+                Play with quantum moves! Place marks in superposition until measurement collapses the game.
+            </div>
+        </div>
+
+        <div class="game-card" onclick="selectGame('entanglement')" id="card-entanglement">
+            <div class="game-icon">🔗⚛️</div>
+            <div class="game-title">Entanglement Game</div>
+            <div class="game-description">
+                Test your understanding of spooky action at a distance! Predict correlations.
+            </div>
+        </div>
+
+        <div class="game-card" onclick="selectGame('interference')" id="card-interference">
+            <div class="game-icon">🌊</div>
+            <div class="game-title">Interference Puzzle</div>
+            <div class="game-description">
+                Use quantum interference to solve puzzles! Constructive and destructive paths.
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container" id="gameContainer">
+        <!-- Game content will be inserted here -->
+    </div>
+
+    <script>
+        let currentGame = 'coin';
+        let gameState = {};
+
+        function selectGame(game) {
+            currentGame = game;
+
+            // Update card styles
+            document.querySelectorAll('.game-card').forEach(card => card.classList.remove('active'));
+            document.getElementById(`card-${game}`).classList.add('active');
+
+            // Initialize game
+            initGame(game);
+        }
+
+        function initGame(game) {
+            const container = document.getElementById('gameContainer');
+
+            if (game === 'coin') {
+                initCoinFlip();
+            } else if (game === 'tictactoe') {
+                initTicTacToe();
+            } else if (game === 'entanglement') {
+                initEntanglementGame();
+            } else if (game === 'interference') {
+                initInterferenceGame();
+            }
+        }
+
+        // ===== QUANTUM COIN FLIP =====
+        function initCoinFlip() {
+            gameState = {
+                state: 'superposition', // 'superposition', 'heads', 'tails'
+                wins: 0,
+                flips: 0,
+                streak: 0
+            };
+
+            const container = document.getElementById('gameContainer');
+            container.innerHTML = `
+                <div class="score-display">
+                    <div class="score-label">Wins / Flips / Streak</div>
+                    <div class="score-value"><span id="coinWins">0</span> / <span id="coinFlips">0</span> / <span id="coinStreak">0</span></div>
+                </div>
+
+                <div class="game-board">
+                    <div id="coin" class="coin superposition" onclick="measureCoin()">
+                        <span id="coinValue">?</span>
+                    </div>
+                </div>
+
+                <div class="quantum-state" style="text-align: center;">
+                    State: <span id="coinState">|ψ⟩ = (|H⟩ + |T⟩)/√2</span>
+                </div>
+
+                <div class="controls">
+                    <button onclick="guess('heads')">Guess Heads</button>
+                    <button onclick="guess('tails')">Guess Tails</button>
+                    <button onclick="resetCoin()">Reset Coin</button>
+                </div>
+
+                <div id="coinMessage"></div>
+            `;
+        }
+
+        function measureCoin() {
+            if (gameState.state !== 'superposition') {
+                resetCoin();
+                return;
+            }
+
+            // Quantum measurement!
+            const result = Math.random() < 0.5 ? 'heads' : 'tails';
+            gameState.state = result;
+            gameState.lastResult = result;
+
+            const coin = document.getElementById('coin');
+            const coinValue = document.getElementById('coinValue');
+            const coinStateDisplay = document.getElementById('coinState');
+
+            coin.className = `coin ${result}`;
+            coinValue.textContent = result === 'heads' ? 'H' : 'T';
+            coinStateDisplay.textContent = result === 'heads' ? '|H⟩' : '|T⟩';
+
+            if (gameState.guessed) {
+                checkGuess(result);
+            }
+        }
+
+        function guess(choice) {
+            gameState.guessed = choice;
+
+            if (gameState.state === 'superposition') {
+                document.getElementById('coinMessage').innerHTML = `
+                    <div class="message-box">
+                        <div class="message-title">Guess locked: ${choice === 'heads' ? 'Heads' : 'Tails'}!</div>
+                        <div class="message-text">Click the coin to measure (collapse the superposition)!</div>
+                    </div>
+                `;
+            } else {
+                checkGuess(gameState.state);
+            }
+        }
+
+        function checkGuess(result) {
+            const correct = gameState.guessed === result;
+            gameState.flips++;
+
+            if (correct) {
+                gameState.wins++;
+                gameState.streak++;
+            } else {
+                gameState.streak = 0;
+            }
+
+            document.getElementById('coinWins').textContent = gameState.wins;
+            document.getElementById('coinFlips').textContent = gameState.flips;
+            document.getElementById('coinStreak').textContent = gameState.streak;
+
+            const emoji = correct ? '🎉' : '😢';
+            document.getElementById('coinMessage').innerHTML = `
+                <div class="message-box">
+                    <div class="message-title">${emoji} ${correct ? 'Correct!' : 'Wrong!'}</div>
+                    <div class="message-text">
+                        You guessed ${gameState.guessed}, result was ${result}.<br>
+                        ${correct ? 'Great quantum intuition!' : 'Quantum randomness strikes again!'}
+                    </div>
+                </div>
+            `;
+
+            gameState.guessed = null;
+        }
+
+        function resetCoin() {
+            gameState.state = 'superposition';
+            gameState.guessed = null;
+
+            const coin = document.getElementById('coin');
+            const coinValue = document.getElementById('coinValue');
+            const coinStateDisplay = document.getElementById('coinState');
+
+            coin.className = 'coin superposition';
+            coinValue.textContent = '?';
+            coinStateDisplay.textContent = '|ψ⟩ = (|H⟩ + |T⟩)/√2';
+            document.getElementById('coinMessage').innerHTML = '';
+        }
+
+        // ===== QUANTUM TIC-TAC-TOE =====
+        function initTicTacToe() {
+            gameState = {
+                board: Array(9).fill(null),
+                superpositions: Array(9).fill(null),
+                currentPlayer: 'X',
+                gameOver: false,
+                winner: null
+            };
+
+            const container = document.getElementById('gameContainer');
+            container.innerHTML = `
+                <div class="score-display">
+                    <div class="score-label">Current Player</div>
+                    <div class="score-value" id="currentPlayer">X</div>
+                </div>
+
+                <div class="game-board">
+                    <div class="grid-3x3" id="tttBoard">
+                        ${Array(9).fill(0).map((_, i) => `
+                            <div class="cell" onclick="quantumMove(${i})" id="cell-${i}"></div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button onclick="collapseTTT()">🔮 Measure (Collapse Superpositions)</button>
+                    <button onclick="initTicTacToe()">Reset Game</button>
+                </div>
+
+                <div class="quantum-state" style="text-align: center;">
+                    Quantum moves create superpositions! Measure to collapse the game.
+                </div>
+
+                <div id="tttMessage"></div>
+            `;
+        }
+
+        function quantumMove(index) {
+            if (gameState.gameOver || gameState.board[index]) return;
+
+            const player = gameState.currentPlayer;
+
+            // Create quantum superposition
+            gameState.superpositions[index] = player;
+
+            const cell = document.getElementById(`cell-${index}`);
+            cell.textContent = `${player}?`;
+            cell.classList.add('superposition');
+
+            gameState.currentPlayer = player === 'X' ? 'O' : 'X';
+            document.getElementById('currentPlayer').textContent = gameState.currentPlayer;
+        }
+
+        function collapseTTT() {
+            // Collapse all superpositions
+            gameState.superpositions.forEach((player, i) => {
+                if (player && !gameState.board[i]) {
+                    // 50% chance to collapse to this cell
+                    if (Math.random() < 0.5) {
+                        gameState.board[i] = player;
+                        const cell = document.getElementById(`cell-${i}`);
+                        cell.textContent = player;
+                        cell.classList.remove('superposition');
+                        cell.classList.add('taken');
+                    } else {
+                        // Superposition collapsed to nothing!
+                        gameState.superpositions[i] = null;
+                        const cell = document.getElementById(`cell-${i}`);
+                        cell.textContent = '';
+                        cell.classList.remove('superposition');
+                    }
+                }
+            });
+
+            checkTTTWinner();
+        }
+
+        function checkTTTWinner() {
+            const lines = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
+                [0, 4, 8], [2, 4, 6]  // diagonals
+            ];
+
+            for (let line of lines) {
+                const [a, b, c] = line;
+                if (gameState.board[a] && gameState.board[a] === gameState.board[b] && gameState.board[a] === gameState.board[c]) {
+                    gameState.gameOver = true;
+                    gameState.winner = gameState.board[a];
+
+                    document.getElementById('tttMessage').innerHTML = `
+                        <div class="message-box">
+                            <div class="message-title">🎉 ${gameState.winner} Wins!</div>
+                            <div class="message-text">Quantum superpositions have been measured!</div>
+                        </div>
+                    `;
+                    return;
+                }
+            }
+
+            // Check for draw
+            if (gameState.board.every(cell => cell !== null)) {
+                gameState.gameOver = true;
+                document.getElementById('tttMessage').innerHTML = `
+                    <div class="message-box">
+                        <div class="message-title">It's a Draw!</div>
+                        <div class="message-text">Quantum interference led to a tie!</div>
+                    </div>
+                `;
+            }
+        }
+
+        // ===== ENTANGLEMENT GAME =====
+        function initEntanglementGame() {
+            gameState = {
+                entangled: true,
+                measured: false,
+                alice: null,
+                bob: null,
+                score: 0,
+                attempts: 0
+            };
+
+            const container = document.getElementById('gameContainer');
+            container.innerHTML = `
+                <div class="score-display">
+                    <div class="score-label">Correct Predictions / Attempts</div>
+                    <div class="score-value"><span id="entScore">0</span> / <span id="entAttempts">0</span></div>
+                </div>
+
+                <div class="quantum-state" style="text-align: center; margin-bottom: 21px;">
+                    Bell State: <span style="color: var(--hot-pink);">|Φ⁺⟩ = (|00⟩ + |11⟩)/√2</span><br>
+                    Alice and Bob share a maximally entangled pair!
+                </div>
+
+                <div class="game-board">
+                    <div class="entangled-pair">
+                        <div>
+                            <div class="qubit-display" id="aliceQubit">
+                                <div class="qubit-label">Alice</div>
+                                <div class="qubit-state" id="aliceState">?</div>
+                            </div>
+                            <button class="measurement-btn" onclick="measureAlice()" id="measureAliceBtn">
+                                Measure Alice
+                            </button>
+                        </div>
+
+                        <div class="entanglement-line" id="entLine"></div>
+
+                        <div>
+                            <div class="qubit-display" id="bobQubit">
+                                <div class="qubit-label">Bob</div>
+                                <div class="qubit-state" id="bobState">?</div>
+                            </div>
+                            <button class="measurement-btn" onclick="measureBob()" id="measureBobBtn">
+                                Measure Bob
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls" style="margin-top: 34px;">
+                    <div style="text-align: center; width: 100%;">
+                        <div style="font-size: 18px; margin-bottom: 13px; color: var(--amber);">
+                            Before measuring Bob, predict the result:
+                        </div>
+                        <button onclick="predictBob('0')" id="predict0">Predict |0⟩</button>
+                        <button onclick="predictBob('1')" id="predict1">Predict |1⟩</button>
+                        <button onclick="resetEntanglement()" style="margin-left: 34px;">Reset</button>
+                    </div>
+                </div>
+
+                <div id="entMessage"></div>
+            `;
+        }
+
+        function measureAlice() {
+            if (gameState.measured) return;
+
+            const result = Math.random() < 0.5 ? '0' : '1';
+            gameState.alice = result;
+            gameState.bob = result; // Entangled!
+
+            document.getElementById('aliceState').textContent = `|${result}⟩`;
+            document.getElementById('measureAliceBtn').disabled = true;
+
+            document.getElementById('entMessage').innerHTML = `
+                <div class="message-box">
+                    <div class="message-title">Alice measured |${result}⟩!</div>
+                    <div class="message-text">
+                        Due to entanglement, Bob's qubit is now also in state |${result}⟩<br>
+                        Can you predict Bob's measurement?
+                    </div>
+                </div>
+            `;
+        }
+
+        function predictBob(prediction) {
+            if (!gameState.alice) {
+                document.getElementById('entMessage').innerHTML = `
+                    <div class="message-box">
+                        <div class="message-title">⚠️ Measure Alice first!</div>
+                        <div class="message-text">You need to measure Alice before predicting Bob's result.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            gameState.prediction = prediction;
+            measureBob();
+        }
+
+        function measureBob() {
+            if (gameState.measured) return;
+            if (!gameState.alice) return;
+
+            gameState.measured = true;
+
+            document.getElementById('bobState').textContent = `|${gameState.bob}⟩`;
+            document.getElementById('measureBobBtn').disabled = true;
+            document.getElementById('entLine').style.animation = 'none';
+            document.getElementById('entLine').style.background = 'rgba(255, 29, 108, 0.3)';
+
+            if (gameState.prediction) {
+                gameState.attempts++;
+                const correct = gameState.prediction === gameState.bob;
+
+                if (correct) {
+                    gameState.score++;
+                }
+
+                document.getElementById('entScore').textContent = gameState.score;
+                document.getElementById('entAttempts').textContent = gameState.attempts;
+
+                const emoji = correct ? '🎉' : '😢';
+                document.getElementById('entMessage').innerHTML = `
+                    <div class="message-box">
+                        <div class="message-title">${emoji} ${correct ? 'Perfect Prediction!' : 'Wrong Guess!'}</div>
+                        <div class="message-text">
+                            Alice: |${gameState.alice}⟩, Bob: |${gameState.bob}⟩<br>
+                            ${correct ? 'You understand entanglement!' : 'Remember: |Φ⁺⟩ means Alice and Bob always get the same result!'}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function resetEntanglement() {
+            initEntanglementGame();
+        }
+
+        // ===== INTERFERENCE PUZZLE =====
+        function initInterferenceGame() {
+            gameState = {
+                level: 1,
+                solved: 0
+            };
+
+            const container = document.getElementById('gameContainer');
+            container.innerHTML = `
+                <div class="score-display">
+                    <div class="score-label">Level / Puzzles Solved</div>
+                    <div class="score-value"><span id="intLevel">1</span> / <span id="intSolved">0</span></div>
+                </div>
+
+                <div class="quantum-state" style="text-align: center; margin-bottom: 21px;">
+                    Use quantum interference to reach the target!<br>
+                    Constructive interference: amplitudes add | Destructive interference: amplitudes cancel
+                </div>
+
+                <div class="game-board" id="interferenceBoard">
+                    <div style="text-align: center;">
+                        <div style="font-size: 18px; margin-bottom: 21px; color: var(--amber);">
+                            Choose your path:
+                        </div>
+
+                        <div style="display: flex; gap: 34px; justify-content: center; align-items: center;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 16px; margin-bottom: 13px; color: var(--electric-blue);">Path A</div>
+                                <div style="font-size: 24px; font-family: 'Courier New', monospace; color: var(--hot-pink);">
+                                    +1/√2
+                                </div>
+                            </div>
+
+                            <div style="font-size: 55px;">⟶</div>
+
+                            <div style="text-align: center;">
+                                <div style="font-size: 16px; margin-bottom: 13px; color: var(--electric-blue);">Path B</div>
+                                <div style="font-size: 24px; font-family: 'Courier New', monospace; color: var(--hot-pink);">
+                                    +1/√2
+                                </div>
+                            </div>
+
+                            <div style="font-size: 55px;">⟶</div>
+
+                            <div style="text-align: center;">
+                                <div style="font-size: 16px; margin-bottom: 13px; color: var(--amber);">Target</div>
+                                <div style="font-size: 34px; font-weight: 900;">🎯</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 34px;">
+                            <div style="font-size: 16px; margin-bottom: 13px;">Total Amplitude at Target:</div>
+                            <div style="font-size: 28px; font-family: 'Courier New', monospace; color: var(--amber);" id="totalAmp">
+                                1/√2 + 1/√2 = √2
+                            </div>
+                            <div style="font-size: 16px; margin-top: 8px;">
+                                Probability: <span id="totalProb" style="color: var(--hot-pink); font-weight: 700;">100%</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 34px;">
+                            <div class="probability-bar" style="width: 100%;" id="probBar">
+                                Constructive Interference! 🎉
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls" style="margin-top: 34px;">
+                    <button onclick="nextInterferenceLevel()">Next Level</button>
+                </div>
+
+                <div class="message-box" style="margin-top: 21px;">
+                    <div class="message-title">How It Works</div>
+                    <div class="message-text" style="text-align: left;">
+                        • Path A contributes amplitude +1/√2<br>
+                        • Path B contributes amplitude +1/√2<br>
+                        • Total amplitude: +1/√2 + 1/√2 = √2<br>
+                        • Probability = |amplitude|² = (√2)² = 2 → normalized to 100%<br>
+                        <br>
+                        <strong>Constructive interference!</strong> Both paths add up to reach the target with certainty.
+                    </div>
+                </div>
+            `;
+        }
+
+        function nextInterferenceLevel() {
+            gameState.level++;
+            gameState.solved++;
+
+            document.getElementById('intLevel').textContent = gameState.level;
+            document.getElementById('intSolved').textContent = gameState.solved;
+
+            // More complex interference patterns for higher levels
+            alert(`Level ${gameState.level} coming soon! Exploring more complex quantum interference patterns.`);
+        }
+
+        // Initialize
+        initCoinFlip();
+    </script>
+</body>
+</html>

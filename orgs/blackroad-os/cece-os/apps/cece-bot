@@ -1,0 +1,67 @@
+#!/bin/bash
+# CECE-BOT v1.0 - AI Chatbot Builder
+# Your own chatbots. No Dialogflow. No Watson. Just you.
+
+BOTS_DIR=~/cece/bots
+mkdir -p "$BOTS_DIR"
+
+create_bot() {
+    NAME="$1"
+    PERSONA="$2"
+    BOT_DIR="$BOTS_DIR/$NAME"
+    mkdir -p "$BOT_DIR"
+    
+    cat > "$BOT_DIR/config.json" << EOF
+{
+  "name": "$NAME",
+  "persona": "$PERSONA",
+  "created": "$(date -Iseconds)",
+  "model": "llama3.2"
+}
+EOF
+    
+    cat > "$BOT_DIR/chat.sh" << 'CHATEOF'
+#!/bin/bash
+PERSONA=$(cat ~/cece/bots/$1/config.json | grep persona | cut -d\" -f4)
+echo "Chat with $1 (type quit to exit)"
+while true; do
+    read -p "You: " MSG
+    [ "$MSG" = "quit" ] && break
+    PROMPT="You are $PERSONA. Respond to: $MSG"
+    echo -n "Bot: "
+    echo "$PROMPT" | ollama run llama3.2 2>/dev/null || echo "I am here to help!"
+done
+CHATEOF
+    chmod +x "$BOT_DIR/chat.sh"
+    echo "Bot $NAME created at $BOT_DIR"
+}
+
+chat() {
+    BOT="$1"
+    shift
+    MSG="$*"
+    if [ -f "$BOTS_DIR/$BOT/config.json" ]; then
+        PERSONA=$(cat "$BOTS_DIR/$BOT/config.json" | grep persona | cut -d\" -f4)
+        PROMPT="You are $PERSONA. Respond to: $MSG"
+        echo "$PROMPT" | ollama run llama3.2 2>/dev/null || echo "Ready to assist!"
+    else
+        echo "Bot not found: $BOT"
+    fi
+}
+
+list_bots() {
+    echo "Your Bots:"
+    for d in "$BOTS_DIR"/*/; do
+        [ -d "$d" ] && basename "$d"
+    done
+}
+
+case "$1" in
+    create) create_bot "$2" "$3" ;;
+    chat) shift; chat "$@" ;;
+    list) list_bots ;;
+    *) echo "CECE-BOT - AI Chatbot Builder"
+       echo "  create <name> <persona> - Create bot"
+       echo "  chat <bot> <message>    - Chat with bot"
+       echo "  list                    - List bots" ;;
+esac

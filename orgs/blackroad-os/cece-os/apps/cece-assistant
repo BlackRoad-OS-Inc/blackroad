@@ -1,0 +1,61 @@
+#!/bin/bash
+# CECE-ASSISTANT v1.0 - Our Own Alexa/Siri
+ASSIST_DIR=~/cece/assistant
+mkdir -p "$ASSIST_DIR/reminders" "$ASSIST_DIR/routines"
+
+ask() {
+    QUESTION="$*"
+    echo "🤖 You asked: $QUESTION"
+    echo ""
+    
+    if command -v ollama &>/dev/null; then
+        echo "Thinking..."
+        ollama run llama3.2 "$QUESTION" 2>/dev/null
+    else
+        # Fallback responses
+        case "$QUESTION" in
+            *time*) echo "The time is $(date +%H:%M)" ;;
+            *date*) echo "Today is $(date +%A,\ %B\ %d,\ %Y)" ;;
+            *weather*) echo "I cannot check weather without internet, but you can!" ;;
+            *hello*|*hi*) echo "Hello! How can I help you today?" ;;
+            *name*) echo "I am CECE, your sovereign AI assistant." ;;
+            *) echo "I heard you. Let me think... (install ollama for AI responses)" ;;
+        esac
+    fi
+}
+
+reminder() {
+    TIME="$1"
+    shift
+    MSG="$*"
+    echo "{\"time\":\"$TIME\",\"message\":\"$MSG\",\"created\":\"$(date -Iseconds)\"}" >> "$ASSIST_DIR/reminders/active.jsonl"
+    echo "⏰ Reminder set for $TIME: $MSG"
+}
+
+routine() {
+    NAME="$1"
+    shift
+    COMMANDS="$*"
+    echo "$COMMANDS" > "$ASSIST_DIR/routines/$NAME.routine"
+    echo "✅ Routine  created"
+}
+
+run_routine() {
+    NAME="$1"
+    if [ -f "$ASSIST_DIR/routines/$NAME.routine" ]; then
+        echo "🏃 Running routine: $NAME"
+        bash "$ASSIST_DIR/routines/$NAME.routine"
+    fi
+}
+
+case "$1" in
+    ask) shift; ask "$@" ;;
+    reminder) reminder "$2" "$3" ;;
+    routine) routine "$2" "$3" ;;
+    run) run_routine "$2" ;;
+    *) echo "🖤 CECE-ASSISTANT - Our Own Alexa"
+       echo "  ask <question>              Ask anything"
+       echo "  reminder <time> <msg>       Set reminder"
+       echo "  routine <name> <commands>   Create routine"
+       echo "  run <routine>               Run routine" ;;
+esac

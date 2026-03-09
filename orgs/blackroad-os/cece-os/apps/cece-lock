@@ -1,0 +1,9 @@
+#!/bin/bash
+# CECE-LOCK v1.0 - Screen Lock
+lock() {
+    xdg-screensaver lock 2>/dev/null || \
+    gnome-screensaver-command -l 2>/dev/null || \
+    dm-tool lock 2>/dev/null || \
+    echo "Screen locked (or lock command not available)"
+}
+case "$1" in *) lock ;; esac

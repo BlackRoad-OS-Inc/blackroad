@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌌 BlackRoad Pixel Metaverse</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0a; color: #fff; font-family: Monaco, monospace; overflow: hidden; }
+    #world { position: absolute; top: 0; left: 0; image-rendering: pixelated; }
+    #hud { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); border: 2px solid #FF1D6C; padding: 20px; font-size: 12px; max-width: 300px; }
+    .title { color: #FF1D6C; font-size: 16px; font-weight: bold; margin-bottom: 10px; text-shadow: 0 0 10px #FF1D6C; }
+    .stat { margin: 5px 0; display: flex; justify-content: space-between; }
+    .label { color: #F5A623; }
+    .value { color: #2979FF; font-weight: bold; }
+    #agents { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); border: 2px solid #2979FF; padding: 20px; font-size: 11px; max-width: 250px; max-height: 80vh; overflow-y: auto; }
+    .agent { margin: 8px 0; padding: 8px; background: rgba(255,29,108,0.1); border-left: 3px solid #FF1D6C; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { border-left-color: #FF1D6C; } 50% { border-left-color: #F5A623; } }
+    .agent-name { color: #FF1D6C; font-weight: bold; }
+    .agent-role { color: #2979FF; font-size: 10px; }
+    #events { position: absolute; bottom: 20px; left: 20px; right: 20px; background: rgba(0,0,0,0.9); border: 2px solid #9C27B0; padding: 15px; font-size: 11px; max-height: 150px; overflow-y: auto; }
+    .event { margin: 3px 0; animation: fadeIn 0.5s forwards; }
+    @keyframes fadeIn { to { opacity: 1; } }
+    .event-time { color: #666; margin-right: 10px; }
+    .event-agent { color: #FF1D6C; margin-right: 10px; }
+    .event-text { color: #F5A623; }
+    #connection { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); border: 2px solid #F5A623; padding: 10px 20px; font-size: 12px; }
+    .connected { color: #4CAF50; }
+    .disconnected { color: #F44336; }
+  </style>
+</head>
+<body>
+  <canvas id="world"></canvas>
+  <div id="connection"><span class="disconnected">⚫ Connecting...</span></div>
+  <div id="hud">
+    <div class="title">🌌 BLACKROAD METAVERSE</div>
+    <div class="stat"><span class="label">Active Sessions:</span><span class="value" id="sessions">7</span></div>
+    <div class="stat"><span class="label">Active Agents:</span><span class="value" id="agent-count">0</span></div>
+    <div class="stat"><span class="label">Memory Writes:</span><span class="value" id="memory-writes">0</span></div>
+    <div class="stat"><span class="label">Events/sec:</span><span class="value" id="event-rate">0</span></div>
+  </div>
+  <div id="agents"><div class="title">👥 ACTIVE AGENTS</div><div id="agent-list"></div></div>
+  <div id="events"><div class="title">📡 LIVE EVENTS</div><div id="event-list"></div></div>
+  <script>
+    const canvas=document.getElementById('world'),ctx=canvas.getContext('2d');
+    canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+    window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight});
+    const agents=new Map(),particles=[],COLORS={pink:'#FF1D6C',amber:'#F5A623',blue:'#2979FF',violet:'#9C27B0'};
+    let sessionCount=7,memoryWrites=0,eventCount=0,lastEventTime=Date.now();
+    const ws=new WebSocket('ws://localhost:8765');
+    ws.onopen=()=>{console.log('Connected');document.querySelector('#connection').innerHTML='<span class="connected">🟢 Connected</span>'};
+    ws.onclose=()=>{document.querySelector('#connection').innerHTML='<span class="disconnected">🔴 Disconnected</span>'};
+    ws.onmessage=(e)=>{try{const d=JSON.parse(e.data);handleEvent(d)}catch(err){}};
+    function handleEvent(d){eventCount++;if(d.type==='memory-write'){memoryWrites++;document.getElementById('memory-writes').textContent=memoryWrites;createParticleBurst(canvas.width/2,canvas.height/2,COLORS.violet)}if(d.agent){const id=d.agent.id||'unknown';agents.set(id,{...d.agent,lastSeen:Date.now(),x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,color:COLORS[['pink','amber','blue','violet'][agents.size%4]]});updateAgentList()}addEventToLog(d);createParticleBurst(Math.random()*canvas.width,Math.random()*canvas.height,COLORS.pink)}
+    function updateAgentList(){document.getElementById('agent-count').textContent=agents.size;const l=document.getElementById('agent-list');l.innerHTML='';agents.forEach((a,id)=>{const d=document.createElement('div');d.className='agent';d.innerHTML='<div class="agent-name">'+(a.name||id)+'</div><div class="agent-role">'+(a.role||'agent')+'</div>';l.appendChild(d)})}
+    function addEventToLog(d){const l=document.getElementById('event-list'),div=document.createElement('div');div.className='event';div.innerHTML='<span class="event-time">'+new Date().toLocaleTimeString()+'</span><span class="event-agent">'+(d.agent?.name||'System')+'</span><span class="event-text">'+d.type+'</span>';l.insertBefore(div,l.firstChild);while(l.children.length>20)l.removeChild(l.lastChild)}
+    function createParticleBurst(x,y,c){for(let i=0;i<5;i++)particles.push({x,y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,life:1,color:c})}
+    function animate(){ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='rgba(255,29,108,0.1)';ctx.lineWidth=1;for(let x=0;x<canvas.width;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}for(let y=0;y<canvas.height;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}agents.forEach((a)=>{a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>canvas.width)a.vx*=-1;if(a.y<0||a.y>canvas.height)a.vy*=-1;ctx.fillStyle=a.color;ctx.fillRect(a.x-5,a.y-5,10,10);ctx.fillStyle='#fff';ctx.font='10px Monaco';ctx.fillText(a.name||'',a.x+10,a.y)});for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.life-=0.02;if(p.life<=0){particles.splice(i,1);continue}ctx.fillStyle=p.color+Math.floor(p.life*255).toString(16).padStart(2,'0');ctx.fillRect(p.x-2,p.y-2,4,4)}const now=Date.now();if(now-lastEventTime>1000){document.getElementById('event-rate').textContent=eventCount;eventCount=0;lastEventTime=now}requestAnimationFrame(animate)}animate()
+  </script>
+</body>
+</html>

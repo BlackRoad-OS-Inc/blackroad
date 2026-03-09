@@ -1,0 +1,20 @@
+#!/bin/bash
+# CECE-LEVEL v1.0 - XP & Leveling
+XP_FILE=~/cece/xp.txt
+add_xp() {
+    CURRENT=$(cat "$XP_FILE" 2>/dev/null || echo 0)
+    NEW=$((CURRENT + $1))
+    echo "$NEW" > "$XP_FILE"
+    LEVEL=$((NEW / 100 + 1))
+    echo "⭐ +$1 XP | Total: $NEW XP | Level $LEVEL"
+}
+status() {
+    XP=$(cat "$XP_FILE" 2>/dev/null || echo 0)
+    LEVEL=$((XP / 100 + 1))
+    echo "Level $LEVEL ($XP XP)"
+}
+case "$1" in
+    add) add_xp "$2" ;;
+    status) status ;;
+    *) echo "CECE-LEVEL: add <xp> | status" ;;
+esac

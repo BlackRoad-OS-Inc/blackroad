@@ -1,0 +1,35 @@
+#!/bin/bash
+# CECE-BACKUP v1.0 - Backup System
+BACKUP_DIR=~/cece/backups
+mkdir -p "$BACKUP_DIR"
+
+backup() {
+    SOURCE="$1"
+    NAME=$(basename "$SOURCE")
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    BACKUP_FILE="$BACKUP_DIR/${NAME}_${TIMESTAMP}.tar.gz"
+    
+    tar -czf "$BACKUP_FILE" -C "$(dirname "$SOURCE")" "$NAME" 2>/dev/null
+    SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+    echo "Backup: $BACKUP_FILE ($SIZE)"
+    echo "{\"source\":\"$SOURCE\",\"file\":\"$BACKUP_FILE\",\"time\":\"$(date -Iseconds)\"}" >> "$BACKUP_DIR/log.jsonl"
+}
+
+restore() {
+    BACKUP="$1"
+    DEST="${2:-.}"
+    tar -xzf "$BACKUP" -C "$DEST"
+    echo "Restored to: $DEST"
+}
+
+list_backups() {
+    echo "Backups:"
+    ls -lh "$BACKUP_DIR"/*.tar.gz 2>/dev/null || echo "(none)"
+}
+
+case "$1" in
+    create) backup "$2" ;;
+    restore) restore "$2" "$3" ;;
+    list) list_backups ;;
+    *) echo "CECE-BACKUP: create <path> | restore <backup> [dest] | list" ;;
+esac

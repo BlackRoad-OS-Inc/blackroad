@@ -1,0 +1,9 @@
+#!/bin/bash
+# CECE-YAML v1.0 - YAML Tools
+validate() { python3 -c "import yaml; yaml.safe_load(open('$1'))" 2>&1 && echo "✅ Valid YAML" || echo "❌ Invalid"; }
+to_json() { python3 -c "import yaml,json; print(json.dumps(yaml.safe_load(open('$1')),indent=2))"; }
+case "$1" in
+    validate) validate "$2" ;;
+    json) to_json "$2" ;;
+    *) echo "CECE-YAML: validate <file> | json <file>" ;;
+esac

@@ -1,0 +1,56 @@
+#!/bin/bash
+# CECE-RIDE v1.0 - Our Own Uber/Lyft
+RIDE_DIR=~/cece/rides
+mkdir -p "$RIDE_DIR/history" "$RIDE_DIR/drivers"
+
+request_ride() {
+    FROM="$1"
+    TO="$2"
+    RIDE_ID=$(date +%s | tail -c 6)
+    
+    echo "🚗 Finding you a ride..."
+    sleep 1
+    
+    DRIVER="Driver-$(shuf -i 100-999 -n 1)"
+    ETA=$((RANDOM % 10 + 1))
+    PRICE=$((RANDOM % 20 + 5))
+    
+    cat > "$RIDE_DIR/history/$RIDE_ID.ride" << EOF
+id: $RIDE_ID
+from: $FROM
+to: $TO
+driver: $DRIVER
+price: $PRICE
+eta: $ETA
+status: arriving
+time: $(date -Iseconds)
+EOF
+    
+    echo ""
+    echo "✅ Ride booked!"
+    echo "   From: $FROM"
+    echo "   To: $TO"
+    echo "   Driver: $DRIVER"
+    echo "   ETA: $ETA min"
+    echo "   Price: \$$PRICE"
+}
+
+history() {
+    echo "🚗 RIDE HISTORY"
+    echo "═══════════════════════════════════════"
+    for r in "$RIDE_DIR/history"/*.ride 2>/dev/null; do
+        [ -f "$r" ] || continue
+        FROM=$(grep "^from:" "$r" | cut -d: -f2-)
+        TO=$(grep "^to:" "$r" | cut -d: -f2-)
+        PRICE=$(grep "^price:" "$r" | cut -d: -f2 | xargs)
+        echo "  🚗 $FROM → $TO (\$$PRICE)"
+    done
+}
+
+case "$1" in
+    request) request_ride "$2" "$3" ;;
+    history) history ;;
+    *) echo "🖤 CECE-RIDE - Our Own Uber"
+       echo "  request <from> <to>  Request ride"
+       echo "  history              Ride history" ;;
+esac

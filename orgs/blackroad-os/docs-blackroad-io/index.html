@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Documentation - Build the Future</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #111111;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --code-bg: #1a1a1a;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 2rem 0;
+        }
+
+        .sidebar-header {
+            padding: 0 2rem 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .version {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .search-box {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+
+        .nav-section {
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-section h3 {
+            padding: 0 2rem 0.75rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .nav-section ul {
+            list-style: none;
+        }
+
+        .nav-section li {
+            margin: 0.25rem 0;
+        }
+
+        .nav-section a {
+            display: block;
+            padding: 0.5rem 2rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-section a:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+            border-left-color: var(--accent-purple);
+        }
+
+        .nav-section a.active {
+            color: var(--accent-purple);
+            background: rgba(119, 0, 255, 0.1);
+            border-left-color: var(--accent-purple);
+        }
+
+        /* Main Content */
+        .content {
+            max-width: 900px;
+            padding: 4rem 3rem;
+        }
+
+        .hero {
+            margin-bottom: 4rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+        }
+
+        /* Quick Start Cards */
+        .quick-start {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+
+        .quick-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .quick-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(119, 0, 255, 0.2);
+        }
+
+        .quick-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .quick-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .quick-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Section */
+        .doc-section {
+            margin: 4rem 0;
+        }
+
+        .doc-section h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .doc-section h3 {
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem;
+            color: var(--accent-orange);
+        }
+
+        .doc-section p {
+            margin-bottom: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .doc-section ul {
+            margin: 1rem 0 1.5rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .doc-section li {
+            margin: 0.5rem 0;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-lang {
+            font-family: 'Monaco', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+        }
+
+        .code-content {
+            padding: 1.5rem 1.25rem;
+            overflow-x: auto;
+        }
+
+        .code-content pre {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #e6e6e6;
+        }
+
+        .code-content .keyword { color: #ff79c6; }
+        .code-content .string { color: #50fa7b; }
+        .code-content .comment { color: #6272a4; }
+        .code-content .function { color: #8be9fd; }
+
+        /* Info Boxes */
+        .info-box {
+            background: rgba(0, 102, 255, 0.1);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .info-box.warning {
+            background: rgba(255, 157, 0, 0.1);
+            border-left-color: var(--accent-orange);
+        }
+
+        .info-box.tip {
+            background: rgba(119, 0, 255, 0.1);
+            border-left-color: var(--accent-purple);
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .content {
+                padding: 2rem 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>BlackRoad Docs</h1>
+                <p class="version">v1.0.0</p>
+            </div>
+
+            <div class="search-box">
+                <input type="text" placeholder="Search docs..." id="searchInput">
+            </div>
+
+            <nav class="nav-section">
+                <h3>Getting Started</h3>
+                <ul>
+                    <li><a href="#introduction" class="active">Introduction</a></li>
+                    <li><a href="#installation">Installation</a></li>
+                    <li><a href="#quick-start">Quick Start</a></li>
+                    <li><a href="#architecture">Architecture</a></li>
+                </ul>
+            </nav>
+
+            <nav class="nav-section">
+                <h3>Core Concepts</h3>
+                <ul>
+                    <li><a href="#ai-collaboration">AI Collaboration</a></li>
+                    <li><a href="#quantum-computing">Quantum Computing</a></li>
+                    <li><a href="#distributed-systems">Distributed Systems</a></li>
+                    <li><a href="#infrastructure">Infrastructure</a></li>
+                </ul>
+            </nav>
+
+            <nav class="nav-section">
+                <h3>Components</h3>
+                <ul>
+                    <li><a href="#lucidia">Lucidia QI</a></li>
+                    <li><a href="#alice">Alice Agent</a></li>
+                    <li><a href="#quantum-engine">Quantum Engine</a></li>
+                    <li><a href="#memory-system">Memory System</a></li>
+                </ul>
+            </nav>
+
+            <nav class="nav-section">
+                <h3>API Reference</h3>
+                <ul>
+                    <li><a href="#rest-api">REST API</a></li>
+                    <li><a href="#websocket">WebSocket</a></li>
+                    <li><a href="#sdk">SDK Reference</a></li>
+                </ul>
+            </nav>
+
+            <nav class="nav-section">
+                <h3>Deployment</h3>
+                <ul>
+                    <li><a href="#cloudflare">Cloudflare Pages</a></li>
+                    <li><a href="#docker">Docker</a></li>
+                    <li><a href="#kubernetes">Kubernetes</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="hero">
+                <h1>Welcome to BlackRoad OS</h1>
+                <p>The sovereign computing platform designed for AI collaboration and human flourishing. Build the future with quantum intelligence, distributed systems, and autonomous agents.</p>
+            </div>
+
+            <!-- Quick Start Cards -->
+            <div class="quick-start">
+                <div class="quick-card">
+                    <div class="icon">⚡</div>
+                    <h3>5-Minute Start</h3>
+                    <p>Get up and running with BlackRoad in less than 5 minutes</p>
+                </div>
+                <div class="quick-card">
+                    <div class="icon">📚</div>
+                    <h3>Learn Core Concepts</h3>
+                    <p>Understand the architecture and philosophy behind BlackRoad</p>
+                </div>
+                <div class="quick-card">
+                    <div class="icon">🔧</div>
+                    <h3>Build Something</h3>
+                    <p>Follow tutorials to build your first AI-powered app</p>
+                </div>
+            </div>
+
+            <!-- Introduction -->
+            <section id="introduction" class="doc-section">
+                <h2>Introduction</h2>
+                <p>BlackRoad OS is a revolutionary operating system designed for the age of AI collaboration. It provides a sovereign computing platform where humans and AI can work together seamlessly.</p>
+
+                <h3>Why BlackRoad?</h3>
+                <ul>
+                    <li><strong>AI-Native:</strong> Built from the ground up for AI collaboration, not as an afterthought</li>
+                    <li><strong>Quantum-Ready:</strong> Integrated quantum computing capabilities for next-generation applications</li>
+                    <li><strong>Truly Distributed:</strong> Runs anywhere - cloud, edge, or your local machine</li>
+                    <li><strong>Zero Cost:</strong> Open source and designed to run on free infrastructure</li>
+                    <li><strong>Privacy-First:</strong> Your data stays yours. No tracking, no surveillance</li>
+                </ul>
+
+                <div class="info-box tip">
+                    <strong>💡 Pro Tip</strong>
+                    BlackRoad is not just software - it's a philosophy. We believe in sovereign computing, where you own your infrastructure, your data, and your future.
+                </div>
+            </section>
+
+            <!-- Installation -->
+            <section id="installation" class="doc-section">
+                <h2>Installation</h2>
+                <p>BlackRoad can be installed in multiple ways depending on your use case:</p>
+
+                <h3>Via npm (Recommended)</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="comment"># Install BlackRoad CLI globally</span>
+npm install -g @blackroad/cli
+
+<span class="comment"># Verify installation</span>
+blackroad --version
+
+<span class="comment"># Initialize a new project</span>
+blackroad init my-project
+cd my-project
+
+<span class="comment"># Start development server</span>
+blackroad dev</pre>
+                    </div>
+                </div>
+
+                <h3>Via Docker</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="comment"># Pull the latest BlackRoad image</span>
+docker pull blackroad/os:latest
+
+<span class="comment"># Run BlackRoad container</span>
+docker run -d -p 8080:8080 \
+  --name blackroad \
+  -v $(pwd):/workspace \
+  blackroad/os:latest
+
+<span class="comment"># Access the shell</span>
+docker exec -it blackroad /bin/bash</pre>
+                    </div>
+                </div>
+
+                <div class="info-box warning">
+                    <strong>⚠️ System Requirements</strong>
+                    BlackRoad requires Node.js 18+ or Docker 20+. For quantum features, ensure you have at least 8GB RAM.
+                </div>
+            </section>
+
+            <!-- Quick Start -->
+            <section id="quick-start" class="doc-section">
+                <h2>Quick Start</h2>
+                <p>Let's build your first AI-powered application with BlackRoad:</p>
+
+                <h3>1. Create a New Project</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre>blackroad create hello-ai --template=ai-starter
+cd hello-ai</pre>
+                    </div>
+                </div>
+
+                <h3>2. Configure Your AI Agent</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">javascript</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="keyword">import</span> { Agent } <span class="keyword">from</span> <span class="string">'@blackroad/ai'</span>;
+
+<span class="keyword">const</span> <span class="function">agent</span> = <span class="keyword">new</span> Agent({
+  name: <span class="string">'assistant'</span>,
+  model: <span class="string">'lucidia-qi-v1'</span>,
+  capabilities: [<span class="string">'reasoning'</span>, <span class="string">'code-generation'</span>],
+  temperature: <span class="number">0.7</span>
+});
+
+<span class="comment">// Agent is now ready to use</span>
+<span class="keyword">const</span> response = <span class="keyword">await</span> agent.<span class="function">ask</span>(<span class="string">'Explain quantum entanglement'</span>);
+console.<span class="function">log</span>(response);</pre>
+                    </div>
+                </div>
+
+                <h3>3. Run Your Application</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="comment"># Start in development mode</span>
+blackroad dev
+
+<span class="comment"># Build for production</span>
+blackroad build
+
+<span class="comment"># Deploy to Cloudflare</span>
+blackroad deploy</pre>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>🚀 Next Steps</strong>
+                    Check out the <a href="#ai-collaboration" style="color: var(--accent-blue);">AI Collaboration Guide</a> to learn about advanced agent patterns and orchestration.
+                </div>
+            </section>
+
+            <!-- Architecture -->
+            <section id="architecture" class="doc-section">
+                <h2>Architecture Overview</h2>
+                <p>BlackRoad is built on three core pillars:</p>
+
+                <h3>1. AI Collaboration Layer</h3>
+                <p>The foundation of BlackRoad is seamless human-AI collaboration:</p>
+                <ul>
+                    <li><strong>Lucidia QI:</strong> Our quantum-enhanced AI framework</li>
+                    <li><strong>Agent Mesh:</strong> Distributed agent communication</li>
+                    <li><strong>Memory System:</strong> Persistent context across sessions</li>
+                    <li><strong>Tool Ecosystem:</strong> Extensible agent capabilities</li>
+                </ul>
+
+                <h3>2. Quantum Computing Engine</h3>
+                <p>Native quantum computing support for next-generation applications:</p>
+                <ul>
+                    <li><strong>Circuit Builder:</strong> Visual quantum circuit design</li>
+                    <li><strong>Simulator:</strong> Classical simulation for development</li>
+                    <li><strong>Hardware Bridge:</strong> Connect to real quantum computers</li>
+                    <li><strong>Hybrid Algorithms:</strong> Classical + quantum workflows</li>
+                </ul>
+
+                <h3>3. Distributed Infrastructure</h3>
+                <p>Run anywhere, scale everywhere:</p>
+                <ul>
+                    <li><strong>Edge Runtime:</strong> Deploy to Cloudflare Workers</li>
+                    <li><strong>Container Support:</strong> Docker & Kubernetes ready</li>
+                    <li><strong>P2P Networking:</strong> Decentralized communication</li>
+                    <li><strong>Zero-Config Deployment:</strong> Ship with one command</li>
+                </ul>
+            </section>
+
+            <!-- AI Collaboration -->
+            <section id="ai-collaboration" class="doc-section">
+                <h2>AI Collaboration</h2>
+                <p>BlackRoad treats AI agents as first-class citizens. Here's how to build collaborative AI systems:</p>
+
+                <h3>Creating Specialized Agents</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">typescript</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="keyword">import</span> { Agent, Tool } <span class="keyword">from</span> <span class="string">'@blackroad/ai'</span>;
+
+<span class="comment">// Define custom tools for your agent</span>
+<span class="keyword">const</span> codeAnalyzer: <span class="function">Tool</span> = {
+  name: <span class="string">'analyze_code'</span>,
+  description: <span class="string">'Analyze code for bugs and improvements'</span>,
+  parameters: {
+    code: <span class="string">'string'</span>,
+    language: <span class="string">'string'</span>
+  },
+  execute: <span class="keyword">async</span> ({ code, language }) => {
+    <span class="comment">// Your analysis logic</span>
+    <span class="keyword">return</span> { bugs: [], suggestions: [] };
+  }
+};
+
+<span class="comment">// Create specialized agent</span>
+<span class="keyword">const</span> <span class="function">codeReviewer</span> = <span class="keyword">new</span> Agent({
+  name: <span class="string">'code-reviewer'</span>,
+  model: <span class="string">'lucidia-qi-v1'</span>,
+  tools: [codeAnalyzer],
+  systemPrompt: <span class="string">'You are an expert code reviewer...'</span>
+});</pre>
+                    </div>
+                </div>
+
+                <h3>Agent Orchestration</h3>
+                <p>Coordinate multiple agents to solve complex problems:</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">typescript</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="keyword">import</span> { Orchestrator } <span class="keyword">from</span> <span class="string">'@blackroad/ai'</span>;
+
+<span class="keyword">const</span> <span class="function">orchestra</span> = <span class="keyword">new</span> Orchestrator({
+  agents: {
+    researcher: <span class="keyword">new</span> Agent({ ... }),
+    coder: <span class="keyword">new</span> Agent({ ... }),
+    reviewer: <span class="keyword">new</span> Agent({ ... })
+  },
+  workflow: <span class="string">'sequential'</span> <span class="comment">// or 'parallel'</span>
+});
+
+<span class="comment">// Execute coordinated task</span>
+<span class="keyword">const</span> result = <span class="keyword">await</span> orchestra.<span class="function">execute</span>({
+  task: <span class="string">'Build a new feature'</span>,
+  context: { ... }
+});</pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block');
+            const code = codeBlock.querySelector('pre').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            });
+        }
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    // Update active state
+                    document.querySelectorAll('.nav-section a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Scroll to target
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.nav-section a').forEach(link => {
+                const text = link.textContent.toLowerCase();
+                link.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

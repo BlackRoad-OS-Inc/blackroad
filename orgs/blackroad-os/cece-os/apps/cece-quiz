@@ -1,0 +1,19 @@
+#!/bin/bash
+# CECE-QUIZ v1.0 - Quiz Game
+SCORE=0
+ask() {
+    echo "Q: $1"
+    echo "  1) $2  2) $3  3) $4"
+    read -p "Answer (1-3): " A
+    [ "$A" = "$5" ] && echo "✅ Correct!" && ((SCORE++)) || echo "❌ Wrong! Answer was $5"
+}
+tech() {
+    ask "What does CPU stand for?" "Central Processing Unit" "Computer Power Unit" "Core Process Unit" "1"
+    ask "Who created Linux?" "Bill Gates" "Linus Torvalds" "Steve Jobs" "2"
+    ask "What port does HTTP use?" "22" "443" "80" "3"
+    echo "Score: $SCORE/3"
+}
+case "$1" in
+    tech) tech ;;
+    *) echo "CECE-QUIZ: tech" ;;
+esac

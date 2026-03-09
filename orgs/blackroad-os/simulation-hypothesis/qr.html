@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scan → Enter Simulation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    color: #eee;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.8rem;
+    padding: 2rem;
+  }
+  h1 {
+    font-size: 1.5rem;
+    letter-spacing: 0.3em;
+    color: #ce93d8;
+  }
+  #qr-wrap {
+    background: #fff;
+    padding: 18px;
+    border-radius: 10px;
+    box-shadow: 0 0 40px #9c27b044;
+  }
+  #qr canvas { display: block; }
+  .url {
+    font-size: 0.75rem;
+    color: #666;
+    text-align: center;
+    max-width: 320px;
+    word-break: break-all;
+  }
+  .steps {
+    font-size: 0.78rem;
+    color: #888;
+    text-align: center;
+    line-height: 2;
+    max-width: 340px;
+  }
+  .steps b { color: #ce93d8; }
+  a.direct {
+    color: #9c27b0;
+    font-size: 0.8rem;
+    text-decoration: none;
+    border: 1px solid #9c27b0;
+    padding: 0.5rem 1.4rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>⬡ ENTER THE SIMULATION</h1>
+
+<div id="qr-wrap">
+  <div id="qr"></div>
+</div>
+
+<p class="url">blackroad-os.github.io/simulation-hypothesis/vr.html</p>
+
+<div class="steps">
+  <b>1.</b> Scan with your Meta Quest browser<br>
+  <b>2.</b> Tap <b>ENTER → VR / META</b><br>
+  <b>3.</b> Menu → <b>Install App / Add to Home</b><br>
+  <b>4.</b> Pin it to your dock ∞
+</div>
+
+<a class="direct" href="vr.html">Open directly →</a>
+
+<script>
+// Inline QR encoder — no CDN dependency, pure JS
+// Uses qrcode-generator (MIT) embedded below
+// ─────────────────────────────────────────────
+(function(){
+// Minimal QR via Google Charts API (no external JS lib needed)
+const url = 'https://blackroad-os.github.io/simulation-hypothesis/vr.html';
+const encoded = encodeURIComponent(url);
+const img = document.createElement('img');
+img.src = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encoded}&bgcolor=ffffff&color=000000&margin=0`;
+img.width = 256;
+img.height = 256;
+img.alt = 'QR code';
+img.style.display = 'block';
+document.getElementById('qr').appendChild(img);
+})();
+</script>
+
+</body>
+</html>

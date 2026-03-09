@@ -1,0 +1,14 @@
+#!/bin/bash
+# CECE-STOPWATCH v1.0 - Stopwatch
+start() {
+    START=$(date +%s)
+    echo "⏱️ Stopwatch started. Press Ctrl+C to stop."
+    trap "echo ''; STOP=\$(date +%s); echo \"Elapsed: \$((STOP - START)) seconds\"" INT
+    while true; do
+        NOW=$(date +%s)
+        ELAPSED=$((NOW - START))
+        echo -ne "\r⏱️  $ELAPSED seconds  "
+        sleep 1
+    done
+}
+case "$1" in *) start ;; esac

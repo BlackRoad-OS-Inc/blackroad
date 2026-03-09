@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Blog - BlackRoad OS</title>
+    <meta name="description" content="Latest news, updates, and technical insights">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .emoji {
+            font-size: 5rem;
+            margin-bottom: 2rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: rgba(119, 0, 255, 0.2);
+            border: 1px solid var(--accent-purple);
+            border-radius: 8px;
+            color: var(--accent-purple);
+            font-weight: 600;
+            margin-bottom: 2rem;
+        }
+
+        .notify-form {
+            display: flex;
+            gap: 1rem;
+            max-width: 400px;
+            margin: 0 auto 2rem;
+        }
+
+        .email-input {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .notify-btn {
+            padding: 1rem 2rem;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .notify-btn:hover {
+            background: #8800ff;
+            transform: scale(1.05);
+        }
+
+        .links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .link {
+            color: var(--accent-blue);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .link:hover {
+            color: var(--accent-purple);
+        }
+
+        .progress-bar {
+            max-width: 400px;
+            height: 4px;
+            background: var(--bg-secondary);
+            border-radius: 2px;
+            margin: 3rem auto 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink));
+            width: 45%;
+            animation: progress 2s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0%, 100% { width: 45%; }
+            50% { width: 75%; }
+        }
+
+        .eta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">📝</div>
+        <h1>BlackRoad Blog</h1>
+        <p>Latest news, updates, and technical insights</p>
+
+        <div class="status">🚧 Coming Soon</div>
+
+        <form class="notify-form" onsubmit="notify(event)">
+            <input type="email" class="email-input" placeholder="Get notified when we launch" required>
+            <button type="submit" class="notify-btn">Notify Me</button>
+        </form>
+
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+        <p class="eta">Currently in development • Launching soon</p>
+
+        <div class="links">
+            <a href="https://blackroad.io" class="link">← Back to BlackRoad</a>
+            <a href="https://docs.blackroad.io" class="link">Documentation</a>
+            <a href="https://status.blackroad.io" class="link">Status</a>
+        </div>
+    </div>
+
+    <script>
+        function notify(event) {
+            event.preventDefault();
+            const email = event.target.querySelector('input').value;
+            alert('✅ Thanks! We\'ll notify ' + email + ' when BlackRoad Blog launches!');
+            event.target.reset();
+        }
+    </script>
+</body>
+</html>

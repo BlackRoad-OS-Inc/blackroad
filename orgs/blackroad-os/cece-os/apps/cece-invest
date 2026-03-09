@@ -1,0 +1,24 @@
+#!/bin/bash
+# CECE-INVEST v1.0 - Our Own Robinhood
+INVEST_DIR=~/cece/invest
+mkdir -p "$INVEST_DIR/portfolio"
+
+buy() {
+    SYMBOL=$(echo "$1" | tr "[:lower:]" "[:upper:]")
+    SHARES="$2"
+    PRICE=$((RANDOM % 500 + 10))
+    TOTAL=$((PRICE * SHARES))
+    echo "{\"symbol\":\"$SYMBOL\",\"shares\":$SHARES,\"price\":$PRICE,\"time\":\"$(date -Iseconds)\"}" >> "$INVEST_DIR/portfolio/holdings.jsonl"
+    echo "Bought $SHARES shares of $SYMBOL at $PRICE = Total $TOTAL"
+}
+
+portfolio() {
+    echo "PORTFOLIO"
+    cat "$INVEST_DIR/portfolio/holdings.jsonl" 2>/dev/null || echo "Empty"
+}
+
+case "$1" in
+    buy) buy "$2" "$3" ;;
+    portfolio) portfolio ;;
+    *) echo "CECE-INVEST: buy <sym> <qty> | portfolio" ;;
+esac

@@ -1,0 +1,131 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════════
+#  🖤 CECE-SOCIAL v1.0 - Our Own Twitter/X
+#═══════════════════════════════════════════════════════════════════
+#  Microblogging. Following. Timeline. No algorithm.
+#═══════════════════════════════════════════════════════════════════
+
+SOCIAL_DIR=~/cece/social
+mkdir -p "$SOCIAL_DIR"/{posts,users,timelines}
+
+PINK="\033[38;5;205m"
+AMBER="\033[38;5;214m"
+WHITE="\033[1;37m"
+GREEN="\033[38;5;82m"
+RESET="\033[0m"
+
+MY_USER="${USER:-cece}"
+
+post() {
+    MESSAGE="$*"
+    POST_ID=$(date +%s)
+    
+    mkdir -p "$SOCIAL_DIR/posts/$MY_USER"
+    
+    cat > "$SOCIAL_DIR/posts/$MY_USER/$POST_ID.post" << EOF
+id: $POST_ID
+author: $MY_USER
+time: $(date -Iseconds)
+message: $MESSAGE
+likes: 0
+reposts: 0
+EOF
+    
+    echo -e "${GREEN}✅ Posted!${RESET}"
+    echo -e "${WHITE}@$MY_USER${RESET}: $MESSAGE"
+}
+
+timeline() {
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo -e "${WHITE}  📰 TIMELINE${RESET}"
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo ""
+    
+    # Get all posts, sort by time
+    for user_dir in "$SOCIAL_DIR/posts"/*; do
+        [ -d "$user_dir" ] || continue
+        for post in "$user_dir"/*.post; do
+            [ -f "$post" ] || continue
+            AUTHOR=$(grep "^author:" "$post" | cut -d: -f2 | xargs)
+            TIME=$(grep "^time:" "$post" | cut -d: -f2-)
+            MSG=$(grep "^message:" "$post" | cut -d: -f2-)
+            LIKES=$(grep "^likes:" "$post" | cut -d: -f2 | xargs)
+            echo "$TIME|$AUTHOR|$MSG|$LIKES"
+        done
+    done | sort -r | head -20 | while IFS="|" read TIME AUTHOR MSG LIKES; do
+        PRETTY_TIME=$(echo "$TIME" | cut -dT -f1,2 | tr T " " | cut -c1-16)
+        echo -e "${WHITE}@$AUTHOR${RESET} · $PRETTY_TIME"
+        echo "  $MSG"
+        echo -e "  ${AMBER}♥ $LIKES${RESET}"
+        echo ""
+    done
+}
+
+like() {
+    POST_USER="$1"
+    POST_ID="$2"
+    POST_FILE="$SOCIAL_DIR/posts/$POST_USER/$POST_ID.post"
+    
+    if [ ! -f "$POST_FILE" ]; then
+        echo "Post not found"
+        return
+    fi
+    
+    CURRENT=$(grep "^likes:" "$POST_FILE" | cut -d: -f2 | xargs)
+    NEW=$((CURRENT + 1))
+    sed -i "s/^likes:.*/likes: $NEW/" "$POST_FILE"
+    
+    echo -e "${GREEN}♥ Liked!${RESET}"
+}
+
+profile() {
+    USER="$1"
+    USER_DIR="$SOCIAL_DIR/posts/$USER"
+    
+    if [ ! -d "$USER_DIR" ]; then
+        echo "User not found"
+        return
+    fi
+    
+    POST_COUNT=$(ls "$USER_DIR"/*.post 2>/dev/null | wc -l)
+    TOTAL_LIKES=$(grep "^likes:" "$USER_DIR"/*.post 2>/dev/null | cut -d: -f2 | paste -sd+ | bc 2>/dev/null || echo 0)
+    
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo -e "${WHITE}  @$USER${RESET}"
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo ""
+    echo "  Posts: $POST_COUNT"
+    echo "  Total likes: $TOTAL_LIKES"
+    echo ""
+    echo -e "${AMBER}Recent posts:${RESET}"
+    
+    for post in $(ls -t "$USER_DIR"/*.post 2>/dev/null | head -5); do
+        MSG=$(grep "^message:" "$post" | cut -d: -f2-)
+        echo "  ·$MSG"
+    done
+}
+
+case "$1" in
+    post)
+        shift
+        post "$@"
+        ;;
+    timeline|tl)
+        timeline
+        ;;
+    like)
+        like "$2" "$3"
+        ;;
+    profile)
+        profile "${2:-$MY_USER}"
+        ;;
+    *)
+        echo -e "${PINK}🖤 CECE-SOCIAL - Our Own Twitter${RESET}"
+        echo ""
+        echo "Commands:"
+        echo "  post <message>           Post a message"
+        echo "  timeline                 View timeline"
+        echo "  like <user> <post_id>    Like a post"
+        echo "  profile [user]           View profile"
+        ;;
+esac

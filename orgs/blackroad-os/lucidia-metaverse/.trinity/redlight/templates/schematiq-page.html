@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schematiq — Design Systems for the Future</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Primary */
+            --black: #000000;
+            --white: #FFFFFF;
+            
+            /* Supporting Colors - Warm */
+            --amber: #F5A623;
+            --orange: #F26522;
+            --hot-pink: #FF1D6C;
+            --magenta: #E91E63;
+            
+            /* Supporting Colors - Cool */
+            --electric-blue: #2979FF;
+            --sky-blue: #448AFF;
+            --violet: #9C27B0;
+            --deep-purple: #5E35B1;
+            
+            /* Gradients */
+            --gradient-sunset: linear-gradient(135deg, var(--amber) 0%, var(--hot-pink) 50%, var(--violet) 100%);
+            --gradient-ocean: linear-gradient(135deg, var(--violet) 0%, var(--electric-blue) 50%, var(--amber) 100%);
+            --gradient-aurora: linear-gradient(180deg, var(--orange) 0%, var(--hot-pink) 33%, var(--violet) 66%, var(--electric-blue) 100%);
+            --gradient-radial: radial-gradient(circle at center, var(--amber) 0%, var(--hot-pink) 40%, var(--violet) 70%, var(--electric-blue) 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--black);
+            color: var(--white);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 24px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-mark {
+            width: 48px;
+            height: 48px;
+            position: relative;
+        }
+
+        .logo-mark svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 13px;
+            letter-spacing: 0.05em;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            opacity: 1;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 120px 48px;
+            position: relative;
+            overflow: hidden;
+            background: var(--black);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: var(--gradient-radial);
+            opacity: 0.15;
+            filter: blur(100px);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.15; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.25; }
+        }
+
+        .hero-logo {
+            width: 200px;
+            height: 200px;
+            margin-bottom: 60px;
+            animation: float 6s ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .hero h1 {
+            font-size: clamp(48px, 10vw, 120px);
+            line-height: 1;
+            margin-bottom: 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 span {
+            background: var(--gradient-sunset);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 18px;
+            max-width: 600px;
+            opacity: 0.7;
+            margin-bottom: 48px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn {
+            padding: 16px 40px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-decoration: none;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--hot-pink);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--magenta);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(255, 29, 108, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--white);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--white);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Section Styling */
+        section {
+            padding: 120px 48px;
+            position: relative;
+        }
+
+        .section-header {
+            max-width: 800px;
+            margin-bottom: 80px;
+        }
+
+        .section-label {
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--hot-pink);
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .section-title {
+            font-size: clamp(32px, 5vw, 56px);
+            line-height: 1.1;
+            margin-bottom: 24px;
+        }
+
+        .section-desc {
+            font-size: 16px;
+            opacity: 0.7;
+            max-width: 600px;
+        }
+
+        /* Color Palette Section */
+        .palette-section {
+            background: var(--black);
+        }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 80px;
+        }
+
+        .color-card {
+            aspect-ratio: 1;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .color-card:hover {
+            transform: scale(1.02);
+        }
+
+        .color-card.amber { background: var(--amber); }
+        .color-card.orange { background: var(--orange); }
+        .color-card.hot-pink { background: var(--hot-pink); }
+        .color-card.magenta { background: var(--magenta); }
+        .color-card.electric-blue { background: var(--electric-blue); }
+        .color-card.violet { background: var(--violet); }
+        .color-card.deep-purple { background: var(--deep-purple); }
+        .color-card.white { background: var(--white); color: var(--black); }
+
+        .color-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .color-hex {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Gradient Showcase */
+        .gradient-showcase {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .gradient-card {
+            aspect-ratio: 1;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gradient-card.sunset { background: var(--gradient-sunset); }
+        .gradient-card.ocean { background: var(--gradient-ocean); }
+        .gradient-card.aurora { background: var(--gradient-aurora); }
+        .gradient-card.radial { background: var(--gradient-radial); }
+
+        /* Features Section */
+        .features-section {
+            background: var(--black);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 48px;
+        }
+
+        .feature-card {
+            padding: 48px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            transition: all 0.4s ease;
+        }
+
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-8px);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+            font-size: 28px;
+        }
+
+        .feature-icon.pink { background: linear-gradient(135deg, var(--hot-pink), var(--magenta)); }
+        .feature-icon.blue { background: linear-gradient(135deg, var(--electric-blue), var(--violet)); }
+        .feature-icon.orange { background: linear-gradient(135deg, var(--amber), var(--orange)); }
+        .feature-icon.purple { background: linear-gradient(135deg, var(--violet), var(--deep-purple)); }
+        .feature-icon.gradient { background: var(--gradient-sunset); }
+        .feature-icon.cool { background: var(--gradient-ocean); }
+
+        .feature-card h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            opacity: 0.6;
+            line-height: 1.8;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            background: var(--black);
+            padding: 160px 48px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 48px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 72px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 16px;
+            background: var(--gradient-sunset);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        /* Process Section */
+        .process-section {
+            background: var(--black);
+        }
+
+        .process-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .process-step {
+            padding: 64px 48px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .process-step:last-child {
+            border-right: none;
+        }
+
+        .step-number {
+            font-size: 80px;
+            font-weight: 700;
+            background: var(--gradient-sunset);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 32px;
+        }
+
+        .process-step h3 {
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .process-step p {
+            font-size: 14px;
+            opacity: 0.6;
+            line-height: 1.8;
+        }
+
+        /* Testimonials */
+        .testimonials-section {
+            background: var(--black);
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 48px;
+        }
+
+        .testimonial-card {
+            padding: 64px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 32px;
+            position: relative;
+        }
+
+        .testimonial-card::before {
+            content: '"';
+            position: absolute;
+            top: 32px;
+            left: 48px;
+            font-size: 120px;
+            line-height: 1;
+            background: var(--gradient-sunset);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 0.3;
+        }
+
+        .testimonial-text {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .author-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--gradient-sunset);
+        }
+
+        .author-info h4 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .author-info p {
+            font-size: 13px;
+            opacity: 0.6;
+        }
+
+        /* Logo Mark Showcase */
+        .logo-showcase {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 48px;
+        }
+
+        .logo-variant {
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 24px;
+            padding: 48px;
+        }
+
+        .logo-variant.on-white {
+            background: var(--white);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-variant.on-black {
+            background: var(--black);
+        }
+
+        .logo-variant.on-gradient {
+            background: var(--gradient-sunset);
+        }
+
+        .logo-variant svg {
+            width: 120px;
+            height: 120px;
+        }
+
+        /* Typography Section */
+        .typography-section {
+            background: var(--black);
+        }
+
+        .type-showcase {
+            display: grid;
+            gap: 64px;
+        }
+
+        .type-sample {
+            padding-bottom: 64px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .type-label {
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--hot-pink);
+            margin-bottom: 24px;
+        }
+
+        .type-display {
+            font-size: 96px;
+            font-weight: 500;
+            line-height: 1;
+            letter-spacing: -0.03em;
+        }
+
+        .type-body {
+            font-size: 18px;
+            line-height: 1.8;
+            max-width: 800px;
+            opacity: 0.7;
+        }
+
+        .type-mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 32px;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+
+        /* Gallery Section */
+        .gallery-section {
+            background: var(--black);
+            padding: 0;
+        }
+
+        .gallery-row {
+            display: flex;
+            gap: 24px;
+            padding: 12px 0;
+            animation: scroll-left 30s linear infinite;
+        }
+
+        .gallery-row.reverse {
+            animation: scroll-right 30s linear infinite;
+        }
+
+        @keyframes scroll-left {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        @keyframes scroll-right {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0); }
+        }
+
+        .gallery-item {
+            flex-shrink: 0;
+            width: 400px;
+            height: 300px;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .gallery-item.pink { background: var(--hot-pink); }
+        .gallery-item.blue { background: var(--electric-blue); }
+        .gallery-item.orange { background: var(--orange); }
+        .gallery-item.violet { background: var(--violet); }
+        .gallery-item.amber { background: var(--amber); }
+        .gallery-item.gradient { background: var(--gradient-sunset); }
+        .gallery-item.gradient-2 { background: var(--gradient-ocean); }
+        .gallery-item.gradient-3 { background: var(--gradient-aurora); }
+
+        /* Pricing Section */
+        .pricing-section {
+            background: var(--black);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            padding: 48px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 32px;
+            transition: all 0.4s ease;
+        }
+
+        .pricing-card.featured {
+            background: var(--gradient-sunset);
+            border: none;
+            transform: scale(1.05);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-8px);
+        }
+
+        .pricing-tier {
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            opacity: 0.7;
+        }
+
+        .pricing-amount {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .pricing-period {
+            font-size: 14px;
+            opacity: 0.6;
+            margin-bottom: 32px;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 48px;
+        }
+
+        .pricing-features li {
+            font-size: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pricing-features li::before {
+            content: '→';
+            color: var(--hot-pink);
+        }
+
+        .pricing-card.featured .pricing-features li::before {
+            color: var(--white);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: var(--black);
+            padding: 200px 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1000px;
+            height: 1000px;
+            background: var(--gradient-radial);
+            opacity: 0.1;
+            filter: blur(100px);
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-section h2 {
+            font-size: clamp(40px, 8vw, 80px);
+            line-height: 1.1;
+            margin-bottom: 32px;
+        }
+
+        .cta-section h2 span {
+            background: var(--gradient-sunset);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .cta-section p {
+            font-size: 18px;
+            opacity: 0.7;
+            max-width: 600px;
+            margin: 0 auto 48px;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--black);
+            padding: 80px 48px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 64px;
+            margin-bottom: 80px;
+        }
+
+        .footer-brand {
+            max-width: 300px;
+        }
+
+        .footer-brand .logo {
+            margin-bottom: 24px;
+        }
+
+        .footer-brand p {
+            font-size: 14px;
+            opacity: 0.6;
+            line-height: 1.8;
+        }
+
+        .footer-column h4 {
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            opacity: 0.5;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .footer-bottom p {
+            font-size: 13px;
+            opacity: 0.5;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .social-links a {
+            color: var(--white);
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            font-size: 14px;
+        }
+
+        .social-links a:hover {
+            opacity: 1;
+        }
+
+        /* Icon Grid Section */
+        .icons-section {
+            background: var(--black);
+        }
+
+        .icons-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 24px;
+        }
+
+        .icon-card {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .icon-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--hot-pink);
+            transform: scale(1.1);
+        }
+
+        /* Bento Grid */
+        .bento-section {
+            background: var(--black);
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 250px);
+            gap: 24px;
+        }
+
+        .bento-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 32px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .bento-item:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .bento-item.large {
+            grid-column: span 2;
+        }
+
+        .bento-item.tall {
+            grid-row: span 2;
+        }
+
+        .bento-item.gradient-bg {
+            background: var(--gradient-sunset);
+            border: none;
+        }
+
+        .bento-item.blue-bg {
+            background: var(--electric-blue);
+            border: none;
+        }
+
+        .bento-item.pink-bg {
+            background: var(--hot-pink);
+            border: none;
+        }
+
+        .bento-item h3 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .bento-item p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* Marquee Section */
+        .marquee-section {
+            background: var(--black);
+            padding: 40px 0;
+            overflow: hidden;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .marquee-content {
+            display: flex;
+            animation: marquee 20s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .marquee-item {
+            flex-shrink: 0;
+            font-size: 48px;
+            font-weight: 700;
+            padding: 0 48px;
+            white-space: nowrap;
+            background: var(--gradient-sunset);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .marquee-item span {
+            opacity: 0.3;
+            margin: 0 24px;
+            -webkit-text-fill-color: var(--hot-pink);
+        }
+
+        /* Team Section */
+        .team-section {
+            background: var(--black);
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+        }
+
+        .team-card {
+            text-align: center;
+        }
+
+        .team-avatar {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            margin: 0 auto 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .team-avatar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--gradient-sunset);
+            opacity: 0.8;
+        }
+
+        .team-card h4 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .team-card p {
+            font-size: 13px;
+            opacity: 0.6;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            background: var(--black);
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+        }
+
+        .faq-item {
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+        }
+
+        .faq-item h4 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: var(--hot-pink);
+        }
+
+        .faq-item p {
+            font-size: 14px;
+            opacity: 0.7;
+            line-height: 1.8;
+        }
+
+        /* Newsletter Section */
+        .newsletter-section {
+            background: var(--black);
+            padding: 120px 48px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .newsletter-content {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .newsletter-content h2 {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+
+        .newsletter-content p {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 32px;
+        }
+
+        .newsletter-form {
+            display: flex;
+            gap: 16px;
+        }
+
+        .newsletter-form input {
+            flex: 1;
+            padding: 16px 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: var(--white);
+        }
+
+        .newsletter-form input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .newsletter-form button {
+            padding: 16px 32px;
+            background: var(--hot-pink);
+            color: var(--white);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .newsletter-form button:hover {
+            background: var(--magenta);
+        }
+
+        /* Timeline Section */
+        .timeline-section {
+            background: var(--black);
+        }
+
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: var(--gradient-aurora);
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 48px;
+            margin-bottom: 64px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: var(--hot-pink);
+            border-radius: 50%;
+            border: 4px solid var(--black);
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding: 32px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content {
+            text-align: right;
+        }
+
+        .timeline-item:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .timeline-year {
+            font-size: 14px;
+            color: var(--hot-pink);
+            margin-bottom: 8px;
+        }
+
+        .timeline-content h4 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .timeline-content p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .features-grid,
+            .pricing-grid,
+            .process-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .bento-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                padding: 16px 24px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            section {
+                padding: 80px 24px;
+            }
+
+            .features-grid,
+            .pricing-grid,
+            .process-grid,
+            .testimonials-grid,
+            .logo-grid,
+            .team-grid,
+            .faq-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .gradient-showcase {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .bento-item.large,
+            .bento-item.tall {
+                grid-column: span 1;
+                grid-row: span 1;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 48px;
+            }
+
+            .icons-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .pricing-card.featured {
+                transform: none;
+            }
+
+            .newsletter-form {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">
+            <div class="logo-mark">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="46" stroke="#FF1D6C" stroke-width="8"/>
+                    <path d="M50 8C26.8 8 8 26.8 8 50H92C92 26.8 73.2 8 50 8Z" fill="#F5A623"/>
+                    <path d="M8 50C8 73.2 26.8 92 50 92C73.2 92 92 73.2 92 50H8Z" fill="#2979FF"/>
+                    <circle cx="50" cy="50" r="16" fill="#000"/>
+                </svg>
+            </div>
+            <span class="logo-text">Schematiq</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#palette">Colors</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-logo">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="46" stroke="#FF1D6C" stroke-width="8"/>
+                <path d="M50 8C26.8 8 8 26.8 8 50H92C92 26.8 73.2 8 50 8Z" fill="#F5A623"/>
+                <path d="M8 50C8 73.2 26.8 92 50 92C73.2 92 92 73.2 92 50H8Z" fill="#2979FF"/>
+                <circle cx="50" cy="50" r="16" fill="#000"/>
+            </svg>
+        </div>
+        <h1>Design Systems<br>for the <span>Future</span></h1>
+        <p>We use classic black and white for our primary colors, playfully contrasted by a lineup of cool and warm tones that make up our supporting colors.</p>
+        <div class="cta-group">
+            <a href="#" class="btn btn-primary">Get Started</a>
+            <a href="#" class="btn btn-outline">Learn More</a>
+        </div>
+    </section>
+
+    <!-- Color Palette Section -->
+    <section class="palette-section" id="palette">
+        <div class="section-header">
+            <span class="section-label">Brand Kit</span>
+            <h2 class="section-title">The Color Palette</h2>
+            <p class="section-desc">We enjoy using visually pleasing gradients that feature our supporting colors to add fun and life to our content.</p>
+        </div>
+
+        <div class="palette-grid">
+            <div class="color-card amber">
+                <span class="color-name">Amber</span>
+                <span class="color-hex">#F5A623</span>
+            </div>
+            <div class="color-card orange">
+                <span class="color-name">Orange</span>
+                <span class="color-hex">#F26522</span>
+            </div>
+            <div class="color-card hot-pink">
+                <span class="color-name">Hot Pink</span>
+                <span class="color-hex">#FF1D6C</span>
+            </div>
+            <div class="color-card magenta">
+                <span class="color-name">Magenta</span>
+                <span class="color-hex">#E91E63</span>
+            </div>
+            <div class="color-card violet">
+                <span class="color-name">Violet</span>
+                <span class="color-hex">#9C27B0</span>
+            </div>
+            <div class="color-card deep-purple">
+                <span class="color-name">Deep Purple</span>
+                <span class="color-hex">#5E35B1</span>
+            </div>
+            <div class="color-card electric-blue">
+                <span class="color-name">Electric Blue</span>
+                <span class="color-hex">#2979FF</span>
+            </div>
+            <div class="color-card white">
+                <span class="color-name">White</span>
+                <span class="color-hex">#FFFFFF</span>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <span class="section-label">Gradients</span>
+            <h2 class="section-title">Dynamic Color Flows</h2>
+        </div>
+
+        <div class="gradient-showcase">
+            <div class="gradient-card sunset"></div>
+            <div class="gradient-card ocean"></div>
+            <div class="gradient-card aurora"></div>
+            <div class="gradient-card radial"></div>
+        </div>
+    </section>
+
+    <!-- Marquee Section -->
+    <section class="marquee-section">
+        <div class="marquee-content">
+            <div class="marquee-item">Design <span>•</span> Systems <span>•</span> Color <span>•</span> Typography <span>•</span> Motion <span>•</span></div>
+            <div class="marquee-item">Design <span>•</span> Systems <span>•</span> Color <span>•</span> Typography <span>•</span> Motion <span>•</span></div>
+            <div class="marquee-item">Design <span>•</span> Systems <span>•</span> Color <span>•</span> Typography <span>•</span> Motion <span>•</span></div>
+            <div class="marquee-item">Design <span>•</span> Systems <span>•</span> Color <span>•</span> Typography <span>•</span> Motion <span>•</span></div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <span class="section-label">Features</span>
+            <h2 class="section-title">Everything you need to build beautiful products</h2>
+            <p class="section-desc">A comprehensive design system that scales with your team and your ambitions.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon pink">◈</div>
+                <h3>Design Tokens</h3>
+                <p>Centralized design decisions that propagate across your entire system. Colors, spacing, typography, and more — all in sync.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon blue">◎</div>
+                <h3>Component Library</h3>
+                <p>Pre-built, accessible components that follow best practices and maintain consistency across all your products.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon orange">◐</div>
+                <h3>Documentation</h3>
+                <p>Comprehensive guidelines and usage examples that help your team ship faster without sacrificing quality.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon purple">◇</div>
+                <h3>Version Control</h3>
+                <p>Track changes, manage releases, and maintain backwards compatibility with built-in versioning tools.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon gradient">◆</div>
+                <h3>Theming Engine</h3>
+                <p>Support for multiple brands, dark mode, and custom themes without duplicating your entire system.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon cool">◌</div>
+                <h3>Analytics</h3>
+                <p>Understand how your design system is being used with built-in adoption metrics and usage tracking.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Components</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">10k+</div>
+                <div class="stat-label">Designers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">2030</div>
+                <div class="stat-label">Est. Year</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process Section -->
+    <section class="process-section">
+        <div class="section-header">
+            <span class="section-label">Process</span>
+            <h2 class="section-title">How we work</h2>
+        </div>
+
+        <div class="process-grid">
+            <div class="process-step">
+                <div class="step-number">01</div>
+                <h3>Discovery</h3>
+                <p>We start by understanding your brand, your users, and your goals. Deep research forms the foundation.</p>
+            </div>
+            <div class="process-step">
+                <div class="step-number">02</div>
+                <h3>Strategy</h3>
+                <p>We define the principles, structure, and governance model that will guide your design system.</p>
+            </div>
+            <div class="process-step">
+                <div class="step-number">03</div>
+                <h3>Design</h3>
+                <p>We create the tokens, patterns, and components that form the building blocks of your system.</p>
+            </div>
+            <div class="process-step">
+                <div class="step-number">04</div>
+                <h3>Build</h3>
+                <p>We implement the system in code, ensuring accessibility, performance, and maintainability.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bento Grid Section -->
+    <section class="bento-section">
+        <div class="section-header">
+            <span class="section-label">Capabilities</span>
+            <h2 class="section-title">What we bring to the table</h2>
+        </div>
+
+        <div class="bento-grid">
+            <div class="bento-item large gradient-bg">
+                <h3>Brand Identity</h3>
+                <p>Complete visual language systems</p>
+            </div>
+            <div class="bento-item">
+                <h3>UI/UX Design</h3>
+                <p>User-centered interfaces</p>
+            </div>
+            <div class="bento-item blue-bg">
+                <h3>Motion</h3>
+                <p>Animated experiences</p>
+            </div>
+            <div class="bento-item tall">
+                <h3>Development</h3>
+                <p>Production-ready code</p>
+            </div>
+            <div class="bento-item pink-bg">
+                <h3>Strategy</h3>
+                <p>Data-driven decisions</p>
+            </div>
+            <div class="bento-item large">
+                <h3>Design Systems</h3>
+                <p>Scalable component libraries and documentation</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Logo Showcase Section -->
+    <section class="logo-showcase">
+        <div class="section-header">
+            <span class="section-label">Brand Mark</span>
+            <h2 class="section-title">The Schematiq Eye</h2>
+            <p class="section-desc">Our logo represents vision, duality, and the intersection of warm and cool perspectives.</p>
+        </div>
+
+        <div class="logo-grid">
+            <div class="logo-variant on-white">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="46" stroke="#FF1D6C" stroke-width="8"/>
+                    <path d="M50 8C26.8 8 8 26.8 8 50H92C92 26.8 73.2 8 50 8Z" fill="#F5A623"/>
+                    <path d="M8 50C8 73.2 26.8 92 50 92C73.2 92 92 73.2 92 50H8Z" fill="#2979FF"/>
+                    <circle cx="50" cy="50" r="16" fill="#000"/>
+                </svg>
+            </div>
+            <div class="logo-variant on-black">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="46" stroke="#FF1D6C" stroke-width="8"/>
+                    <path d="M50 8C26.8 8 8 26.8 8 50H92C92 26.8 73.2 8 50 8Z" fill="#F5A623"/>
+                    <path d="M8 50C8 73.2 26.8 92 50 92C73.2 92 92 73.2 92 50H8Z" fill="#2979FF"/>
+                    <circle cx="50" cy="50" r="16" fill="#000"/>
+                </svg>
+            </div>
+            <div class="logo-variant on-gradient">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="46" stroke="#FFFFFF" stroke-width="8"/>
+                    <path d="M50 8C26.8 8 8 26.8 8 50H92C92 26.8 73.2 8 50 8Z" fill="#FFFFFF"/>
+                    <path d="M8 50C8 73.2 26.8 92 50 92C73.2 92 92 73.2 92 50H8Z" fill="rgba(255,255,255,0.7)"/>
+                    <circle cx="50" cy="50" r="16" fill="#000"/>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Typography Section -->
+    <section class="typography-section">
+        <div class="section-header">
+            <span class="section-label">Typography</span>
+            <h2 class="section-title">JetBrains Mono</h2>
+            <p class="section-desc">A typeface made for developers, perfect for technical precision and modern aesthetics.</p>
+        </div>
+
+        <div class="type-showcase">
+            <div class="type-sample">
+                <div class="type-label">Display</div>
+                <div class="type-display">Aa Bb Cc Dd</div>
+            </div>
+            <div class="type-sample">
+                <div class="type-label">Body</div>
+                <p class="type-body">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump! The five boxing wizards jump quickly. Sphinx of black quartz, judge my vow.</p>
+            </div>
+            <div class="type-sample">
+                <div class="type-label">Monospace</div>
+                <pre class="type-mono">const schematiq = {
+  primary: ['#000000', '#FFFFFF'],
+  supporting: ['#F5A623', '#F26522', '#FF1D6C', '#E91E63'],
+  cool: ['#2979FF', '#448AFF', '#9C27B0', '#5E35B1']
+};</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section class="gallery-section">
+        <div class="gallery-row">
+            <div class="gallery-item pink"></div>
+            <div class="gallery-item gradient"></div>
+            <div class="gallery-item blue"></div>
+            <div class="gallery-item orange"></div>
+            <div class="gallery-item violet"></div>
+            <div class="gallery-item gradient-2"></div>
+            <div class="gallery-item amber"></div>
+            <div class="gallery-item gradient-3"></div>
+            <div class="gallery-item pink"></div>
+            <div class="gallery-item gradient"></div>
+            <div class="gallery-item blue"></div>
+            <div class="gallery-item orange"></div>
+        </div>
+        <div class="gallery-row reverse">
+            <div class="gallery-item gradient-2"></div>
+            <div class="gallery-item violet"></div>
+            <div class="gallery-item amber"></div>
+            <div class="gallery-item pink"></div>
+            <div class="gallery-item gradient-3"></div>
+            <div class="gallery-item blue"></div>
+            <div class="gallery-item orange"></div>
+            <div class="gallery-item gradient"></div>
+            <div class="gallery-item gradient-2"></div>
+            <div class="gallery-item violet"></div>
+            <div class="gallery-item amber"></div>
+            <div class="gallery-item pink"></div>
+        </div>
+    </section>
+
+    <!-- Icons Section -->
+    <section class="icons-section">
+        <div class="section-header">
+            <span class="section-label">Icon Set</span>
+            <h2 class="section-title">Consistent iconography</h2>
+        </div>
+
+        <div class="icons-grid">
+            <div class="icon-card">◈</div>
+            <div class="icon-card">◎</div>
+            <div class="icon-card">◐</div>
+            <div class="icon-card">◇</div>
+            <div class="icon-card">◆</div>
+            <div class="icon-card">◌</div>
+            <div class="icon-card">◍</div>
+            <div class="icon-card">◑</div>
+            <div class="icon-card">▲</div>
+            <div class="icon-card">▼</div>
+            <div class="icon-card">◀</div>
+            <div class="icon-card">▶</div>
+            <div class="icon-card">●</div>
+            <div class="icon-card">○</div>
+            <div class="icon-card">■</div>
+            <div class="icon-card">□</div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-section">
+        <div class="section-header">
+            <span class="section-label">Testimonials</span>
+            <h2 class="section-title">What people are saying</h2>
+        </div>
+
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <p class="testimonial-text">Schematiq transformed how we approach design. The system is intuitive, beautiful, and scales effortlessly with our growing team.</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar"></div>
+                    <div class="author-info">
+                        <h4>Sarah Chen</h4>
+                        <p>Design Director, TechCorp</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p class="testimonial-text">The color palette alone is worth the investment. It's playful yet professional — exactly what modern brands need.</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar"></div>
+                    <div class="author-info">
+                        <h4>Marcus Webb</h4>
+                        <p>Creative Lead, StartupXYZ</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p class="testimonial-text">Finally, a design system that doesn't feel cookie-cutter. The attention to detail in every component is remarkable.</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar"></div>
+                    <div class="author-info">
+                        <h4>Elena Rodriguez</h4>
+                        <p>Product Designer, FinanceApp</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p class="testimonial-text">We shipped 3x faster after adopting Schematiq. Our developers and designers finally speak the same language.</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar"></div>
+                    <div class="author-info">
+                        <h4>James Park</h4>
+                        <p>Engineering Manager, ScaleUp</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing-section" id="pricing">
+        <div class="section-header">
+            <span class="section-label">Pricing</span>
+            <h2 class="section-title">Simple, transparent pricing</h2>
+            <p class="section-desc">Choose the plan that fits your team's needs. All plans include core features.</p>
+        </div>
+
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-tier">Starter</div>
+                <div class="pricing-amount">$0</div>
+                <div class="pricing-period">Free forever</div>
+                <ul class="pricing-features">
+                    <li>Up to 3 projects</li>
+                    <li>Core components</li>
+                    <li>Community support</li>
+                    <li>Basic documentation</li>
+                </ul>
+                <a href="#" class="btn btn-outline" style="width: 100%; text-align: center;">Get Started</a>
+            </div>
+            <div class="pricing-card featured">
+                <div class="pricing-tier">Professional</div>
+                <div class="pricing-amount">$99</div>
+                <div class="pricing-period">per month</div>
+                <ul class="pricing-features">
+                    <li>Unlimited projects</li>
+                    <li>All components</li>
+                    <li>Priority support</li>
+                    <li>Custom theming</li>
+                    <li>Analytics dashboard</li>
+                </ul>
+                <a href="#" class="btn btn-primary" style="width: 100%; text-align: center; background: var(--black);">Get Started</a>
+            </div>
+            <div class="pricing-card">
+                <div class="pricing-tier">Enterprise</div>
+                <div class="pricing-amount">Custom</div>
+                <div class="pricing-period">Let's talk</div>
+                <ul class="pricing-features">
+                    <li>Everything in Pro</li>
+                    <li>Dedicated support</li>
+                    <li>Custom development</li>
+                    <li>SLA guarantee</li>
+                    <li>On-premise option</li>
+                </ul>
+                <a href="#" class="btn btn-outline" style="width: 100%; text-align: center;">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section class="team-section" id="about">
+        <div class="section-header">
+            <span class="section-label">Team</span>
+            <h2 class="section-title">The people behind Schematiq</h2>
+        </div>
+
+        <div class="team-grid">
+            <div class="team-card">
+                <div class="team-avatar"></div>
+                <h4>Alex Morgan</h4>
+                <p>Founder & CEO</p>
+            </div>
+            <div class="team-card">
+                <div class="team-avatar"></div>
+                <h4>Jordan Lee</h4>
+                <p>Head of Design</p>
+            </div>
+            <div class="team-card">
+                <div class="team-avatar"></div>
+                <h4>Sam Rivera</h4>
+                <p>Lead Engineer</p>
+            </div>
+            <div class="team-card">
+                <div class="team-avatar"></div>
+                <h4>Chris Taylor</h4>
+                <p>Product Manager</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Timeline Section -->
+    <section class="timeline-section">
+        <div class="section-header" style="text-align: center;">
+            <span class="section-label">Our Journey</span>
+            <h2 class="section-title">The Schematiq Story</h2>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <div class="timeline-year">2020</div>
+                    <h4>The Beginning</h4>
+                    <p>Started as a side project to solve our own design consistency problems.</p>
+                </div>
+                <div style="flex: 1;"></div>
+            </div>
+            <div class="timeline-item">
+                <div style="flex: 1;"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2022</div>
+                    <h4>First Users</h4>
+                    <p>Launched publicly and gained our first 1,000 users within three months.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <div class="timeline-year">2024</div>
+                    <h4>Series A</h4>
+                    <p>Raised $10M to scale our team and expand the platform capabilities.</p>
+                </div>
+                <div style="flex: 1;"></div>
+            </div>
+            <div class="timeline-item">
+                <div style="flex: 1;"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2030</div>
+                    <h4>The Future</h4>
+                    <p>Our vision: design systems that design themselves. AI-powered, human-centered.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="section-header">
+            <span class="section-label">FAQ</span>
+            <h2 class="section-title">Frequently asked questions</h2>
+        </div>
+
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h4>What frameworks do you support?</h4>
+                <p>We support React, Vue, Angular, Svelte, and vanilla HTML/CSS/JS. Our design tokens work with any framework or no framework at all.</p>
+            </div>
+            <div class="faq-item">
+                <h4>Can I customize the color palette?</h4>
+                <p>Absolutely. While our default palette is carefully crafted, you can override any color token to match your brand's unique identity.</p>
+            </div>
+            <div class="faq-item">
+                <h4>Is there a Figma library?</h4>
+                <p>Yes! We maintain a comprehensive Figma library that stays in sync with our code components. Updates are pushed automatically.</p>
+            </div>
+            <div class="faq-item">
+                <h4>How do I get support?</h4>
+                <p>Free users have access to our community Discord. Paid plans include priority email support and dedicated Slack channels for Enterprise.</p>
+            </div>
+            <div class="faq-item">
+                <h4>What about accessibility?</h4>
+                <p>All our components meet WCAG 2.1 AA standards out of the box. We're committed to making the web accessible to everyone.</p>
+            </div>
+            <div class="faq-item">
+                <h4>Can I use this for client projects?</h4>
+                <p>Yes, all our licenses allow commercial use. You can use Schematiq for client work, internal tools, or public products.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <div class="newsletter-content">
+            <h2>Stay in the loop</h2>
+            <p>Get the latest updates on new components, features, and design system best practices.</p>
+            <form class="newsletter-form">
+                <input type="email" placeholder="Enter your email">
+                <button type="submit">Subscribe</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section" id="contact">
+        <div class="cta-content">
+            <h2>Ready to build<br>something <span>beautiful?</span></h2>
+            <p>Join thousands of designers and developers who are building better products with Schematiq.</p>
+            <div class="cta-group" style="justify-content: center;">
+                <a href="#" class="btn btn-primary">Start Free Trial</a>
+                <a href="#" class="btn btn-outline">Schedule Demo</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo">
+                    <div class="logo-mark">
+                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="46" stroke="#FF1D6C" stroke-width="8"/>
+                            <path d="M50 8C26.8 8 8 26.8 8 50H92C92 26.8 73.2 8 50 8Z" fill="#F5A623"/>
+                            <path d="M8 50C8 73.2 26.8 92 50 92C73.2 92 92 73.2 92 50H8Z" fill="#2979FF"/>
+                            <circle cx="50" cy="50" r="16" fill="#000"/>
+                        </svg>
+                    </div>
+                    <span class="logo-text">Schematiq</span>
+                </div>
+                <p>Design systems for the future. Classic black and white, playfully contrasted by cool and warm tones.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Product</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Features</a></li>
+                    <li><a href="#">Pricing</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">Changelog</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Company</h4>
+                <ul class="footer-links">
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Community</a></li>
+                    <li><a href="#">Support</a></li>
+                    <li><a href="#">Terms</a></li>
+                    <li><a href="#">Privacy</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2030 Schematiq. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#">Twitter</a>
+                <a href="#">GitHub</a>
+                <a href="#">Discord</a>
+                <a href="#">LinkedIn</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

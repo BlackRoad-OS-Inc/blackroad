@@ -1,0 +1,72 @@
+name: BlackRoad AI Agents
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+  pull_request_review_comment:
+    types: [created]
+  push:
+    branches: [main, master]
+
+jobs:
+  agent-response:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Check for @blackroad-agents mention
+        id: check_mention
+        run: |
+          if echo "${{ github.event.comment.body || github.event.issue.body || github.event.pull_request.body }}" | grep -q "@blackroad-agents"; then
+            echo "mentioned=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Call AI Agent System
+        if: steps.check_mention.outputs.mentioned == 'true'
+        run: |
+          # Extract request
+          REQUEST=$(echo "${{ github.event.comment.body || github.event.issue.body }}" | grep -A 10 "@blackroad-agents")
+          
+          # Call agent API (multiple providers for redundancy)
+          RESPONSE=$(curl -s -X POST https://blackroad-agents.amundsonalexa.workers.dev/agent \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"request\": \"$REQUEST\",
+              \"repo\": \"${{ github.repository }}\",
+              \"context\": {
+                \"event\": \"${{ github.event_name }}\",
+                \"user\": \"${{ github.actor }}\"
+              }
+            }" || echo "Using fallback AI...")
+          
+          # Post response
+          gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} \
+            --body "$RESPONSE" || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Auto-fix code issues
+        if: github.event_name == 'pull_request'
+        run: |
+          # Run multiple AI code fixers in parallel
+          echo "Running AI code analysis..."
+          
+          # Get changed files
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
+          
+          for file in $FILES; do
+            echo "Analyzing $file with AI..."
+            
+            # Send to agent for auto-fix
+            curl -X POST https://blackroad-agents.amundsonalexa.workers.dev/autofix \
+              -H "Content-Type: application/json" \
+              -d "{\"file\":\"$file\",\"repo\":\"${{ github.repository }}\"}" &
+          done
+          
+          wait
+          echo "✅ All files analyzed"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

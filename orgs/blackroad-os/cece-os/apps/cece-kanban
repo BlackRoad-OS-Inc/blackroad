@@ -1,0 +1,42 @@
+#!/bin/bash
+# CECE-KANBAN v1.0 - Kanban Board
+KANBAN_DIR=~/cece/kanban
+mkdir -p "$KANBAN_DIR"/{todo,doing,done}
+
+add() {
+    TASK="$1"
+    ID=$(date +%s | tail -c 6)
+    echo "$TASK" > "$KANBAN_DIR/todo/$ID"
+    echo "Added to TODO: [$ID] $TASK"
+}
+
+move() {
+    ID="$1"
+    TO="$2"
+    for col in todo doing done; do
+        if [ -f "$KANBAN_DIR/$col/$ID" ]; then
+            mv "$KANBAN_DIR/$col/$ID" "$KANBAN_DIR/$TO/$ID"
+            echo "Moved $ID to $TO"
+            return
+        fi
+    done
+    echo "Task not found: $ID"
+}
+
+board() {
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║  TODO              │  DOING             │  DONE              ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    
+    for f in "$KANBAN_DIR/todo"/*; do
+        [ -f "$f" ] && echo "║  [$(basename "$f")] $(cat "$f" | head -c 15)"
+    done
+    echo "╚══════════════════════════════════════════════════════════════╝"
+}
+
+case "$1" in
+    add) add "$2" ;;
+    move) move "$2" "$3" ;;
+    board) board ;;
+    *) echo "CECE-KANBAN: add <task> | move <id> <todo|doing|done> | board" ;;
+esac

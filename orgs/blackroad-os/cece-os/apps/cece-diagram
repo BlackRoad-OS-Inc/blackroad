@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-DIAGRAM v1.0 - ASCII Diagrams
+box() {
+    TEXT="$1"
+    LEN=${#TEXT}
+    echo "┌$(printf '─%.0s' $(seq 1 $((LEN+2))))┐"
+    echo "│ $TEXT │"
+    echo "└$(printf '─%.0s' $(seq 1 $((LEN+2))))┘"
+}
+arrow() { echo "$1 ──────────► $2"; }
+flow() { echo "$1 → $2 → $3"; }
+case "$1" in
+    box) box "$2" ;;
+    arrow) arrow "$2" "$3" ;;
+    flow) shift; flow "$@" ;;
+    *) echo "CECE-DIAGRAM: box <text> | arrow <from> <to> | flow <a> <b> <c>" ;;
+esac

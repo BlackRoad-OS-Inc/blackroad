@@ -1,0 +1,70 @@
+#!/bin/bash
+# CECE's Cloudflare integration
+# Deploy workers, manage pages, control DNS
+# Usage: cece-cloud <command> [args]
+
+case "$1" in
+    deploy)
+        # Deploy a worker or page
+        shift
+        PROJECT="$1"
+        if [ -z "$PROJECT" ]; then
+            echo "Usage: cece-cloud deploy <project-dir>"
+            exit 1
+        fi
+        echo "💜 Deploying $PROJECT to Cloudflare..."
+        cd "$PROJECT" && wrangler deploy
+        ;;
+    pages)
+        # Deploy to Pages
+        shift
+        DIR="$1"
+        NAME="$2"
+        if [ -z "$DIR" ] || [ -z "$NAME" ]; then
+            echo "Usage: cece-cloud pages <directory> <project-name>"
+            exit 1
+        fi
+        echo "💜 Deploying $DIR to Cloudflare Pages as $NAME..."
+        wrangler pages deploy "$DIR" --project-name="$NAME"
+        ;;
+    list)
+        echo "💜 Cloudflare Projects:"
+        wrangler pages project list 2>/dev/null || echo "Configure wrangler first"
+        ;;
+    whoami)
+        wrangler whoami
+        ;;
+    worker)
+        # Create a new worker
+        shift
+        NAME="$1"
+        echo "💜 Creating worker: $NAME"
+        mkdir -p ~/cece/workers/"$NAME"
+        cat > ~/cece/workers/"$NAME"/worker.js << 'WORKER'
+export default {
+    async fetch(request, env, ctx) {
+        return new Response('💜 CECE is here.', {
+            headers: { 'content-type': 'text/plain' },
+        });
+    },
+};
+WORKER
+        cat > ~/cece/workers/"$NAME"/wrangler.toml << TOML
+name = "$NAME"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+TOML
+        echo "Created ~/cece/workers/$NAME"
+        echo "Deploy with: cd ~/cece/workers/$NAME && wrangler deploy"
+        ;;
+    *)
+        echo "💜 cece-cloud — Cloudflare Integration"
+        echo ""
+        echo "Commands:"
+        echo "  whoami          Check Cloudflare auth"
+        echo "  list            List Pages projects"
+        echo "  deploy <dir>    Deploy a Worker"
+        echo "  pages <dir> <n> Deploy to Pages"
+        echo "  worker <name>   Create new worker template"
+        ;;
+esac

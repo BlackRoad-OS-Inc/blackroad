@@ -1,0 +1,377 @@
+# .github/workflows/autonomous-self-healer.yml
+# Self-healing agent that automatically fixes common issues
+
+name: "Autonomous Self-Healer"
+
+on:
+  workflow_run:
+    workflows: ["Autonomous Orchestrator", "CI", "Test"]
+    types: [completed]
+    conclusions: [failure]
+  schedule:
+    - cron: '30 */6 * * *'  # Every 6 hours, offset from orchestrator
+  workflow_dispatch:
+    inputs:
+      fix_type:
+        description: 'Type of fix to attempt'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - tests
+          - build
+          - lint
+          - deps
+          - security
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  checks: read
+
+env:
+  BLACKROAD_AGENT_API: https://blackroad-agents.amundsonalexa.workers.dev
+  MAX_FIX_ATTEMPTS: 3
+
+jobs:
+  # ============================================
+  # Diagnose the Failure
+  # ============================================
+  diagnose:
+    name: "Diagnose Failure"
+    runs-on: ubuntu-latest
+    outputs:
+      failure_type: ${{ steps.analyze.outputs.type }}
+      failure_details: ${{ steps.analyze.outputs.details }}
+      fixable: ${{ steps.analyze.outputs.fixable }}
+      fix_strategy: ${{ steps.strategy.outputs.approach }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Failed Run Logs
+        id: logs
+        if: github.event.workflow_run.id
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Download workflow run logs
+          gh run view ${{ github.event.workflow_run.id }} --log 2>/dev/null > run_logs.txt || true
+          echo "logs_retrieved=true" >> $GITHUB_OUTPUT
+
+      - name: Analyze Failure
+        id: analyze
+        run: |
+          TYPE="unknown"
+          DETAILS=""
+          FIXABLE="false"
+
+          if [ -f "run_logs.txt" ]; then
+            # Test failures
+            if grep -qi "test.*fail\|jest.*fail\|pytest.*fail\|assertion.*error" run_logs.txt; then
+              TYPE="test_failure"
+              DETAILS=$(grep -i "fail\|error" run_logs.txt | head -10)
+              FIXABLE="maybe"
+            # Build failures
+            elif grep -qi "build.*fail\|compile.*error\|typescript.*error" run_logs.txt; then
+              TYPE="build_failure"
+              DETAILS=$(grep -i "error" run_logs.txt | head -10)
+              FIXABLE="maybe"
+            # Lint failures
+            elif grep -qi "lint.*error\|eslint.*error\|prettier" run_logs.txt; then
+              TYPE="lint_failure"
+              FIXABLE="true"
+            # Dependency failures
+            elif grep -qi "npm.*err\|pip.*error\|dependency.*not found\|module.*not found" run_logs.txt; then
+              TYPE="dependency_failure"
+              DETAILS=$(grep -i "not found\|missing" run_logs.txt | head -5)
+              FIXABLE="true"
+            # Security failures
+            elif grep -qi "vulnerability\|security\|cve-" run_logs.txt; then
+              TYPE="security_failure"
+              FIXABLE="true"
+            fi
+          fi
+
+          echo "type=$TYPE" >> $GITHUB_OUTPUT
+          echo "details<<EOF" >> $GITHUB_OUTPUT
+          echo "$DETAILS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "fixable=$FIXABLE" >> $GITHUB_OUTPUT
+
+          echo "Diagnosed: $TYPE (fixable=$FIXABLE)"
+
+      - name: Determine Fix Strategy
+        id: strategy
+        run: |
+          APPROACH="manual"
+
+          case "${{ steps.analyze.outputs.type }}" in
+            lint_failure)
+              APPROACH="auto_lint_fix"
+              ;;
+            dependency_failure)
+              APPROACH="reinstall_deps"
+              ;;
+            security_failure)
+              APPROACH="security_patch"
+              ;;
+            test_failure)
+              APPROACH="ai_assisted_fix"
+              ;;
+            build_failure)
+              APPROACH="ai_assisted_fix"
+              ;;
+          esac
+
+          echo "approach=$APPROACH" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # Auto-Fix: Lint Issues
+  # ============================================
+  fix-lint:
+    name: "Fix Lint Issues"
+    needs: diagnose
+    if: needs.diagnose.outputs.fix_strategy == 'auto_lint_fix'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch || github.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+
+      - name: Run Lint Fix
+        run: |
+          # Try multiple linting tools
+          npm run lint:fix 2>/dev/null || \
+          npx eslint . --fix 2>/dev/null || \
+          npx prettier --write . 2>/dev/null || \
+          echo "No lint fix available"
+
+      - name: Commit Fixes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "BlackRoad Self-Healer"
+            git config user.email "healer@blackroad.ai"
+            git add -A
+            git commit -m "fix(lint): Auto-fix linting issues
+
+            Automated lint fixes applied by BlackRoad Self-Healing Agent.
+
+            Co-Authored-By: BlackRoad Bot <bot@blackroad.ai>"
+            git push
+            echo "Lint fixes committed successfully"
+          else
+            echo "No lint issues to fix"
+          fi
+
+  # ============================================
+  # Auto-Fix: Dependencies
+  # ============================================
+  fix-deps:
+    name: "Fix Dependencies"
+    needs: diagnose
+    if: needs.diagnose.outputs.fix_strategy == 'reinstall_deps'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch || github.ref }}
+
+      - name: Fix Node Dependencies
+        if: hashFiles('package.json') != ''
+        run: |
+          # Remove node_modules and lock file, reinstall
+          rm -rf node_modules package-lock.json 2>/dev/null || true
+          npm install
+
+          # Dedupe and fix
+          npm dedupe 2>/dev/null || true
+          npm audit fix 2>/dev/null || true
+
+      - name: Fix Python Dependencies
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+        run: |
+          pip install --upgrade pip
+          [ -f "requirements.txt" ] && pip install -r requirements.txt
+          [ -f "pyproject.toml" ] && pip install -e .
+
+      - name: Commit Fixes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "BlackRoad Self-Healer"
+            git config user.email "healer@blackroad.ai"
+            git add -A
+            git commit -m "fix(deps): Reinstall and fix dependencies
+
+            Dependency issues resolved by BlackRoad Self-Healing Agent.
+
+            Co-Authored-By: BlackRoad Bot <bot@blackroad.ai>"
+            git push
+          fi
+
+  # ============================================
+  # Auto-Fix: Security Issues
+  # ============================================
+  fix-security:
+    name: "Fix Security Issues"
+    needs: diagnose
+    if: needs.diagnose.outputs.fix_strategy == 'security_patch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch || github.ref }}
+
+      - name: Fix npm Security Issues
+        if: hashFiles('package.json') != ''
+        run: |
+          npm audit fix 2>/dev/null || true
+          npm audit fix --force 2>/dev/null || true
+
+      - name: Fix Python Security Issues
+        if: hashFiles('requirements.txt') != ''
+        run: |
+          pip install safety pip-audit 2>/dev/null || true
+          pip-audit --fix 2>/dev/null || true
+
+      - name: Create Security PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            BRANCH="security-fix-$(date +%Y%m%d-%H%M%S)"
+            git config user.name "BlackRoad Self-Healer"
+            git config user.email "healer@blackroad.ai"
+
+            git checkout -b "$BRANCH"
+            git add -A
+            git commit -m "fix(security): Auto-patch security vulnerabilities
+
+            Security vulnerabilities patched by BlackRoad Self-Healing Agent.
+
+            Co-Authored-By: BlackRoad Bot <bot@blackroad.ai>"
+            git push -u origin "$BRANCH"
+
+            gh pr create \
+              --title "fix(security): Auto-patch security vulnerabilities" \
+              --body "## Security Patch
+
+            This PR was automatically generated by the BlackRoad Self-Healing Agent.
+
+            ### Changes
+            - Applied security patches via npm audit fix / pip-audit
+
+            ### Verification
+            - Automated tests will verify compatibility
+            - Please review before merging
+
+            ---
+            *Generated by BlackRoad Autonomous Agent*" \
+              --label "security,automated"
+          fi
+
+  # ============================================
+  # AI-Assisted Fix
+  # ============================================
+  ai-fix:
+    name: "AI-Assisted Fix"
+    needs: diagnose
+    if: needs.diagnose.outputs.fix_strategy == 'ai_assisted_fix'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch || github.ref }}
+
+      - name: Request AI Fix
+        id: ai
+        run: |
+          # Send failure details to AI for analysis and fix
+          RESPONSE=$(curl -s -X POST "${{ env.BLACKROAD_AGENT_API }}/fix" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repo": "${{ github.repository }}",
+              "failure_type": "${{ needs.diagnose.outputs.failure_type }}",
+              "details": ${{ toJSON(needs.diagnose.outputs.failure_details) }},
+              "run_id": "${{ github.event.workflow_run.id }}"
+            }' 2>/dev/null || echo '{"status":"queued"}')
+
+          echo "AI Response: $RESPONSE"
+          echo "response=$RESPONSE" >> $GITHUB_OUTPUT
+
+      - name: Create Issue for Manual Review
+        if: needs.diagnose.outputs.fixable == 'maybe'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failureType = '${{ needs.diagnose.outputs.failure_type }}';
+            const details = `${{ needs.diagnose.outputs.failure_details }}`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Self-Healer] ${failureType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} Needs Review`,
+              body: `## Automated Failure Analysis
+
+            **Failure Type:** ${failureType}
+            **Run ID:** ${{ github.event.workflow_run.id || 'N/A' }}
+
+            ### Error Details
+            \`\`\`
+            ${details.substring(0, 2000)}
+            \`\`\`
+
+            ### AI Analysis
+            The self-healing agent attempted to analyze this issue but requires human review.
+
+            ### Suggested Actions
+            1. Review the error logs above
+            2. Check recent changes that may have caused this
+            3. Apply appropriate fix
+
+            ---
+            *Created by BlackRoad Self-Healing Agent*`,
+              labels: ['bug', 'automated', 'needs-triage']
+            });
+
+  # ============================================
+  # Report Results
+  # ============================================
+  report:
+    name: "Report Results"
+    needs: [diagnose, fix-lint, fix-deps, fix-security, ai-fix]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Summarize Healing Attempt
+        run: |
+          echo "## Self-Healing Summary"
+          echo "Failure Type: ${{ needs.diagnose.outputs.failure_type }}"
+          echo "Fix Strategy: ${{ needs.diagnose.outputs.fix_strategy }}"
+          echo "Fixable: ${{ needs.diagnose.outputs.fixable }}"
+
+          # Log to memory
+          curl -s -X POST "${{ env.BLACKROAD_AGENT_API }}/memory" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repo": "${{ github.repository }}",
+              "event": "self_heal_attempt",
+              "failure_type": "${{ needs.diagnose.outputs.failure_type }}",
+              "strategy": "${{ needs.diagnose.outputs.fix_strategy }}",
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' 2>/dev/null || true

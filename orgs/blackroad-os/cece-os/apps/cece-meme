@@ -1,0 +1,30 @@
+#!/bin/bash
+# CECE-MEME v1.0 - Meme Generator
+MEME_DIR=~/cece/memes
+mkdir -p "$MEME_DIR"
+
+generate() {
+    TOP="$1"
+    BOTTOM="$2"
+    MEME="$MEME_DIR/meme_$(date +%s).txt"
+    
+    echo "╔════════════════════════════════╗" > "$MEME"
+    echo "║  ${TOP^^}  ║" >> "$MEME"
+    echo "║                                ║" >> "$MEME"
+    echo "║         (╯°□°)╯︵ ┻━┻          ║" >> "$MEME"
+    echo "║                                ║" >> "$MEME"
+    echo "║  ${BOTTOM^^}  ║" >> "$MEME"
+    echo "╚════════════════════════════════╝" >> "$MEME"
+    cat "$MEME"
+}
+
+random_face() {
+    FACES=("(╯°□°)╯︵ ┻━┻" "ಠ_ಠ" "(ノಠ益ಠ)ノ彡┻━┻" "¯\_(ツ)_/¯" "(☞ﾟヮﾟ)☞" "( ͡° ͜ʖ ͡°)" "ʕ•ᴥ•ʔ" "(づ｡◕‿‿◕｡)づ")
+    echo "${FACES[$RANDOM % ${#FACES[@]}]}"
+}
+
+case "$1" in
+    create) generate "$2" "$3" ;;
+    face) random_face ;;
+    *) echo "CECE-MEME: create <top> <bottom> | face" ;;
+esac

@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-LED v1.0 - LED Controller
+LED_PIN="${LED_PIN:-17}"
+on() { echo "1" > /sys/class/gpio/gpio$LED_PIN/value 2>/dev/null && echo "💡 LED ON"; }
+off() { echo "0" > /sys/class/gpio/gpio$LED_PIN/value 2>/dev/null && echo "💡 LED OFF"; }
+blink() {
+    COUNT="${1:-5}"
+    for i in $(seq 1 $COUNT); do
+        on; sleep 0.5; off; sleep 0.5
+    done
+}
+case "$1" in
+    on) on ;;
+    off) off ;;
+    blink) blink "$2" ;;
+    *) echo "CECE-LED: on | off | blink [count]" ;;
+esac

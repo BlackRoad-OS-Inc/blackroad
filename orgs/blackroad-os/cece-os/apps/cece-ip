@@ -1,0 +1,18 @@
+#!/bin/bash
+# CECE-IP v1.0 - IP Tools
+my_ip() {
+    echo "Local IPs:"
+    hostname -I 2>/dev/null || ifconfig | grep "inet " | awk '{print $2}'
+    echo ""
+    echo "Public IP:"
+    curl -s ifconfig.me 2>/dev/null || curl -s icanhazip.com 2>/dev/null || echo "Unable to detect"
+}
+lookup() {
+    IP="$1"
+    curl -s "ipinfo.io/$IP" 2>/dev/null || echo "Lookup failed"
+}
+case "$1" in
+    my) my_ip ;;
+    lookup) lookup "$2" ;;
+    *) my_ip ;;
+esac

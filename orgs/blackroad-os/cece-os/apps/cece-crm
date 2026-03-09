@@ -1,0 +1,44 @@
+#!/bin/bash
+# CECE-CRM v1.0 - Customer Relationship Manager
+CRM_DIR=~/cece/crm
+mkdir -p "$CRM_DIR"
+
+add_contact() {
+    NAME="$1"
+    EMAIL="$2"
+    COMPANY="$3"
+    echo "{\"name\":\"$NAME\",\"email\":\"$EMAIL\",\"company\":\"$COMPANY\",\"created\":\"$(date -Iseconds)\",\"status\":\"lead\"}" >> "$CRM_DIR/contacts.jsonl"
+    echo "Added: $NAME ($EMAIL)"
+}
+
+list_contacts() {
+    echo "Contacts:"
+    echo "========="
+    cat "$CRM_DIR/contacts.jsonl" 2>/dev/null | while read line; do
+        NAME=$(echo "$line" | grep -o '"name":"[^"]*"' | cut -d\" -f4)
+        EMAIL=$(echo "$line" | grep -o '"email":"[^"]*"' | cut -d\" -f4)
+        COMPANY=$(echo "$line" | grep -o '"company":"[^"]*"' | cut -d\" -f4)
+        echo "  $NAME | $EMAIL | $COMPANY"
+    done
+}
+
+search() {
+    QUERY="$1"
+    echo "Results for: $QUERY"
+    grep -i "$QUERY" "$CRM_DIR/contacts.jsonl" 2>/dev/null || echo "(no matches)"
+}
+
+stats() {
+    TOTAL=$(wc -l < "$CRM_DIR/contacts.jsonl" 2>/dev/null || echo 0)
+    echo "CRM Stats"
+    echo "========="
+    echo "Total Contacts: $TOTAL"
+}
+
+case "$1" in
+    add) add_contact "$2" "$3" "$4" ;;
+    list) list_contacts ;;
+    search) search "$2" ;;
+    stats) stats ;;
+    *) echo "CECE-CRM: add <name> <email> <company> | list | search <query> | stats" ;;
+esac

@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-CSV v1.0 - CSV Tools
+view() { column -t -s, "$1" | head -20; }
+to_json() {
+    FILE="$1"
+    HEADERS=$(head -1 "$FILE")
+    tail -n +2 "$FILE" | while IFS=, read -r vals; do
+        echo "{\"row\": \"$vals\"}"
+    done
+}
+count() { wc -l < "$1"; }
+case "$1" in
+    view) view "$2" ;;
+    json) to_json "$2" ;;
+    count) count "$2" ;;
+    *) echo "CECE-CSV: view <file> | json <file> | count <file>" ;;
+esac

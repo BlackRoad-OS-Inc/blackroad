@@ -1,0 +1,102 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "roadworkflow"
+version = "0.1.0"
+description = "RoadWorkflow - Enterprise Workflow Orchestration Engine for BlackRoad OS"
+readme = "README.md"
+license = {text = "Proprietary - BlackRoad OS, Inc."}
+authors = [
+    {name = "BlackRoad OS", email = "engineering@blackroad.io"}
+]
+maintainers = [
+    {name = "BlackRoad OS", email = "engineering@blackroad.io"}
+]
+keywords = [
+    "workflow",
+    "orchestration",
+    "dag",
+    "scheduler",
+    "automation",
+    "pipeline",
+    "tasks",
+    "blackroad"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Distributed Computing",
+    "Typing :: Typed",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+redis = ["redis>=4.0.0"]
+celery = ["celery>=5.0.0"]
+kubernetes = ["kubernetes>=20.0.0"]
+dask = ["dask>=2023.1.0", "distributed>=2023.1.0"]
+aws = ["boto3>=1.26.0"]
+gcp = ["google-cloud-storage>=2.0.0"]
+azure = ["azure-storage-blob>=12.0.0"]
+all = [
+    "redis>=4.0.0",
+    "celery>=5.0.0",
+    "kubernetes>=20.0.0",
+    "dask>=2023.1.0",
+    "distributed>=2023.1.0",
+    "boto3>=1.26.0",
+    "google-cloud-storage>=2.0.0",
+    "azure-storage-blob>=12.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.20.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/BlackRoad-OS/roadworkflow"
+Documentation = "https://docs.blackroad.io/roadworkflow"
+Repository = "https://github.com/BlackRoad-OS/roadworkflow"
+Issues = "https://github.com/BlackRoad-OS/roadworkflow/issues"
+
+[project.scripts]
+roadworkflow = "roadworkflow_core.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["roadworkflow_core"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

@@ -1,0 +1,26 @@
+#!/bin/bash
+# CECE-TRIVIA v1.0 - Trivia Game
+QUESTIONS=(
+"What year was Linux created?|1991"
+"Who created Python?|Guido van Rossum"
+"What does CPU stand for?|Central Processing Unit"
+"What port does SSH use?|22"
+"What does HTML stand for?|HyperText Markup Language"
+"What year was the first iPhone released?|2007"
+"Who founded Microsoft?|Bill Gates"
+"What does API stand for?|Application Programming Interface"
+)
+
+play() {
+    Q="${QUESTIONS[$RANDOM % ${#QUESTIONS[@]}]}"
+    QUESTION="${Q%%|*}"
+    ANSWER="${Q##*|}"
+    echo "❓ $QUESTION"
+    read -p "Your answer: " USER_ANS
+    if [ "${USER_ANS,,}" = "${ANSWER,,}" ]; then
+        echo "✅ Correct!"
+    else
+        echo "❌ Wrong! Answer: $ANSWER"
+    fi
+}
+case "$1" in *) play ;; esac

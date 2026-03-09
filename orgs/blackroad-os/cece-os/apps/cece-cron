@@ -1,0 +1,25 @@
+#!/bin/bash
+# CECE-CRON v1.0 - Cron Helper
+explain() {
+    echo "Cron Format: MIN HOUR DOM MON DOW"
+    echo "  MIN  = 0-59"
+    echo "  HOUR = 0-23"
+    echo "  DOM  = 1-31 (day of month)"
+    echo "  MON  = 1-12"
+    echo "  DOW  = 0-6 (0=Sunday)"
+}
+examples() {
+    echo "Common Cron Patterns:"
+    echo "  */5 * * * *     Every 5 minutes"
+    echo "  0 * * * *       Every hour"
+    echo "  0 0 * * *       Daily at midnight"
+    echo "  0 0 * * 0       Weekly on Sunday"
+    echo "  0 0 1 * *       Monthly on 1st"
+}
+list() { crontab -l 2>/dev/null || echo "No crontab"; }
+case "$1" in
+    explain) explain ;;
+    examples) examples ;;
+    list) list ;;
+    *) echo "CECE-CRON: explain | examples | list" ;;
+esac

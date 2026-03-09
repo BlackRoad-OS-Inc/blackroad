@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-VPN v1.0 - VPN Helper
+status() { ip addr show tun0 2>/dev/null && echo "VPN: Connected" || echo "VPN: Disconnected"; }
+connect() { sudo openvpn --config "$1" & echo "Connecting..."; }
+disconnect() { sudo killall openvpn 2>/dev/null && echo "Disconnected"; }
+case "$1" in
+    status) status ;;
+    connect) connect "$2" ;;
+    disconnect) disconnect ;;
+    *) echo "CECE-VPN: status | connect <config> | disconnect" ;;
+esac

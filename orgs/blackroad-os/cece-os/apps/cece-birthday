@@ -1,0 +1,24 @@
+#!/bin/bash
+# CECE-BIRTHDAY v1.0 - Birthday Tracker
+BDAY_FILE=~/cece/birthdays.txt
+add() {
+    NAME="$1"
+    DATE="$2"
+    echo "$DATE|$NAME" >> "$BDAY_FILE"
+    echo "Added: $NAME on $DATE"
+}
+upcoming() {
+    TODAY=$(date +%m-%d)
+    echo "Upcoming Birthdays:"
+    sort "$BDAY_FILE" 2>/dev/null | while IFS='|' read DATE NAME; do
+        MMDD="${DATE:5:5}"
+        [ "$MMDD" \> "$TODAY" ] && echo "  $DATE: $NAME"
+    done | head -10
+}
+list() { sort "$BDAY_FILE" 2>/dev/null; }
+case "$1" in
+    add) add "$2" "$3" ;;
+    upcoming) upcoming ;;
+    list) list ;;
+    *) echo "CECE-BIRTHDAY: add <name> <YYYY-MM-DD> | upcoming | list" ;;
+esac

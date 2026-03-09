@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-BASE64 v1.0 - Base64 Encoder/Decoder
+encode() { echo -n "$1" | base64; }
+decode() { echo "$1" | base64 -d; echo ""; }
+file_encode() { base64 "$1"; }
+file_decode() { base64 -d "$1"; }
+case "$1" in
+    encode) encode "$2" ;;
+    decode) decode "$2" ;;
+    file-encode) file_encode "$2" ;;
+    file-decode) file_decode "$2" ;;
+    *) echo "CECE-BASE64: encode <str> | decode <str> | file-encode <path> | file-decode <path>" ;;
+esac

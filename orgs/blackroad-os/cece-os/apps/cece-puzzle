@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-PUZZLE v1.0 - Word Puzzles
+anagram() {
+    WORD="$1"
+    echo "$WORD" | fold -w1 | shuf | tr -d '\n'
+    echo ""
+}
+scramble() {
+    WORDS=("programming" "blackroad" "sovereign" "raspberry" "terminal")
+    WORD="${WORDS[$RANDOM % ${#WORDS[@]}]}"
+    echo "Unscramble: $(echo $WORD | fold -w1 | shuf | tr -d '\n')"
+}
+case "$1" in
+    anagram) anagram "$2" ;;
+    scramble) scramble ;;
+    *) echo "CECE-PUZZLE: anagram <word> | scramble" ;;
+esac

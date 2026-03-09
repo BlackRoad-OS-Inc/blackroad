@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-DIFF v1.0 - File Differ
+compare() { diff -u "$1" "$2"; }
+side() { diff -y "$1" "$2"; }
+brief() { diff -q "$1" "$2"; }
+case "$1" in
+    compare) compare "$2" "$3" ;;
+    side) side "$2" "$3" ;;
+    brief) brief "$2" "$3" ;;
+    *) echo "CECE-DIFF: compare <f1> <f2> | side <f1> <f2> | brief <f1> <f2>" ;;
+esac

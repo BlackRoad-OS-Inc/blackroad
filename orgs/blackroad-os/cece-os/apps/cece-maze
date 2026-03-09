@@ -1,0 +1,12 @@
+#!/bin/bash
+# CECE-MAZE v1.0 - Maze Generator
+generate() {
+    SIZE="${1:-10}"
+    for i in $(seq 1 $SIZE); do
+        for j in $(seq 1 $SIZE); do
+            [ $((RANDOM % 3)) -eq 0 ] && echo -n "█" || echo -n " "
+        done
+        echo ""
+    done
+}
+case "$1" in *) generate "$1" ;; esac

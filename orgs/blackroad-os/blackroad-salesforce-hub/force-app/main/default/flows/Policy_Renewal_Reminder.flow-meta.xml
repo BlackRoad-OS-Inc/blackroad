@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>59.0</apiVersion>
+    <description>Scheduled flow that identifies policies expiring within 30 days and creates reminder tasks for agents</description>
+    <interviewLabel>Policy Renewal Reminder {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Policy Renewal Reminder</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <runInMode>DefaultMode</runInMode>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Get_Expiring_Policies</targetReference>
+        </connector>
+        <schedule>
+            <frequency>Daily</frequency>
+            <startDate>2024-01-01</startDate>
+            <startTime>08:00:00.000Z</startTime>
+        </schedule>
+        <triggerType>Scheduled</triggerType>
+    </start>
+    <status>Draft</status>
+
+    <!-- Variable for Collection of Policies -->
+    <variables>
+        <name>varExpiringPolicies</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Policy__c</objectType>
+    </variables>
+
+    <!-- Variable for Single Policy in Loop -->
+    <variables>
+        <name>varCurrentPolicy</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Policy__c</objectType>
+    </variables>
+
+    <!-- Formula for 30 Days from Now -->
+    <formulas>
+        <name>ThirtyDaysFromNow</name>
+        <dataType>Date</dataType>
+        <expression>{!$Flow.CurrentDate} + 30</expression>
+    </formulas>
+
+    <!-- Get Expiring Policies -->
+    <recordLookups>
+        <name>Get_Expiring_Policies</name>
+        <label>Get Expiring Policies</label>
+        <locationX>176</locationX>
+        <locationY>134</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Loop_Through_Policies</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Expiration_Date__c</field>
+            <operator>LessThanOrEqualTo</operator>
+            <value>
+                <elementReference>ThirtyDaysFromNow</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Expiration_Date__c</field>
+            <operator>GreaterThanOrEqualTo</operator>
+            <value>
+                <elementReference>$Flow.CurrentDate</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Status__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Active</stringValue>
+            </value>
+        </filters>
+        <object>Policy__c</object>
+        <outputReference>varExpiringPolicies</outputReference>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>Name</queriedFields>
+        <queriedFields>Agent__c</queriedFields>
+        <queriedFields>Client__c</queriedFields>
+        <queriedFields>Expiration_Date__c</queriedFields>
+        <queriedFields>Premium__c</queriedFields>
+    </recordLookups>
+
+    <!-- Loop Through Policies -->
+    <loops>
+        <name>Loop_Through_Policies</name>
+        <label>Loop Through Policies</label>
+        <locationX>176</locationX>
+        <locationY>242</locationY>
+        <collectionReference>varExpiringPolicies</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Create_Renewal_Task</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>End_Flow</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+
+    <!-- Create Renewal Task -->
+    <recordCreates>
+        <name>Create_Renewal_Task</name>
+        <label>Create Renewal Task</label>
+        <locationX>264</locationX>
+        <locationY>350</locationY>
+        <connector>
+            <targetReference>Loop_Through_Policies</targetReference>
+        </connector>
+        <inputAssignments>
+            <field>Subject</field>
+            <value>
+                <stringValue>Policy Renewal Reminder: Review expiring policy</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status</field>
+            <value>
+                <stringValue>Not Started</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Priority</field>
+            <value>
+                <stringValue>High</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>OwnerId</field>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Task</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
+
+    <!-- End Flow -->
+    <assignments>
+        <name>End_Flow</name>
+        <label>End Flow</label>
+        <locationX>50</locationX>
+        <locationY>350</locationY>
+        <assignmentItems>
+            <assignToReference>varCurrentPolicy</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>varCurrentPolicy</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+</Flow>

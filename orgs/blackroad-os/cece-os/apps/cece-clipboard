@@ -1,0 +1,15 @@
+#!/bin/bash
+# CECE-CLIPBOARD v1.0 - Clipboard Manager
+CLIP_DIR=~/cece/clipboard
+mkdir -p "$CLIP_DIR"
+copy() { echo "$1" > "$CLIP_DIR/current.txt" && echo "Copied!"; }
+paste() { cat "$CLIP_DIR/current.txt" 2>/dev/null; }
+save() { cp "$CLIP_DIR/current.txt" "$CLIP_DIR/$1.txt" && echo "Saved: $1"; }
+list() { ls "$CLIP_DIR"/*.txt 2>/dev/null | xargs -I{} basename {} .txt; }
+case "$1" in
+    copy) copy "$2" ;;
+    paste) paste ;;
+    save) save "$2" ;;
+    list) list ;;
+    *) echo "CECE-CLIPBOARD: copy <text> | paste | save <name> | list" ;;
+esac

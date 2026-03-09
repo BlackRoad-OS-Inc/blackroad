@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Visual Cards - Pi AI Revolution</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0f0f0f;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 2rem;
+        }
+
+        .instructions {
+            background: #1a1a1a;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #F5A623;
+        }
+
+        .instructions h1 {
+            color: #F5A623;
+            margin-bottom: 1rem;
+        }
+
+        .instructions p {
+            color: #fff;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-container {
+            display: grid;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .twitter-card {
+            width: 1200px;
+            height: 675px;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid #FF1D6C;
+        }
+
+        .card-1 {
+            background: linear-gradient(135deg, #000 0%, #1a0510 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .card-1 h1 {
+            font-size: 6rem;
+            font-weight: 900;
+            text-align: center;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .card-1 .subtitle {
+            font-size: 3rem;
+            color: #fff;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .card-1 .price {
+            font-size: 8rem;
+            color: #4CAF50;
+            font-weight: 900;
+            margin: 2rem 0;
+        }
+
+        .card-2 {
+            background: #000;
+            display: flex;
+        }
+
+        .vs-left, .vs-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+        }
+
+        .vs-left {
+            background: rgba(118,185,0,0.1);
+            border-right: 3px solid #666;
+        }
+
+        .vs-right {
+            background: rgba(255,29,108,0.1);
+        }
+
+        .vs-logo {
+            font-size: 8rem;
+            margin-bottom: 2rem;
+        }
+
+        .vs-title {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+        }
+
+        .vs-left .vs-title { color: #76b900; }
+        .vs-right .vs-title { color: #FF1D6C; }
+
+        .vs-stat {
+            font-size: 2.5rem;
+            margin: 1rem 0;
+            color: #fff;
+        }
+
+        .vs-stat span {
+            color: #F5A623;
+            font-weight: 900;
+        }
+
+        .winner-badge {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: #FF1D6C;
+            color: #000;
+            padding: 1.5rem 3rem;
+            border-radius: 50px;
+            font-size: 2.5rem;
+            font-weight: 900;
+        }
+
+        .card-3 {
+            background: linear-gradient(135deg, #000 0%, #0a0a2e 100%);
+            padding: 4rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.05);
+            padding: 2rem;
+            border-radius: 12px;
+            border-left: 6px solid #FF1D6C;
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            color: #F5A623;
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+
+        .stat-label {
+            font-size: 2rem;
+            color: #fff;
+        }
+
+        .card-3 h2 {
+            font-size: 4rem;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-4 {
+            background: #000;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-4 .quote {
+            font-size: 4rem;
+            color: #fff;
+            text-align: center;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 3rem;
+        }
+
+        .card-4 .quote .highlight {
+            color: #F5A623;
+            font-weight: 900;
+        }
+
+        .card-4 .cta {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+        }
+
+        .footer-brand {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 2rem;
+            color: #2979FF;
+        }
+
+        .download-btn {
+            background: #F5A623;
+            color: #000;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 900;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h1>📸 Twitter Visual Cards - Ready to Share!</h1>
+        <p><strong>How to use:</strong> Right-click each card below → "Save Image As..." → Upload to Twitter</p>
+        <p><strong>Optimal size:</strong> 1200x675px (Twitter's recommended aspect ratio)</p>
+        <p><strong>When to post:</strong> Use these throughout your Twitter thread for maximum engagement</p>
+        <p><strong>Pro tip:</strong> Take screenshots of each card for instant sharing!</p>
+    </div>
+
+    <div class="card-container">
+        <!-- Card 1: Price Shock -->
+        <div class="twitter-card card-1">
+            <h1>Same AI Power</h1>
+            <div class="subtitle">NVIDIA: $3,000</div>
+            <div class="price">$75</div>
+            <div class="subtitle">Raspberry Pi 5</div>
+            <div class="footer-brand">🥧🍎 BlackRoad • Same Energy • 1% Cost • 100% Sovereignty</div>
+        </div>
+
+        <!-- Card 2: Head to Head -->
+        <div class="twitter-card card-2">
+            <div class="winner-badge">🏆 WINNER</div>
+            <div class="vs-left">
+                <div class="vs-logo">🎮</div>
+                <div class="vs-title">NVIDIA DIGITS</div>
+                <div class="vs-stat"><span>$3,000</span> cost</div>
+                <div class="vs-stat"><span>May 2025</span> ship date</div>
+                <div class="vs-stat"><span>500W</span> power</div>
+                <div class="vs-stat"><span>0</span> nodes deployed</div>
+            </div>
+            <div class="vs-right">
+                <div class="vs-logo">🥧</div>
+                <div class="vs-title">Raspberry Pi 5</div>
+                <div class="vs-stat"><span>$75</span> cost</div>
+                <div class="vs-stat"><span>NOW</span> ship date</div>
+                <div class="vs-stat"><span>15W</span> power</div>
+                <div class="vs-stat"><span>2,847</span> nodes deployed</div>
+            </div>
+        </div>
+
+        <!-- Card 3: Global Impact -->
+        <div class="twitter-card card-3">
+            <h2>🌍 Global Pi AI Network</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-number">2,847</div>
+                    <div class="stat-label">Active Nodes</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">67</div>
+                    <div class="stat-label">Countries</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">$8.2M</div>
+                    <div class="stat-label">Total Saved</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">97%</div>
+                    <div class="stat-label">Cost Reduction</div>
+                </div>
+            </div>
+            <div class="footer-brand">🖤🛣️ BlackRoad Pi AI Revolution</div>
+        </div>
+
+        <!-- Card 4: The Message -->
+        <div class="twitter-card card-4">
+            <div class="quote">
+                <span class="highlight">Same energy.</span><br>
+                <span class="highlight">1% cost.</span><br>
+                <span class="highlight">100% sovereignty.</span>
+            </div>
+            <div class="cta">🥧 Get Started: blackroad-os.github.io/pi-ai-hub</div>
+            <div class="footer-brand">Pi + Apple = Revolution 🥧🍎</div>
+        </div>
+    </div>
+
+    <script>
+        // Add watermark to prevent reproduction
+        console.log('%c🥧 Pi AI Revolution - BlackRoad', 'font-size: 20px; color: #F5A623; font-weight: bold;');
+        console.log('%cSame Energy • 1% Cost • 100% Sovereignty', 'font-size: 14px; color: #FF1D6C;');
+    </script>
+</body>
+</html>

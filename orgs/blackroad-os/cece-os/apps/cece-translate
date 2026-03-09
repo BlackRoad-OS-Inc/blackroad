@@ -1,0 +1,42 @@
+#!/bin/bash
+# CECE-TRANSLATE v1.0 - Our Own Google Translate (via Ollama)
+TRANSLATE_DIR=~/cece/translate
+mkdir -p "$TRANSLATE_DIR/history"
+
+translate() {
+    TEXT="$1"
+    FROM="${2:-english}"
+    TO="${3:-spanish}"
+    
+    echo "🌐 Translating from $FROM to $TO..."
+    echo ""
+    
+    if command -v ollama &>/dev/null; then
+        RESULT=$(echo "Translate the following from $FROM to $TO. Only respond with the translation, nothing else: $TEXT" | ollama run llama3.2 2>/dev/null)
+        echo "📝 Original ($FROM):"
+        echo "   $TEXT"
+        echo ""
+        echo "🌍 Translation ($TO):"
+        echo "   $RESULT"
+        
+        # Log
+        echo "{\"from\":\"$FROM\",\"to\":\"$TO\",\"original\":\"$TEXT\",\"translation\":\"$RESULT\",\"time\":\"$(date -Iseconds)\"}" >> "$TRANSLATE_DIR/history/translations.jsonl"
+    else
+        echo "Ollama not available. Install for AI translation."
+    fi
+}
+
+history() {
+    echo "📚 Translation History"
+    tail -10 "$TRANSLATE_DIR/history/translations.jsonl" 2>/dev/null
+}
+
+case "$1" in
+    translate|t) translate "$2" "$3" "$4" ;;
+    history) history ;;
+    *) echo "🖤 CECE-TRANSLATE - Our Own Google Translate"
+       echo "  translate <text> [from] [to]   Translate text"
+       echo "  history                        View history"
+       echo ""
+       echo "Languages: english, spanish, french, german, etc." ;;
+esac

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - BlackRoad OS</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff00;
+            --error: #ff0000;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        /* Left Side - Info */
+        .info-side {
+            padding: 2rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2rem;
+        }
+
+        .info-side h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .info-side p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .features {
+            list-style: none;
+        }
+
+        .features li {
+            padding: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .features li:last-child {
+            border-bottom: none;
+        }
+
+        .check {
+            color: var(--success);
+            font-size: 1.5rem;
+        }
+
+        .testimonial {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .author-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .author-name {
+            font-weight: 600;
+        }
+
+        .author-role {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Right Side - Signup Form */
+        .signup-side {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 3rem;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        .step.active .step-number {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-color: var(--accent-purple);
+        }
+
+        .step.completed .step-number {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .step.active .step-label {
+            color: var(--accent-purple);
+        }
+
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: var(--border);
+            z-index: -1;
+        }
+
+        .step:last-child::after {
+            display: none;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-header {
+            margin-bottom: 2rem;
+        }
+
+        .form-header h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            background: var(--bg);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .plan-selection {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-option {
+            padding: 1.5rem;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .plan-option:hover {
+            border-color: var(--accent-purple);
+        }
+
+        .plan-option.selected {
+            border-color: var(--accent-purple);
+            background: rgba(119, 0, 255, 0.1);
+        }
+
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .plan-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .plan-features {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Stripe Elements */
+        #payment-element {
+            margin-bottom: 1.5rem;
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .success-message {
+            color: var(--success);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .button {
+            width: 100%;
+            padding: 1.125rem;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(119, 0, 255, 0.5);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button.secondary {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-top: 0.25rem;
+        }
+
+        .checkbox-group label {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .summary-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .info-side {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Side - Info -->
+        <div class="info-side">
+            <div class="logo">🚀 BlackRoad</div>
+            <h1>Start building with AI & Quantum computing today</h1>
+            <p>Join thousands of developers using BlackRoad OS to build the future of intelligent systems.</p>
+
+            <ul class="features">
+                <li>
+                    <span class="check">✓</span>
+                    <div>
+                        <strong>14-day free trial</strong>
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">No credit card required</div>
+                    </div>
+                </li>
+                <li>
+                    <span class="check">✓</span>
+                    <div>
+                        <strong>Cancel anytime</strong>
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">No long-term commitments</div>
+                    </div>
+                </li>
+                <li>
+                    <span class="check">✓</span>
+                    <div>
+                        <strong>Instant access</strong>
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">Start deploying immediately</div>
+                    </div>
+                </li>
+                <li>
+                    <span class="check">✓</span>
+                    <div>
+                        <strong>Enterprise-grade security</strong>
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">SOC 2 compliant infrastructure</div>
+                    </div>
+                </li>
+            </ul>
+
+            <div class="testimonial">
+                <div class="testimonial-text">
+                    "BlackRoad OS transformed how we build AI systems. The quantum integration is mind-blowing, and the deployment automation saved us weeks of work."
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">SC</div>
+                    <div>
+                        <div class="author-name">Sarah Chen</div>
+                        <div class="author-role">CTO, Quantum Dynamics</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Signup Form -->
+        <div class="signup-side">
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" id="step-1-indicator">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Account</div>
+                </div>
+                <div class="step" id="step-2-indicator">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Plan</div>
+                </div>
+                <div class="step" id="step-3-indicator">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Payment</div>
+                </div>
+            </div>
+
+            <!-- Step 1: Account Info -->
+            <div class="form-section active" id="step-1">
+                <div class="form-header">
+                    <h2>Create your account</h2>
+                    <p>Get started with BlackRoad OS</p>
+                </div>
+
+                <form id="account-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" name="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" name="lastName" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" required minlength="8">
+                        <div class="error-message" id="password-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Company (Optional)</label>
+                        <input type="text" name="company">
+                    </div>
+
+                    <button type="submit" class="button">Continue →</button>
+                </form>
+            </div>
+
+            <!-- Step 2: Plan Selection -->
+            <div class="form-section" id="step-2">
+                <div class="form-header">
+                    <h2>Choose your plan</h2>
+                    <p>Select the plan that fits your needs</p>
+                </div>
+
+                <form id="plan-form">
+                    <div class="plan-selection">
+                        <div class="plan-option" onclick="selectPlan('free')">
+                            <div class="plan-header">
+                                <div class="plan-name">Starter</div>
+                                <div class="plan-price">$0</div>
+                            </div>
+                            <div class="plan-features">1K API requests • 2 agents • Basic quantum</div>
+                        </div>
+
+                        <div class="plan-option selected" onclick="selectPlan('pro')">
+                            <div class="plan-header">
+                                <div class="plan-name">Professional</div>
+                                <div class="plan-price">$49</div>
+                            </div>
+                            <div class="plan-features">100K requests • Unlimited agents • Advanced quantum</div>
+                        </div>
+
+                        <div class="plan-option" onclick="selectPlan('enterprise')">
+                            <div class="plan-header">
+                                <div class="plan-name">Enterprise</div>
+                                <div class="plan-price">$499</div>
+                            </div>
+                            <div class="plan-features">Unlimited everything • Dedicated support</div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="plan" value="pro">
+
+                    <div class="button-group">
+                        <button type="button" class="button secondary" onclick="previousStep()">← Back</button>
+                        <button type="submit" class="button">Continue →</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 3: Payment -->
+            <div class="form-section" id="step-3">
+                <div class="form-header">
+                    <h2>Payment details</h2>
+                    <p>Secure payment powered by Stripe</p>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-card">
+                    <div class="summary-row">
+                        <span>Plan</span>
+                        <span id="summary-plan">Professional</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Billing</span>
+                        <span>Monthly</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Total</span>
+                        <span id="summary-total">$49.00/mo</span>
+                    </div>
+                </div>
+
+                <form id="payment-form">
+                    <!-- Stripe Payment Element will be inserted here -->
+                    <div id="payment-element"></div>
+                    <div id="payment-errors" class="error-message"></div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="terms" required>
+                            <label for="terms">I agree to the <a href="#" style="color: var(--accent-purple);">Terms of Service</a> and <a href="#" style="color: var(--accent-purple);">Privacy Policy</a></label>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="button secondary" onclick="previousStep()">← Back</button>
+                        <button type="submit" class="button" id="submit-button">
+                            <span id="button-text">Start 14-Day Trial</span>
+                            <span id="spinner" class="spinner" style="display: none;"></span>
+                        </button>
+                    </div>
+                </form>
+
+                <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                    🔒 Your payment information is secure and encrypted
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let selectedPlan = 'pro';
+        let stripe;
+        let elements;
+        let paymentElement;
+
+        // Initialize Stripe
+        if (window.Stripe) {
+            stripe = Stripe('pk_test_51QYourTestKeyHere'); // Replace with actual key
+
+            // Initialize Stripe Elements for Step 3
+            const appearance = {
+                theme: 'night',
+                variables: {
+                    colorPrimary: '#7700FF',
+                    colorBackground: '#1a1a1a',
+                    colorText: '#ffffff',
+                    colorDanger: '#ff0000',
+                    borderRadius: '8px'
+                }
+            };
+
+            // Note: In production, create PaymentIntent on server first
+            // For demo, we'll initialize elements when reaching step 3
+        }
+
+        // Account Form
+        document.getElementById('account-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const password = e.target.password.value;
+            if (password.length < 8) {
+                document.getElementById('password-error').textContent = 'Password must be at least 8 characters';
+                return;
+            }
+            nextStep();
+        });
+
+        // Plan Form
+        document.getElementById('plan-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Initialize Stripe Elements when moving to payment step
+            initializeStripeElements();
+            nextStep();
+        });
+
+        // Payment Form
+        document.getElementById('payment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitButton = document.getElementById('submit-button');
+            const buttonText = document.getElementById('button-text');
+            const spinner = document.getElementById('spinner');
+
+            submitButton.disabled = true;
+            buttonText.style.display = 'none';
+            spinner.style.display = 'inline-block';
+
+            // In production: confirm payment with Stripe
+            if (stripe && elements) {
+                // Simulate payment processing
+                setTimeout(() => {
+                    // Success!
+                    alert('🎉 Welcome to BlackRoad!\n\nYour account has been created successfully.\n\nIn production, this would:\n1. Confirm payment with Stripe\n2. Create subscription\n3. Provision account\n4. Redirect to dashboard\n\nRedirecting to dashboard...');
+                    window.location.href = 'https://dashboard.blackroad.io';
+                }, 2000);
+            } else {
+                // Demo mode
+                setTimeout(() => {
+                    alert('Demo Mode: Payment would be processed via Stripe\n\nAccount Details:\n' +
+                          '- Plan: ' + selectedPlan + '\n' +
+                          '- Price: ' + getPlanPrice(selectedPlan) + '\n\n' +
+                          'Redirecting to dashboard...');
+                    submitButton.disabled = false;
+                    buttonText.style.display = 'inline';
+                    spinner.style.display = 'none';
+                }, 1500);
+            }
+        });
+
+        function selectPlan(plan) {
+            selectedPlan = plan;
+            document.querySelectorAll('.plan-option').forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            document.querySelector('[name="plan"]').value = plan;
+
+            // Update summary
+            const planNames = { free: 'Starter', pro: 'Professional', enterprise: 'Enterprise' };
+            document.getElementById('summary-plan').textContent = planNames[plan];
+            document.getElementById('summary-total').textContent = getPlanPrice(plan) + '/mo';
+        }
+
+        function getPlanPrice(plan) {
+            const prices = { free: '$0.00', pro: '$49.00', enterprise: '$499.00' };
+            return prices[plan];
+        }
+
+        function nextStep() {
+            if (currentStep < 3) {
+                document.getElementById(`step-${currentStep}`).classList.remove('active');
+                document.getElementById(`step-${currentStep}-indicator`).classList.remove('active');
+                document.getElementById(`step-${currentStep}-indicator`).classList.add('completed');
+
+                currentStep++;
+
+                document.getElementById(`step-${currentStep}`).classList.add('active');
+                document.getElementById(`step-${currentStep}-indicator`).classList.add('active');
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                document.getElementById(`step-${currentStep}`).classList.remove('active');
+                document.getElementById(`step-${currentStep}-indicator`).classList.remove('active');
+
+                currentStep--;
+
+                document.getElementById(`step-${currentStep}`).classList.add('active');
+                document.getElementById(`step-${currentStep}-indicator`).classList.remove('completed');
+            }
+        }
+
+        function initializeStripeElements() {
+            if (!stripe || elements) return;
+
+            // In production, fetch clientSecret from server
+            const options = {
+                mode: 'subscription',
+                amount: 4900, // $49.00 in cents
+                currency: 'usd',
+                appearance: {
+                    theme: 'night',
+                    variables: {
+                        colorPrimary: '#7700FF',
+                        colorBackground: '#1a1a1a',
+                        colorText: '#ffffff',
+                        colorDanger: '#ff0000',
+                        borderRadius: '8px'
+                    }
+                }
+            };
+
+            elements = stripe.elements(options);
+            paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+        }
+    </script>
+</body>
+</html>

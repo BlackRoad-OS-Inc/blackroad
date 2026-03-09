@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genesis Earth - Smith Chart × Lo Shu × Spherical Harmonics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            background: #000;
+        }
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            color: #ff9d00;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #ff9d00;
+            font-size: 13px;
+            max-width: 320px;
+            z-index: 100;
+        }
+        #controls h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #ff6b00;
+        }
+        #controls .stat {
+            margin: 5px 0;
+            color: #fff;
+        }
+        #controls button {
+            background: #ff9d00;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px 5px 5px 0;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        #controls button:hover {
+            background: #ff6b00;
+        }
+        .info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #d600aa;
+            font-size: 11px;
+            max-width: 300px;
+            z-index: 100;
+        }
+        .lo-shu {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            margin: 10px 0;
+            font-size: 10px;
+        }
+        .lo-shu div {
+            background: #ff9d00;
+            color: #000;
+            padding: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="controls">
+        <h2>🜃 Genesis Earth</h2>
+        <div class="stat">Smith Φ: <span id="smith">0.00</span></div>
+        <div class="stat">Lo Shu: <span id="loshu">15</span></div>
+        <div class="stat">Harmonics: <span id="harmonics">Y₀₀</span></div>
+        <div class="stat">Seed: <span id="seed">genesis</span></div>
+        <hr style="margin: 10px 0; border-color: #ff9d00;">
+        <div class="lo-shu">
+            <div>4</div><div>9</div><div>2</div>
+            <div>3</div><div>5</div><div>7</div>
+            <div>8</div><div>1</div><div>6</div>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <button onclick="regenerate()">Regenerate</button>
+            <button onclick="toggleMode()">Mode</button>
+        </div>
+        <div style="font-size: 10px; color: #ff9d00;">
+            Mouse: Rotate planet<br>
+            Scroll: Zoom in/out
+        </div>
+    </div>
+
+    <div class="info">
+        <strong>Planet Generation Formula</strong><br>
+        <br>
+        <strong>Smith Chart (Φ impedance):</strong><br>
+        Maps energy flow to terrain height<br>
+        <br>
+        <strong>Lo Shu Magic Square:</strong><br>
+        4+9+2=15, 3+5+7=15, 8+1+6=15<br>
+        Creates balanced biome distribution<br>
+        <br>
+        <strong>Spherical Harmonics (Y_lm):</strong><br>
+        l=0: continents (large scale)<br>
+        l=1,2: mountain ranges<br>
+        l=3+: terrain details<br>
+        <br>
+        <strong>Result:</strong> Mathematically balanced,<br>
+        naturally beautiful Earth-like planet
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // Scene setup
+        const canvas = document.getElementById('canvas');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000510);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 150);
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Lighting
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambient);
+
+        const sun = new THREE.DirectionalLight(0xfff4e6, 1.2);
+        sun.position.set(100, 50, 100);
+        scene.add(sun);
+
+        // Controls
+        const controls = new OrbitControls(camera, canvas);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lo Shu Magic Square (3x3)
+        const LO_SHU = [
+            [4, 9, 2],
+            [3, 5, 7],
+            [8, 1, 6]
+        ];
+
+        // Get Lo Shu value for coordinates
+        function getLoShuValue(x, y) {
+            const row = Math.abs(Math.floor(y * 3)) % 3;
+            const col = Math.abs(Math.floor(x * 3)) % 3;
+            return LO_SHU[row][col] / 9.0; // Normalize to 0-1
+        }
+
+        // Smith Chart: Complex impedance mapping
+        // Maps (lat, lon) to impedance on unit circle
+        function smithChart(lat, lon) {
+            // Convert to complex impedance
+            const z_real = Math.cos(lon) * Math.cos(lat);
+            const z_imag = Math.sin(lon) * Math.cos(lat);
+
+            // Smith chart transformation: Γ = (Z - 1) / (Z + 1)
+            const denom = Math.pow(z_real + 1, 2) + Math.pow(z_imag, 2);
+            const gamma_real = (Math.pow(z_real, 2) + Math.pow(z_imag, 2) - 1) / denom;
+            const gamma_imag = (2 * z_imag) / denom;
+
+            // Return magnitude (for terrain height)
+            return Math.sqrt(gamma_real * gamma_real + gamma_imag * gamma_imag);
+        }
+
+        // Spherical Harmonics Y_lm
+        // Simplified real spherical harmonics for terrain generation
+        function sphericalHarmonic(lat, lon, l, m) {
+            const theta = lat + Math.PI / 2; // 0 to π
+            const phi = lon; // 0 to 2π
+
+            // Simplified associated Legendre polynomials
+            let P_lm;
+            if (l === 0) {
+                P_lm = 1;
+            } else if (l === 1) {
+                if (m === 0) P_lm = Math.cos(theta);
+                else P_lm = Math.sin(theta);
+            } else if (l === 2) {
+                if (m === 0) P_lm = (3 * Math.cos(theta) * Math.cos(theta) - 1) / 2;
+                else if (m === 1) P_lm = 3 * Math.cos(theta) * Math.sin(theta);
+                else P_lm = 3 * Math.sin(theta) * Math.sin(theta);
+            } else {
+                // Higher orders - approximate with combinations
+                P_lm = Math.sin(l * theta) * Math.cos(m * phi);
+            }
+
+            // Add azimuthal component
+            const azimuthal = m === 0 ? 1 : Math.cos(m * phi);
+
+            return P_lm * azimuthal;
+        }
+
+        // Combined terrain generation using all three methods
+        function generateTerrain(lat, lon, seed) {
+            // 1. Smith Chart: Large-scale continental structure
+            const smithValue = smithChart(lat, lon);
+
+            // 2. Lo Shu: Biome distribution (9 regions)
+            const loShuValue = getLoShuValue(lat / Math.PI, lon / (2 * Math.PI));
+
+            // 3. Spherical Harmonics: Multi-scale terrain features
+            let harmonicSum = 0;
+
+            // l=0: Global shape (continents)
+            harmonicSum += sphericalHarmonic(lat, lon, 0, 0) * 0.3;
+
+            // l=1: Hemispheric variations
+            harmonicSum += sphericalHarmonic(lat, lon, 1, 0) * 0.25;
+            harmonicSum += sphericalHarmonic(lat, lon, 1, 1) * 0.15;
+
+            // l=2: Continental-scale features
+            harmonicSum += sphericalHarmonic(lat, lon, 2, 0) * 0.2;
+            harmonicSum += sphericalHarmonic(lat, lon, 2, 1) * 0.15;
+            harmonicSum += sphericalHarmonic(lat, lon, 2, 2) * 0.1;
+
+            // l=3+: Regional details
+            for (let l = 3; l <= 6; l++) {
+                for (let m = 0; m <= l; m++) {
+                    const weight = 0.05 / Math.pow(l, 1.5);
+                    harmonicSum += sphericalHarmonic(lat, lon, l, m) * weight;
+                }
+            }
+
+            // Combine all three methods
+            // Smith chart controls base elevation
+            // Lo Shu adds regional variation
+            // Harmonics add multi-scale detail
+            const baseHeight = smithValue * 0.4;
+            const regionalMod = (loShuValue - 0.5) * 0.3;
+            const detail = harmonicSum * 0.3;
+
+            return baseHeight + regionalMod + detail;
+        }
+
+        // Get biome color based on Lo Shu region and elevation
+        function getBiomeColor(lat, lon, elevation) {
+            const loShuValue = getLoShuValue(lat / Math.PI, lon / (2 * Math.PI));
+            const loShuIndex = Math.floor(loShuValue * 9);
+
+            // Deep ocean
+            if (elevation < -0.2) {
+                return new THREE.Color(0x001a4d);
+            }
+            // Ocean
+            else if (elevation < 0) {
+                return new THREE.Color(0x0066cc);
+            }
+            // Beach
+            else if (elevation < 0.05) {
+                return new THREE.Color(0xc2b280);
+            }
+            // Lowlands - color depends on Lo Shu region
+            else if (elevation < 0.3) {
+                const colors = [
+                    0x2d5016, // Dark forest (4)
+                    0x9acd32, // Grassland (9)
+                    0xdaa520, // Savanna (2)
+                    0x228b22, // Temperate forest (3)
+                    0x6b8e23, // Mixed forest (5)
+                    0xbdb76b, // Dry plains (7)
+                    0x3cb371, // Tropical (8)
+                    0x8fbc8f, // Light forest (1)
+                    0x556b2f  // Taiga (6)
+                ];
+                return new THREE.Color(colors[loShuIndex]);
+            }
+            // Highlands
+            else if (elevation < 0.5) {
+                return new THREE.Color(0x8b7355);
+            }
+            // Mountains
+            else if (elevation < 0.7) {
+                return new THREE.Color(0x696969);
+            }
+            // Snow caps
+            else {
+                return new THREE.Color(0xf0f8ff);
+            }
+        }
+
+        // Create planet mesh
+        let planet;
+        let currentSeed = 'genesis';
+
+        function createPlanet(seed) {
+            if (planet) scene.remove(planet);
+
+            const radius = 50;
+            const segments = 128;
+
+            const geometry = new THREE.SphereGeometry(radius, segments, segments);
+            const positions = geometry.attributes.position;
+            const colors = new Float32Array(positions.count * 3);
+
+            for (let i = 0; i < positions.count; i++) {
+                const x = positions.getX(i);
+                const y = positions.getY(i);
+                const z = positions.getZ(i);
+
+                // Convert to spherical coordinates
+                const r = Math.sqrt(x * x + y * y + z * z);
+                const lat = Math.asin(y / r); // -π/2 to π/2
+                const lon = Math.atan2(z, x); // -π to π
+
+                // Generate terrain height using combined method
+                const terrainHeight = generateTerrain(lat, lon, seed);
+
+                // Displace vertex
+                const displacement = terrainHeight * 8;
+                const nx = x / r;
+                const ny = y / r;
+                const nz = z / r;
+
+                positions.setXYZ(
+                    i,
+                    x + nx * displacement,
+                    y + ny * displacement,
+                    z + nz * displacement
+                );
+
+                // Get color
+                const color = getBiomeColor(lat, lon, terrainHeight);
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+            }
+
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+
+            const material = new THREE.MeshStandardMaterial({
+                vertexColors: true,
+                roughness: 0.8,
+                metalness: 0.2,
+            });
+
+            planet = new THREE.Mesh(geometry, material);
+            scene.add(planet);
+
+            // Update stats
+            document.getElementById('smith').textContent = smithChart(0, 0).toFixed(2);
+            document.getElementById('seed').textContent = seed;
+            document.getElementById('harmonics').textContent = 'Y₀₀→Y₆₆';
+        }
+
+        // Stars
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7 });
+        const starsVertices = [];
+        for (let i = 0; i < 3000; i++) {
+            const x = (Math.random() - 0.5) * 800;
+            const y = (Math.random() - 0.5) * 800;
+            const z = (Math.random() - 0.5) * 800;
+            starsVertices.push(x, y, z);
+        }
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // Controls
+        window.regenerate = function() {
+            const seeds = ['genesis', 'alpha', 'omega', 'terra', 'gaia', 'earth', 'lucidia'];
+            currentSeed = seeds[Math.floor(Math.random() * seeds.length)];
+            createPlanet(currentSeed);
+        };
+
+        window.toggleMode = function() {
+            alert('Current mode: Smith × Lo Shu × Harmonics\nFuture modes: Pure harmonics, Pure Smith, Lo Shu only');
+        };
+
+        // Animation
+        function animate() {
+            requestAnimationFrame(animate);
+            if (planet) planet.rotation.y += 0.001;
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        createPlanet(currentSeed);
+        animate();
+
+        console.log('🜃 Genesis Earth - Smith Chart × Lo Shu × Spherical Harmonics');
+        console.log('Planet generation combines:');
+        console.log('  • Smith Chart: Energy flow → terrain elevation');
+        console.log('  • Lo Shu: Magic square → biome distribution');
+        console.log('  • Spherical Harmonics: Multi-scale terrain detail');
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+wrangler pages project create blackroad-os-demo --production-branch=main
+wrangler pages project create blackroad-os-home --production-branch=main
+wrangler pages project create blackroad-hello --production-branch=main
+wrangler pages project create blackroad-console --production-branch=main
+wrangler pages project create lucidia-earth --production-branch=main
+wrangler pages project create analytics-blackroad-io --production-branch=main
+wrangler pages project create creator-studio-blackroad-io --production-branch=main
+wrangler pages project create research-lab-blackroad-io --production-branch=main
+wrangler pages project create finance-blackroad-io --production-branch=main
+wrangler pages project create legal-blackroad-io --production-branch=main
+wrangler pages project create education-blackroad-io --production-branch=main
+wrangler pages project create engineering-blackroad-io --production-branch=main

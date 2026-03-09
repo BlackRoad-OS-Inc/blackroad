@@ -1,0 +1,27 @@
+#!/bin/bash
+# CECE-HASH v1.0 - Hash Generator
+md5sum_str() {
+    echo -n "$1" | md5sum | cut -d' ' -f1
+}
+
+sha256_str() {
+    echo -n "$1" | sha256sum | cut -d' ' -f1
+}
+
+sha512_str() {
+    echo -n "$1" | sha512sum | cut -d' ' -f1
+}
+
+file_hash() {
+    FILE="$1"
+    echo "MD5:    $(md5sum "$FILE" | cut -d' ' -f1)"
+    echo "SHA256: $(sha256sum "$FILE" | cut -d' ' -f1)"
+}
+
+case "$1" in
+    md5) md5sum_str "$2" ;;
+    sha256) sha256_str "$2" ;;
+    sha512) sha512_str "$2" ;;
+    file) file_hash "$2" ;;
+    *) echo "CECE-HASH: md5 <str> | sha256 <str> | sha512 <str> | file <path>" ;;
+esac

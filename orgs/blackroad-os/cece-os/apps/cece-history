@@ -1,0 +1,16 @@
+#!/bin/bash
+# CECE-HISTORY v1.0 - Command History
+show() { history | tail -50; }
+search() { history | grep -i "$1"; }
+clear() { history -c && echo "History cleared"; }
+stats() {
+    echo "Most used commands:"
+    history | awk '{print $2}' | sort | uniq -c | sort -rn | head -10
+}
+case "$1" in
+    show) show ;;
+    search) search "$2" ;;
+    clear) clear ;;
+    stats) stats ;;
+    *) echo "CECE-HISTORY: show | search <term> | clear | stats" ;;
+esac

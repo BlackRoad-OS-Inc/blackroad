@@ -1,0 +1,24 @@
+#!/bin/bash
+# CECE-ANALYTICS v1.0 - Analytics Dashboard
+ANALYTICS_DIR=~/cece/analytics
+mkdir -p "$ANALYTICS_DIR"
+
+track() {
+    EVENT="$1"
+    DATA="$2"
+    echo "{\"event\":\"$EVENT\",\"data\":\"$DATA\",\"time\":\"$(date -Iseconds)\"}" >> "$ANALYTICS_DIR/events.jsonl"
+    echo "Tracked: $EVENT"
+}
+
+stats() {
+    EVENTS=$(wc -l < "$ANALYTICS_DIR/events.jsonl" 2>/dev/null || echo 0)
+    echo "CECE Analytics"
+    echo "=============="
+    echo "Total Events: $EVENTS"
+}
+
+case "$1" in
+    track) track "$2" "$3" ;;
+    stats) stats ;;
+    *) echo "CECE-ANALYTICS: track <event> <data> | stats" ;;
+esac

@@ -1,0 +1,28 @@
+#!/bin/bash
+# CECE-TEMPLATE v1.0 - Template Engine
+TPL_DIR=~/cece/templates
+mkdir -p "$TPL_DIR"
+create() {
+    NAME="$1"
+    CONTENT="$2"
+    echo "$CONTENT" > "$TPL_DIR/$NAME.tpl"
+    echo "Template created: $NAME"
+}
+use() {
+    NAME="$1"
+    shift
+    TPL=$(cat "$TPL_DIR/$NAME.tpl")
+    for VAR in "$@"; do
+        KEY="${VAR%%=*}"
+        VAL="${VAR#*=}"
+        TPL="${TPL//\{\{$KEY\}\}/$VAL}"
+    done
+    echo "$TPL"
+}
+list() { ls "$TPL_DIR"/*.tpl 2>/dev/null | xargs -I{} basename {} .tpl; }
+case "$1" in
+    create) create "$2" "$3" ;;
+    use) shift; use "$@" ;;
+    list) list ;;
+    *) echo "CECE-TEMPLATE: create <name> <content> | use <name> key=val... | list" ;;
+esac

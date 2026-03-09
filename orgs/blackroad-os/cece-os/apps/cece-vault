@@ -1,0 +1,35 @@
+#!/bin/bash
+# CECE-VAULT v1.0 - Secret Manager
+VAULT_DIR=~/cece/vault
+mkdir -p "$VAULT_DIR"
+chmod 700 "$VAULT_DIR"
+
+store() {
+    KEY="$1"
+    VALUE="$2"
+    echo "$VALUE" | openssl enc -aes-256-cbc -pbkdf2 -salt -out "$VAULT_DIR/$KEY.enc" -pass pass:cecesecret 2>/dev/null
+    echo "Stored: $KEY"
+}
+
+get() {
+    KEY="$1"
+    if [ -f "$VAULT_DIR/$KEY.enc" ]; then
+        openssl enc -aes-256-cbc -pbkdf2 -d -in "$VAULT_DIR/$KEY.enc" -pass pass:cecesecret 2>/dev/null
+    else
+        echo "Not found: $KEY"
+    fi
+}
+
+list_keys() {
+    echo "Vault Keys:"
+    for f in "$VAULT_DIR"/*.enc; do
+        [ -f "$f" ] && basename "$f" .enc
+    done
+}
+
+case "$1" in
+    store) store "$2" "$3" ;;
+    get) get "$2" ;;
+    list) list_keys ;;
+    *) echo "CECE-VAULT: store <key> <value> | get <key> | list" ;;
+esac

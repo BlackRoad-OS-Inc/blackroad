@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊⚛️ Entropy Explorer - BlackRoad Quantum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000000; --white: #FFFFFF;
+            --amber: #F5A623; --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF; --violet: #9C27B0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black); color: var(--white);
+            overflow: hidden;
+        }
+
+        .container { display: flex; height: 100vh; }
+        .canvas-container { flex: 1; position: relative; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .sidebar {
+            width: 380px; background: rgba(0, 0, 0, 0.95);
+            border-left: 2px solid var(--hot-pink);
+            padding: 34px; overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 34px;
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+
+        .section { margin-bottom: 34px; }
+        .section-title {
+            font-size: 16px; color: var(--hot-pink);
+            margin-bottom: 13px; text-transform: uppercase;
+        }
+
+        button {
+            width: 100%; padding: 13px; margin: 8px 0;
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; color: var(--white);
+            font-size: 13px; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--hot-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 29, 108, 0.5);
+        }
+
+        button.active {
+            background: var(--hot-pink);
+            box-shadow: 0 0 20px rgba(255, 29, 108, 0.8);
+        }
+
+        .formula {
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 3px solid #00FF88;
+            padding: 13px; margin: 13px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px; color: #00FF88;
+        }
+
+        .info {
+            font-size: 12px; color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6; margin-top: 8px;
+        }
+
+        .stat-box {
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; padding: 13px;
+            margin: 8px 0;
+        }
+
+        .stat-label { font-size: 11px; color: var(--amber); }
+        .stat-value {
+            font-size: 21px; font-weight: 700;
+            color: var(--white); margin-top: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .slider-group {
+            margin: 13px 0;
+        }
+
+        .slider-label {
+            font-size: 12px; color: var(--amber);
+            margin-bottom: 5px; display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            background: rgba(255, 29, 108, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 21px; height: 21px;
+            border-radius: 50%;
+            background: var(--hot-pink);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--hot-pink);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 21px; height: 21px;
+            border-radius: 50%;
+            background: var(--hot-pink);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--hot-pink);
+        }
+
+        .comparison-box {
+            background: rgba(41, 121, 255, 0.1);
+            border: 1px solid var(--electric-blue);
+            border-radius: 8px;
+            padding: 13px;
+            margin: 13px 0;
+        }
+
+        .comparison-title {
+            font-size: 13px;
+            color: var(--electric-blue);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .comparison-item {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="entropyCanvas"></canvas>
+        </div>
+
+        <div class="sidebar">
+            <h1>📊 Entropy Universe</h1>
+
+            <div class="section">
+                <div class="section-title">Three Faces of Entropy</div>
+                <button onclick="showShannon()" id="btnShannon">Shannon Entropy</button>
+                <button onclick="showVonNeumann()" id="btnVonNeumann">Von Neumann Entropy</button>
+                <button onclick="showBoltzmann()" id="btnBoltzmann">Boltzmann Entropy</button>
+                <button onclick="showComparison()" id="btnComparison">Compare All Three</button>
+            </div>
+
+            <div class="section" id="shannonControls" style="display:none;">
+                <div class="section-title">Probability Distribution</div>
+                <button onclick="setDistribution('uniform')">Uniform (max entropy)</button>
+                <button onclick="setDistribution('peaked')">Peaked (low entropy)</button>
+                <button onclick="setDistribution('bimodal')">Bimodal</button>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Number of States</span>
+                        <span id="nStatesValue">8</span>
+                    </div>
+                    <input type="range" id="nStates" min="2" max="16" value="8" step="1">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Concentration</span>
+                        <span id="concentrationValue">0.5</span>
+                    </div>
+                    <input type="range" id="concentration" min="0" max="1" value="0.5" step="0.01">
+                </div>
+            </div>
+
+            <div class="section" id="vnControls" style="display:none;">
+                <div class="section-title">Quantum State</div>
+                <button onclick="setQuantumState('pure')">Pure State (S=0)</button>
+                <button onclick="setQuantumState('mixed')">Mixed State (S>0)</button>
+                <button onclick="setQuantumState('maximally-mixed')">Maximally Mixed (S=max)</button>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Mixing Parameter λ</span>
+                        <span id="mixingValue">0.5</span>
+                    </div>
+                    <input type="range" id="mixing" min="0" max="1" value="0.5" step="0.01">
+                </div>
+            </div>
+
+            <div class="section" id="boltzmannControls" style="display:none;">
+                <div class="section-title">Thermodynamic System</div>
+                <button onclick="setTemperature('low')">Low Temp (ordered)</button>
+                <button onclick="setTemperature('medium')">Medium Temp</button>
+                <button onclick="setTemperature('high')">High Temp (disordered)</button>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Temperature (T)</span>
+                        <span id="temperatureValue">1.0</span>
+                    </div>
+                    <input type="range" id="temperature" min="0.1" max="5" value="1" step="0.1">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Energy Levels</span>
+                        <span id="energyLevelsValue">10</span>
+                    </div>
+                    <input type="range" id="energyLevels" min="2" max="20" value="10" step="1">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Current Entropy</div>
+                <div class="stat-box">
+                    <div class="stat-label">Type</div>
+                    <div class="stat-value" id="entropyType">Shannon</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Value</div>
+                    <div class="stat-value" id="entropyValue">2.079</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Units</div>
+                    <div class="stat-value" id="entropyUnits">bits</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">The Formula</div>
+                <div class="formula" id="formulaDisplay">
+                    H(X) = -Σ p(x) log₂ p(x)<br>
+                    <br>
+                    Shannon Entropy<br>
+                    (Information Theory)
+                </div>
+                <div class="info" id="descriptionDisplay">
+                    <strong style="color: var(--hot-pink);">Claude Shannon (1948):</strong>
+                    Measures information content and uncertainty in a message.
+                    <br><br>
+                    <strong style="color: var(--electric-blue);">Maximum</strong> when all outcomes equally likely (uniform distribution).
+                </div>
+            </div>
+
+            <div class="section" id="comparisonSection" style="display:none;">
+                <div class="section-title">Deep Connections</div>
+                <div class="comparison-box">
+                    <div class="comparison-title">Same Mathematical Form</div>
+                    <div class="comparison-item">
+                        Shannon: -Σ pᵢ log pᵢ (information)<br>
+                        Von Neumann: -Tr(ρ log ρ) (quantum)<br>
+                        Boltzmann: k ln(Ω) (thermodynamic)
+                    </div>
+                </div>
+                <div class="comparison-box">
+                    <div class="comparison-title">All Measure Disorder</div>
+                    <div class="comparison-item">
+                        Shannon: Uncertainty in message<br>
+                        Von Neumann: Quantum mixedness<br>
+                        Boltzmann: Thermodynamic chaos
+                    </div>
+                </div>
+                <div class="comparison-box">
+                    <div class="comparison-title">Second Law</div>
+                    <div class="comparison-item">
+                        All three entropies NEVER DECREASE in isolated systems!
+                    </div>
+                </div>
+            </div>
+
+            <div class="info" style="margin-top: 34px; padding-top: 34px; border-top: 1px solid rgba(255,255,255,0.2);">
+                <strong>Unity of Entropy:</strong> From information bits to quantum states to thermodynamic chaos - the same deep principle governs all! 📊⚛️🔥
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('entropyCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, centerX, centerY;
+
+        let mode = 'shannon';
+        let nStates = 8;
+        let concentration = 0.5;
+        let mixing = 0.5;
+        let temperature = 1.0;
+        let energyLevels = 10;
+
+        let probabilities = [];
+        let entropy = 0;
+
+        function resizeCanvas() {
+            width = canvas.width = canvas.offsetWidth;
+            height = canvas.height = canvas.offsetHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+            draw();
+        }
+
+        function calculateShannon(probs) {
+            let H = 0;
+            for (let p of probs) {
+                if (p > 0) {
+                    H -= p * Math.log2(p);
+                }
+            }
+            return H;
+        }
+
+        function calculateVonNeumann(eigenvalues) {
+            let S = 0;
+            for (let λ of eigenvalues) {
+                if (λ > 0) {
+                    S -= λ * Math.log2(λ);
+                }
+            }
+            return S;
+        }
+
+        function calculateBoltzmann(T, levels) {
+            // Partition function for harmonic oscillator-like system
+            const β = 1 / T;
+            let Z = 0;
+            const probs = [];
+
+            for (let n = 0; n < levels; n++) {
+                const E = n; // Energy levels
+                const boltzmann = Math.exp(-β * E);
+                probs.push(boltzmann);
+                Z += boltzmann;
+            }
+
+            // Normalize
+            for (let i = 0; i < probs.length; i++) {
+                probs[i] /= Z;
+            }
+
+            // Entropy in natural log (for k_B = 1)
+            let S = 0;
+            for (let p of probs) {
+                if (p > 0) {
+                    S -= p * Math.log(p);
+                }
+            }
+
+            return { S, probs, Z };
+        }
+
+        function generateProbabilities() {
+            probabilities = new Array(nStates).fill(0);
+
+            if (mode === 'shannon') {
+                // Generate based on concentration parameter
+                for (let i = 0; i < nStates; i++) {
+                    const x = i / (nStates - 1);
+                    const peak = Math.exp(-50 * Math.pow(x - concentration, 2));
+                    probabilities[i] = peak + 0.01; // Small baseline
+                }
+            } else if (mode === 'vonneumann') {
+                // Quantum state eigenvalues (density matrix diagonal)
+                const λ = mixing; // 0 = pure, 1 = maximally mixed
+                probabilities = new Array(2).fill(0);
+                probabilities[0] = (1 + (1 - 2*λ)) / 2;
+                probabilities[1] = (1 - (1 - 2*λ)) / 2;
+                nStates = 2; // Qubit
+            } else if (mode === 'boltzmann') {
+                const result = calculateBoltzmann(temperature, energyLevels);
+                probabilities = result.probs;
+                nStates = energyLevels;
+            }
+
+            // Normalize
+            const sum = probabilities.reduce((a, b) => a + b, 0);
+            probabilities = probabilities.map(p => p / sum);
+
+            // Calculate entropy
+            if (mode === 'shannon') {
+                entropy = calculateShannon(probabilities);
+            } else if (mode === 'vonneumann') {
+                entropy = calculateVonNeumann(probabilities);
+            } else if (mode === 'boltzmann') {
+                entropy = calculateShannon(probabilities); // Same formula, different units
+            }
+
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('entropyValue').textContent = entropy.toFixed(3);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Background gradient
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height));
+            gradient.addColorStop(0, 'rgba(255, 29, 108, 0.1)');
+            gradient.addColorStop(0.5, 'rgba(156, 39, 176, 0.05)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            if (mode === 'comparison') {
+                drawComparison();
+            } else {
+                drawBars();
+            }
+        }
+
+        function drawBars() {
+            if (probabilities.length === 0) return;
+
+            const barWidth = Math.min(80, (width - 200) / nStates);
+            const maxBarHeight = height * 0.6;
+            const startX = centerX - (nStates * barWidth) / 2;
+            const baseY = height * 0.8;
+
+            // Find max probability for scaling
+            const maxP = Math.max(...probabilities);
+
+            // Draw bars
+            for (let i = 0; i < probabilities.length; i++) {
+                const x = startX + i * barWidth;
+                const p = probabilities[i];
+                const barHeight = (p / maxP) * maxBarHeight;
+                const y = baseY - barHeight;
+
+                // Color based on mode
+                let color;
+                if (mode === 'shannon') {
+                    color = '#F5A623'; // Amber
+                } else if (mode === 'vonneumann') {
+                    color = '#2979FF'; // Electric Blue
+                } else if (mode === 'boltzmann') {
+                    color = '#FF1D6C'; // Hot Pink
+                }
+
+                // Glow
+                const glow = ctx.createRadialGradient(
+                    x + barWidth/2, y + barHeight/2, 0,
+                    x + barWidth/2, y + barHeight/2, barWidth
+                );
+                glow.addColorStop(0, color + 'CC');
+                glow.addColorStop(1, color + '00');
+                ctx.fillStyle = glow;
+                ctx.fillRect(x - 10, y - 10, barWidth + 20, barHeight + 20);
+
+                // Bar
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, barWidth * 0.8, barHeight);
+
+                // Border
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, barWidth * 0.8, barHeight);
+
+                // Label
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '11px SF Pro Display';
+                ctx.textAlign = 'center';
+                ctx.fillText(p.toFixed(3), x + barWidth * 0.4, baseY + 20);
+
+                // State label
+                if (mode === 'shannon') {
+                    ctx.fillText(`x${i}`, x + barWidth * 0.4, baseY + 35);
+                } else if (mode === 'vonneumann') {
+                    ctx.fillText(i === 0 ? '|0⟩' : '|1⟩', x + barWidth * 0.4, baseY + 35);
+                } else if (mode === 'boltzmann') {
+                    ctx.fillText(`E${i}`, x + barWidth * 0.4, baseY + 35);
+                }
+            }
+
+            // Entropy display (large)
+            ctx.fillStyle = mode === 'shannon' ? '#F5A623' : mode === 'vonneumann' ? '#2979FF' : '#FF1D6C';
+            ctx.font = 'bold 55px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText(`S = ${entropy.toFixed(2)}`, centerX, 80);
+
+            // Formula
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '20px Courier New';
+            let formula = '';
+            if (mode === 'shannon') {
+                formula = 'H = -Σ pᵢ log₂ pᵢ';
+            } else if (mode === 'vonneumann') {
+                formula = 'S = -Tr(ρ log₂ ρ)';
+            } else if (mode === 'boltzmann') {
+                formula = 'S = -Σ pᵢ ln pᵢ (k_B = 1)';
+            }
+            ctx.fillText(formula, centerX, 120);
+
+            // Units
+            ctx.font = '16px SF Pro Display';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            const units = mode === 'shannon' ? 'bits' : mode === 'vonneumann' ? 'qubits' : 'k_B';
+            ctx.fillText(`(${units})`, centerX, 145);
+
+            // Interpretation
+            ctx.font = '14px SF Pro Display';
+            ctx.textAlign = 'left';
+            const interpretation = entropy < 0.5 ? 'Low entropy - ordered!' :
+                                 entropy < 1.5 ? 'Medium entropy' :
+                                 'High entropy - disordered!';
+            ctx.fillStyle = entropy < 0.5 ? '#00FF88' : entropy < 1.5 ? '#F5A623' : '#FF1D6C';
+            ctx.fillText(interpretation, 50, height - 50);
+        }
+
+        function drawComparison() {
+            // Draw all three entropies side by side
+            const boxWidth = width / 4;
+            const boxHeight = height * 0.4;
+            const y = centerY - boxHeight / 2;
+
+            const entropies = [
+                { name: 'Shannon', color: '#F5A623', value: calculateShannon([0.5, 0.5]), unit: 'bits', x: boxWidth * 0.5 },
+                { name: 'Von Neumann', color: '#2979FF', value: calculateVonNeumann([0.5, 0.5]), unit: 'qubits', x: boxWidth * 1.8 },
+                { name: 'Boltzmann', color: '#FF1D6C', value: calculateBoltzmann(1, 10).S, unit: 'k_B', x: boxWidth * 3.1 }
+            ];
+
+            entropies.forEach((ent, i) => {
+                const x = ent.x;
+
+                // Box
+                ctx.fillStyle = ent.color + '22';
+                ctx.fillRect(x - boxWidth * 0.4, y, boxWidth * 0.8, boxHeight);
+                ctx.strokeStyle = ent.color;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x - boxWidth * 0.4, y, boxWidth * 0.8, boxHeight);
+
+                // Name
+                ctx.fillStyle = ent.color;
+                ctx.font = 'bold 20px SF Pro Display';
+                ctx.textAlign = 'center';
+                ctx.fillText(ent.name, x, y + 40);
+
+                // Formula icon
+                ctx.font = '34px Courier New';
+                ctx.fillText('S', x, y + 100);
+
+                // Value
+                ctx.font = 'bold 28px SF Pro Display';
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText(ent.value.toFixed(2), x, y + 160);
+
+                // Unit
+                ctx.font = '14px SF Pro Display';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.fillText(ent.unit, x, y + 185);
+            });
+
+            // Title
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 34px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Three Faces of Entropy', centerX, 80);
+
+            // Connection lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+
+            // Shannon to Von Neumann
+            ctx.beginPath();
+            ctx.moveTo(entropies[0].x + boxWidth * 0.4, centerY);
+            ctx.lineTo(entropies[1].x - boxWidth * 0.4, centerY);
+            ctx.stroke();
+
+            // Von Neumann to Boltzmann
+            ctx.beginPath();
+            ctx.moveTo(entropies[1].x + boxWidth * 0.4, centerY);
+            ctx.lineTo(entropies[2].x - boxWidth * 0.4, centerY);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+
+            // Bottom text
+            ctx.fillStyle = '#00FF88';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.fillText('Same Deep Principle: -Σ pᵢ log pᵢ', centerX, height - 60);
+            ctx.font = '14px SF Pro Display';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillText('Information = Quantum Mixedness = Thermodynamic Disorder', centerX, height - 30);
+        }
+
+        function showShannon() {
+            mode = 'shannon';
+            setActiveButton('btnShannon');
+            document.getElementById('shannonControls').style.display = 'block';
+            document.getElementById('vnControls').style.display = 'none';
+            document.getElementById('boltzmannControls').style.display = 'none';
+            document.getElementById('comparisonSection').style.display = 'none';
+
+            document.getElementById('entropyType').textContent = 'Shannon';
+            document.getElementById('entropyUnits').textContent = 'bits';
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                H(X) = -Σ p(x) log₂ p(x)<br>
+                <br>
+                Shannon Entropy<br>
+                (Information Theory)
+            `;
+
+            document.getElementById('descriptionDisplay').innerHTML = `
+                <strong style="color: var(--hot-pink);">Claude Shannon (1948):</strong>
+                Measures information content and uncertainty.
+                <br><br>
+                <strong style="color: var(--electric-blue);">Maximum</strong> when all outcomes equally likely.
+                <br><br>
+                <strong style="color: var(--amber);">Applications:</strong> Data compression, communication theory, machine learning!
+            `;
+
+            generateProbabilities();
+            draw();
+        }
+
+        function showVonNeumann() {
+            mode = 'vonneumann';
+            setActiveButton('btnVonNeumann');
+            document.getElementById('shannonControls').style.display = 'none';
+            document.getElementById('vnControls').style.display = 'block';
+            document.getElementById('boltzmannControls').style.display = 'none';
+            document.getElementById('comparisonSection').style.display = 'none';
+
+            document.getElementById('entropyType').textContent = 'Von Neumann';
+            document.getElementById('entropyUnits').textContent = 'qubits';
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                S(ρ) = -Tr(ρ log₂ ρ)<br>
+                <br>
+                Von Neumann Entropy<br>
+                (Quantum Information)
+            `;
+
+            document.getElementById('descriptionDisplay').innerHTML = `
+                <strong style="color: var(--hot-pink);">John von Neumann (1927):</strong>
+                Measures quantum entanglement and mixedness.
+                <br><br>
+                <strong style="color: var(--electric-blue);">S = 0</strong> for pure states (|ψ⟩).
+                <strong style="color: var(--hot-pink);">S > 0</strong> for mixed states.
+                <br><br>
+                <strong style="color: var(--amber);">Key Property:</strong> Entanglement entropy in quantum systems!
+            `;
+
+            generateProbabilities();
+            draw();
+        }
+
+        function showBoltzmann() {
+            mode = 'boltzmann';
+            setActiveButton('btnBoltzmann');
+            document.getElementById('shannonControls').style.display = 'none';
+            document.getElementById('vnControls').style.display = 'none';
+            document.getElementById('boltzmannControls').style.display = 'block';
+            document.getElementById('comparisonSection').style.display = 'none';
+
+            document.getElementById('entropyType').textContent = 'Boltzmann';
+            document.getElementById('entropyUnits').textContent = 'k_B';
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                S = k_B ln(Ω)<br>
+                <br>
+                Boltzmann Entropy<br>
+                (Statistical Mechanics)
+            `;
+
+            document.getElementById('descriptionDisplay').innerHTML = `
+                <strong style="color: var(--hot-pink);">Ludwig Boltzmann (1877):</strong>
+                Measures thermodynamic disorder.
+                <br><br>
+                <strong style="color: var(--electric-blue);">Ω</strong> = number of microstates.
+                Engraved on Boltzmann's tombstone!
+                <br><br>
+                <strong style="color: var(--amber);">Second Law:</strong> Entropy ALWAYS increases in isolated systems!
+            `;
+
+            generateProbabilities();
+            draw();
+        }
+
+        function showComparison() {
+            mode = 'comparison';
+            setActiveButton('btnComparison');
+            document.getElementById('shannonControls').style.display = 'none';
+            document.getElementById('vnControls').style.display = 'none';
+            document.getElementById('boltzmannControls').style.display = 'none';
+            document.getElementById('comparisonSection').style.display = 'block';
+
+            document.getElementById('entropyType').textContent = 'All Three';
+            document.getElementById('entropyValue').textContent = '∞';
+            document.getElementById('entropyUnits').textContent = 'unified';
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                Shannon: -Σ pᵢ log pᵢ<br>
+                VN: -Tr(ρ log ρ)<br>
+                Boltzmann: k ln(Ω)<br>
+                <br>
+                ALL THE SAME!
+            `;
+
+            document.getElementById('descriptionDisplay').innerHTML = `
+                <strong style="color: var(--hot-pink);">Deep Unity:</strong>
+                All three entropies measure the same fundamental concept: DISORDER!
+                <br><br>
+                <strong style="color: var(--electric-blue);">From bits</strong> (Shannon)
+                <strong style="color: var(--violet);">to qubits</strong> (Von Neumann)
+                <strong style="color: var(--hot-pink);">to atoms</strong> (Boltzmann).
+                <br><br>
+                <strong style="color: var(--amber);">One principle, three domains!</strong>
+            `;
+
+            draw();
+        }
+
+        function setDistribution(type) {
+            if (type === 'uniform') {
+                concentration = 0.5;
+                probabilities = new Array(nStates).fill(1/nStates);
+            } else if (type === 'peaked') {
+                concentration = 0.1;
+            } else if (type === 'bimodal') {
+                concentration = 0.8;
+            }
+            document.getElementById('concentration').value = concentration;
+            document.getElementById('concentrationValue').textContent = concentration.toFixed(2);
+            generateProbabilities();
+            draw();
+        }
+
+        function setQuantumState(type) {
+            if (type === 'pure') {
+                mixing = 0;
+            } else if (type === 'mixed') {
+                mixing = 0.3;
+            } else if (type === 'maximally-mixed') {
+                mixing = 1;
+            }
+            document.getElementById('mixing').value = mixing;
+            document.getElementById('mixingValue').textContent = mixing.toFixed(2);
+            generateProbabilities();
+            draw();
+        }
+
+        function setTemperature(level) {
+            if (level === 'low') {
+                temperature = 0.3;
+            } else if (level === 'medium') {
+                temperature = 1.0;
+            } else if (level === 'high') {
+                temperature = 3.0;
+            }
+            document.getElementById('temperature').value = temperature;
+            document.getElementById('temperatureValue').textContent = temperature.toFixed(1);
+            generateProbabilities();
+            draw();
+        }
+
+        function setActiveButton(btnId) {
+            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(btnId).classList.add('active');
+        }
+
+        // Event listeners
+        document.getElementById('nStates').addEventListener('input', (e) => {
+            nStates = parseInt(e.target.value);
+            document.getElementById('nStatesValue').textContent = nStates;
+            generateProbabilities();
+            draw();
+        });
+
+        document.getElementById('concentration').addEventListener('input', (e) => {
+            concentration = parseFloat(e.target.value);
+            document.getElementById('concentrationValue').textContent = concentration.toFixed(2);
+            generateProbabilities();
+            draw();
+        });
+
+        document.getElementById('mixing').addEventListener('input', (e) => {
+            mixing = parseFloat(e.target.value);
+            document.getElementById('mixingValue').textContent = mixing.toFixed(2);
+            generateProbabilities();
+            draw();
+        });
+
+        document.getElementById('temperature').addEventListener('input', (e) => {
+            temperature = parseFloat(e.target.value);
+            document.getElementById('temperatureValue').textContent = temperature.toFixed(1);
+            generateProbabilities();
+            draw();
+        });
+
+        document.getElementById('energyLevels').addEventListener('input', (e) => {
+            energyLevels = parseInt(e.target.value);
+            document.getElementById('energyLevelsValue').textContent = energyLevels;
+            generateProbabilities();
+            draw();
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Initialize
+        resizeCanvas();
+        showShannon();
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+#!/bin/bash
+# CECE-WATCH v1.0 - File Watcher
+file() {
+    FILE="$1"
+    echo "Watching $FILE for changes..."
+    LAST=$(stat -c %Y "$FILE" 2>/dev/null || stat -f %m "$FILE" 2>/dev/null)
+    while true; do
+        sleep 2
+        NOW=$(stat -c %Y "$FILE" 2>/dev/null || stat -f %m "$FILE" 2>/dev/null)
+        [ "$NOW" != "$LAST" ] && echo "[$(date +%H:%M:%S)] $FILE changed" && LAST=$NOW
+    done
+}
+dir() {
+    DIR="${1:-.}"
+    echo "Watching $DIR for changes..."
+    inotifywait -m -r "$DIR" 2>/dev/null || echo "Install inotify-tools for dir watching"
+}
+case "$1" in
+    file) file "$2" ;;
+    dir) dir "$2" ;;
+    *) echo "CECE-WATCH: file <path> | dir [path]" ;;
+esac

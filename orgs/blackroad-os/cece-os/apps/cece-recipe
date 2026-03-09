@@ -1,0 +1,63 @@
+#!/bin/bash
+# CECE-RECIPE v1.0 - Our Own AllRecipes/Tasty
+RECIPE_DIR=~/cece/recipes
+mkdir -p "$RECIPE_DIR"
+
+add_recipe() {
+    NAME="$1"
+    SLUG=$(echo "$NAME" | tr " " "-" | tr "[:upper:]" "[:lower:]")
+    RECIPE="$RECIPE_DIR/$SLUG.recipe"
+    cat > "$RECIPE" << EOF
+# $NAME
+
+## Ingredients
+- 
+
+## Instructions
+1. 
+
+## Notes
+
+---
+Added: $(date)
+EOF
+    echo "🍳 Recipe added: $NAME"
+    echo "Edit: nano $RECIPE"
+}
+
+view_recipe() {
+    SLUG="$1"
+    RECIPE="$RECIPE_DIR/$SLUG.recipe"
+    [ -f "$RECIPE" ] && cat "$RECIPE" || echo "Recipe not found"
+}
+
+search_recipes() {
+    QUERY="$1"
+    echo "🔍 Recipes matching: $QUERY"
+    grep -l -i "$QUERY" "$RECIPE_DIR"/*.recipe 2>/dev/null | while read f; do
+        echo "  🍳 $(head -1 "$f" | sed "s/^# //")"
+    done
+}
+
+list_recipes() {
+    echo "🍳 RECIPE BOX"
+    echo "═══════════════════════════════════════"
+    for r in "$RECIPE_DIR"/*.recipe 2>/dev/null; do
+        [ -f "$r" ] || continue
+        NAME=$(head -1 "$r" | sed "s/^# //")
+        SLUG=$(basename "$r" .recipe)
+        echo "  🍳 $NAME ($SLUG)"
+    done
+}
+
+case "$1" in
+    add) add_recipe "$2" ;;
+    view) view_recipe "$2" ;;
+    search) search_recipes "$2" ;;
+    list) list_recipes ;;
+    *) echo "🖤 CECE-RECIPE - Our Own AllRecipes"
+       echo "  add <name>      Add recipe"
+       echo "  view <slug>     View recipe"
+       echo "  search <query>  Search recipes"
+       echo "  list            List all" ;;
+esac

@@ -1,0 +1,37 @@
+#!/bin/bash
+# CECE-PODCAST v1.0 - Our Own Spotify Podcasts
+POD_DIR=~/cece/podcasts
+mkdir -p "$POD_DIR/shows" "$POD_DIR/episodes"
+
+create_show() {
+    NAME="$1"
+    DESC="$2"
+    mkdir -p "$POD_DIR/shows/$NAME"
+    echo "name: $NAME" > "$POD_DIR/shows/$NAME/info"
+    echo "description: $DESC" >> "$POD_DIR/shows/$NAME/info"
+    echo "created: $(date -Iseconds)" >> "$POD_DIR/shows/$NAME/info"
+    echo "Created podcast: $NAME"
+}
+
+add_episode() {
+    SHOW="$1"
+    TITLE="$2"
+    EP_NUM=$(ls "$POD_DIR/shows/$SHOW" 2>/dev/null | grep -c episode)
+    EP_NUM=$((EP_NUM + 1))
+    echo "Episode $EP_NUM: $TITLE" > "$POD_DIR/shows/$SHOW/episode-$EP_NUM.md"
+    echo "Added Episode $EP_NUM: $TITLE"
+}
+
+list_shows() {
+    echo "PODCASTS"
+    for s in "$POD_DIR/shows"/*; do
+        [ -d "$s" ] && echo "  $(basename $s)"
+    done
+}
+
+case "$1" in
+    new) create_show "$2" "$3" ;;
+    episode) add_episode "$2" "$3" ;;
+    list) list_shows ;;
+    *) echo "CECE-PODCAST: new <name> <desc> | episode <show> <title> | list" ;;
+esac

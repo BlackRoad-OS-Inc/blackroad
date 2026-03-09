@@ -1,0 +1,20 @@
+#!/bin/bash
+# CECE-ACHIEVEMENT v1.0 - Achievement System
+ACH_FILE=~/cece/achievements.jsonl
+unlock() {
+    NAME="$1"
+    echo "{\"achievement\":\"$NAME\",\"unlocked\":\"$(date -Iseconds)\"}" >> "$ACH_FILE"
+    echo "🏅 Achievement Unlocked: $NAME"
+}
+list() {
+    echo "Achievements:"
+    cat "$ACH_FILE" 2>/dev/null | while read line; do
+        ACH=$(echo "$line" | grep -o '"achievement":"[^"]*"' | cut -d\" -f4)
+        echo "  🏅 $ACH"
+    done
+}
+case "$1" in
+    unlock) unlock "$2" ;;
+    list) list ;;
+    *) echo "CECE-ACHIEVEMENT: unlock <name> | list" ;;
+esac

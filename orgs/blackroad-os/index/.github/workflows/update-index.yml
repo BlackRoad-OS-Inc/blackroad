@@ -1,0 +1,49 @@
+name: Update Index
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      
+      - name: Scan Organizations
+        env:
+          GH_TOKEN: ${{ secrets.INDEX_TOKEN }}
+        run: |
+          echo '{"generated_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'", "orgs": [' > index.json
+          
+          ORGS="Blackbox-Enterprises BlackRoad-AI BlackRoad-OS BlackRoad-Labs BlackRoad-Cloud BlackRoad-Ventures BlackRoad-Foundation BlackRoad-Media BlackRoad-Hardware BlackRoad-Education BlackRoad-Gov BlackRoad-Security BlackRoad-Interactive BlackRoad-Archive BlackRoad-Studio"
+          
+          first_org=true
+          for org in $ORGS; do
+            if [ "$first_org" = false ]; then echo "," >> index.json; fi
+            first_org=false
+            
+            ORG_DESC=$(curl -s -H "Authorization: token $GH_TOKEN" "https://api.github.com/orgs/$org" | jq -r '.description // ""')
+            
+            echo '{"name": "'$org'", "description": "'$ORG_DESC'", "repos": [' >> index.json
+            
+            curl -s -H "Authorization: token $GH_TOKEN" "https://api.github.com/orgs/$org/repos?per_page=100" | \
+              jq -c '.[] | {name: .name, description: .description, visibility: .visibility, language: .language, url: .html_url, updated_at: .updated_at}' | \
+              sed 's/$/,/' | sed '$ s/,$//' >> index.json
+            
+            echo ']}' >> index.json
+          done
+          
+          echo ']}' >> index.json
+          cat index.json | jq '.' > index_formatted.json && mv index_formatted.json index.json
+
+      - name: Commit Changes
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.io"
+          git add index.json
+          git diff --staged --quiet || git commit -m "🔄 Auto-update index $(date -u +%Y-%m-%d)"
+          git push

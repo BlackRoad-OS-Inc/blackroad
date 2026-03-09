@@ -1,0 +1,63 @@
+name: 🚀 Pi AI Stats Monitor
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  monitor-stats:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup GitHub CLI
+        run: |
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+          && sudo apt update \
+          && sudo apt install gh -y
+
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Monitor GitHub Stats
+        run: |
+          chmod +x monitor-github.sh
+          ./monitor-github.sh
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      - name: Upload Stats Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: github-stats
+          path: /tmp/pi-github-stats.json
+          retention-days: 30
+
+      - name: Commit Stats (if changed)
+        run: |
+          if [ -f /tmp/pi-github-stats.json ]; then
+            mkdir -p stats
+            cp /tmp/pi-github-stats.json stats/latest.json
+
+            # Also save timestamped version
+            TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+            cp /tmp/pi-github-stats.json stats/stats-$TIMESTAMP.json
+
+            git config user.name "Pi Monitor Bot"
+            git config user.email "noreply@blackroad.io"
+            git add stats/
+
+            if git diff --staged --quiet; then
+              echo "No changes to commit"
+            else
+              git commit -m "📊 Stats update: $(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)"
+              git push
+            fi
+          fi

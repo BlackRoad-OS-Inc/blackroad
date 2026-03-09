@@ -1,0 +1,12 @@
+#!/bin/bash
+# CECE-BATTERY v1.0 - Battery Monitor
+status() {
+    if [ -f /sys/class/power_supply/BAT0/capacity ]; then
+        CAP=$(cat /sys/class/power_supply/BAT0/capacity)
+        STATUS=$(cat /sys/class/power_supply/BAT0/status)
+        echo "🔋 Battery: $CAP% ($STATUS)"
+    else
+        echo "🔌 No battery detected (desktop/server)"
+    fi
+}
+case "$1" in *) status ;; esac

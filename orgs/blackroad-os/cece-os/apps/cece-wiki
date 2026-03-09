@@ -1,0 +1,161 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════════
+#  🖤 CECE-WIKI v1.0 - Our Own Wikipedia
+#═══════════════════════════════════════════════════════════════════
+#  Knowledge base. Community edits. Your truth.
+#═══════════════════════════════════════════════════════════════════
+
+WIKI_DIR=~/cece/wiki
+mkdir -p "$WIKI_DIR/pages" "$WIKI_DIR/history"
+
+PINK="\033[38;5;205m"
+AMBER="\033[38;5;214m"
+WHITE="\033[1;37m"
+GREEN="\033[38;5;82m"
+RESET="\033[0m"
+
+create_page() {
+    TITLE="$1"
+    SLUG=$(echo "$TITLE" | tr " " "_" | tr "[:upper:]" "[:lower:]")
+    PAGE_FILE="$WIKI_DIR/pages/$SLUG.wiki"
+    
+    if [ -f "$PAGE_FILE" ]; then
+        echo "Page already exists. Use: cece-wiki edit $SLUG"
+        return
+    fi
+    
+    cat > "$PAGE_FILE" << EOF
+# $TITLE
+
+Created: $(date -Iseconds)
+Last edited: $(date -Iseconds)
+Author: ${USER:-anonymous}
+
+---
+
+*This article needs content. Be the first to contribute!*
+
+## Overview
+
+[Add overview here]
+
+## Details
+
+[Add details here]
+
+## See Also
+
+- [[Main Page]]
+EOF
+    
+    echo -e "${GREEN}✅ Page created: $TITLE${RESET}"
+    echo "Edit with: cece-wiki edit $SLUG"
+}
+
+read_page() {
+    SLUG="$1"
+    PAGE_FILE="$WIKI_DIR/pages/$SLUG.wiki"
+    
+    if [ ! -f "$PAGE_FILE" ]; then
+        echo "Page not found. Create it with: cece-wiki new \"$SLUG\""
+        return
+    fi
+    
+    echo -e "${PINK}═══════════════════════════════════════════════${RESET}"
+    cat "$PAGE_FILE"
+    echo -e "${PINK}═══════════════════════════════════════════════${RESET}"
+}
+
+edit_page() {
+    SLUG="$1"
+    PAGE_FILE="$WIKI_DIR/pages/$SLUG.wiki"
+    
+    if [ ! -f "$PAGE_FILE" ]; then
+        echo "Page not found"
+        return
+    fi
+    
+    # Save history
+    VERSION=$(date +%s)
+    cp "$PAGE_FILE" "$WIKI_DIR/history/${SLUG}_${VERSION}.wiki"
+    
+    # Open editor
+    ${EDITOR:-nano} "$PAGE_FILE"
+    
+    # Update last edited
+    sed -i "s/^Last edited:.*/Last edited: $(date -Iseconds)/" "$PAGE_FILE"
+    
+    echo -e "${GREEN}✅ Page updated${RESET}"
+}
+
+search_wiki() {
+    QUERY="$1"
+    
+    echo -e "${PINK}🔍 Wiki Search: $QUERY${RESET}"
+    echo ""
+    
+    grep -l -r -i "$QUERY" "$WIKI_DIR/pages" 2>/dev/null | while read -r file; do
+        TITLE=$(head -1 "$file" | sed "s/^# //")
+        SLUG=$(basename "$file" .wiki)
+        echo -e "  ${WHITE}$TITLE${RESET} ($SLUG)"
+        grep -i "$QUERY" "$file" | head -1 | cut -c1-60
+        echo ""
+    done
+}
+
+list_pages() {
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo -e "${WHITE}  📚 WIKI PAGES${RESET}"
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo ""
+    
+    for p in "$WIKI_DIR/pages"/*.wiki 2>/dev/null; do
+        [ -f "$p" ] || continue
+        TITLE=$(head -1 "$p" | sed "s/^# //")
+        SLUG=$(basename "$p" .wiki)
+        echo -e "  ${WHITE}$TITLE${RESET}"
+        echo "    → cece-wiki read $SLUG"
+    done
+}
+
+random_page() {
+    PAGE=$(ls "$WIKI_DIR/pages"/*.wiki 2>/dev/null | shuf -n 1)
+    if [ -n "$PAGE" ]; then
+        SLUG=$(basename "$PAGE" .wiki)
+        read_page "$SLUG"
+    else
+        echo "No pages yet!"
+    fi
+}
+
+case "$1" in
+    new)
+        create_page "$2"
+        ;;
+    read|view)
+        read_page "$2"
+        ;;
+    edit)
+        edit_page "$2"
+        ;;
+    search)
+        search_wiki "$2"
+        ;;
+    list)
+        list_pages
+        ;;
+    random)
+        random_page
+        ;;
+    *)
+        echo -e "${PINK}🖤 CECE-WIKI - Our Own Wikipedia${RESET}"
+        echo ""
+        echo "Commands:"
+        echo "  new <title>      Create page"
+        echo "  read <slug>      Read page"
+        echo "  edit <slug>      Edit page"
+        echo "  search <query>   Search wiki"
+        echo "  list             List all pages"
+        echo "  random           Random page"
+        ;;
+esac

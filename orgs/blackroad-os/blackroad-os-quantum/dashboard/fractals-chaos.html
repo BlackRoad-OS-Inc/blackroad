@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>∞ Fractals & Chaos - BlackRoad Quantum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000000; --white: #FFFFFF;
+            --amber: #F5A623; --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF; --violet: #9C27B0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black); color: var(--white);
+            overflow: hidden;
+        }
+
+        .container { display: flex; height: 100vh; }
+        .canvas-container { flex: 1; position: relative; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .sidebar {
+            width: 350px; background: rgba(0, 0, 0, 0.95);
+            border-left: 2px solid var(--hot-pink);
+            padding: 34px; overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 34px;
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+
+        .section { margin-bottom: 34px; }
+        .section-title {
+            font-size: 16px; color: var(--hot-pink);
+            margin-bottom: 13px; text-transform: uppercase;
+        }
+
+        button {
+            width: 100%; padding: 13px; margin: 8px 0;
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; color: var(--white);
+            font-size: 13px; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--hot-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 29, 108, 0.5);
+        }
+
+        button.active {
+            background: var(--hot-pink);
+            box-shadow: 0 0 20px rgba(255, 29, 108, 0.8);
+        }
+
+        .formula {
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 3px solid #00FF88;
+            padding: 13px; margin: 13px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px; color: #00FF88;
+        }
+
+        .info {
+            font-size: 12px; color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6; margin-top: 8px;
+        }
+
+        .slider-group {
+            margin: 13px 0;
+        }
+
+        .slider-label {
+            font-size: 12px; color: var(--amber);
+            margin-bottom: 5px; display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            background: rgba(255, 29, 108, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 21px; height: 21px;
+            border-radius: 50%;
+            background: var(--hot-pink);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--hot-pink);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 21px; height: 21px;
+            border-radius: 50%;
+            background: var(--hot-pink);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--hot-pink);
+        }
+
+        .stat-box {
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; padding: 13px;
+            margin: 8px 0;
+        }
+
+        .stat-label { font-size: 11px; color: var(--amber); }
+        .stat-value {
+            font-size: 16px; font-weight: 700;
+            color: var(--white); margin-top: 5px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="chaosCanvas"></canvas>
+        </div>
+
+        <div class="sidebar">
+            <h1>∞ Fractals & Chaos</h1>
+
+            <div class="section">
+                <div class="section-title">Fractals</div>
+                <button onclick="showMandelbrot()" id="btnMandelbrot">Mandelbrot Set</button>
+                <button onclick="showJuliaSet()" id="btnJulia">Julia Set</button>
+                <button onclick="showBurningShip()" id="btnBurningShip">Burning Ship</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Chaos</div>
+                <button onclick="showLorenz()" id="btnLorenz">Lorenz Attractor</button>
+                <button onclick="showLogistic()" id="btnLogistic">Logistic Map</button>
+                <button onclick="showHenon()" id="btnHenon">Hénon Map</button>
+            </div>
+
+            <div class="section" id="fractalControls">
+                <div class="section-title">Fractal Controls</div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Max Iterations</span>
+                        <span id="maxIterValue">100</span>
+                    </div>
+                    <input type="range" id="maxIter" min="20" max="500" value="100" step="10">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Zoom</span>
+                        <span id="zoomValue">1.0x</span>
+                    </div>
+                    <input type="range" id="zoom" min="1" max="1000" value="1" step="1">
+                </div>
+
+                <div class="slider-group" id="juliaControl" style="display:none;">
+                    <div class="slider-label">
+                        <span>Julia C (real)</span>
+                        <span id="juliaCRealValue">-0.7</span>
+                    </div>
+                    <input type="range" id="juliaCReal" min="-2" max="2" value="-0.7" step="0.01">
+                </div>
+
+                <div class="slider-group" id="juliaControlImag" style="display:none;">
+                    <div class="slider-label">
+                        <span>Julia C (imag)</span>
+                        <span id="juliaCImagValue">0.27</span>
+                    </div>
+                    <input type="range" id="juliaCImag" min="-2" max="2" value="0.27" step="0.01">
+                </div>
+
+                <button onclick="resetView()">Reset View</button>
+            </div>
+
+            <div class="section" id="lorenzControls" style="display:none;">
+                <div class="section-title">Lorenz Parameters</div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>σ (sigma)</span>
+                        <span id="sigmaValue">10.0</span>
+                    </div>
+                    <input type="range" id="sigma" min="0" max="30" value="10" step="0.1">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>ρ (rho)</span>
+                        <span id="rhoValue">28.0</span>
+                    </div>
+                    <input type="range" id="rho" min="0" max="50" value="28" step="0.1">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>β (beta)</span>
+                        <span id="betaValue">2.67</span>
+                    </div>
+                    <input type="range" id="beta" min="0" max="10" value="2.67" step="0.01">
+                </div>
+
+                <button onclick="resetLorenz()">Reset Attractor</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Current View</div>
+                <div class="stat-box">
+                    <div class="stat-label">Mode</div>
+                    <div class="stat-value" id="currentMode">Mandelbrot</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Dimension</div>
+                    <div class="stat-value" id="dimension">~2.0</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">The Math</div>
+                <div class="formula" id="currentFormula">
+                    z_(n+1) = z_n² + c<br>
+                    <br>
+                    Mandelbrot: c varies, z₀ = 0<br>
+                    Julia: c fixed, z₀ varies
+                </div>
+                <div class="info" id="currentInfo">
+                    The Mandelbrot set is the set of complex numbers c for which the iteration doesn't diverge to infinity.
+                    <br><br>
+                    Boundary has fractal dimension ≈ 2. Self-similar at all scales. Infinite complexity!
+                </div>
+            </div>
+
+            <div class="info" style="margin-top: 34px; padding-top: 34px; border-top: 1px solid rgba(255,255,255,0.2);">
+                <strong>Quantum Connection:</strong> Quantum chaos shows similar fractal patterns in wave function scars and energy level statistics.
+                <br><br>
+                <strong>Click and drag</strong> to explore! 🌀∞
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('chaosCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        let mode = 'mandelbrot';
+        let maxIterations = 100;
+        let zoom = 1;
+        let centerX = 0;
+        let centerY = 0;
+
+        // Julia set parameters
+        let juliaCReal = -0.7;
+        let juliaCImag = 0.27;
+
+        // Lorenz parameters
+        let sigma = 10.0;
+        let rho = 28.0;
+        let beta = 2.67;
+        let lorenzPoints = [];
+
+        // Logistic map parameters
+        let logisticPoints = [];
+
+        // Henon map parameters
+        let henonPoints = [];
+
+        function resizeCanvas() {
+            width = canvas.width = canvas.offsetWidth;
+            height = canvas.height = canvas.offsetHeight;
+            draw();
+        }
+
+        function draw() {
+            if (mode === 'mandelbrot' || mode === 'julia' || mode === 'burning-ship') {
+                drawFractal();
+            } else if (mode === 'lorenz') {
+                drawLorenz();
+            } else if (mode === 'logistic') {
+                drawLogisticMap();
+            } else if (mode === 'henon') {
+                drawHenon();
+            }
+        }
+
+        function drawFractal() {
+            const imageData = ctx.createImageData(width, height);
+            const data = imageData.data;
+
+            const scale = 4 / zoom;
+            const offsetX = centerX;
+            const offsetY = centerY;
+
+            for (let px = 0; px < width; px++) {
+                for (let py = 0; py < height; py++) {
+                    const x0 = (px - width / 2) * scale / width + offsetX;
+                    const y0 = (py - height / 2) * scale / height + offsetY;
+
+                    let iterations;
+                    if (mode === 'mandelbrot') {
+                        iterations = mandelbrot(x0, y0);
+                    } else if (mode === 'julia') {
+                        iterations = julia(x0, y0, juliaCReal, juliaCImag);
+                    } else if (mode === 'burning-ship') {
+                        iterations = burningShip(x0, y0);
+                    }
+
+                    const color = getColor(iterations, maxIterations);
+                    const idx = (py * width + px) * 4;
+                    data[idx] = color.r;
+                    data[idx + 1] = color.g;
+                    data[idx + 2] = color.b;
+                    data[idx + 3] = 255;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function mandelbrot(cx, cy) {
+            let x = 0, y = 0;
+            let iteration = 0;
+
+            while (x*x + y*y <= 4 && iteration < maxIterations) {
+                const xtemp = x*x - y*y + cx;
+                y = 2*x*y + cy;
+                x = xtemp;
+                iteration++;
+            }
+
+            return iteration;
+        }
+
+        function julia(zx, zy, cx, cy) {
+            let x = zx, y = zy;
+            let iteration = 0;
+
+            while (x*x + y*y <= 4 && iteration < maxIterations) {
+                const xtemp = x*x - y*y + cx;
+                y = 2*x*y + cy;
+                x = xtemp;
+                iteration++;
+            }
+
+            return iteration;
+        }
+
+        function burningShip(cx, cy) {
+            let x = 0, y = 0;
+            let iteration = 0;
+
+            while (x*x + y*y <= 4 && iteration < maxIterations) {
+                const xtemp = x*x - y*y - cx;
+                y = Math.abs(2*x*y) - cy;
+                x = Math.abs(xtemp);
+                iteration++;
+            }
+
+            return iteration;
+        }
+
+        function getColor(iterations, maxIter) {
+            if (iterations === maxIter) {
+                return { r: 0, g: 0, b: 0 };
+            }
+
+            const t = iterations / maxIter;
+
+            // BlackRoad gradient
+            if (t < 0.25) {
+                const s = t / 0.25;
+                return {
+                    r: Math.floor(245 + (255 - 245) * s),
+                    g: Math.floor(166 + (29 - 166) * s),
+                    b: Math.floor(35 + (108 - 35) * s)
+                };
+            } else if (t < 0.5) {
+                const s = (t - 0.25) / 0.25;
+                return {
+                    r: Math.floor(255 + (156 - 255) * s),
+                    g: Math.floor(29 + (39 - 29) * s),
+                    b: Math.floor(108 + (176 - 108) * s)
+                };
+            } else if (t < 0.75) {
+                const s = (t - 0.5) / 0.25;
+                return {
+                    r: Math.floor(156 + (41 - 156) * s),
+                    g: Math.floor(39 + (121 - 39) * s),
+                    b: Math.floor(176 + (255 - 176) * s)
+                };
+            } else {
+                const s = (t - 0.75) / 0.25;
+                return {
+                    r: Math.floor(41 * (1 - s)),
+                    g: Math.floor(121 * (1 - s)),
+                    b: Math.floor(255 * (1 - s))
+                };
+            }
+        }
+
+        function drawLorenz() {
+            if (lorenzPoints.length === 0) {
+                initLorenz();
+            }
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw attractor
+            const scale = 15;
+            const offsetX = width / 2;
+            const offsetY = height / 2;
+
+            for (let i = 1; i < lorenzPoints.length; i++) {
+                const prev = lorenzPoints[i - 1];
+                const curr = lorenzPoints[i];
+
+                const alpha = i / lorenzPoints.length;
+                const hue = (alpha * 360) % 360;
+
+                ctx.strokeStyle = `hsla(${hue}, 100%, 60%, ${alpha * 0.5})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(offsetX + prev.x * scale, offsetY - prev.z * scale);
+                ctx.lineTo(offsetX + curr.x * scale, offsetY - curr.z * scale);
+                ctx.stroke();
+            }
+
+            // Continue evolution
+            stepLorenz();
+            requestAnimationFrame(() => {
+                if (mode === 'lorenz') drawLorenz();
+            });
+        }
+
+        function initLorenz() {
+            lorenzPoints = [];
+            let x = 1, y = 1, z = 1;
+            const dt = 0.01;
+
+            for (let i = 0; i < 3000; i++) {
+                lorenzPoints.push({ x, y, z });
+
+                const dx = sigma * (y - x);
+                const dy = x * (rho - z) - y;
+                const dz = x * y - beta * z;
+
+                x += dx * dt;
+                y += dy * dt;
+                z += dz * dt;
+            }
+        }
+
+        function stepLorenz() {
+            const last = lorenzPoints[lorenzPoints.length - 1];
+            const dt = 0.01;
+
+            const dx = sigma * (last.y - last.x);
+            const dy = last.x * (rho - last.z) - last.y;
+            const dz = last.x * last.y - beta * last.z;
+
+            const x = last.x + dx * dt;
+            const y = last.y + dy * dt;
+            const z = last.z + dz * dt;
+
+            lorenzPoints.push({ x, y, z });
+            if (lorenzPoints.length > 3000) {
+                lorenzPoints.shift();
+            }
+        }
+
+        function drawLogisticMap() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            // Bifurcation diagram
+            for (let px = 0; px < width; px++) {
+                const r = 2.5 + (px / width) * 1.5; // r from 2.5 to 4.0
+                let x = 0.5;
+
+                // Skip transient
+                for (let i = 0; i < 100; i++) {
+                    x = r * x * (1 - x);
+                }
+
+                // Plot attractors
+                for (let i = 0; i < 100; i++) {
+                    x = r * x * (1 - x);
+                    const py = height - (x * height);
+
+                    ctx.fillStyle = '#FF1D6C';
+                    ctx.fillRect(px, py, 1, 1);
+                }
+            }
+
+            // Labels
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillText('Logistic Map: x_(n+1) = rx_n(1-x_n)', 20, 30);
+            ctx.fillText('r →', width - 60, height - 20);
+        }
+
+        function drawHenon() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            const a = 1.4;
+            const b = 0.3;
+
+            let x = 0, y = 0;
+            const scale = 200;
+            const offsetX = width / 2;
+            const offsetY = height / 2;
+
+            for (let i = 0; i < 10000; i++) {
+                const xnew = 1 - a * x * x + y;
+                const ynew = b * x;
+                x = xnew;
+                y = ynew;
+
+                const px = offsetX + x * scale;
+                const py = offsetY - y * scale;
+
+                const alpha = i / 10000;
+                const hue = (alpha * 360) % 360;
+
+                ctx.fillStyle = `hsla(${hue}, 100%, 60%, 0.5)`;
+                ctx.fillRect(px, py, 2, 2);
+            }
+
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillText('Hénon Map: Strange Attractor', 20, 30);
+        }
+
+        function showMandelbrot() {
+            mode = 'mandelbrot';
+            setActiveButton('btnMandelbrot');
+            document.getElementById('fractalControls').style.display = 'block';
+            document.getElementById('lorenzControls').style.display = 'none';
+            document.getElementById('juliaControl').style.display = 'none';
+            document.getElementById('juliaControlImag').style.display = 'none';
+
+            document.getElementById('currentMode').textContent = 'Mandelbrot Set';
+            document.getElementById('dimension').textContent = '~2.0';
+            document.getElementById('currentFormula').innerHTML =
+                'z_(n+1) = z_n² + c<br><br>Mandelbrot: c varies, z₀ = 0<br>Set = {c : |z_n| doesn\'t diverge}';
+            document.getElementById('currentInfo').innerHTML =
+                'The Mandelbrot set is the set of complex numbers c for which the iteration doesn\'t diverge to infinity.<br><br>Boundary has fractal dimension ≈ 2. Self-similar at all scales. Infinite complexity!';
+
+            resetView();
+        }
+
+        function showJuliaSet() {
+            mode = 'julia';
+            setActiveButton('btnJulia');
+            document.getElementById('fractalControls').style.display = 'block';
+            document.getElementById('lorenzControls').style.display = 'none';
+            document.getElementById('juliaControl').style.display = 'block';
+            document.getElementById('juliaControlImag').style.display = 'block';
+
+            document.getElementById('currentMode').textContent = 'Julia Set';
+            document.getElementById('dimension').textContent = '~2.0';
+            document.getElementById('currentFormula').innerHTML =
+                'z_(n+1) = z_n² + c<br><br>Julia: c = ' + juliaCReal.toFixed(2) + ' + ' + juliaCImag.toFixed(2) + 'i<br>z₀ varies';
+            document.getElementById('currentInfo').innerHTML =
+                'Julia sets are connected if c is in the Mandelbrot set, disconnected otherwise.<br><br>Every point in the Mandelbrot set corresponds to a unique Julia set!';
+
+            centerX = 0; centerY = 0; zoom = 1;
+            draw();
+        }
+
+        function showBurningShip() {
+            mode = 'burning-ship';
+            setActiveButton('btnBurningShip');
+            document.getElementById('fractalControls').style.display = 'block';
+            document.getElementById('lorenzControls').style.display = 'none';
+            document.getElementById('juliaControl').style.display = 'none';
+            document.getElementById('juliaControlImag').style.display = 'none';
+
+            document.getElementById('currentMode').textContent = 'Burning Ship';
+            document.getElementById('dimension').textContent = '~2.0';
+            document.getElementById('currentFormula').innerHTML =
+                'z_(n+1) = (|Re(z_n)| + i|Im(z_n)|)² - c<br><br>Absolute values create asymmetry';
+            document.getElementById('currentInfo').innerHTML =
+                'The Burning Ship fractal uses absolute values in its iteration, creating a distinctive asymmetric shape that resembles a burning ship!<br><br>Discovered in 1992.';
+
+            centerX = -0.5; centerY = -0.6; zoom = 1;
+            draw();
+        }
+
+        function showLorenz() {
+            mode = 'lorenz';
+            setActiveButton('btnLorenz');
+            document.getElementById('fractalControls').style.display = 'none';
+            document.getElementById('lorenzControls').style.display = 'block';
+
+            document.getElementById('currentMode').textContent = 'Lorenz Attractor';
+            document.getElementById('dimension').textContent = '~2.06';
+            document.getElementById('currentFormula').innerHTML =
+                'dx/dt = σ(y - x)<br>dy/dt = x(ρ - z) - y<br>dz/dt = xy - βz';
+            document.getElementById('currentInfo').innerHTML =
+                'The Lorenz attractor is a set of chaotic solutions to the Lorenz system. Butterfly effect!<br><br>Tiny changes in initial conditions lead to vastly different outcomes.';
+
+            initLorenz();
+            drawLorenz();
+        }
+
+        function showLogistic() {
+            mode = 'logistic';
+            setActiveButton('btnLogistic');
+            document.getElementById('fractalControls').style.display = 'none';
+            document.getElementById('lorenzControls').style.display = 'none';
+
+            document.getElementById('currentMode').textContent = 'Logistic Map';
+            document.getElementById('dimension').textContent = '~0.538';
+            document.getElementById('currentFormula').innerHTML =
+                'x_(n+1) = rx_n(1 - x_n)<br><br>Bifurcation diagram shows<br>transition to chaos';
+            document.getElementById('currentInfo').innerHTML =
+                'The logistic map shows how simple equations can produce complex, chaotic behavior.<br><br>Period-doubling route to chaos!';
+
+            drawLogisticMap();
+        }
+
+        function showHenon() {
+            mode = 'henon';
+            setActiveButton('btnHenon');
+            document.getElementById('fractalControls').style.display = 'none';
+            document.getElementById('lorenzControls').style.display = 'none';
+
+            document.getElementById('currentMode').textContent = 'Hénon Map';
+            document.getElementById('dimension').textContent = '~1.26';
+            document.getElementById('currentFormula').innerHTML =
+                'x_(n+1) = 1 - ax_n² + y_n<br>y_(n+1) = bx_n<br><br>a = 1.4, b = 0.3';
+            document.getElementById('currentInfo').innerHTML =
+                'The Hénon map is a discrete-time dynamical system that exhibits chaotic behavior and has a strange attractor.<br><br>Discovered by Michel Hénon in 1976.';
+
+            drawHenon();
+        }
+
+        function setActiveButton(btnId) {
+            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(btnId).classList.add('active');
+        }
+
+        function resetView() {
+            if (mode === 'mandelbrot') {
+                centerX = -0.5; centerY = 0; zoom = 1;
+            } else if (mode === 'julia') {
+                centerX = 0; centerY = 0; zoom = 1;
+            } else if (mode === 'burning-ship') {
+                centerX = -0.5; centerY = -0.6; zoom = 1;
+            }
+            document.getElementById('zoom').value = 1;
+            document.getElementById('zoomValue').textContent = '1.0x';
+            draw();
+        }
+
+        function resetLorenz() {
+            initLorenz();
+        }
+
+        // Event listeners
+        document.getElementById('maxIter').addEventListener('input', (e) => {
+            maxIterations = parseInt(e.target.value);
+            document.getElementById('maxIterValue').textContent = maxIterations;
+            draw();
+        });
+
+        document.getElementById('zoom').addEventListener('input', (e) => {
+            zoom = parseFloat(e.target.value);
+            document.getElementById('zoomValue').textContent = zoom.toFixed(1) + 'x';
+            draw();
+        });
+
+        document.getElementById('juliaCReal').addEventListener('input', (e) => {
+            juliaCReal = parseFloat(e.target.value);
+            document.getElementById('juliaCRealValue').textContent = juliaCReal.toFixed(2);
+            document.getElementById('currentFormula').innerHTML =
+                'z_(n+1) = z_n² + c<br><br>Julia: c = ' + juliaCReal.toFixed(2) + ' + ' + juliaCImag.toFixed(2) + 'i<br>z₀ varies';
+            draw();
+        });
+
+        document.getElementById('juliaCImag').addEventListener('input', (e) => {
+            juliaCImag = parseFloat(e.target.value);
+            document.getElementById('juliaCImagValue').textContent = juliaCImag.toFixed(2);
+            document.getElementById('currentFormula').innerHTML =
+                'z_(n+1) = z_n² + c<br><br>Julia: c = ' + juliaCReal.toFixed(2) + ' + ' + juliaCImag.toFixed(2) + 'i<br>z₀ varies';
+            draw();
+        });
+
+        document.getElementById('sigma').addEventListener('input', (e) => {
+            sigma = parseFloat(e.target.value);
+            document.getElementById('sigmaValue').textContent = sigma.toFixed(1);
+        });
+
+        document.getElementById('rho').addEventListener('input', (e) => {
+            rho = parseFloat(e.target.value);
+            document.getElementById('rhoValue').textContent = rho.toFixed(1);
+        });
+
+        document.getElementById('beta').addEventListener('input', (e) => {
+            beta = parseFloat(e.target.value);
+            document.getElementById('betaValue').textContent = beta.toFixed(2);
+        });
+
+        // Click and drag
+        let isDragging = false;
+        let lastX, lastY;
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging && (mode === 'mandelbrot' || mode === 'julia' || mode === 'burning-ship')) {
+                const dx = (e.clientX - lastX) * 4 / (zoom * width);
+                const dy = (e.clientY - lastY) * 4 / (zoom * height);
+                centerX -= dx;
+                centerY -= dy;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                draw();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (mode === 'mandelbrot' || mode === 'julia' || mode === 'burning-ship') {
+                const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                zoom *= zoomFactor;
+                document.getElementById('zoom').value = zoom;
+                document.getElementById('zoomValue').textContent = zoom.toFixed(1) + 'x';
+                draw();
+            }
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Initialize
+        resizeCanvas();
+        showMandelbrot();
+    </script>
+</body>
+</html>

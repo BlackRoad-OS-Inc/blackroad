@@ -1,0 +1,20 @@
+#!/bin/bash
+# CECE-SNIPPET v1.0 - Code Snippets
+SNIP_DIR=~/cece/snippets
+mkdir -p "$SNIP_DIR"
+save() {
+    NAME="$1"
+    LANG="$2"
+    CODE="$3"
+    mkdir -p "$SNIP_DIR/$LANG"
+    echo "$CODE" > "$SNIP_DIR/$LANG/$NAME"
+    echo "Saved: $LANG/$NAME"
+}
+get() { cat "$SNIP_DIR/$1/$2" 2>/dev/null || echo "Not found"; }
+list() { find "$SNIP_DIR" -type f | sed "s|$SNIP_DIR/||"; }
+case "$1" in
+    save) save "$2" "$3" "$4" ;;
+    get) get "$2" "$3" ;;
+    list) list ;;
+    *) echo "CECE-SNIPPET: save <name> <lang> <code> | get <lang> <name> | list" ;;
+esac

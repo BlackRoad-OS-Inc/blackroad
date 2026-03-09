@@ -1,0 +1,16 @@
+#!/bin/bash
+# CECE-SPEAK v1.0 - Text to Speech
+say_text() {
+    TEXT="$1"
+    if command -v espeak &>/dev/null; then
+        espeak "$TEXT"
+    elif command -v say &>/dev/null; then
+        say "$TEXT"
+    else
+        echo "[SPEAKING]: $TEXT"
+    fi
+}
+case "$1" in
+    say) say_text "$2" ;;
+    *) echo "CECE-SPEAK: say <text>" ;;
+esac

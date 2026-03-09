@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-DEBUG v1.0 - Debug Helper
+trace() { bash -x "$1"; }
+strace_cmd() { strace "$@" 2>&1 | head -50; }
+vars() { set | grep -E "^[A-Z]" | head -30; }
+case "$1" in
+    trace) trace "$2" ;;
+    strace) shift; strace_cmd "$@" ;;
+    vars) vars ;;
+    *) echo "CECE-DEBUG: trace <script> | strace <cmd> | vars" ;;
+esac

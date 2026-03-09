@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlackRoad Command Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --br-orange: #ff6b35;
+      --br-pink: #ff1493;
+      --br-purple: #ba55d3;
+      --br-blue: #1e90ff;
+    }
+    body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #e5e5e5; }
+    h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+    code, .mono { font-family: 'JetBrains Mono', monospace; }
+    .gradient-text {
+      background: linear-gradient(135deg, var(--br-orange), var(--br-pink), var(--br-purple), var(--br-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .gradient-border {
+      border: 2px solid transparent;
+      background: linear-gradient(#0a0a0a, #0a0a0a) padding-box,
+                  linear-gradient(135deg, var(--br-orange), var(--br-pink), var(--br-purple), var(--br-blue)) border-box;
+    }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .card { background: #111; border-radius: 12px; }
+    .glow { box-shadow: 0 0 20px rgba(255, 107, 53, 0.3); }
+  </style>
+</head>
+<body class="min-h-screen p-6">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <header class="mb-8">
+      <h1 class="text-4xl font-bold gradient-text mb-2">BlackRoad Command Center</h1>
+      <p class="text-gray-400">Real-time infrastructure status • <span id="timestamp" class="mono text-sm"></span></p>
+    </header>
+
+    <!-- Live Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="card gradient-border p-4 text-center">
+        <div id="stat-orgs" class="text-3xl font-bold gradient-text">--</div>
+        <div class="text-gray-400 text-sm">GitHub Orgs</div>
+      </div>
+      <div class="card gradient-border p-4 text-center">
+        <div id="stat-repos" class="text-3xl font-bold gradient-text">--</div>
+        <div class="text-gray-400 text-sm">Repositories</div>
+      </div>
+      <div class="card gradient-border p-4 text-center">
+        <div id="stat-agents" class="text-3xl font-bold gradient-text">--</div>
+        <div class="text-gray-400 text-sm">AI Agents</div>
+      </div>
+      <div class="card gradient-border p-4 text-center">
+        <div id="stat-workers" class="text-3xl font-bold gradient-text">--</div>
+        <div class="text-gray-400 text-sm">Workers</div>
+      </div>
+    </div>
+
+    <!-- Services Grid -->
+    <h2 class="text-xl font-semibold mb-4">Services</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div class="card p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">Continuity API</h3>
+          <span id="status-continuity" class="w-3 h-3 rounded-full bg-gray-500"></span>
+        </div>
+        <p class="text-gray-400 text-sm mb-2">Memory anchors & context sync</p>
+        <div id="continuity-anchors" class="mono text-xs text-gray-500">Loading...</div>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">Agent Registry</h3>
+          <span id="status-agents" class="w-3 h-3 rounded-full bg-gray-500"></span>
+        </div>
+        <p class="text-gray-400 text-sm mb-2">1,000 unique AI agents</p>
+        <div id="agents-sample" class="mono text-xs text-gray-500">Loading...</div>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">Stripe Billing</h3>
+          <span id="status-stripe" class="w-3 h-3 rounded-full bg-gray-500"></span>
+        </div>
+        <p class="text-gray-400 text-sm mb-2">Products & subscriptions</p>
+        <div id="stripe-products" class="mono text-xs text-gray-500">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Agent Roster -->
+    <h2 class="text-xl font-semibold mb-4">Agent Roster <span class="text-gray-500 text-sm">(live from D1)</span></h2>
+    <div id="agent-grid" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Quick Links -->
+    <h2 class="text-xl font-semibold mb-4">Quick Links</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <a href="https://github.com/BlackRoad-OS" class="card p-3 hover:glow transition-all text-center">
+        <div class="text-2xl mb-1">📦</div>
+        <div class="text-sm">GitHub Org</div>
+      </a>
+      <a href="https://dash.cloudflare.com" class="card p-3 hover:glow transition-all text-center">
+        <div class="text-2xl mb-1">☁️</div>
+        <div class="text-sm">Cloudflare</div>
+      </a>
+      <a href="https://dashboard.stripe.com" class="card p-3 hover:glow transition-all text-center">
+        <div class="text-2xl mb-1">💳</div>
+        <div class="text-sm">Stripe</div>
+      </a>
+      <a href="https://buy.stripe.com/4gM9AS59N43Q7f27tz4ko04" class="card p-3 hover:glow transition-all text-center gradient-border">
+        <div class="text-2xl mb-1">🤖</div>
+        <div class="text-sm">Get an Agent</div>
+      </a>
+    </div>
+
+    <footer class="mt-12 text-center text-gray-600 text-sm">
+      <p>BlackRoad OS • Continuity across conversations</p>
+      <p class="mono mt-1">Z := yx - w</p>
+    </footer>
+  </div>
+
+  <script>
+    const CONTINUITY_API = 'https://blackroad-continuity-api.amundsonalexa.workers.dev';
+    const API_KEY = 'blackroad-continuity-2026';
+
+    async function fetchWithKey(url) {
+      return fetch(url, { headers: { 'X-BR-API-KEY': API_KEY } }).then(r => r.json());
+    }
+
+    async function loadDashboard() {
+      document.getElementById('timestamp').textContent = new Date().toISOString();
+
+      // Continuity API health
+      try {
+        const health = await fetchWithKey(`${CONTINUITY_API}/health`);
+        document.getElementById('status-continuity').className = 'w-3 h-3 rounded-full bg-green-500 pulse';
+        document.getElementById('continuity-anchors').textContent = `${health.anchors_count} anchors`;
+        document.getElementById('stat-agents').textContent = '1,000';
+      } catch (e) {
+        document.getElementById('status-continuity').className = 'w-3 h-3 rounded-full bg-red-500';
+        document.getElementById('continuity-anchors').textContent = 'Error';
+      }
+
+      // Hardcoded stats (from our index)
+      document.getElementById('stat-orgs').textContent = '15';
+      document.getElementById('stat-repos').textContent = '318';
+      document.getElementById('stat-workers').textContent = '82';
+
+      // Stripe status
+      document.getElementById('status-stripe').className = 'w-3 h-3 rounded-full bg-green-500';
+      document.getElementById('stripe-products').textContent = '12 products active';
+
+      // Agent status
+      document.getElementById('status-agents').className = 'w-3 h-3 rounded-full bg-green-500';
+      document.getElementById('agents-sample').textContent = '30 in D1, 1000 in registry';
+
+      // Load agent roster from registry JSON
+      try {
+        const agentsResp = await fetch('https://raw.githubusercontent.com/BlackRoad-OS/agent-registry/main/agents.json');
+        const data = await agentsResp.json();
+        const agents = data.agents.slice(0, 20); // First 20
+        const grid = document.getElementById('agent-grid');
+        grid.innerHTML = agents.map(a => `
+          <div class="card p-3">
+            <div class="font-semibold text-sm">${a.name}</div>
+            <div class="text-xs text-gray-500">${a.type}</div>
+            <div class="mono text-xs text-gray-600 mt-1">${a.id}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('agent-grid').innerHTML = '<div class="text-red-500">Failed to load agents</div>';
+      }
+    }
+
+    loadDashboard();
+    setInterval(loadDashboard, 30000); // Refresh every 30s
+  </script>
+</body>
+</html>

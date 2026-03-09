@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Console - Developer Control Panel</title>
+    <style>
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --amber: #F5A623;
+            --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF;
+            --violet: #9C27B0;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --error: #F44336;
+            --phi: 1.618;
+            --space-xs: 8px;
+            --space-sm: 13px;
+            --space-md: 21px;
+            --space-lg: 34px;
+            --space-xl: 55px;
+            --space-2xl: 89px;
+            --space-3xl: 144px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            line-height: 1.618;
+            background: var(--black);
+            color: var(--white);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.03);
+            border-right: 1px solid rgba(245, 166, 35, 0.2);
+            padding: var(--space-lg);
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg,
+                var(--amber) 0%,
+                var(--hot-pink) 38.2%,
+                var(--violet) 61.8%,
+                var(--electric-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--space-xl);
+        }
+
+        .nav-section {
+            margin-bottom: var(--space-lg);
+        }
+
+        .nav-title {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: var(--space-sm);
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: var(--space-sm) var(--space-md);
+            margin: var(--space-xs) 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 29, 108, 0.1);
+            color: var(--hot-pink);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--hot-pink), var(--violet));
+            color: var(--white);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: var(--space-lg);
+        }
+
+        .header {
+            margin-bottom: var(--space-2xl);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1rem;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-2xl);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(245, 166, 35, 0.3);
+            border-radius: var(--space-md);
+            padding: var(--space-lg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            border-color: var(--hot-pink);
+            transform: translateY(-4px);
+            box-shadow: 0 13px 34px rgba(255, 29, 108, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .card-title {
+            color: var(--hot-pink);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .card-icon {
+            font-size: 2rem;
+        }
+
+        .card-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+            background: linear-gradient(135deg, var(--electric-blue), var(--violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .card-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: var(--space-xs);
+        }
+
+        .status-success { background: var(--success); }
+        .status-warning { background: var(--warning); }
+        .status-error { background: var(--error); }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(245, 166, 35, 0.3);
+            border-radius: var(--space-md);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            padding: var(--space-md);
+            text-align: left;
+            font-weight: 600;
+            color: var(--hot-pink);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        td {
+            padding: var(--space-md);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover {
+            background: rgba(255, 29, 108, 0.05);
+        }
+
+        .btn {
+            padding: var(--space-sm) var(--space-lg);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--hot-pink), var(--violet));
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 21px rgba(255, 29, 108, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">BlackRoad Console</div>
+
+        <div class="nav-section">
+            <div class="nav-title">Overview</div>
+            <div class="nav-item active">
+                <span>📊</span> Dashboard
+            </div>
+            <div class="nav-item">
+                <span>🚀</span> Deployments
+            </div>
+            <div class="nav-item">
+                <span>📈</span> Analytics
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-title">Development</div>
+            <div class="nav-item">
+                <span>🔧</span> Projects
+            </div>
+            <div class="nav-item">
+                <span>🔑</span> API Keys
+            </div>
+            <div class="nav-item">
+                <span>🌐</span> Domains
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-title">AI & Quantum</div>
+            <div class="nav-item">
+                <span>🤖</span> AI Agents
+            </div>
+            <div class="nav-item">
+                <span>⚛️</span> Quantum Jobs
+            </div>
+            <div class="nav-item">
+                <span>🧠</span> Models
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-title">System</div>
+            <div class="nav-item">
+                <span>⚙️</span> Settings
+            </div>
+            <div class="nav-item">
+                <span>👤</span> Account
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Dashboard</h1>
+            <p class="subtitle">Welcome back! Here's what's happening with your BlackRoad infrastructure.</p>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Active Projects</div>
+                    <div class="card-icon">📁</div>
+                </div>
+                <div class="card-value">60</div>
+                <div class="card-label">
+                    <span class="status-indicator status-success pulse"></span>
+                    All systems operational
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Deployments Today</div>
+                    <div class="card-icon">🚀</div>
+                </div>
+                <div class="card-value">12</div>
+                <div class="card-label">
+                    <span class="status-indicator status-success"></span>
+                    +3 from yesterday
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">API Requests</div>
+                    <div class="card-icon">⚡</div>
+                </div>
+                <div class="card-value">1.2M</div>
+                <div class="card-label">
+                    <span class="status-indicator status-success"></span>
+                    Last 24 hours
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">AI Agents Active</div>
+                    <div class="card-icon">🤖</div>
+                </div>
+                <div class="card-value">8</div>
+                <div class="card-label">
+                    <span class="status-indicator status-success pulse"></span>
+                    Coordinating via [MEMORY]
+                </div>
+            </div>
+        </div>
+
+        <h2 style="color: var(--hot-pink); margin-bottom: var(--space-lg);">Recent Deployments</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Branch</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>earth-blackroad-io</td>
+                        <td>main</td>
+                        <td><span class="status-indicator status-success"></span> Success</td>
+                        <td>2 minutes ago</td>
+                        <td><button class="btn btn-primary">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>blackroad-dashboard</td>
+                        <td>main</td>
+                        <td><span class="status-indicator status-success"></span> Success</td>
+                        <td>5 minutes ago</td>
+                        <td><button class="btn btn-primary">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>blackroad-api</td>
+                        <td>main</td>
+                        <td><span class="status-indicator status-success"></span> Success</td>
+                        <td>8 minutes ago</td>
+                        <td><button class="btn btn-primary">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>console-blackroad-io</td>
+                        <td>main</td>
+                        <td><span class="status-indicator status-warning pulse"></span> Building</td>
+                        <td>Just now</td>
+                        <td><button class="btn btn-primary">View</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

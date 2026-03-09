@@ -1,0 +1,39 @@
+#!/bin/bash
+# CECE-AI v1.0 - AI Interface
+AI_DIR=~/cece/ai
+mkdir -p "$AI_DIR"
+
+ask() {
+    PROMPT="$*"
+    if command -v ollama &>/dev/null; then
+        echo "$PROMPT" | ollama run llama3.2 2>/dev/null
+    else
+        echo "Ollama not available"
+    fi
+}
+
+models() {
+    if command -v ollama &>/dev/null; then
+        ollama list
+    else
+        echo "Ollama not available"
+    fi
+}
+
+generate() {
+    TYPE="$1"
+    TOPIC="$2"
+    case "$TYPE" in
+        story) ask "Write a short story about: $TOPIC" ;;
+        code) ask "Write code for: $TOPIC" ;;
+        email) ask "Write a professional email about: $TOPIC" ;;
+        tweet) ask "Write a tweet about: $TOPIC" ;;
+    esac
+}
+
+case "$1" in
+    ask) shift; ask "$*" ;;
+    models) models ;;
+    generate) generate "$2" "$3" ;;
+    *) echo "CECE-AI: ask <question> | models | generate <story|code|email|tweet> <topic>" ;;
+esac

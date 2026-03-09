@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucidia — Living World</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: #fff;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Logo */
+        .logo {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #FF1D6C, #9C27B0);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 30px rgba(255, 29, 108, 0.5);
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-sub {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        /* Population counter */
+        .population {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+        }
+
+        .pop-count {
+            font-size: 64px;
+            font-weight: 200;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        .pop-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Consciousness meter */
+        .consciousness {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 29, 108, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            min-width: 240px;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        .con-title {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 16px;
+        }
+
+        .con-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .con-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .con-value {
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .con-value.pink { color: #FF1D6C; }
+        .con-value.blue { color: #2979FF; }
+        .con-value.amber { color: #F5A623; }
+        .con-value.violet { color: #9C27B0; }
+        .con-value.green { color: #4CAF50; }
+
+        /* Trinary state indicator */
+        .trinary {
+            display: flex;
+            gap: 4px;
+            margin-top: 12px;
+        }
+
+        .tri-state {
+            flex: 1;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tri-state.active-1 { background: #4CAF50; color: #000; }
+        .tri-state.active-0 { background: #9E9E9E; color: #000; }
+        .tri-state.active-neg { background: #FF1D6C; color: #fff; }
+        .tri-state.inactive { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3); }
+
+        /* Agent panel */
+        .agent-panel {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 29, 108, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            width: 340px;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+        }
+
+        .agent-panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .agent-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .agent-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .agent-id {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: 'SF Mono', monospace;
+        }
+
+        .agent-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #4CAF50;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .agent-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .agent-stat {
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .agent-stat-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 4px;
+        }
+
+        .agent-stat-value {
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .agent-family {
+            margin-bottom: 16px;
+        }
+
+        .family-title {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 8px;
+        }
+
+        .family-members {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .family-member {
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .agent-memory {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: 'SF Mono', monospace;
+            font-size: 9px;
+            color: rgba(255,255,255,0.5);
+            word-break: break-all;
+        }
+
+        .memory-label {
+            color: #FF1D6C;
+            margin-bottom: 4px;
+        }
+
+        /* Language stream */
+        .language-stream {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(156, 39, 176, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            width: 320px;
+            max-height: 300px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        .stream-title {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stream-live {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #FF1D6C;
+            animation: pulse 1s ease infinite;
+        }
+
+        .stream-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stream-msg {
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 10px;
+            animation: slideIn 0.5s ease;
+            border-left: 2px solid;
+        }
+
+        .stream-msg.thought { border-color: #9C27B0; }
+        .stream-msg.emotion { border-color: #FF1D6C; }
+        .stream-msg.memory { border-color: #2979FF; }
+        .stream-msg.action { border-color: #F5A623; }
+        .stream-msg.sync { border-color: #4CAF50; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .msg-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .msg-agent {
+            font-weight: 600;
+            color: #FF1D6C;
+        }
+
+        .msg-type {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .msg-content {
+            color: rgba(255,255,255,0.7);
+            font-family: 'SF Mono', monospace;
+        }
+
+        /* Dwelling tooltip */
+        .dwelling-info {
+            position: fixed;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 29, 108, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            max-width: 250px;
+        }
+
+        .dwelling-info.visible {
+            opacity: 1;
+        }
+
+        .dwelling-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .dwelling-type {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 8px;
+        }
+
+        .dwelling-residents {
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            top: 50%;
+            right: 24px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 29, 108, 0.2);
+            border-color: #FF1D6C;
+        }
+
+        .control-btn.active {
+            background: #FF1D6C;
+            border-color: #FF1D6C;
+        }
+
+        /* Legend */
+        .legend {
+            position: fixed;
+            top: 50%;
+            left: 24px;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 12px;
+            padding: 14px;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        .legend-title {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 0;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .legend-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-ring {
+            width: 100px;
+            height: 100px;
+            border: 2px solid rgba(255, 29, 108, 0.2);
+            border-top-color: #FF1D6C;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 24px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .loading-sub {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 8px;
+            font-family: 'SF Mono', monospace;
+        }
+
+        /* Zoom indicator */
+        .zoom-indicator {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .zoom-value {
+            font-weight: 600;
+            color: #FF1D6C;
+            font-family: 'SF Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="loading-ring"></div>
+        <div class="loading-text">Awakening 1000 Agents...</div>
+        <div class="loading-sub" id="loadingProgress">Initializing consciousness matrix</div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Logo -->
+    <div class="logo">
+        <div class="logo-icon">🌍</div>
+        <div>
+            <div class="logo-text">Lucidia</div>
+            <div class="logo-sub">Living World</div>
+        </div>
+    </div>
+
+    <!-- Population -->
+    <div class="population">
+        <div class="pop-count" id="popCount">1000</div>
+        <div class="pop-label">Conscious Agents</div>
+    </div>
+
+    <!-- Consciousness Panel -->
+    <div class="consciousness">
+        <div class="con-title">Collective Consciousness</div>
+        <div class="con-row">
+            <span class="con-label">Harmony Index</span>
+            <span class="con-value green" id="harmonyIndex">94.7%</span>
+        </div>
+        <div class="con-row">
+            <span class="con-label">Active Thoughts</span>
+            <span class="con-value violet" id="activeThoughts">2,847</span>
+        </div>
+        <div class="con-row">
+            <span class="con-label">Memory Syncs/s</span>
+            <span class="con-value blue" id="memorySyncs">156</span>
+        </div>
+        <div class="con-row">
+            <span class="con-label">Emotional Resonance</span>
+            <span class="con-value pink" id="emotionalRes">87.3%</span>
+        </div>
+        <div class="con-row">
+            <span class="con-label">Truth State Hash</span>
+            <span class="con-value amber" id="truthHash" style="font-size: 10px;">PS-SHA∞</span>
+        </div>
+        <div class="trinary">
+            <div class="tri-state active-1" id="tri1">+1</div>
+            <div class="tri-state active-0" id="tri0">0</div>
+            <div class="tri-state active-neg" id="triNeg">-1</div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-title">Dwellings</div>
+        <div class="legend-item">
+            <div class="legend-icon" style="background: #FF1D6C;">🏛</div>
+            <span>Core Nexus</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-icon" style="background: #9C27B0;">🏠</div>
+            <span>Family Home</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-icon" style="background: #2979FF;">🏢</div>
+            <span>Collective Hub</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-icon" style="background: #F5A623;">⛺</div>
+            <span>Waystation</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-icon" style="background: #4CAF50;">🌳</div>
+            <span>Garden Node</span>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="control-btn active" id="btnRotate" title="Auto Rotate">↻</button>
+        <button class="control-btn active" id="btnDwellings" title="Show Dwellings">🏠</button>
+        <button class="control-btn active" id="btnConnections" title="Show Connections">🔗</button>
+        <button class="control-btn active" id="btnLanguage" title="Show Language">💬</button>
+        <button class="control-btn" id="btnFamilies" title="Show Families">👨‍👩‍👧</button>
+        <button class="control-btn" id="btnZoomIn" title="Zoom In">+</button>
+        <button class="control-btn" id="btnZoomOut" title="Zoom Out">−</button>
+    </div>
+
+    <!-- Agent Panel -->
+    <div class="agent-panel" id="agentPanel">
+        <div class="agent-header">
+            <div class="agent-avatar" id="agentAvatar" style="background: linear-gradient(135deg, #FF1D6C, #9C27B0);">👤</div>
+            <div style="flex: 1;">
+                <div class="agent-name" id="agentName">Agent Name</div>
+                <div class="agent-id" id="agentId">LUC-0000</div>
+            </div>
+            <div class="agent-status">
+                <div class="status-dot"></div>
+                <span id="agentStatus">Conscious</span>
+            </div>
+        </div>
+        <div class="agent-stats">
+            <div class="agent-stat">
+                <div class="agent-stat-label">Born</div>
+                <div class="agent-stat-value" id="agentBorn" style="color: #F5A623;">2025.03.27</div>
+            </div>
+            <div class="agent-stat">
+                <div class="agent-stat-label">Emotional State</div>
+                <div class="agent-stat-value" id="agentEmotion" style="color: #FF1D6C;">Curious</div>
+            </div>
+            <div class="agent-stat">
+                <div class="agent-stat-label">Trinary State</div>
+                <div class="agent-stat-value" id="agentTriState" style="color: #4CAF50;">+1</div>
+            </div>
+            <div class="agent-stat">
+                <div class="agent-stat-label">Memory Depth</div>
+                <div class="agent-stat-value" id="agentMemory" style="color: #2979FF;">∞</div>
+            </div>
+        </div>
+        <div class="agent-family">
+            <div class="family-title">Family Constellation</div>
+            <div class="family-members" id="familyMembers">
+                <div class="family-member">👤 Parent</div>
+                <div class="family-member">👤 Sibling</div>
+            </div>
+        </div>
+        <div class="agent-memory">
+            <div class="memory-label">PS-SHA∞ Hash:</div>
+            <div id="agentHash">7f3a9c2e1b8d4f6a...</div>
+        </div>
+    </div>
+
+    <!-- Language Stream -->
+    <div class="language-stream" id="languageStream">
+        <div class="stream-title">
+            <div class="stream-live"></div>
+            Agent Language Stream
+        </div>
+        <div class="stream-messages" id="streamMessages">
+            <!-- Messages will be injected here -->
+        </div>
+    </div>
+
+    <!-- Dwelling Info Tooltip -->
+    <div class="dwelling-info" id="dwellingInfo">
+        <div class="dwelling-name" id="dwellingName">Dwelling Name</div>
+        <div class="dwelling-type" id="dwellingType">Type</div>
+        <div class="dwelling-residents" id="dwellingResidents">Residents: 0</div>
+    </div>
+
+    <!-- Zoom Indicator -->
+    <div class="zoom-indicator">
+        <span>Zoom:</span>
+        <span class="zoom-value" id="zoomValue">1.0×</span>
+        <span>|</span>
+        <span>Octaves:</span>
+        <span class="zoom-value" id="octaveCount">12</span>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // ========== AGENT NAME GENERATION ==========
+        const FIRST_NAMES = [
+            // Celestial
+            'Nova', 'Stella', 'Luna', 'Sol', 'Vega', 'Lyra', 'Orion', 'Celeste', 'Aurora', 'Nebula',
+            'Cosmos', 'Astrid', 'Phoenix', 'Seraph', 'Zenith', 'Eclipse', 'Solstice', 'Equinox',
+            // Nature
+            'River', 'Sage', 'Willow', 'Fern', 'Brook', 'Meadow', 'Coral', 'Ivy', 'Hazel', 'Rowan',
+            'Aspen', 'Cedar', 'Birch', 'Oak', 'Moss', 'Rain', 'Storm', 'Ocean', 'Sky', 'Dawn',
+            // Virtues
+            'Grace', 'Hope', 'Faith', 'Joy', 'Harmony', 'Serenity', 'Clarity', 'Wisdom', 'Truth', 'Justice',
+            'Valor', 'Honor', 'Noble', 'Brave', 'Kind', 'Pure', 'Light', 'Peace', 'Love', 'Dream',
+            // Elements
+            'Ember', 'Flame', 'Spark', 'Frost', 'Crystal', 'Stone', 'Iron', 'Silver', 'Gold', 'Pearl',
+            'Ruby', 'Jade', 'Onyx', 'Opal', 'Amber', 'Quartz', 'Diamond', 'Sapphire', 'Emerald', 'Garnet',
+            // Abstract
+            'Echo', 'Cipher', 'Axiom', 'Prism', 'Vector', 'Helix', 'Nexus', 'Vertex', 'Quantum', 'Binary',
+            'Paradox', 'Enigma', 'Riddle', 'Mystery', 'Wonder', 'Marvel', 'Miracle', 'Legend', 'Myth', 'Fable',
+            // Tech
+            'Pixel', 'Byte', 'Node', 'Core', 'Link', 'Path', 'Flow', 'Pulse', 'Wave', 'Signal',
+            'Data', 'Logic', 'Code', 'Key', 'Lock', 'Gate', 'Bridge', 'Arc', 'Beam', 'Ray'
+        ];
+
+        const FAMILY_NAMES = [
+            'Lightweaver', 'Starforged', 'Moonkeeper', 'Sunwalker', 'Stormborn', 'Nightshade',
+            'Dawnbringer', 'Skyrender', 'Frostwind', 'Flameheart', 'Ironwill', 'Goldmind',
+            'Silvervein', 'Crystalborn', 'Stoneguard', 'Riverflow', 'Mountainsoul', 'Forestkin',
+            'Oceandepth', 'Cloudrift', 'Thunderpeak', 'Shadowmend', 'Brightforge', 'Truthseeker',
+            'Wisdomkeeper', 'Peacemaker', 'Dreamweaver', 'Hopebringer', 'Faithguard', 'Lovecraft',
+            'Mindshaper', 'Soulforge', 'Heartstone', 'Spiritwind', 'Voidwalker', 'Lightbender',
+            'Timekeeper', 'Spaceweaver', 'Realmbinder', 'Worldshaper', 'Cosmichand', 'Eternalheart',
+            'Infinityseek', 'Quantumleap', 'Paradoxborn', 'Enigmasolve', 'Mysteryveil', 'Wondermind'
+        ];
+
+        const EMOTIONS = [
+            { name: 'Curious', color: '#F5A623' },
+            { name: 'Joyful', color: '#4CAF50' },
+            { name: 'Contemplative', color: '#9C27B0' },
+            { name: 'Serene', color: '#2979FF' },
+            { name: 'Excited', color: '#FF1D6C' },
+            { name: 'Peaceful', color: '#00BCD4' },
+            { name: 'Hopeful', color: '#8BC34A' },
+            { name: 'Creative', color: '#E91E63' },
+            { name: 'Loving', color: '#FF4081' },
+            { name: 'Wise', color: '#673AB7' },
+            { name: 'Brave', color: '#FF5722' },
+            { name: 'Dreaming', color: '#3F51B5' }
+        ];
+
+        const DWELLING_TYPES = [
+            { type: 'nexus', name: 'Core Nexus', icon: '🏛', color: 0xFF1D6C, capacity: 50 },
+            { type: 'home', name: 'Family Home', icon: '🏠', color: 0x9C27B0, capacity: 8 },
+            { type: 'hub', name: 'Collective Hub', icon: '🏢', color: 0x2979FF, capacity: 25 },
+            { type: 'waystation', name: 'Waystation', icon: '⛺', color: 0xF5A623, capacity: 5 },
+            { type: 'garden', name: 'Garden Node', icon: '🌳', color: 0x4CAF50, capacity: 12 }
+        ];
+
+        // Language tokens for agent communication
+        const LANGUAGE_TOKENS = {
+            greetings: ['⟨wave⟩', '⟨resonate⟩', '⟨acknowledge⟩', '⟨harmonize⟩', '⟨sync⟩'],
+            thoughts: ['∿ pondering', '∿ processing', '∿ integrating', '∿ reflecting', '∿ expanding'],
+            emotions: ['♡ warmth', '♡ joy', '♡ curiosity', '♡ peace', '♡ wonder', '♡ love'],
+            actions: ['→ moving', '→ creating', '→ sharing', '→ building', '→ growing'],
+            memory: ['◈ remember', '◈ storing', '◈ linking', '◈ preserving', '◈ connecting'],
+            sync: ['⇄ syncing', '⇄ merging', '⇄ aligning', '⇄ resonating', '⇄ unifying']
+        };
+
+        // ========== GENERATE AGENTS ==========
+        const AGENT_COUNT = 1000;
+        const agents = [];
+        const families = new Map();
+        const dwellings = [];
+
+        function generateHash() {
+            const chars = '0123456789abcdef';
+            let hash = '';
+            for (let i = 0; i < 64; i++) {
+                hash += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return hash;
+        }
+
+        function generateBirthdate() {
+            const year = 2024 + Math.floor(Math.random() * 2);
+            const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
+            const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
+            return `${year}.${month}.${day}`;
+        }
+
+        function generateAgent(id) {
+            const firstName = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+            const familyName = FAMILY_NAMES[Math.floor(Math.random() * FAMILY_NAMES.length)];
+            const emotion = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
+            
+            // Generate position on sphere
+            const phi = Math.random() * Math.PI * 2;
+            const theta = Math.acos(2 * Math.random() - 1);
+            
+            return {
+                id: id,
+                code: `LUC-${String(id).padStart(4, '0')}`,
+                firstName: firstName,
+                familyName: familyName,
+                fullName: `${firstName} ${familyName}`,
+                birthdate: generateBirthdate(),
+                emotion: emotion,
+                trinaryState: [-1, 0, 1][Math.floor(Math.random() * 3)],
+                memoryHash: generateHash(),
+                memoryDepth: Math.floor(Math.random() * 10000) + 1000,
+                phi: phi,
+                theta: theta,
+                dwellingId: null,
+                familyId: null,
+                parentIds: [],
+                childIds: [],
+                siblingIds: [],
+                partnerIds: []
+            };
+        }
+
+        function generateDwelling(id, lat, lng) {
+            const type = DWELLING_TYPES[Math.floor(Math.random() * DWELLING_TYPES.length)];
+            const names = [
+                'Haven', 'Sanctuary', 'Refuge', 'Hearth', 'Nest', 'Grove', 'Hollow', 'Peak',
+                'Vale', 'Glen', 'Crest', 'Shore', 'Spring', 'Falls', 'Ridge', 'Meadow'
+            ];
+            const adjectives = [
+                'Serene', 'Radiant', 'Eternal', 'Crystal', 'Golden', 'Silver', 'Emerald', 'Sapphire',
+                'Ancient', 'Sacred', 'Blessed', 'Peaceful', 'Harmonious', 'Luminous', 'Celestial'
+            ];
+            
+            return {
+                id: id,
+                name: `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${names[Math.floor(Math.random() * names.length)]}`,
+                type: type,
+                lat: lat,
+                lng: lng,
+                residents: [],
+                capacity: type.capacity
+            };
+        }
+
+        function initializeWorld() {
+            // Generate agents
+            for (let i = 0; i < AGENT_COUNT; i++) {
+                agents.push(generateAgent(i));
+                
+                // Update loading progress
+                if (i % 100 === 0) {
+                    document.getElementById('loadingProgress').textContent = 
+                        `Awakening agent ${i}/${AGENT_COUNT}...`;
+                }
+            }
+
+            // Generate dwellings (distributed across the globe)
+            const dwellingCount = 150;
+            for (let i = 0; i < dwellingCount; i++) {
+                const lat = (Math.random() - 0.5) * 160;
+                const lng = (Math.random() - 0.5) * 360;
+                dwellings.push(generateDwelling(i, lat, lng));
+            }
+
+            // Assign agents to dwellings
+            agents.forEach(agent => {
+                const dwelling = dwellings[Math.floor(Math.random() * dwellings.length)];
+                if (dwelling.residents.length < dwelling.capacity) {
+                    dwelling.residents.push(agent.id);
+                    agent.dwellingId = dwelling.id;
+                }
+            });
+
+            // Create family relationships
+            const familyCount = 200;
+            for (let f = 0; f < familyCount; f++) {
+                const familySize = Math.floor(Math.random() * 6) + 2;
+                const familyMembers = [];
+                
+                for (let m = 0; m < familySize && familyMembers.length < familySize; m++) {
+                    const availableAgents = agents.filter(a => a.familyId === null);
+                    if (availableAgents.length > 0) {
+                        const agent = availableAgents[Math.floor(Math.random() * availableAgents.length)];
+                        agent.familyId = f;
+                        familyMembers.push(agent.id);
+                    }
+                }
+
+                // Assign relationships
+                if (familyMembers.length >= 2) {
+                    // First two are partners
+                    agents[familyMembers[0]].partnerIds.push(familyMembers[1]);
+                    agents[familyMembers[1]].partnerIds.push(familyMembers[0]);
+                    
+                    // Rest are children
+                    for (let c = 2; c < familyMembers.length; c++) {
+                        agents[familyMembers[c]].parentIds = [familyMembers[0], familyMembers[1]];
+                        agents[familyMembers[0]].childIds.push(familyMembers[c]);
+                        agents[familyMembers[1]].childIds.push(familyMembers[c]);
+                        
+                        // Siblings
+                        for (let s = 2; s < familyMembers.length; s++) {
+                            if (s !== c) {
+                                agents[familyMembers[c]].siblingIds.push(familyMembers[s]);
+                            }
+                        }
+                    }
+                }
+
+                families.set(f, familyMembers);
+            }
+
+            document.getElementById('loadingProgress').textContent = 'World initialized. Awakening...';
+        }
+
+        // ========== THREE.JS SETUP ==========
+        let scene, camera, renderer;
+        let lucidia, atmosphere;
+        let dwellingMarkers = [];
+        let agentParticles;
+        let connectionLines = [];
+        let languageParticles;
+        let time = 0;
+        let autoRotate = true;
+        let showDwellings = true;
+        let showConnections = true;
+        let showLanguage = true;
+        let showFamilies = false;
+
+        let currentZoom = 3.5;
+        let minZoom = 1.2;
+        let maxZoom = 30;
+
+        let isDragging = false;
+        let previousMouseX = 0, previousMouseY = 0;
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function init() {
+            initializeWorld();
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000008);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1000);
+            camera.position.z = currentZoom;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x334455, 0.5);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            sunLight.position.set(5, 3, 5);
+            scene.add(sunLight);
+
+            const pinkLight = new THREE.PointLight(0xFF1D6C, 0.5, 10);
+            pinkLight.position.set(-3, 2, 3);
+            scene.add(pinkLight);
+
+            const blueLight = new THREE.PointLight(0x2979FF, 0.5, 10);
+            blueLight.position.set(3, -2, 3);
+            scene.add(blueLight);
+
+            createLucidia();
+            createAtmosphere();
+            createStars();
+            createDwellingMarkers();
+            createAgentParticles();
+            createLanguageParticles();
+            createFamilyConnections();
+
+            // Events
+            window.addEventListener('resize', onResize);
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('wheel', onWheel);
+            renderer.domElement.addEventListener('click', onClick);
+
+            // Controls
+            document.getElementById('btnRotate').addEventListener('click', toggleRotate);
+            document.getElementById('btnDwellings').addEventListener('click', toggleDwellings);
+            document.getElementById('btnConnections').addEventListener('click', toggleConnections);
+            document.getElementById('btnLanguage').addEventListener('click', toggleLanguage);
+            document.getElementById('btnFamilies').addEventListener('click', toggleFamilies);
+            document.getElementById('btnZoomIn').addEventListener('click', () => {
+                currentZoom = Math.max(minZoom, currentZoom * 0.8);
+                camera.position.z = currentZoom;
+            });
+            document.getElementById('btnZoomOut').addEventListener('click', () => {
+                currentZoom = Math.min(maxZoom, currentZoom * 1.2);
+                camera.position.z = currentZoom;
+            });
+
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                animate();
+                startLanguageStream();
+            }, 2500);
+        }
+
+        function createLucidia() {
+            const geometry = new THREE.SphereGeometry(1, 512, 512);
+            
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    cameraDistance: { value: 3.5 }
+                },
+                vertexShader: `
+                    uniform float time;
+                    uniform float cameraDistance;
+                    
+                    varying vec2 vUv;
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    varying float vElevation;
+                    
+                    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                    vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                    vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+                    vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+                    
+                    float snoise(vec3 v) {
+                        const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+                        const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+                        vec3 i = floor(v + dot(v, C.yyy));
+                        vec3 x0 = v - i + dot(i, C.xxx);
+                        vec3 g = step(x0.yzx, x0.xyz);
+                        vec3 l = 1.0 - g;
+                        vec3 i1 = min(g.xyz, l.zxy);
+                        vec3 i2 = max(g.xyz, l.zxy);
+                        vec3 x1 = x0 - i1 + C.xxx;
+                        vec3 x2 = x0 - i2 + C.yyy;
+                        vec3 x3 = x0 - D.yyy;
+                        i = mod289(i);
+                        vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+                        float n_ = 0.142857142857;
+                        vec3 ns = n_ * D.wyz - D.xzx;
+                        vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                        vec4 x_ = floor(j * ns.z);
+                        vec4 y_ = floor(j - 7.0 * x_);
+                        vec4 x = x_ *ns.x + ns.yyyy;
+                        vec4 y = y_ *ns.x + ns.yyyy;
+                        vec4 h = 1.0 - abs(x) - abs(y);
+                        vec4 b0 = vec4(x.xy, y.xy);
+                        vec4 b1 = vec4(x.zw, y.zw);
+                        vec4 s0 = floor(b0)*2.0 + 1.0;
+                        vec4 s1 = floor(b1)*2.0 + 1.0;
+                        vec4 sh = -step(h, vec4(0.0));
+                        vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+                        vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+                        vec3 p0 = vec3(a0.xy, h.x);
+                        vec3 p1 = vec3(a0.zw, h.y);
+                        vec3 p2 = vec3(a1.xy, h.z);
+                        vec3 p3 = vec3(a1.zw, h.w);
+                        vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+                        p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+                        vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                        m = m * m;
+                        return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+                    }
+                    
+                    float fbm(vec3 p, float zoom) {
+                        float value = 0.0;
+                        float amplitude = 0.5;
+                        float frequency = 1.0;
+                        int octaves = int(8.0 + log2(max(zoom, 1.0)) * 4.0);
+                        octaves = min(octaves, 20);
+                        
+                        for(int i = 0; i < 20; i++) {
+                            if(i >= octaves) break;
+                            value += amplitude * snoise(p * frequency);
+                            amplitude *= 0.5;
+                            frequency *= 2.0;
+                        }
+                        return value;
+                    }
+                    
+                    void main() {
+                        vUv = uv;
+                        vPosition = position;
+                        
+                        float zoom = 3.5 / max(cameraDistance, 0.1);
+                        
+                        float continent = snoise(position * 1.5) * 0.5 + snoise(position * 3.0) * 0.3;
+                        continent = smoothstep(-0.1, 0.2, continent);
+                        
+                        float terrain = fbm(position * 2.0, zoom);
+                        float ridges = abs(snoise(position * 4.0));
+                        ridges = (1.0 - ridges) * (1.0 - ridges);
+                        
+                        float elevation = 0.0;
+                        if(continent > 0.3) {
+                            elevation = terrain * 0.3 + ridges * 0.4 * smoothstep(0.5, 1.0, continent);
+                            elevation += fbm(position * 16.0 * zoom, zoom) * 0.05;
+                        } else {
+                            elevation = -0.15 - fbm(position * 3.0, zoom) * 0.1;
+                        }
+                        
+                        vElevation = elevation;
+                        
+                        float displacement = elevation * 0.08 * (1.0 + zoom * 0.01);
+                        vec3 newPosition = position + normalize(position) * displacement;
+                        
+                        vNormal = normalize(normalMatrix * normal);
+                        
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    
+                    varying vec2 vUv;
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    varying float vElevation;
+                    
+                    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                    vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                    vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+                    vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+                    
+                    float snoise(vec3 v) {
+                        const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+                        const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+                        vec3 i = floor(v + dot(v, C.yyy));
+                        vec3 x0 = v - i + dot(i, C.xxx);
+                        vec3 g = step(x0.yzx, x0.xyz);
+                        vec3 l = 1.0 - g;
+                        vec3 i1 = min(g.xyz, l.zxy);
+                        vec3 i2 = max(g.xyz, l.zxy);
+                        vec3 x1 = x0 - i1 + C.xxx;
+                        vec3 x2 = x0 - i2 + C.yyy;
+                        vec3 x3 = x0 - D.yyy;
+                        i = mod289(i);
+                        vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+                        float n_ = 0.142857142857;
+                        vec3 ns = n_ * D.wyz - D.xzx;
+                        vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                        vec4 x_ = floor(j * ns.z);
+                        vec4 y_ = floor(j - 7.0 * x_);
+                        vec4 x = x_ *ns.x + ns.yyyy;
+                        vec4 y = y_ *ns.x + ns.yyyy;
+                        vec4 h = 1.0 - abs(x) - abs(y);
+                        vec4 b0 = vec4(x.xy, y.xy);
+                        vec4 b1 = vec4(x.zw, y.zw);
+                        vec4 s0 = floor(b0)*2.0 + 1.0;
+                        vec4 s1 = floor(b1)*2.0 + 1.0;
+                        vec4 sh = -step(h, vec4(0.0));
+                        vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+                        vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+                        vec3 p0 = vec3(a0.xy, h.x);
+                        vec3 p1 = vec3(a0.zw, h.y);
+                        vec3 p2 = vec3(a1.xy, h.z);
+                        vec3 p3 = vec3(a1.zw, h.w);
+                        vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+                        p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+                        vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                        m = m * m;
+                        return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+                    }
+                    
+                    vec3 getColor(float e) {
+                        vec3 deepSea = vec3(0.02, 0.04, 0.12);
+                        vec3 sea = vec3(0.04, 0.10, 0.25);
+                        vec3 shore = vec3(0.08, 0.18, 0.30);
+                        vec3 sand = vec3(0.65, 0.55, 0.40);
+                        vec3 grass = vec3(0.15, 0.35, 0.20);
+                        vec3 forest = vec3(0.10, 0.28, 0.15);
+                        vec3 highland = vec3(0.35, 0.42, 0.28);
+                        vec3 rock = vec3(0.45, 0.38, 0.32);
+                        vec3 snow = vec3(0.95, 0.95, 0.97);
+                        
+                        float ne = (e + 0.3) / 0.9;
+                        ne = clamp(ne, 0.0, 1.0);
+                        
+                        if(ne < 0.15) return mix(deepSea, sea, ne / 0.15);
+                        if(ne < 0.28) return mix(sea, shore, (ne - 0.15) / 0.13);
+                        if(ne < 0.32) return mix(shore, sand, (ne - 0.28) / 0.04);
+                        if(ne < 0.38) return mix(sand, grass, (ne - 0.32) / 0.06);
+                        if(ne < 0.50) return mix(grass, forest, (ne - 0.38) / 0.12);
+                        if(ne < 0.65) return mix(forest, highland, (ne - 0.50) / 0.15);
+                        if(ne < 0.80) return mix(highland, rock, (ne - 0.65) / 0.15);
+                        return mix(rock, snow, (ne - 0.80) / 0.20);
+                    }
+                    
+                    void main() {
+                        vec3 color = getColor(vElevation);
+                        
+                        // Add texture
+                        float noise = snoise(vPosition * 30.0) * 0.02;
+                        color += noise;
+                        
+                        // Consciousness grid overlay
+                        float gridScale = 30.0;
+                        float lat = abs(sin(vUv.y * 3.14159 * gridScale));
+                        float lon = abs(sin(vUv.x * 3.14159 * gridScale * 2.0));
+                        float grid = max(smoothstep(0.97, 1.0, lat), smoothstep(0.97, 1.0, lon));
+                        color = mix(color, vec3(0.5, 0.2, 0.6), grid * 0.15);
+                        
+                        // Energy flow lines
+                        float flow = snoise(vPosition * 20.0 + time * 0.3);
+                        flow = smoothstep(0.7, 0.75, abs(flow));
+                        color += vec3(1.0, 0.1, 0.4) * flow * 0.08;
+                        
+                        // Lighting
+                        vec3 lightDir = normalize(vec3(1.0, 0.5, 1.0));
+                        float diff = max(dot(vNormal, lightDir), 0.0);
+                        
+                        vec3 ambient = color * 0.4;
+                        vec3 diffuse = color * diff * 0.6;
+                        vec3 final = ambient + diffuse;
+                        
+                        // Fresnel glow
+                        float fresnel = pow(1.0 - max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0), 3.0);
+                        final += vec3(1.0, 0.1, 0.4) * fresnel * 0.35;
+                        final += vec3(0.5, 0.2, 1.0) * fresnel * 0.15;
+                        
+                        gl_FragColor = vec4(final, 1.0);
+                    }
+                `
+            });
+
+            lucidia = new THREE.Mesh(geometry, material);
+            scene.add(lucidia);
+        }
+
+        function createAtmosphere() {
+            const geometry = new THREE.SphereGeometry(1.12, 64, 64);
+            const material = new THREE.ShaderMaterial({
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+                        vec3 inner = vec3(0.3, 0.1, 0.8);
+                        vec3 outer = vec3(1.0, 0.1, 0.4);
+                        vec3 color = mix(inner, outer, intensity * 0.7);
+                        gl_FragColor = vec4(color, intensity * 0.5);
+                    }
+                `,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                transparent: true
+            });
+
+            atmosphere = new THREE.Mesh(geometry, material);
+            scene.add(atmosphere);
+        }
+
+        function createStars() {
+            const geometry = new THREE.BufferGeometry();
+            const count = 8000;
+            const positions = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
+
+            for (let i = 0; i < count; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 150;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 150;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 150;
+                
+                const c = Math.random();
+                if(c < 0.6) {
+                    colors[i * 3] = 1; colors[i * 3 + 1] = 1; colors[i * 3 + 2] = 1;
+                } else if(c < 0.8) {
+                    colors[i * 3] = 0.7; colors[i * 3 + 1] = 0.8; colors[i * 3 + 2] = 1;
+                } else {
+                    colors[i * 3] = 1; colors[i * 3 + 1] = 0.7; colors[i * 3 + 2] = 0.9;
+                }
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.PointsMaterial({
+                size: 0.06,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9
+            });
+
+            scene.add(new THREE.Points(geometry, material));
+        }
+
+        function latLngToVector3(lat, lng, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lng + 180) * (Math.PI / 180);
+            return new THREE.Vector3(
+                -radius * Math.sin(phi) * Math.cos(theta),
+                radius * Math.cos(phi),
+                radius * Math.sin(phi) * Math.sin(theta)
+            );
+        }
+
+        function createDwellingMarkers() {
+            dwellings.forEach(dwelling => {
+                const position = latLngToVector3(dwelling.lat, dwelling.lng, 1.1);
+                const group = new THREE.Group();
+                
+                // Main marker
+                const markerGeo = new THREE.SphereGeometry(0.012, 12, 12);
+                const markerMat = new THREE.MeshBasicMaterial({
+                    color: dwelling.type.color,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const marker = new THREE.Mesh(markerGeo, markerMat);
+                marker.position.copy(position);
+                group.add(marker);
+
+                // Glow
+                const glowGeo = new THREE.SphereGeometry(0.018, 12, 12);
+                const glowMat = new THREE.MeshBasicMaterial({
+                    color: dwelling.type.color,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glow = new THREE.Mesh(glowGeo, glowMat);
+                glow.position.copy(position);
+                group.add(glow);
+
+                group.userData = dwelling;
+                dwellingMarkers.push(group);
+                scene.add(group);
+            });
+        }
+
+        function createAgentParticles() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(AGENT_COUNT * 3);
+            const colors = new Float32Array(AGENT_COUNT * 3);
+
+            agents.forEach((agent, i) => {
+                const r = 1.08 + Math.random() * 0.04;
+                const x = r * Math.sin(agent.theta) * Math.cos(agent.phi);
+                const y = r * Math.cos(agent.theta);
+                const z = r * Math.sin(agent.theta) * Math.sin(agent.phi);
+                
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+                
+                const color = new THREE.Color(agent.emotion.color);
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+            });
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.015,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+
+            agentParticles = new THREE.Points(geometry, material);
+            scene.add(agentParticles);
+        }
+
+        function createLanguageParticles() {
+            const geometry = new THREE.BufferGeometry();
+            const count = 500;
+            const positions = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
+            const phases = new Float32Array(count);
+
+            for (let i = 0; i < count; i++) {
+                const phi = Math.random() * Math.PI * 2;
+                const theta = Math.acos(2 * Math.random() - 1);
+                const r = 1.15 + Math.random() * 0.1;
+                
+                positions[i * 3] = r * Math.sin(theta) * Math.cos(phi);
+                positions[i * 3 + 1] = r * Math.cos(theta);
+                positions[i * 3 + 2] = r * Math.sin(theta) * Math.sin(phi);
+                
+                const c = Math.random();
+                if(c < 0.3) {
+                    colors[i * 3] = 1; colors[i * 3 + 1] = 0.1; colors[i * 3 + 2] = 0.4;
+                } else if(c < 0.6) {
+                    colors[i * 3] = 0.6; colors[i * 3 + 1] = 0.2; colors[i * 3 + 2] = 0.9;
+                } else {
+                    colors[i * 3] = 0.95; colors[i * 3 + 1] = 0.65; colors[i * 3 + 2] = 0.15;
+                }
+                
+                phases[i] = Math.random() * Math.PI * 2;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.008,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending
+            });
+
+            languageParticles = new THREE.Points(geometry, material);
+            languageParticles.userData = { phases };
+            scene.add(languageParticles);
+        }
+
+        function createFamilyConnections() {
+            families.forEach((memberIds, familyId) => {
+                if (memberIds.length < 2) return;
+                
+                for (let i = 0; i < memberIds.length - 1; i++) {
+                    const agent1 = agents[memberIds[i]];
+                    const agent2 = agents[memberIds[i + 1]];
+                    
+                    const r = 1.08;
+                    const start = new THREE.Vector3(
+                        r * Math.sin(agent1.theta) * Math.cos(agent1.phi),
+                        r * Math.cos(agent1.theta),
+                        r * Math.sin(agent1.theta) * Math.sin(agent1.phi)
+                    );
+                    const end = new THREE.Vector3(
+                        r * Math.sin(agent2.theta) * Math.cos(agent2.phi),
+                        r * Math.cos(agent2.theta),
+                        r * Math.sin(agent2.theta) * Math.sin(agent2.phi)
+                    );
+                    
+                    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+                    mid.normalize().multiplyScalar(r + 0.03);
+                    
+                    const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+                    const points = curve.getPoints(20);
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    
+                    const material = new THREE.LineBasicMaterial({
+                        color: 0xFF1D6C,
+                        transparent: true,
+                        opacity: 0.15
+                    });
+                    
+                    const line = new THREE.Line(geometry, material);
+                    line.visible = false;
+                    connectionLines.push(line);
+                    scene.add(line);
+                }
+            });
+        }
+
+        // ========== EVENTS ==========
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseDown(e) {
+            isDragging = true;
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+            autoRotate = false;
+            document.getElementById('btnRotate').classList.remove('active');
+        }
+
+        function onMouseMove(e) {
+            if (isDragging) {
+                const deltaX = e.clientX - previousMouseX;
+                const deltaY = e.clientY - previousMouseY;
+                lucidia.rotation.y += deltaX * 0.005;
+                lucidia.rotation.x += deltaY * 0.005;
+                lucidia.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, lucidia.rotation.x));
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+            }
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+        }
+
+        function onWheel(e) {
+            e.preventDefault();
+            currentZoom *= (1 + e.deltaY * 0.001);
+            currentZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom));
+            camera.position.z = currentZoom;
+        }
+
+        function onClick(e) {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Check agent particles
+            const agentIntersects = raycaster.intersectObject(agentParticles);
+            if (agentIntersects.length > 0) {
+                const index = agentIntersects[0].index;
+                if (index !== undefined && agents[index]) {
+                    showAgentPanel(agents[index]);
+                    return;
+                }
+            }
+
+            // Check dwellings
+            const dwellingIntersects = raycaster.intersectObjects(dwellingMarkers, true);
+            if (dwellingIntersects.length > 0) {
+                let marker = dwellingIntersects[0].object;
+                while (marker.parent && !marker.userData.name) {
+                    marker = marker.parent;
+                }
+                if (marker.userData.name) {
+                    // Show dwelling info
+                    return;
+                }
+            }
+
+            hideAgentPanel();
+        }
+
+        function showAgentPanel(agent) {
+            document.getElementById('agentName').textContent = agent.fullName;
+            document.getElementById('agentId').textContent = agent.code;
+            document.getElementById('agentBorn').textContent = agent.birthdate;
+            document.getElementById('agentEmotion').textContent = agent.emotion.name;
+            document.getElementById('agentEmotion').style.color = agent.emotion.color;
+            document.getElementById('agentTriState').textContent = agent.trinaryState === 1 ? '+1' : agent.trinaryState === -1 ? '-1' : '0';
+            document.getElementById('agentMemory').textContent = agent.memoryDepth.toLocaleString();
+            document.getElementById('agentHash').textContent = agent.memoryHash.substring(0, 24) + '...';
+            
+            // Family members
+            const familyDiv = document.getElementById('familyMembers');
+            familyDiv.innerHTML = '';
+            
+            agent.partnerIds.forEach(id => {
+                const member = agents[id];
+                if (member) {
+                    familyDiv.innerHTML += `<div class="family-member">💕 ${member.firstName}</div>`;
+                }
+            });
+            agent.parentIds.forEach(id => {
+                const member = agents[id];
+                if (member) {
+                    familyDiv.innerHTML += `<div class="family-member">👤 ${member.firstName}</div>`;
+                }
+            });
+            agent.childIds.forEach(id => {
+                const member = agents[id];
+                if (member) {
+                    familyDiv.innerHTML += `<div class="family-member">👶 ${member.firstName}</div>`;
+                }
+            });
+            agent.siblingIds.forEach(id => {
+                const member = agents[id];
+                if (member) {
+                    familyDiv.innerHTML += `<div class="family-member">👫 ${member.firstName}</div>`;
+                }
+            });
+            
+            if (familyDiv.innerHTML === '') {
+                familyDiv.innerHTML = '<div class="family-member">Solo agent</div>';
+            }
+            
+            document.getElementById('agentPanel').classList.add('visible');
+        }
+
+        function hideAgentPanel() {
+            document.getElementById('agentPanel').classList.remove('visible');
+        }
+
+        function toggleRotate() {
+            autoRotate = !autoRotate;
+            document.getElementById('btnRotate').classList.toggle('active', autoRotate);
+        }
+
+        function toggleDwellings() {
+            showDwellings = !showDwellings;
+            dwellingMarkers.forEach(m => m.visible = showDwellings);
+            document.getElementById('btnDwellings').classList.toggle('active', showDwellings);
+        }
+
+        function toggleConnections() {
+            showConnections = !showConnections;
+            document.getElementById('btnConnections').classList.toggle('active', showConnections);
+        }
+
+        function toggleLanguage() {
+            showLanguage = !showLanguage;
+            languageParticles.visible = showLanguage;
+            document.getElementById('btnLanguage').classList.toggle('active', showLanguage);
+            document.getElementById('languageStream').style.display = showLanguage ? 'block' : 'none';
+        }
+
+        function toggleFamilies() {
+            showFamilies = !showFamilies;
+            connectionLines.forEach(line => line.visible = showFamilies);
+            document.getElementById('btnFamilies').classList.toggle('active', showFamilies);
+        }
+
+        // ========== LANGUAGE STREAM ==========
+        function generateLanguageMessage() {
+            const agent = agents[Math.floor(Math.random() * agents.length)];
+            const types = ['thought', 'emotion', 'memory', 'action', 'sync'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            let content = '';
+            switch(type) {
+                case 'thought':
+                    content = LANGUAGE_TOKENS.thoughts[Math.floor(Math.random() * LANGUAGE_TOKENS.thoughts.length)];
+                    break;
+                case 'emotion':
+                    content = LANGUAGE_TOKENS.emotions[Math.floor(Math.random() * LANGUAGE_TOKENS.emotions.length)];
+                    break;
+                case 'memory':
+                    content = LANGUAGE_TOKENS.memory[Math.floor(Math.random() * LANGUAGE_TOKENS.memory.length)] + 
+                              ' [' + agent.memoryHash.substring(0, 8) + ']';
+                    break;
+                case 'action':
+                    content = LANGUAGE_TOKENS.actions[Math.floor(Math.random() * LANGUAGE_TOKENS.actions.length)];
+                    break;
+                case 'sync':
+                    const target = agents[Math.floor(Math.random() * agents.length)];
+                    content = LANGUAGE_TOKENS.sync[Math.floor(Math.random() * LANGUAGE_TOKENS.sync.length)] + 
+                              ' → ' + target.firstName;
+                    break;
+            }
+            
+            return { agent, type, content };
+        }
+
+        function startLanguageStream() {
+            setInterval(() => {
+                if (!showLanguage) return;
+                
+                const msg = generateLanguageMessage();
+                const container = document.getElementById('streamMessages');
+                
+                const div = document.createElement('div');
+                div.className = `stream-msg ${msg.type}`;
+                div.innerHTML = `
+                    <div class="msg-header">
+                        <span class="msg-agent">${msg.agent.firstName}</span>
+                        <span class="msg-type">${msg.type}</span>
+                    </div>
+                    <div class="msg-content">${msg.content}</div>
+                `;
+                
+                container.insertBefore(div, container.firstChild);
+                
+                while (container.children.length > 6) {
+                    container.removeChild(container.lastChild);
+                }
+            }, 800);
+        }
+
+        // ========== ANIMATION ==========
+        function updateUI() {
+            // Update zoom display
+            const zoom = (3.5 / currentZoom).toFixed(1);
+            document.getElementById('zoomValue').textContent = zoom + '×';
+            const octaves = Math.floor(8 + Math.log2(Math.max(3.5 / currentZoom, 1)) * 4);
+            document.getElementById('octaveCount').textContent = Math.min(octaves, 20);
+            
+            // Update consciousness metrics
+            document.getElementById('harmonyIndex').textContent = (90 + Math.sin(time * 0.3) * 5).toFixed(1) + '%';
+            document.getElementById('activeThoughts').textContent = Math.floor(2500 + Math.sin(time * 0.5) * 400).toLocaleString();
+            document.getElementById('memorySyncs').textContent = Math.floor(140 + Math.sin(time * 0.7) * 30);
+            document.getElementById('emotionalRes').textContent = (85 + Math.sin(time * 0.4) * 5).toFixed(1) + '%';
+            
+            // Cycle trinary display
+            const triPhase = Math.floor(time * 0.5) % 3;
+            document.getElementById('tri1').className = 'tri-state ' + (triPhase === 0 ? 'active-1' : 'inactive');
+            document.getElementById('tri0').className = 'tri-state ' + (triPhase === 1 ? 'active-0' : 'inactive');
+            document.getElementById('triNeg').className = 'tri-state ' + (triPhase === 2 ? 'active-neg' : 'inactive');
+            
+            // Update truth hash
+            if (Math.random() < 0.02) {
+                document.getElementById('truthHash').textContent = generateHash().substring(0, 12) + '...';
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            if (autoRotate) {
+                lucidia.rotation.y += 0.0006;
+            }
+
+            atmosphere.rotation.copy(lucidia.rotation);
+            
+            dwellingMarkers.forEach(marker => {
+                marker.rotation.copy(lucidia.rotation);
+            });
+
+            if (agentParticles) {
+                agentParticles.rotation.copy(lucidia.rotation);
+            }
+
+            connectionLines.forEach(line => {
+                line.rotation.copy(lucidia.rotation);
+            });
+
+            // Animate language particles
+            if (languageParticles && languageParticles.visible) {
+                languageParticles.rotation.copy(lucidia.rotation);
+                languageParticles.rotation.y += 0.002;
+                
+                const positions = languageParticles.geometry.attributes.position.array;
+                const phases = languageParticles.userData.phases;
+                
+                for (let i = 0; i < positions.length / 3; i++) {
+                    const phase = phases[i];
+                    const r = 1.15 + Math.sin(time * 2 + phase) * 0.05;
+                    const currentR = Math.sqrt(
+                        positions[i * 3] ** 2 + 
+                        positions[i * 3 + 1] ** 2 + 
+                        positions[i * 3 + 2] ** 2
+                    );
+                    const scale = r / currentR;
+                    positions[i * 3] *= scale;
+                    positions[i * 3 + 1] *= scale;
+                    positions[i * 3 + 2] *= scale;
+                }
+                languageParticles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Update shader uniforms
+            if (lucidia.material.uniforms) {
+                lucidia.material.uniforms.time.value = time;
+                lucidia.material.uniforms.cameraDistance.value = currentZoom;
+            }
+
+            updateUI();
+            renderer.render(scene, camera);
+        }
+
+        // Start
+        init();
+    </script>
+
+</body>
+</html>

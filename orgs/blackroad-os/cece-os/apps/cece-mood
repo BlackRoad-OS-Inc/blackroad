@@ -1,0 +1,21 @@
+#!/bin/bash
+# CECE-MOOD v1.0 - Mood Tracker
+MOOD_DIR=~/cece/moods
+mkdir -p "$MOOD_DIR"
+log() {
+    MOOD="$1"
+    NOTE="$2"
+    echo "{\"mood\":\"$MOOD\",\"note\":\"$NOTE\",\"time\":\"$(date -Iseconds)\"}" >> "$MOOD_DIR/moods.jsonl"
+    echo "Logged: $MOOD"
+}
+history() { tail -10 "$MOOD_DIR/moods.jsonl" 2>/dev/null; }
+stats() {
+    echo "Mood Stats:"
+    cat "$MOOD_DIR/moods.jsonl" 2>/dev/null | grep -o '"mood":"[^"]*"' | sort | uniq -c
+}
+case "$1" in
+    log) log "$2" "$3" ;;
+    history) history ;;
+    stats) stats ;;
+    *) echo "CECE-MOOD: log <mood> [note] | history | stats" ;;
+esac

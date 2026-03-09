@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Hub - BlackRoad OS</title>
+    <meta name="description" content="Browse, deploy, and fine-tune state-of-the-art AI models">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00FF88;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: #8800ff;
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-purple);
+            background: transparent;
+        }
+
+        .main {
+            display: flex;
+        }
+
+        .filters {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            height: calc(100vh - 76px);
+            overflow-y: auto;
+            position: sticky;
+            top: 76px;
+        }
+
+        .filter-section {
+            margin-bottom: 2rem;
+        }
+
+        .filter-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .filter-option:hover {
+            color: var(--text);
+        }
+
+        .filter-option input {
+            accent-color: var(--accent-purple);
+        }
+
+        .filter-count {
+            margin-left: auto;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .content {
+            flex: 1;
+            padding: 3rem;
+        }
+
+        .search-bar {
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat {
+            color: var(--text-muted);
+        }
+
+        .stat strong {
+            color: var(--accent-purple);
+        }
+
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .model-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .model-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-4px);
+        }
+
+        .model-header {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .model-icon {
+            font-size: 2.5rem;
+        }
+
+        .model-info {
+            flex: 1;
+        }
+
+        .model-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .model-author {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .model-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tag {
+            padding: 0.25rem 0.75rem;
+            background: rgba(119, 0, 255, 0.2);
+            border: 1px solid var(--accent-purple);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--accent-purple);
+        }
+
+        .tag.popular {
+            background: rgba(255, 0, 102, 0.2);
+            border-color: var(--accent-pink);
+            color: var(--accent-pink);
+        }
+
+        .tag.new {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .model-desc {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .model-stats {
+            display: flex;
+            gap: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .model-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 2rem;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: var(--text);
+        }
+
+        .code-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            color: var(--success);
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab.active {
+            color: var(--accent-purple);
+            border-bottom-color: var(--accent-purple);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .deploy-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .metric-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .metric-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">🤖 Model Hub</div>
+        <div class="header-actions">
+            <button class="btn btn-secondary">Upload Model</button>
+            <button class="btn">Deploy Model</button>
+        </div>
+    </header>
+
+    <div class="main">
+        <aside class="filters">
+            <div class="filter-section">
+                <div class="filter-title">Tasks</div>
+                <label class="filter-option">
+                    <input type="checkbox" checked onchange="filterModels()">
+                    Text Generation <span class="filter-count">847</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    Image Generation <span class="filter-count">324</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    Speech Recognition <span class="filter-count">156</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    Translation <span class="filter-count">89</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    Classification <span class="filter-count">512</span>
+                </label>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Model Type</div>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    Transformer <span class="filter-count">654</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    Diffusion <span class="filter-count">234</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    CNN <span class="filter-count">178</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    RNN <span class="filter-count">89</span>
+                </label>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Framework</div>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    PyTorch <span class="filter-count">892</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    TensorFlow <span class="filter-count">456</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    JAX <span class="filter-count">123</span>
+                </label>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Size</div>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    Small (<1B params) <span class="filter-count">234</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    Medium (1B-10B) <span class="filter-count">456</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    Large (10B-100B) <span class="filter-count">123</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" onchange="filterModels()">
+                    XL (>100B params) <span class="filter-count">34</span>
+                </label>
+            </div>
+        </aside>
+
+        <div class="content">
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="Search 1,847 models..." onkeyup="searchModels(event)">
+            </div>
+
+            <div class="stats">
+                <div class="stat"><strong>1,847</strong> models</div>
+                <div class="stat"><strong>234</strong> organizations</div>
+                <div class="stat"><strong>15.2M</strong> downloads this month</div>
+            </div>
+
+            <div class="models-grid" id="modelsGrid">
+                <!-- Models will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Detail Modal -->
+    <div class="modal" id="modelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle">Model Name</h2>
+                    <p style="color: var(--text-muted);" id="modalAuthor">by Author</p>
+                </div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+
+            <div class="tab-nav">
+                <div class="tab active" onclick="switchModalTab('overview', event)">Overview</div>
+                <div class="tab" onclick="switchModalTab('deploy', event)">Deploy</div>
+                <div class="tab" onclick="switchModalTab('code', event)">Code</div>
+                <div class="tab" onclick="switchModalTab('metrics', event)">Metrics</div>
+            </div>
+
+            <div id="overview-tab" class="tab-content active">
+                <p id="modalDesc" style="color: var(--text-muted); line-height: 1.8; margin-bottom: 2rem;">
+                    Model description goes here...
+                </p>
+                <h3 style="margin-bottom: 1rem;">Key Features</h3>
+                <ul id="modalFeatures" style="color: var(--text-muted); line-height: 2; list-style-position: inside;">
+                </ul>
+            </div>
+
+            <div id="deploy-tab" class="tab-content">
+                <div class="deploy-section">
+                    <h3 style="margin-bottom: 1.5rem;">Deploy Model</h3>
+                    <div class="form-group">
+                        <label class="form-label">Deployment Region</label>
+                        <select class="form-select">
+                            <option>US East (N. Virginia)</option>
+                            <option>US West (Oregon)</option>
+                            <option>EU (Ireland)</option>
+                            <option>Asia Pacific (Tokyo)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Instance Type</label>
+                        <select class="form-select">
+                            <option>GPU Small (1x A100, $2.50/hr)</option>
+                            <option>GPU Medium (2x A100, $5.00/hr)</option>
+                            <option>GPU Large (4x A100, $10.00/hr)</option>
+                            <option>GPU XL (8x A100, $20.00/hr)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Auto-scaling</label>
+                        <select class="form-select">
+                            <option>Disabled</option>
+                            <option>Scale 1-5 instances</option>
+                            <option>Scale 1-10 instances</option>
+                            <option>Scale 1-20 instances</option>
+                        </select>
+                    </div>
+                    <button class="btn" style="width: 100%; margin-top: 1rem;" onclick="deployModel()">Deploy Now</button>
+                </div>
+            </div>
+
+            <div id="code-tab" class="tab-content">
+                <h3 style="margin-bottom: 1rem;">Quick Start</h3>
+                <div class="code-block">
+                    <code id="modalCode">
+# Install BlackRoad SDK
+pip install blackroad
+
+# Initialize client
+from blackroad import ModelClient
+client = ModelClient(api_key="your_api_key")
+
+# Load model
+model = client.load("model-name")
+
+# Run inference
+result = model.predict("Your input text here")
+print(result)
+                    </code>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem;">API Usage</h3>
+                <div class="code-block">
+                    <code id="modalApiCode">
+curl https://api.blackroad.io/v1/models/model-name/predict \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Your input text here",
+    "max_length": 100
+  }'
+                    </code>
+                </div>
+            </div>
+
+            <div id="metrics-tab" class="tab-content">
+                <h3 style="margin-bottom: 1.5rem;">Performance Metrics</h3>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Inference Speed</div>
+                        <div class="metric-value">45ms</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Accuracy</div>
+                        <div class="metric-value">95.3%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Downloads</div>
+                        <div class="metric-value">2.4M</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Model Size</div>
+                        <div class="metric-value">7B</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem;">Benchmark Results</h3>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+                    <ul style="color: var(--text-muted); line-height: 2; list-style: none;">
+                        <li>✓ GLUE Benchmark: <strong style="color: var(--success);">89.2</strong></li>
+                        <li>✓ SuperGLUE: <strong style="color: var(--success);">84.6</strong></li>
+                        <li>✓ SQuAD 2.0: <strong style="color: var(--success);">91.4 F1</strong></li>
+                        <li>✓ MMLU: <strong style="color: var(--success);">73.8</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const models = [
+            {
+                id: 1,
+                icon: '🧠',
+                name: 'BlackRoad-LLM-7B',
+                author: 'BlackRoad AI',
+                description: 'State-of-the-art large language model fine-tuned for general purpose tasks with 7 billion parameters.',
+                tags: ['Popular', 'Text Generation', 'PyTorch'],
+                downloads: '2.4M',
+                likes: '45K',
+                updated: '2 days ago',
+                features: [
+                    'Optimized for low-latency inference',
+                    'Multi-task fine-tuning across 50+ domains',
+                    'Supports context length up to 8K tokens',
+                    'Available in 15 languages',
+                    'One-click deployment'
+                ]
+            },
+            {
+                id: 2,
+                icon: '🎨',
+                name: 'DreamForge-XL',
+                author: 'BlackRoad Creative',
+                description: 'Advanced diffusion model for photorealistic image generation with superior detail and composition.',
+                tags: ['New', 'Image Generation', 'PyTorch'],
+                downloads: '1.2M',
+                likes: '32K',
+                updated: '1 week ago',
+                features: [
+                    'Generate 1024x1024 images in <3 seconds',
+                    'Fine-tuned on 500M curated images',
+                    'Advanced prompt understanding',
+                    'Style transfer capabilities',
+                    'Commercial use allowed'
+                ]
+            },
+            {
+                id: 3,
+                icon: '🗣️',
+                name: 'VoiceNet-Ultra',
+                author: 'BlackRoad Audio',
+                description: 'Real-time speech recognition with 98% accuracy across 40+ languages and accents.',
+                tags: ['Speech Recognition', 'TensorFlow'],
+                downloads: '890K',
+                likes: '18K',
+                updated: '3 days ago',
+                features: [
+                    'Real-time processing with <100ms latency',
+                    'Noise cancellation built-in',
+                    'Speaker diarization',
+                    'Supports 40+ languages',
+                    'On-device deployment ready'
+                ]
+            },
+            {
+                id: 4,
+                icon: '🌍',
+                name: 'Polyglot-Translate',
+                author: 'BlackRoad Language',
+                description: 'Neural machine translation supporting 100+ language pairs with context awareness.',
+                tags: ['Translation', 'PyTorch'],
+                downloads: '650K',
+                likes: '12K',
+                updated: '5 days ago',
+                features: [
+                    '100+ language pairs supported',
+                    'Context-aware translations',
+                    'Specialized domain models (medical, legal, technical)',
+                    'Batch processing support',
+                    'API and SDK available'
+                ]
+            },
+            {
+                id: 5,
+                icon: '📊',
+                name: 'ClassifyPro-Vision',
+                author: 'BlackRoad Vision',
+                description: 'Multi-class image classification with 95%+ accuracy on ImageNet and custom datasets.',
+                tags: ['Popular', 'Classification', 'PyTorch'],
+                downloads: '1.8M',
+                likes: '28K',
+                updated: '1 day ago',
+                features: [
+                    '1000+ pre-trained classes',
+                    'Transfer learning ready',
+                    'Mobile-optimized versions available',
+                    'Explainable AI features',
+                    'Custom fine-tuning support'
+                ]
+            },
+            {
+                id: 6,
+                icon: '🔬',
+                name: 'BioMed-Analyzer',
+                author: 'BlackRoad Research',
+                description: 'Specialized model for medical image analysis and diagnostic assistance.',
+                tags: ['Classification', 'TensorFlow'],
+                downloads: '420K',
+                likes: '15K',
+                updated: '1 week ago',
+                features: [
+                    'FDA-cleared for diagnostic assistance',
+                    'Trained on 10M+ medical images',
+                    'Multi-modal analysis (X-ray, CT, MRI)',
+                    'HIPAA compliant deployment',
+                    'Explainable predictions'
+                ]
+            }
+        ];
+
+        function renderModels(modelsToRender = models) {
+            const grid = document.getElementById('modelsGrid');
+            grid.innerHTML = modelsToRender.map(model => `
+                <div class="model-card" onclick="openModal(${model.id})">
+                    <div class="model-header">
+                        <div class="model-icon">${model.icon}</div>
+                        <div class="model-info">
+                            <div class="model-name">${model.name}</div>
+                            <div class="model-author">by ${model.author}</div>
+                        </div>
+                    </div>
+                    <div class="model-tags">
+                        ${model.tags.map(tag => `<span class="tag ${tag === 'Popular' ? 'popular' : tag === 'New' ? 'new' : ''}">${tag}</span>`).join('')}
+                    </div>
+                    <p class="model-desc">${model.description}</p>
+                    <div class="model-stats">
+                        <div class="model-stat">📥 ${model.downloads}</div>
+                        <div class="model-stat">❤️ ${model.likes}</div>
+                        <div class="model-stat">🕒 ${model.updated}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openModal(modelId) {
+            const model = models.find(m => m.id === modelId);
+            if (!model) return;
+
+            document.getElementById('modalTitle').textContent = model.name;
+            document.getElementById('modalAuthor').textContent = `by ${model.author}`;
+            document.getElementById('modalDesc').textContent = model.description;
+            document.getElementById('modalFeatures').innerHTML = model.features.map(f => `<li>✓ ${f}</li>`).join('');
+
+            document.getElementById('modelModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modelModal').classList.remove('active');
+        }
+
+        function switchModalTab(tabName, event) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        function searchModels(event) {
+            const query = event.target.value.toLowerCase();
+            const filtered = models.filter(m =>
+                m.name.toLowerCase().includes(query) ||
+                m.description.toLowerCase().includes(query) ||
+                m.author.toLowerCase().includes(query)
+            );
+            renderModels(filtered);
+        }
+
+        function filterModels() {
+            // In production, this would filter based on checked checkboxes
+            renderModels(models);
+        }
+
+        function deployModel() {
+            alert('🚀 Model deployment initiated! Your model will be ready in ~5 minutes. Check the deployments dashboard for status.');
+        }
+
+        // Initialize
+        renderModels();
+
+        // Close modal on outside click
+        document.getElementById('modelModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>

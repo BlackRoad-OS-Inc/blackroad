@@ -1,0 +1,18 @@
+#!/bin/bash
+# CECE-ENV v1.0 - Environment Manager
+ENV_DIR=~/cece/envs
+mkdir -p "$ENV_DIR"
+save() {
+    NAME="$1"
+    cp ~/.bashrc "$ENV_DIR/$NAME.bashrc" 2>/dev/null
+    env > "$ENV_DIR/$NAME.env"
+    echo "Saved environment: $NAME"
+}
+list() { ls "$ENV_DIR"/*.env 2>/dev/null | xargs -I{} basename {} .env; }
+show() { cat "$ENV_DIR/$1.env" 2>/dev/null || echo "Not found"; }
+case "$1" in
+    save) save "$2" ;;
+    list) list ;;
+    show) show "$2" ;;
+    *) echo "CECE-ENV: save <name> | list | show <name>" ;;
+esac

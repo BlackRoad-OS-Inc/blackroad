@@ -1,0 +1,38 @@
+#!/bin/bash
+# CECE-SURVEY v1.0 - Survey Builder
+SURVEY_DIR=~/cece/surveys
+mkdir -p "$SURVEY_DIR"
+
+create() {
+    NAME="$1"
+    QUESTIONS="$2"
+    SURVEY="$SURVEY_DIR/$NAME.html"
+    
+    echo "<!DOCTYPE html><html><head><title>$NAME Survey</title>" > "$SURVEY"
+    echo "<style>body{font-family:system-ui;background:#0a0a0a;color:#fff;padding:40px;max-width:600px;margin:0 auto;}" >> "$SURVEY"
+    echo ".question{background:#1a1a1a;padding:20px;margin:15px 0;border-radius:8px;}" >> "$SURVEY"
+    echo "input[type=radio]{margin-right:10px;}" >> "$SURVEY"
+    echo "button{background:#FF1D6C;color:white;padding:15px 40px;border:none;border-radius:8px;cursor:pointer;font-size:16px;}</style></head><body>" >> "$SURVEY"
+    echo "<h1 style=\"color:#FF1D6C;\">$NAME</h1>" >> "$SURVEY"
+    
+    i=1
+    IFS="|"
+    for q in $QUESTIONS; do
+        echo "<div class=\"question\"><p>$i. $q</p>" >> "$SURVEY"
+        for opt in "Strongly Agree" "Agree" "Neutral" "Disagree" "Strongly Disagree"; do
+            echo "<label><input type=\"radio\" name=\"q$i\" value=\"$opt\"> $opt</label><br>" >> "$SURVEY"
+        done
+        echo "</div>" >> "$SURVEY"
+        ((i++))
+    done
+    
+    echo "<button type=\"submit\">Submit Survey</button>" >> "$SURVEY"
+    echo "<p style=\"color:#666;margin-top:30px;\">Powered by CECE Surveys</p></body></html>" >> "$SURVEY"
+    echo "Survey: $SURVEY"
+}
+
+case "$1" in
+    create) create "$2" "$3" ;;
+    list) ls "$SURVEY_DIR"/*.html 2>/dev/null || echo "(none)" ;;
+    *) echo "CECE-SURVEY: create <name> \"question1|question2|question3\"" ;;
+esac

@@ -1,0 +1,20 @@
+#!/bin/bash
+# CECE-PORT v1.0 - Port Scanner
+check() {
+    HOST="$1"
+    PORT="$2"
+    timeout 2 bash -c "echo >/dev/tcp/$HOST/$PORT" 2>/dev/null && echo "✅ $HOST:$PORT OPEN" || echo "❌ $HOST:$PORT CLOSED"
+}
+common() {
+    HOST="${1:-localhost}"
+    for PORT in 22 80 443 3000 5000 8000 8080; do
+        check "$HOST" "$PORT"
+    done
+}
+listening() { netstat -tlnp 2>/dev/null || ss -tlnp 2>/dev/null; }
+case "$1" in
+    check) check "$2" "$3" ;;
+    scan) common "$2" ;;
+    listening) listening ;;
+    *) echo "CECE-PORT: check <host> <port> | scan [host] | listening" ;;
+esac

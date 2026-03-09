@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Tools API Worker (development mode)
+  tools-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./src:/app/src
+      - ./wrangler.toml:/app/wrangler.toml
+    environment:
+      - NODE_ENV=development
+    command: npx wrangler dev --local --port 8787
+
+  # Local D1 SQLite (for testing)
+  sqlite:
+    image: keinos/sqlite3:latest
+    volumes:
+      - ./data:/data
+    command: tail -f /dev/null
+
+  # Redis for event bus (local substitute for KV)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  # Swagger UI for API exploration
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SWAGGER_JSON=/spec/openapi.yaml
+    volumes:
+      - ./openapi.yaml:/spec/openapi.yaml:ro
+
+volumes:
+  redis-data:

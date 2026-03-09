@@ -1,0 +1,25 @@
+#!/bin/bash
+# CECE-BUDGET v1.0 - Budget Tracker
+BUDGET_DIR=~/cece/budget
+mkdir -p "$BUDGET_DIR"
+add() {
+    TYPE="$1"
+    AMOUNT="$2"
+    CATEGORY="$3"
+    echo "{\"type\":\"$TYPE\",\"amount\":$AMOUNT,\"category\":\"$CATEGORY\",\"date\":\"$(date -Iseconds)\"}" >> "$BUDGET_DIR/transactions.jsonl"
+    echo "Added $TYPE: \$$AMOUNT ($CATEGORY)"
+}
+summary() {
+    echo "Budget Summary:"
+    INCOME=$(grep '"type":"income"' "$BUDGET_DIR/transactions.jsonl" 2>/dev/null | grep -o '"amount":[0-9]*' | cut -d: -f2 | paste -sd+ | bc 2>/dev/null || echo 0)
+    EXPENSE=$(grep '"type":"expense"' "$BUDGET_DIR/transactions.jsonl" 2>/dev/null | grep -o '"amount":[0-9]*' | cut -d: -f2 | paste -sd+ | bc 2>/dev/null || echo 0)
+    echo "  Income:  \$$INCOME"
+    echo "  Expense: \$$EXPENSE"
+    echo "  Balance: \$$((INCOME - EXPENSE))"
+}
+case "$1" in
+    income) add "income" "$2" "$3" ;;
+    expense) add "expense" "$2" "$3" ;;
+    summary) summary ;;
+    *) echo "CECE-BUDGET: income <amount> <category> | expense <amount> <category> | summary" ;;
+esac

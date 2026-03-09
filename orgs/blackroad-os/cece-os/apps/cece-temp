@@ -1,0 +1,16 @@
+#!/bin/bash
+# CECE-TEMP v1.0 - Temperature Monitor
+cpu() {
+    if [ -f /sys/class/thermal/thermal_zone0/temp ]; then
+        TEMP=$(cat /sys/class/thermal/thermal_zone0/temp)
+        echo "🌡️ CPU: $((TEMP/1000))°C"
+    else
+        vcgencmd measure_temp 2>/dev/null || echo "Temperature unavailable"
+    fi
+}
+gpu() { vcgencmd measure_temp 2>/dev/null || echo "GPU temp unavailable"; }
+case "$1" in
+    cpu) cpu ;;
+    gpu) gpu ;;
+    *) cpu ;;
+esac

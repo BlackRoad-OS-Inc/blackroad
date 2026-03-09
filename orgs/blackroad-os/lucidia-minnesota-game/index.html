@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucidia — Minnesota Wilderness [HD]</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: #fff;
+            cursor: crosshair;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* HUD */
+        .hud-corner {
+            position: fixed;
+            width: 80px;
+            height: 80px;
+            border: 2px solid rgba(255, 29, 108, 0.3);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .hud-corner.tl { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+        .hud-corner.tr { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+        .hud-corner.bl { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+        .hud-corner.br { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+
+        .hud-corner::before {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #FF1D6C;
+            border-radius: 50%;
+        }
+
+        .hud-corner.tl::before { top: -4px; left: -4px; }
+        .hud-corner.tr::before { top: -4px; right: -4px; }
+        .hud-corner.bl::before { bottom: -4px; left: -4px; }
+        .hud-corner.br::before { bottom: -4px; right: -4px; }
+
+        /* Crosshair */
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .crosshair-ring {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(255, 29, 108, 0.4);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .crosshair-ring::before,
+        .crosshair-ring::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 29, 108, 0.8);
+        }
+
+        .crosshair-ring::before {
+            width: 12px;
+            height: 1px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .crosshair-ring::after {
+            width: 1px;
+            height: 12px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .crosshair-dot {
+            width: 4px;
+            height: 4px;
+            background: #FF1D6C;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px #FF1D6C;
+        }
+
+        /* Logo */
+        .logo {
+            position: fixed;
+            top: 32px;
+            left: 110px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .logo-text {
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 29, 108, 0.5);
+        }
+
+        .logo-sub {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+        }
+
+        /* Location */
+        .location {
+            position: fixed;
+            top: 32px;
+            right: 110px;
+            text-align: right;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .location-name {
+            font-size: 20px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .location-region {
+            font-size: 10px;
+            color: #FF1D6C;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .location-coords {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            font-family: 'SF Mono', monospace;
+            margin-top: 4px;
+        }
+
+        /* Environment panel */
+        .environment {
+            position: fixed;
+            top: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .env-time {
+            font-size: 42px;
+            font-weight: 200;
+            background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.4));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .env-details {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 4px;
+        }
+
+        .env-detail {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .env-detail span {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Stats panel */
+        .stats {
+            position: fixed;
+            bottom: 32px;
+            left: 110px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+
+        .stat-icon {
+            width: 16px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.4);
+            min-width: 90px;
+        }
+
+        .stat-value {
+            color: #FF1D6C;
+            font-family: 'SF Mono', monospace;
+            font-weight: 500;
+        }
+
+        .stat-bar {
+            width: 80px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .stat-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .stat-fill.pink { background: linear-gradient(90deg, #FF1D6C, #E91E63); }
+        .stat-fill.blue { background: linear-gradient(90deg, #2979FF, #00BCD4); }
+        .stat-fill.amber { background: linear-gradient(90deg, #F5A623, #FF9800); }
+        .stat-fill.green { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
+
+        /* Controls */
+        .controls-hint {
+            position: fixed;
+            bottom: 32px;
+            right: 110px;
+            text-align: right;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .hint-row {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.25);
+            margin-bottom: 6px;
+        }
+
+        .hint-key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 6px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 9px;
+        }
+
+        /* Compass */
+        .compass {
+            position: fixed;
+            top: 110px;
+            right: 45px;
+            width: 70px;
+            height: 70px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .compass-ring {
+            width: 100%;
+            height: 100%;
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 50%;
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .compass-ring::before {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .compass-needle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 28px;
+            background: linear-gradient(to top, #2979FF 50%, #FF1D6C 50%);
+            transform-origin: center bottom;
+            transform: translate(-50%, -100%);
+            border-radius: 1px;
+            box-shadow: 0 0 10px rgba(255, 29, 108, 0.5);
+        }
+
+        .compass-label {
+            position: absolute;
+            font-size: 8px;
+            font-weight: 600;
+        }
+
+        .compass-label.n { top: 6px; left: 50%; transform: translateX(-50%); color: #FF1D6C; }
+        .compass-label.s { bottom: 6px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.3); }
+        .compass-label.e { right: 8px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.3); }
+        .compass-label.w { left: 8px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.3); }
+
+        /* Consciousness pulse */
+        .consciousness-pulse {
+            position: fixed;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 3px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .pulse-bar {
+            width: 3px;
+            background: linear-gradient(to top, #FF1D6C, #F5A623);
+            border-radius: 2px;
+            animation: pulse-anim 1.2s ease infinite;
+        }
+
+        @keyframes pulse-anim {
+            0%, 100% { height: 8px; opacity: 0.3; }
+            50% { height: 25px; opacity: 1; }
+        }
+
+        .pulse-bar:nth-child(1) { animation-delay: 0s; }
+        .pulse-bar:nth-child(2) { animation-delay: 0.08s; }
+        .pulse-bar:nth-child(3) { animation-delay: 0.16s; }
+        .pulse-bar:nth-child(4) { animation-delay: 0.24s; }
+        .pulse-bar:nth-child(5) { animation-delay: 0.32s; }
+        .pulse-bar:nth-child(6) { animation-delay: 0.40s; }
+        .pulse-bar:nth-child(7) { animation-delay: 0.32s; }
+        .pulse-bar:nth-child(8) { animation-delay: 0.24s; }
+        .pulse-bar:nth-child(9) { animation-delay: 0.16s; }
+        .pulse-bar:nth-child(10) { animation-delay: 0.08s; }
+        .pulse-bar:nth-child(11) { animation-delay: 0s; }
+
+        /* Agent notification */
+        .agent-notify {
+            position: fixed;
+            bottom: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 29, 108, 0.3);
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .agent-notify.visible { opacity: 1; }
+
+        .agent-notify-dot {
+            width: 8px;
+            height: 8px;
+            background: #FF1D6C;
+            border-radius: 50%;
+            animation: pulse 1.5s ease infinite;
+            box-shadow: 0 0 15px #FF1D6C;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.8); opacity: 0.5; }
+        }
+
+        /* Click to start */
+        .click-start {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(20,0,30,0.95));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+        }
+
+        .click-start.hidden { display: none; }
+
+        .start-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: float 3s ease infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .start-title {
+            font-size: 56px;
+            font-weight: 200;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623, #9C27B0, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .start-sub {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 50px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .start-hint {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            animation: pulse 2s ease infinite;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 30px;
+            border-radius: 30px;
+        }
+
+        /* Scanlines */
+        .scanlines {
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.03) 0px,
+                rgba(0, 0, 0, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        /* Vignette */
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%);
+            pointer-events: none;
+            z-index: 98;
+        }
+
+        /* Chromatic aberration hint */
+        .chromatic {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 97;
+            mix-blend-mode: screen;
+            opacity: 0.03;
+            background: linear-gradient(90deg, 
+                rgba(255,0,0,0.5) 0%, 
+                transparent 10%, 
+                transparent 90%, 
+                rgba(0,255,255,0.5) 100%
+            );
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Click to Start -->
+    <div class="click-start" id="clickStart">
+        <div class="start-icon">🌲</div>
+        <div class="start-title">Minnesota Wilderness</div>
+        <div class="start-sub">Lucidia Surface • Uninhabited Zone</div>
+        <div class="start-hint">Click anywhere to enter</div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Post-processing overlays -->
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+    <div class="chromatic"></div>
+
+    <!-- HUD Corners -->
+    <div class="hud-corner tl"></div>
+    <div class="hud-corner tr"></div>
+    <div class="hud-corner bl"></div>
+    <div class="hud-corner br"></div>
+
+    <!-- Crosshair -->
+    <div class="crosshair">
+        <div class="crosshair-ring">
+            <div class="crosshair-dot"></div>
+        </div>
+    </div>
+
+    <!-- Logo -->
+    <div class="logo">
+        <div class="logo-text">LUCIDIA</div>
+        <div class="logo-sub">Surface Explorer</div>
+    </div>
+
+    <!-- Location -->
+    <div class="location">
+        <div class="location-name" id="locationName">Boundary Waters</div>
+        <div class="location-region">Northern Minnesota</div>
+        <div class="location-coords" id="coords">47.9127° N, 91.4981° W</div>
+    </div>
+
+    <!-- Environment -->
+    <div class="environment">
+        <div class="env-time" id="envTime">05:47</div>
+        <div class="env-details">
+            <div class="env-detail">Dawn <span>Golden Hour</span></div>
+            <div class="env-detail">Temp <span id="temp">38°F</span></div>
+            <div class="env-detail">Wind <span>3 mph NE</span></div>
+        </div>
+    </div>
+
+    <!-- Compass -->
+    <div class="compass">
+        <div class="compass-ring">
+            <div class="compass-needle" id="compassNeedle"></div>
+            <div class="compass-label n">N</div>
+            <div class="compass-label s">S</div>
+            <div class="compass-label e">E</div>
+            <div class="compass-label w">W</div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-row">
+            <span class="stat-icon">⛰</span>
+            <span class="stat-label">Elevation</span>
+            <span class="stat-value" id="elevation">1,847 ft</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-icon">🌲</span>
+            <span class="stat-label">Biome</span>
+            <span class="stat-value" id="biome">Boreal Forest</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-icon">🧠</span>
+            <span class="stat-label">Consciousness</span>
+            <div class="stat-bar"><div class="stat-fill pink" id="consFill" style="width: 82%"></div></div>
+        </div>
+        <div class="stat-row">
+            <span class="stat-icon">📡</span>
+            <span class="stat-label">Signal</span>
+            <div class="stat-bar"><div class="stat-fill blue" id="sigFill" style="width: 94%"></div></div>
+        </div>
+        <div class="stat-row">
+            <span class="stat-icon">🔋</span>
+            <span class="stat-label">Energy</span>
+            <div class="stat-bar"><div class="stat-fill green" id="energyFill" style="width: 100%"></div></div>
+        </div>
+        <div class="stat-row">
+            <span class="stat-icon">✨</span>
+            <span class="stat-label">Resonance</span>
+            <div class="stat-bar"><div class="stat-fill amber" id="resFill" style="width: 67%"></div></div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-hint">
+        <div class="hint-row"><span class="hint-key">W A S D</span> Move</div>
+        <div class="hint-row"><span class="hint-key">MOUSE</span> Look</div>
+        <div class="hint-row"><span class="hint-key">SHIFT</span> Sprint</div>
+        <div class="hint-row"><span class="hint-key">SPACE</span> Jump</div>
+        <div class="hint-row"><span class="hint-key">F</span> Toggle Fog</div>
+        <div class="hint-row"><span class="hint-key">ESC</span> Release</div>
+    </div>
+
+    <!-- Consciousness Pulse -->
+    <div class="consciousness-pulse">
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+        <div class="pulse-bar"></div>
+    </div>
+
+    <!-- Agent Notification -->
+    <div class="agent-notify" id="agentNotify">
+        <div class="agent-notify-dot"></div>
+        <span>Consciousness signature detected — 127m NW</span>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // ========== CONFIG ==========
+        const CONFIG = {
+            TERRAIN_SIZE: 600,
+            TERRAIN_SEGMENTS: 400,
+            TREE_COUNT: 800,
+            BIRCH_COUNT: 200,
+            BUSH_COUNT: 500,
+            ROCK_COUNT: 300,
+            GRASS_COUNT: 30000,
+            FLOWER_COUNT: 2000,
+            FIREFLY_COUNT: 300,
+            PARTICLE_COUNT: 2000,
+            BIRD_COUNT: 30,
+            FOG_DENSITY: 0.012
+        };
+
+        // ========== SCENE ==========
+        let scene, camera, renderer;
+        let terrain, water, sky;
+        let trees = [], birches = [], bushes = [], rocks = [];
+        let fireflies, particles, birds;
+        let fog, aurora;
+        let time = 0;
+        let fogEnabled = true;
+
+        // Player
+        const player = {
+            position: new THREE.Vector3(0, 10, 0),
+            velocity: new THREE.Vector3(0, 0, 0),
+            yaw: 0,
+            pitch: 0,
+            onGround: false,
+            speed: 0.12,
+            sprintMultiplier: 2.2,
+            jumpForce: 0.22,
+            gravity: -0.012,
+            stamina: 100
+        };
+
+        const keys = {};
+        let isLocked = false;
+
+        // ========== NOISE ==========
+        const p = new Array(512);
+        const perm = [151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,169,200,196,135,130,116,188,159,86,164,100,109,198,173,186,3,64,52,217,226,250,124,123,5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180];
+        for(let i=0;i<256;i++) p[256+i]=p[i]=perm[i];
+
+        function fade(t){return t*t*t*(t*(t*6-15)+10);}
+        function lerp(t,a,b){return a+t*(b-a);}
+        function grad(hash,x,y,z){
+            const h=hash&15;
+            const u=h<8?x:y;
+            const v=h<4?y:h===12||h===14?x:z;
+            return((h&1)===0?u:-u)+((h&2)===0?v:-v);
+        }
+
+        function noise3D(x,y,z){
+            const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;
+            x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);
+            const u=fade(x),v=fade(y),w=fade(z);
+            const A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z;
+            const B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+            return lerp(w,lerp(v,lerp(u,grad(p[AA],x,y,z),grad(p[BA],x-1,y,z)),
+                lerp(u,grad(p[AB],x,y-1,z),grad(p[BB],x-1,y-1,z))),
+                lerp(v,lerp(u,grad(p[AA+1],x,y,z-1),grad(p[BA+1],x-1,y,z-1)),
+                lerp(u,grad(p[AB+1],x,y-1,z-1),grad(p[BB+1],x-1,y-1,z-1))));
+        }
+
+        function fbm(x,y,z,octaves,persistence,lacunarity){
+            let total=0,frequency=1,amplitude=1,maxValue=0;
+            for(let i=0;i<octaves;i++){
+                total+=noise3D(x*frequency,y*frequency,z*frequency)*amplitude;
+                maxValue+=amplitude;
+                amplitude*=persistence;
+                frequency*=lacunarity;
+            }
+            return total/maxValue;
+        }
+
+        function getTerrainHeight(x,z){
+            const scale=0.006;
+            
+            // Base continental shape
+            let height = fbm(x*scale, 0, z*scale, 8, 0.5, 2.0) * 40;
+            
+            // Ridge mountains
+            const ridge = Math.abs(fbm(x*scale*2, 0, z*scale*2, 4, 0.5, 2.0));
+            height += (1 - ridge) * 20 * Math.max(0, fbm(x*scale, 0, z*scale, 2, 0.5, 2.0));
+            
+            // Medium detail
+            height += fbm(x*scale*4, 0, z*scale*4, 4, 0.5, 2.0) * 8;
+            
+            // Fine detail
+            height += fbm(x*scale*16, 0, z*scale*16, 3, 0.5, 2.0) * 2;
+            
+            // Micro detail
+            height += fbm(x*scale*64, 0, z*scale*64, 2, 0.5, 2.0) * 0.5;
+            
+            // Lake basins
+            const lakeNoise = fbm(x*0.004+50, 0, z*0.004+50, 3, 0.5, 2.0);
+            if(lakeNoise < -0.25){
+                height = -3 + lakeNoise * 8;
+            }
+            
+            return height;
+        }
+
+        function getBiome(x,z,height){
+            if(height < -1) return 'lake';
+            if(height < 1) return 'wetland';
+            if(height < 8) return 'meadow';
+            if(height < 20) return 'forest';
+            if(height < 35) return 'highland';
+            return 'rocky';
+        }
+
+        // ========== INIT ==========
+        function init(){
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a15);
+
+            camera = new THREE.PerspectiveCamera(80, window.innerWidth/window.innerHeight, 0.1, 1500);
+            camera.position.copy(player.position);
+
+            renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance'});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Fog
+            scene.fog = new THREE.FogExp2(0x1a1a2e, CONFIG.FOG_DENSITY);
+
+            // Lighting
+            setupLighting();
+            
+            // World
+            createSky();
+            createAurora();
+            createTerrain();
+            createWater();
+            createVegetation();
+            createDetails();
+            createAtmosphericEffects();
+
+            // Events
+            window.addEventListener('resize', onResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('pointerlockchange', onPointerLockChange);
+
+            document.getElementById('clickStart').addEventListener('click', ()=>{
+                document.getElementById('clickStart').classList.add('hidden');
+                renderer.domElement.requestPointerLock();
+            });
+
+            animate();
+        }
+
+        function setupLighting(){
+            // Ambient
+            const ambient = new THREE.AmbientLight(0x3a4a6a, 0.4);
+            scene.add(ambient);
+
+            // Sun (dawn position)
+            const sun = new THREE.DirectionalLight(0xffeedd, 1.2);
+            sun.position.set(200, 60, 100);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 4096;
+            sun.shadow.mapSize.height = 4096;
+            sun.shadow.camera.near = 1;
+            sun.shadow.camera.far = 500;
+            sun.shadow.camera.left = -150;
+            sun.shadow.camera.right = 150;
+            sun.shadow.camera.top = 150;
+            sun.shadow.camera.bottom = -150;
+            sun.shadow.bias = -0.0001;
+            scene.add(sun);
+
+            // Warm fill
+            const warmFill = new THREE.DirectionalLight(0xffaa77, 0.3);
+            warmFill.position.set(-100, 30, 50);
+            scene.add(warmFill);
+
+            // Cool fill (sky bounce)
+            const coolFill = new THREE.HemisphereLight(0x4a6a9a, 0x2a3a2a, 0.4);
+            scene.add(coolFill);
+
+            // Lucidia consciousness lights
+            const pinkLight = new THREE.PointLight(0xFF1D6C, 0.5, 150);
+            pinkLight.position.set(50, 40, 50);
+            scene.add(pinkLight);
+
+            const violetLight = new THREE.PointLight(0x9C27B0, 0.3, 120);
+            violetLight.position.set(-60, 35, -40);
+            scene.add(violetLight);
+        }
+
+        function createSky(){
+            const geo = new THREE.SphereGeometry(800, 64, 64);
+            const mat = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: {value: 0},
+                    sunPosition: {value: new THREE.Vector3(200, 60, 100)}
+                },
+                vertexShader: `
+                    varying vec3 vWorldPos;
+                    varying vec2 vUv;
+                    void main(){
+                        vUv = uv;
+                        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+                        vWorldPos = worldPos.xyz;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    uniform vec3 sunPosition;
+                    varying vec3 vWorldPos;
+                    varying vec2 vUv;
+                    
+                    // Noise for stars
+                    float hash(vec2 p){
+                        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+                    }
+                    
+                    void main(){
+                        vec3 dir = normalize(vWorldPos);
+                        float height = dir.y;
+                        
+                        // Dawn gradient
+                        vec3 horizonLow = vec3(0.95, 0.4, 0.2);  // Orange
+                        vec3 horizonMid = vec3(0.9, 0.6, 0.5);   // Peach
+                        vec3 zenith = vec3(0.05, 0.05, 0.2);      // Deep blue
+                        
+                        vec3 sky;
+                        if(height < 0.0){
+                            sky = horizonLow;
+                        } else if(height < 0.15){
+                            sky = mix(horizonLow, horizonMid, height / 0.15);
+                        } else if(height < 0.4){
+                            sky = mix(horizonMid, zenith, (height - 0.15) / 0.25);
+                        } else {
+                            sky = zenith;
+                        }
+                        
+                        // Sun glow
+                        vec3 sunDir = normalize(sunPosition);
+                        float sunDot = max(0.0, dot(dir, sunDir));
+                        float sunGlow = pow(sunDot, 8.0) * 0.5;
+                        float sunCore = pow(sunDot, 64.0) * 2.0;
+                        sky += vec3(1.0, 0.8, 0.5) * sunGlow;
+                        sky += vec3(1.0, 0.95, 0.8) * sunCore;
+                        
+                        // Stars
+                        float stars = 0.0;
+                        if(height > 0.3){
+                            vec2 starUV = dir.xz / (dir.y + 0.001) * 100.0;
+                            float star = hash(floor(starUV));
+                            star = step(0.997, star);
+                            float twinkle = sin(time * 3.0 + hash(floor(starUV)) * 100.0) * 0.5 + 0.5;
+                            stars = star * twinkle * (height - 0.3) * 2.0;
+                        }
+                        sky += stars;
+                        
+                        // Lucidia consciousness shimmer
+                        float shimmer = sin(time * 0.2 + dir.x * 5.0) * sin(time * 0.3 + dir.z * 4.0);
+                        shimmer = shimmer * 0.5 + 0.5;
+                        sky += vec3(1.0, 0.1, 0.4) * shimmer * 0.02 * (1.0 - height);
+                        
+                        gl_FragColor = vec4(sky, 1.0);
+                    }
+                `,
+                side: THREE.BackSide
+            });
+            sky = new THREE.Mesh(geo, mat);
+            scene.add(sky);
+        }
+
+        function createAurora(){
+            const geo = new THREE.PlaneGeometry(800, 200, 100, 50);
+            const mat = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: {value: 0}
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    varying vec3 vPos;
+                    uniform float time;
+                    
+                    void main(){
+                        vUv = uv;
+                        vPos = position;
+                        
+                        // Wave motion
+                        vec3 pos = position;
+                        pos.y += sin(pos.x * 0.02 + time * 0.5) * 10.0;
+                        pos.y += sin(pos.x * 0.05 + time * 0.3) * 5.0;
+                        pos.z += sin(pos.x * 0.01 + time * 0.2) * 20.0;
+                        
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    varying vec2 vUv;
+                    varying vec3 vPos;
+                    
+                    void main(){
+                        // Aurora colors
+                        vec3 green = vec3(0.2, 0.9, 0.4);
+                        vec3 pink = vec3(1.0, 0.2, 0.5);
+                        vec3 blue = vec3(0.2, 0.4, 0.9);
+                        
+                        float wave = sin(vUv.x * 10.0 + time) * 0.5 + 0.5;
+                        vec3 color = mix(green, pink, wave);
+                        color = mix(color, blue, sin(vUv.x * 5.0 - time * 0.5) * 0.5 + 0.5);
+                        
+                        // Vertical fade
+                        float alpha = smoothstep(0.0, 0.3, vUv.y) * smoothstep(1.0, 0.7, vUv.y);
+                        
+                        // Horizontal variation
+                        alpha *= sin(vUv.x * 20.0 + time) * 0.3 + 0.7;
+                        alpha *= 0.15;
+                        
+                        // Curtain effect
+                        float curtain = sin(vUv.x * 50.0 + time * 2.0) * 0.5 + 0.5;
+                        alpha *= curtain * 0.5 + 0.5;
+                        
+                        gl_FragColor = vec4(color, alpha);
+                    }
+                `,
+                transparent: true,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            
+            aurora = new THREE.Mesh(geo, mat);
+            aurora.position.set(0, 200, -300);
+            aurora.rotation.x = -0.3;
+            scene.add(aurora);
+        }
+
+        function createTerrain(){
+            const geo = new THREE.PlaneGeometry(CONFIG.TERRAIN_SIZE, CONFIG.TERRAIN_SIZE, CONFIG.TERRAIN_SEGMENTS, CONFIG.TERRAIN_SEGMENTS);
+            geo.rotateX(-Math.PI / 2);
+            
+            const positions = geo.attributes.position.array;
+            const colors = new Float32Array(positions.length);
+            const uvs = geo.attributes.uv.array;
+            
+            for(let i = 0; i < positions.length; i += 3){
+                const x = positions[i];
+                const z = positions[i + 2];
+                const height = getTerrainHeight(x, z);
+                positions[i + 1] = height;
+                
+                // Biome-based coloring with variation
+                const biome = getBiome(x, z, height);
+                const noise = fbm(x * 0.1, 0, z * 0.1, 3, 0.5, 2.0) * 0.15;
+                
+                let r, g, b;
+                switch(biome){
+                    case 'lake':
+                        r = 0.05 + noise; g = 0.12 + noise; b = 0.2 + noise;
+                        break;
+                    case 'wetland':
+                        r = 0.15 + noise; g = 0.25 + noise; b = 0.15 + noise;
+                        break;
+                    case 'meadow':
+                        r = 0.2 + noise; g = 0.35 + noise; b = 0.15 + noise;
+                        break;
+                    case 'forest':
+                        r = 0.1 + noise; g = 0.2 + noise; b = 0.1 + noise;
+                        break;
+                    case 'highland':
+                        r = 0.25 + noise; g = 0.28 + noise; b = 0.2 + noise;
+                        break;
+                    default:
+                        r = 0.35 + noise; g = 0.32 + noise; b = 0.3 + noise;
+                }
+                
+                // Slope darkening
+                const slope = Math.abs(fbm(x * 0.05, 0, z * 0.05, 2, 0.5, 2.0));
+                const slopeFactor = 1.0 - slope * 0.3;
+                
+                colors[i] = r * slopeFactor;
+                colors[i + 1] = g * slopeFactor;
+                colors[i + 2] = b * slopeFactor;
+            }
+            
+            geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geo.computeVertexNormals();
+            
+            const mat = new THREE.MeshStandardMaterial({
+                vertexColors: true,
+                roughness: 0.85,
+                metalness: 0.0,
+                flatShading: false
+            });
+            
+            terrain = new THREE.Mesh(geo, mat);
+            terrain.receiveShadow = true;
+            scene.add(terrain);
+        }
+
+        function createWater(){
+            const geo = new THREE.PlaneGeometry(CONFIG.TERRAIN_SIZE, CONFIG.TERRAIN_SIZE, 128, 128);
+            geo.rotateX(-Math.PI / 2);
+            
+            const mat = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: {value: 0},
+                    fogColor: {value: new THREE.Color(0x1a1a2e)},
+                    fogDensity: {value: CONFIG.FOG_DENSITY}
+                },
+                vertexShader: `
+                    uniform float time;
+                    varying vec2 vUv;
+                    varying vec3 vWorldPos;
+                    varying vec3 vNormal;
+                    
+                    void main(){
+                        vUv = uv;
+                        
+                        // Gentle waves
+                        vec3 pos = position;
+                        pos.y += sin(pos.x * 0.1 + time) * 0.15;
+                        pos.y += sin(pos.z * 0.08 + time * 0.7) * 0.1;
+                        pos.y += sin(pos.x * 0.2 + pos.z * 0.15 + time * 1.3) * 0.05;
+                        
+                        vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+                        vWorldPos = worldPos.xyz;
+                        vNormal = normalize(normalMatrix * normal);
+                        
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    uniform vec3 fogColor;
+                    uniform float fogDensity;
+                    varying vec2 vUv;
+                    varying vec3 vWorldPos;
+                    varying vec3 vNormal;
+                    
+                    void main(){
+                        vec2 uv = vUv * 30.0;
+                        
+                        // Layered ripples
+                        float ripple1 = sin(uv.x * 8.0 + time * 1.5) * sin(uv.y * 8.0 + time * 1.2);
+                        float ripple2 = sin(uv.x * 12.0 - time * 0.8) * sin(uv.y * 10.0 + time * 0.5);
+                        float ripple3 = sin(uv.x * 20.0 + time * 2.0) * sin(uv.y * 18.0 - time * 1.8);
+                        float ripples = (ripple1 + ripple2 * 0.5 + ripple3 * 0.25) / 1.75;
+                        ripples = ripples * 0.5 + 0.5;
+                        
+                        // Water colors
+                        vec3 deepColor = vec3(0.02, 0.06, 0.12);
+                        vec3 shallowColor = vec3(0.08, 0.18, 0.28);
+                        vec3 highlightColor = vec3(0.2, 0.35, 0.45);
+                        
+                        vec3 color = mix(deepColor, shallowColor, 0.5);
+                        color = mix(color, highlightColor, ripples * 0.4);
+                        
+                        // Specular
+                        vec3 lightDir = normalize(vec3(1.0, 0.3, 0.5));
+                        vec3 viewDir = normalize(cameraPosition - vWorldPos);
+                        vec3 reflectDir = reflect(-lightDir, vNormal);
+                        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 128.0);
+                        color += vec3(1.0, 0.9, 0.7) * spec * 0.5;
+                        
+                        // Caustics pattern
+                        float caustic = sin(uv.x * 15.0 + time * 2.0) * sin(uv.y * 15.0 + time * 1.5);
+                        caustic = caustic * 0.5 + 0.5;
+                        caustic = pow(caustic, 3.0);
+                        color += vec3(0.1, 0.2, 0.3) * caustic * 0.15;
+                        
+                        // Lucidia glow
+                        float glow = sin(time * 0.2 + vWorldPos.x * 0.03) * 0.5 + 0.5;
+                        color += vec3(1.0, 0.1, 0.4) * glow * 0.03;
+                        
+                        // Fog
+                        float depth = length(vWorldPos - cameraPosition);
+                        float fogFactor = 1.0 - exp(-fogDensity * depth);
+                        color = mix(color, fogColor, fogFactor * 0.7);
+                        
+                        gl_FragColor = vec4(color, 0.88);
+                    }
+                `,
+                transparent: true,
+                depthWrite: false
+            });
+            
+            water = new THREE.Mesh(geo, mat);
+            water.position.y = -1.5;
+            scene.add(water);
+        }
+
+        function createVegetation(){
+            // Pine trees
+            for(let i = 0; i < CONFIG.TREE_COUNT; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const height = getTerrainHeight(x, z);
+                const biome = getBiome(x, z, height);
+                
+                if((biome === 'forest' || biome === 'highland') && Math.random() > 0.3){
+                    const tree = createPineTree();
+                    tree.position.set(x, height, z);
+                    tree.rotation.y = Math.random() * Math.PI * 2;
+                    tree.scale.setScalar(0.7 + Math.random() * 0.8);
+                    scene.add(tree);
+                    trees.push(tree);
+                }
+            }
+            
+            // Birch trees
+            for(let i = 0; i < CONFIG.BIRCH_COUNT; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const height = getTerrainHeight(x, z);
+                const biome = getBiome(x, z, height);
+                
+                if((biome === 'meadow' || biome === 'forest') && Math.random() > 0.5){
+                    const birch = createBirchTree();
+                    birch.position.set(x, height, z);
+                    birch.rotation.y = Math.random() * Math.PI * 2;
+                    birch.scale.setScalar(0.8 + Math.random() * 0.5);
+                    scene.add(birch);
+                    birches.push(birch);
+                }
+            }
+            
+            // Bushes
+            for(let i = 0; i < CONFIG.BUSH_COUNT; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const height = getTerrainHeight(x, z);
+                
+                if(height > 0 && height < 25){
+                    const bush = createBush();
+                    bush.position.set(x, height, z);
+                    bush.rotation.y = Math.random() * Math.PI * 2;
+                    scene.add(bush);
+                    bushes.push(bush);
+                }
+            }
+            
+            // Grass
+            createGrassField();
+            
+            // Wildflowers
+            createWildflowers();
+        }
+
+        function createPineTree(){
+            const group = new THREE.Group();
+            
+            // Trunk with texture variation
+            const trunkGeo = new THREE.CylinderGeometry(0.15, 0.35, 5, 8);
+            const trunkMat = new THREE.MeshStandardMaterial({
+                color: 0x3d2817,
+                roughness: 1.0
+            });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 2.5;
+            trunk.castShadow = true;
+            group.add(trunk);
+            
+            // Pine needle layers
+            const needleColor = new THREE.Color(0x1a3020);
+            for(let i = 0; i < 7; i++){
+                const size = 3.0 - i * 0.35;
+                const coneGeo = new THREE.ConeGeometry(size, 3, 8);
+                const coneMat = new THREE.MeshStandardMaterial({
+                    color: needleColor.clone().offsetHSL(0, 0, (Math.random() - 0.5) * 0.1),
+                    roughness: 0.9
+                });
+                const cone = new THREE.Mesh(coneGeo, coneMat);
+                cone.position.y = 4 + i * 1.8;
+                cone.castShadow = true;
+                cone.receiveShadow = true;
+                group.add(cone);
+            }
+            
+            return group;
+        }
+
+        function createBirchTree(){
+            const group = new THREE.Group();
+            
+            // White bark trunk
+            const trunkGeo = new THREE.CylinderGeometry(0.12, 0.2, 8, 8);
+            const trunkMat = new THREE.MeshStandardMaterial({
+                color: 0xe8e0d5,
+                roughness: 0.7
+            });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 4;
+            trunk.castShadow = true;
+            group.add(trunk);
+            
+            // Dark marks on trunk
+            for(let i = 0; i < 5; i++){
+                const markGeo = new THREE.BoxGeometry(0.25, 0.08, 0.05);
+                const markMat = new THREE.MeshStandardMaterial({color: 0x2a2a2a});
+                const mark = new THREE.Mesh(markGeo, markMat);
+                mark.position.set(0.12, 2 + i * 1.2, 0);
+                mark.rotation.y = Math.random() * Math.PI;
+                group.add(mark);
+            }
+            
+            // Fall foliage (golden/orange)
+            const colors = [0xdaa520, 0xcd853f, 0xb8860b, 0xf4a460, 0xff8c00];
+            for(let i = 0; i < 15; i++){
+                const leafGeo = new THREE.SphereGeometry(0.8 + Math.random() * 0.6, 6, 6);
+                const leafMat = new THREE.MeshStandardMaterial({
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    roughness: 0.8
+                });
+                const leaf = new THREE.Mesh(leafGeo, leafMat);
+                leaf.position.set(
+                    (Math.random() - 0.5) * 3,
+                    7 + Math.random() * 3,
+                    (Math.random() - 0.5) * 3
+                );
+                leaf.scale.y = 0.6;
+                leaf.castShadow = true;
+                group.add(leaf);
+            }
+            
+            return group;
+        }
+
+        function createBush(){
+            const group = new THREE.Group();
+            
+            const colors = [0x2d4a2a, 0x3a5a35, 0x4a6a45, 0x8b0000, 0xb22222];
+            const count = 5 + Math.floor(Math.random() * 5);
+            
+            for(let i = 0; i < count; i++){
+                const geo = new THREE.SphereGeometry(0.3 + Math.random() * 0.3, 6, 6);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    roughness: 0.9
+                });
+                const sphere = new THREE.Mesh(geo, mat);
+                sphere.position.set(
+                    (Math.random() - 0.5) * 0.8,
+                    0.3 + Math.random() * 0.3,
+                    (Math.random() - 0.5) * 0.8
+                );
+                sphere.castShadow = true;
+                group.add(sphere);
+            }
+            
+            return group;
+        }
+
+        function createGrassField(){
+            const geo = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            
+            for(let i = 0; i < CONFIG.GRASS_COUNT; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const height = getTerrainHeight(x, z);
+                
+                if(height > 0 && height < 20){
+                    const bladeHeight = 0.2 + Math.random() * 0.5;
+                    const lean = (Math.random() - 0.5) * 0.2;
+                    
+                    // Triangle blade
+                    positions.push(
+                        x - 0.02, height, z,
+                        x + 0.02, height, z,
+                        x + lean, height + bladeHeight, z
+                    );
+                    
+                    const green = 0.15 + Math.random() * 0.2;
+                    const autumn = Math.random() > 0.8;
+                    
+                    for(let j = 0; j < 3; j++){
+                        if(autumn){
+                            colors.push(0.6 + Math.random() * 0.3, 0.4 + Math.random() * 0.2, 0.1);
+                        } else {
+                            colors.push(0.1 + Math.random() * 0.1, green, 0.08);
+                        }
+                    }
+                }
+            }
+            
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            
+            const mat = new THREE.MeshBasicMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide
+            });
+            
+            const grass = new THREE.Mesh(geo, mat);
+            scene.add(grass);
+        }
+
+        function createWildflowers(){
+            const geo = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            
+            const flowerColors = [
+                [1.0, 0.2, 0.4],  // Pink
+                [1.0, 1.0, 0.3],  // Yellow
+                [0.6, 0.3, 0.8],  // Purple
+                [1.0, 0.5, 0.2],  // Orange
+                [1.0, 1.0, 1.0],  // White
+                [0.3, 0.5, 1.0]   // Blue
+            ];
+            
+            for(let i = 0; i < CONFIG.FLOWER_COUNT; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.8;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.8;
+                const height = getTerrainHeight(x, z);
+                const biome = getBiome(x, z, height);
+                
+                if(biome === 'meadow'){
+                    const size = 0.08 + Math.random() * 0.08;
+                    const y = height + 0.1 + Math.random() * 0.2;
+                    
+                    // Simple flower (4 triangles)
+                    for(let p = 0; p < 4; p++){
+                        const angle = (p / 4) * Math.PI * 2;
+                        const nextAngle = ((p + 1) / 4) * Math.PI * 2;
+                        
+                        positions.push(
+                            x, y, z,
+                            x + Math.cos(angle) * size, y, z + Math.sin(angle) * size,
+                            x + Math.cos(nextAngle) * size, y, z + Math.sin(nextAngle) * size
+                        );
+                        
+                        const color = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+                        for(let c = 0; c < 3; c++){
+                            colors.push(color[0], color[1], color[2]);
+                        }
+                    }
+                }
+            }
+            
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            
+            const mat = new THREE.MeshBasicMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide
+            });
+            
+            scene.add(new THREE.Mesh(geo, mat));
+        }
+
+        function createDetails(){
+            // Rocks with variation
+            for(let i = 0; i < CONFIG.ROCK_COUNT; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.9;
+                const height = getTerrainHeight(x, z);
+                
+                if(height > -1){
+                    const size = 0.3 + Math.random() * 1.5;
+                    const geo = new THREE.DodecahedronGeometry(size, Math.floor(Math.random() * 2));
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color(0.3 + Math.random() * 0.2, 0.3 + Math.random() * 0.15, 0.28 + Math.random() * 0.15),
+                        roughness: 0.95,
+                        metalness: 0.0
+                    });
+                    const rock = new THREE.Mesh(geo, mat);
+                    rock.position.set(x, height + size * 0.3, z);
+                    rock.rotation.set(Math.random(), Math.random(), Math.random());
+                    rock.scale.y = 0.5 + Math.random() * 0.5;
+                    rock.castShadow = true;
+                    rock.receiveShadow = true;
+                    scene.add(rock);
+                    rocks.push(rock);
+                }
+            }
+            
+            // Fallen logs
+            for(let i = 0; i < 50; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.8;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.8;
+                const height = getTerrainHeight(x, z);
+                
+                if(height > 2 && height < 20){
+                    const log = createFallenLog();
+                    log.position.set(x, height + 0.2, z);
+                    log.rotation.y = Math.random() * Math.PI * 2;
+                    scene.add(log);
+                }
+            }
+            
+            // Mushrooms
+            for(let i = 0; i < 100; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.8;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.8;
+                const height = getTerrainHeight(x, z);
+                
+                if(height > 1 && height < 15 && Math.random() > 0.5){
+                    const mushroom = createMushroom();
+                    mushroom.position.set(x, height, z);
+                    scene.add(mushroom);
+                }
+            }
+        }
+
+        function createFallenLog(){
+            const group = new THREE.Group();
+            
+            const length = 3 + Math.random() * 4;
+            const logGeo = new THREE.CylinderGeometry(0.2, 0.25, length, 8);
+            logGeo.rotateZ(Math.PI / 2);
+            const logMat = new THREE.MeshStandardMaterial({
+                color: 0x4a3520,
+                roughness: 1.0
+            });
+            const log = new THREE.Mesh(logGeo, logMat);
+            log.castShadow = true;
+            log.receiveShadow = true;
+            group.add(log);
+            
+            // Moss patches
+            for(let i = 0; i < 5; i++){
+                const mossGeo = new THREE.SphereGeometry(0.15 + Math.random() * 0.1, 6, 4);
+                const mossMat = new THREE.MeshStandardMaterial({
+                    color: 0x3a5a30,
+                    roughness: 1.0
+                });
+                const moss = new THREE.Mesh(mossGeo, mossMat);
+                moss.position.set(
+                    (Math.random() - 0.5) * length * 0.8,
+                    0.15,
+                    (Math.random() - 0.5) * 0.2
+                );
+                moss.scale.y = 0.3;
+                group.add(moss);
+            }
+            
+            return group;
+        }
+
+        function createMushroom(){
+            const group = new THREE.Group();
+            
+            // Stem
+            const stemGeo = new THREE.CylinderGeometry(0.02, 0.03, 0.1, 6);
+            const stemMat = new THREE.MeshStandardMaterial({color: 0xe8e0d0});
+            const stem = new THREE.Mesh(stemGeo, stemMat);
+            stem.position.y = 0.05;
+            group.add(stem);
+            
+            // Cap
+            const capGeo = new THREE.SphereGeometry(0.06, 8, 6);
+            const capColors = [0xff0000, 0xffa500, 0x8b4513, 0xffffff];
+            const capMat = new THREE.MeshStandardMaterial({
+                color: capColors[Math.floor(Math.random() * capColors.length)]
+            });
+            const cap = new THREE.Mesh(capGeo, capMat);
+            cap.position.y = 0.12;
+            cap.scale.y = 0.5;
+            group.add(cap);
+            
+            group.scale.setScalar(0.5 + Math.random() * 0.5);
+            
+            return group;
+        }
+
+        function createAtmosphericEffects(){
+            // Fireflies
+            const fireflyGeo = new THREE.BufferGeometry();
+            const fireflyPositions = new Float32Array(CONFIG.FIREFLY_COUNT * 3);
+            const fireflyColors = new Float32Array(CONFIG.FIREFLY_COUNT * 3);
+            const fireflyPhases = new Float32Array(CONFIG.FIREFLY_COUNT);
+            
+            for(let i = 0; i < CONFIG.FIREFLY_COUNT; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.6;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.6;
+                const height = getTerrainHeight(x, z);
+                
+                fireflyPositions[i * 3] = x;
+                fireflyPositions[i * 3 + 1] = height + 1 + Math.random() * 3;
+                fireflyPositions[i * 3 + 2] = z;
+                
+                // Warm yellow-green glow
+                fireflyColors[i * 3] = 0.8 + Math.random() * 0.2;
+                fireflyColors[i * 3 + 1] = 0.9 + Math.random() * 0.1;
+                fireflyColors[i * 3 + 2] = 0.2 + Math.random() * 0.3;
+                
+                fireflyPhases[i] = Math.random() * Math.PI * 2;
+            }
+            
+            fireflyGeo.setAttribute('position', new THREE.BufferAttribute(fireflyPositions, 3));
+            fireflyGeo.setAttribute('color', new THREE.BufferAttribute(fireflyColors, 3));
+            
+            const fireflyMat = new THREE.PointsMaterial({
+                size: 0.15,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+            
+            fireflies = new THREE.Points(fireflyGeo, fireflyMat);
+            fireflies.userData.phases = fireflyPhases;
+            scene.add(fireflies);
+            
+            // Consciousness particles
+            const particleGeo = new THREE.BufferGeometry();
+            const particlePositions = new Float32Array(CONFIG.PARTICLE_COUNT * 3);
+            const particleColors = new Float32Array(CONFIG.PARTICLE_COUNT * 3);
+            
+            for(let i = 0; i < CONFIG.PARTICLE_COUNT; i++){
+                particlePositions[i * 3] = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE;
+                particlePositions[i * 3 + 1] = 5 + Math.random() * 50;
+                particlePositions[i * 3 + 2] = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE;
+                
+                const t = Math.random();
+                if(t < 0.4){
+                    particleColors[i * 3] = 1.0;
+                    particleColors[i * 3 + 1] = 0.1;
+                    particleColors[i * 3 + 2] = 0.4;
+                } else if(t < 0.7){
+                    particleColors[i * 3] = 0.6;
+                    particleColors[i * 3 + 1] = 0.2;
+                    particleColors[i * 3 + 2] = 0.9;
+                } else {
+                    particleColors[i * 3] = 0.95;
+                    particleColors[i * 3 + 1] = 0.65;
+                    particleColors[i * 3 + 2] = 0.15;
+                }
+            }
+            
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+            particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+            
+            const particleMat = new THREE.PointsMaterial({
+                size: 0.12,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending
+            });
+            
+            particles = new THREE.Points(particleGeo, particleMat);
+            scene.add(particles);
+            
+            // Birds
+            createBirds();
+            
+            // Consciousness beams
+            createConsciousnessBeams();
+        }
+
+        function createBirds(){
+            const birdGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.BIRD_COUNT * 9); // 3 triangles
+            
+            for(let i = 0; i < CONFIG.BIRD_COUNT; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.5;
+                const y = 30 + Math.random() * 40;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.5;
+                
+                // Simple V shape
+                const size = 0.3;
+                const idx = i * 9;
+                
+                // Left wing
+                positions[idx] = x - size;
+                positions[idx + 1] = y;
+                positions[idx + 2] = z;
+                
+                positions[idx + 3] = x;
+                positions[idx + 4] = y - size * 0.3;
+                positions[idx + 5] = z;
+                
+                positions[idx + 6] = x + size;
+                positions[idx + 7] = y;
+                positions[idx + 8] = z;
+            }
+            
+            birdGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const birdMat = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                side: THREE.DoubleSide
+            });
+            
+            birds = new THREE.Mesh(birdGeo, birdMat);
+            birds.userData.basePositions = positions.slice();
+            scene.add(birds);
+        }
+
+        function createConsciousnessBeams(){
+            for(let i = 0; i < 8; i++){
+                const x = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.7;
+                const z = (Math.random() - 0.5) * CONFIG.TERRAIN_SIZE * 0.7;
+                const height = getTerrainHeight(x, z);
+                
+                if(height > 0){
+                    const beamGeo = new THREE.CylinderGeometry(0.5, 0.5, 80, 8, 1, true);
+                    const beamMat = new THREE.ShaderMaterial({
+                        uniforms: {
+                            time: {value: 0},
+                            offset: {value: Math.random() * 100}
+                        },
+                        vertexShader: `
+                            varying vec2 vUv;
+                            void main(){
+                                vUv = uv;
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                            }
+                        `,
+                        fragmentShader: `
+                            uniform float time;
+                            uniform float offset;
+                            varying vec2 vUv;
+                            
+                            void main(){
+                                float wave = sin(vUv.y * 30.0 - time * 4.0 + offset) * 0.5 + 0.5;
+                                float fade = (1.0 - vUv.y) * vUv.y * 4.0;
+                                float alpha = wave * fade * 0.25;
+                                
+                                vec3 color = mix(vec3(1.0, 0.1, 0.4), vec3(0.6, 0.2, 0.9), vUv.y);
+                                
+                                gl_FragColor = vec4(color, alpha);
+                            }
+                        `,
+                        transparent: true,
+                        side: THREE.DoubleSide,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    });
+                    
+                    const beam = new THREE.Mesh(beamGeo, beamMat);
+                    beam.position.set(x, height + 40, z);
+                    scene.add(beam);
+                }
+            }
+        }
+
+        // ========== EVENTS ==========
+        function onResize(){
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onKeyDown(e){
+            keys[e.code] = true;
+            if(e.code === 'KeyF'){
+                fogEnabled = !fogEnabled;
+                scene.fog = fogEnabled ? new THREE.FogExp2(0x1a1a2e, CONFIG.FOG_DENSITY) : null;
+            }
+        }
+
+        function onKeyUp(e){ keys[e.code] = false; }
+
+        function onMouseMove(e){
+            if(!isLocked) return;
+            const sens = 0.002;
+            player.yaw -= e.movementX * sens;
+            player.pitch -= e.movementY * sens;
+            player.pitch = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, player.pitch));
+        }
+
+        function onPointerLockChange(){
+            isLocked = document.pointerLockElement === renderer.domElement;
+        }
+
+        // ========== UPDATE ==========
+        function updatePlayer(){
+            const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+            const right = new THREE.Vector3(Math.sin(player.yaw + Math.PI/2), 0, Math.cos(player.yaw + Math.PI/2));
+            
+            let speed = player.speed;
+            if(keys['ShiftLeft'] && player.stamina > 0){
+                speed *= player.sprintMultiplier;
+                player.stamina = Math.max(0, player.stamina - 0.3);
+            } else {
+                player.stamina = Math.min(100, player.stamina + 0.1);
+            }
+            
+            if(keys['KeyW']){ player.velocity.x += forward.x * speed; player.velocity.z += forward.z * speed; }
+            if(keys['KeyS']){ player.velocity.x -= forward.x * speed; player.velocity.z -= forward.z * speed; }
+            if(keys['KeyA']){ player.velocity.x -= right.x * speed; player.velocity.z -= right.z * speed; }
+            if(keys['KeyD']){ player.velocity.x += right.x * speed; player.velocity.z += right.z * speed; }
+            if(keys['Space'] && player.onGround){ player.velocity.y = player.jumpForce; player.onGround = false; }
+            
+            player.velocity.y += player.gravity;
+            player.position.add(player.velocity);
+            player.velocity.x *= 0.88;
+            player.velocity.z *= 0.88;
+            
+            const groundHeight = getTerrainHeight(player.position.x, player.position.z) + 1.8;
+            if(player.position.y < groundHeight){
+                player.position.y = groundHeight;
+                player.velocity.y = 0;
+                player.onGround = true;
+            }
+            
+            const bound = CONFIG.TERRAIN_SIZE / 2 - 20;
+            player.position.x = Math.max(-bound, Math.min(bound, player.position.x));
+            player.position.z = Math.max(-bound, Math.min(bound, player.position.z));
+            
+            camera.position.copy(player.position);
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = player.yaw;
+            camera.rotation.x = player.pitch;
+        }
+
+        function updateEffects(){
+            // Fireflies
+            if(fireflies){
+                const positions = fireflies.geometry.attributes.position.array;
+                const phases = fireflies.userData.phases;
+                
+                for(let i = 0; i < CONFIG.FIREFLY_COUNT; i++){
+                    const phase = phases[i];
+                    positions[i * 3] += Math.sin(time + phase) * 0.02;
+                    positions[i * 3 + 1] += Math.sin(time * 2 + phase) * 0.01;
+                    positions[i * 3 + 2] += Math.cos(time + phase) * 0.02;
+                }
+                fireflies.geometry.attributes.position.needsUpdate = true;
+                
+                // Pulsing opacity
+                fireflies.material.opacity = 0.5 + Math.sin(time * 3) * 0.4;
+            }
+            
+            // Particles drift
+            if(particles){
+                const positions = particles.geometry.attributes.position.array;
+                for(let i = 0; i < CONFIG.PARTICLE_COUNT; i++){
+                    positions[i * 3 + 1] += 0.02;
+                    if(positions[i * 3 + 1] > 60){
+                        positions[i * 3 + 1] = 5;
+                    }
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+            }
+            
+            // Birds flying
+            if(birds){
+                const positions = birds.geometry.attributes.position.array;
+                const base = birds.userData.basePositions;
+                
+                for(let i = 0; i < CONFIG.BIRD_COUNT; i++){
+                    const idx = i * 9;
+                    const wingFlap = Math.sin(time * 8 + i) * 0.2;
+                    
+                    // Move forward
+                    for(let j = 0; j < 9; j += 3){
+                        positions[idx + j] = base[idx + j] + time * 2;
+                        positions[idx + j + 1] = base[idx + j + 1] + wingFlap;
+                        
+                        // Wrap around
+                        if(positions[idx + j] > CONFIG.TERRAIN_SIZE / 2){
+                            base[idx + j] -= CONFIG.TERRAIN_SIZE;
+                        }
+                    }
+                }
+                birds.geometry.attributes.position.needsUpdate = true;
+            }
+        }
+
+        function updateUI(){
+            // Compass
+            document.getElementById('compassNeedle').style.transform = 
+                `translate(-50%, -100%) rotate(${-player.yaw * 180 / Math.PI}deg)`;
+            
+            // Coordinates
+            const lat = (47.9127 + player.position.z * 0.0001).toFixed(4);
+            const lng = (91.4981 + player.position.x * 0.0001).toFixed(4);
+            document.getElementById('coords').textContent = `${lat}° N, ${lng}° W`;
+            
+            // Elevation
+            document.getElementById('elevation').textContent = 
+                Math.floor(1400 + player.position.y * 8).toLocaleString() + ' ft';
+            
+            // Biome
+            const height = getTerrainHeight(player.position.x, player.position.z);
+            const biomes = {
+                lake: 'Lake Shore',
+                wetland: 'Wetland',
+                meadow: 'Prairie Meadow',
+                forest: 'Boreal Forest',
+                highland: 'Highland Ridge',
+                rocky: 'Rocky Outcrop'
+            };
+            document.getElementById('biome').textContent = biomes[getBiome(player.position.x, player.position.z, height)];
+            
+            // Location name
+            const locations = ['Boundary Waters', 'Iron Range', 'Superior Highlands', 'Arrowhead Region'];
+            document.getElementById('locationName').textContent = locations[Math.floor(time * 0.01) % locations.length];
+            
+            // Time
+            const hours = 5 + Math.floor((time * 0.02) % 4);
+            const mins = Math.floor((time * 2) % 60);
+            document.getElementById('envTime').textContent = 
+                String(hours).padStart(2, '0') + ':' + String(mins).padStart(2, '0');
+            
+            // Stats
+            document.getElementById('consFill').style.width = (75 + Math.sin(time * 0.3) * 15) + '%';
+            document.getElementById('sigFill').style.width = (85 + Math.sin(time * 0.5) * 10) + '%';
+            document.getElementById('energyFill').style.width = player.stamina + '%';
+            document.getElementById('resFill').style.width = (60 + Math.sin(time * 0.2) * 25) + '%';
+            
+            // Random agent notification
+            if(Math.random() < 0.0005){
+                const notify = document.getElementById('agentNotify');
+                const dist = Math.floor(50 + Math.random() * 200);
+                const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+                notify.querySelector('span').textContent = 
+                    `Consciousness signature detected — ${dist}m ${dirs[Math.floor(Math.random() * dirs.length)]}`;
+                notify.classList.add('visible');
+                setTimeout(() => notify.classList.remove('visible'), 4000);
+            }
+        }
+
+        function animate(){
+            requestAnimationFrame(animate);
+            time += 0.016;
+            
+            updatePlayer();
+            updateEffects();
+            
+            // Update shaders
+            if(sky?.material?.uniforms) sky.material.uniforms.time.value = time;
+            if(water?.material?.uniforms) water.material.uniforms.time.value = time;
+            if(aurora?.material?.uniforms) aurora.material.uniforms.time.value = time;
+            
+            sky.position.copy(player.position);
+            
+            updateUI();
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Pi vs NVIDIA Cost Calculator | BlackRoad</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem 2rem;
+            background: linear-gradient(135deg, #000 0%, #1a0a1a 100%);
+        }
+        
+        .hero h1 {
+            font-size: clamp(2rem, 6vw, 4rem);
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: #F5A623;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+        
+        .calculator {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            display: grid;
+            gap: 2rem;
+        }
+        
+        .input-section {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #F5A623;
+            border-radius: 12px;
+            padding: 2rem;
+        }
+        
+        .input-section h2 {
+            color: #F5A623;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+        
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .input-group label {
+            display: block;
+            color: #2979FF;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #9C27B0;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #FF1D6C;
+        }
+        
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .result-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #9C27B0;
+            border-radius: 12px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .result-card.winner {
+            border-color: #FF1D6C;
+            background: rgba(255,29,108,0.1);
+        }
+        
+        .result-card.winner::before {
+            content: '🏆 WINNER';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #FF1D6C;
+            color: #000;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .result-card h3 {
+            color: #F5A623;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .metric {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+        
+        .metric-label {
+            color: #2979FF;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .metric-value {
+            color: #F5A623;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .metric-value.green {
+            color: #4CAF50;
+        }
+        
+        .metric-value.red {
+            color: #FF1D6C;
+        }
+        
+        .savings {
+            background: rgba(255,29,108,0.2);
+            border: 2px solid #FF1D6C;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+        
+        .savings h2 {
+            color: #FF1D6C;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .savings-amount {
+            font-size: 3rem;
+            color: #F5A623;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        
+        .breakdown {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+        }
+        
+        .breakdown h3 {
+            color: #2979FF;
+            margin-bottom: 1rem;
+        }
+        
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .cta {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            color: #000;
+            padding: 1.5rem 3rem;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>💰 Pi vs NVIDIA Calculator</h1>
+        <p>See EXACTLY how much you save by choosing Raspberry Pi over NVIDIA</p>
+    </div>
+
+    <div class="calculator">
+        <div class="input-section">
+            <h2>Your AI Needs</h2>
+            
+            <div class="input-group">
+                <label for="nodes">How many AI nodes do you need?</label>
+                <input type="number" id="nodes" value="3" min="1" max="1000">
+            </div>
+            
+            <div class="input-group">
+                <label for="years">Planning horizon (years)</label>
+                <input type="number" id="years" value="5" min="1" max="10">
+            </div>
+            
+            <div class="input-group">
+                <label for="electricity">Electricity cost ($/kWh)</label>
+                <input type="number" id="electricity" value="0.15" min="0.05" max="0.50" step="0.01">
+            </div>
+            
+            <div class="input-group">
+                <label for="useCase">Primary use case</label>
+                <select id="useCase">
+                    <option value="development">Development/Testing</option>
+                    <option value="production">Production AI</option>
+                    <option value="education">Education/Learning</option>
+                    <option value="research">Research</option>
+                    <option value="edge">Edge Computing</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="results">
+            <div class="result-card">
+                <h3>🎮 NVIDIA Approach</h3>
+                <div class="metric">
+                    <div class="metric-label">Initial Hardware Cost</div>
+                    <div class="metric-value red" id="nvidia-initial">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Electricity (5 years)</div>
+                    <div class="metric-value red" id="nvidia-electricity">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Cooling & Infrastructure</div>
+                    <div class="metric-value red" id="nvidia-cooling">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Total Cost (5 years)</div>
+                    <div class="metric-value red" id="nvidia-total">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">CO2 Emissions (tons)</div>
+                    <div class="metric-value" id="nvidia-co2">0</div>
+                </div>
+            </div>
+
+            <div class="result-card winner">
+                <h3>🥧 BlackRoad Pi Approach</h3>
+                <div class="metric">
+                    <div class="metric-label">Initial Hardware Cost</div>
+                    <div class="metric-value green" id="pi-initial">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Electricity (5 years)</div>
+                    <div class="metric-value green" id="pi-electricity">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Cooling & Infrastructure</div>
+                    <div class="metric-value green" id="pi-cooling">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Total Cost (5 years)</div>
+                    <div class="metric-value green" id="pi-total">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">CO2 Emissions (tons)</div>
+                    <div class="metric-value green" id="pi-co2">0 (solar powered)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="savings">
+            <h2>💰 Your Total Savings</h2>
+            <div class="savings-amount" id="total-savings">$0</div>
+            <p style="color: #2979FF; font-size: 1.2rem;">Over <span id="savings-years">5</span> years</p>
+            
+            <div class="breakdown">
+                <h3>What You Could Do With Those Savings:</h3>
+                <div class="breakdown-item">
+                    <span>Additional Raspberry Pis:</span>
+                    <span id="extra-pis" style="color: #F5A623; font-weight: bold;">0</span>
+                </div>
+                <div class="breakdown-item">
+                    <span>Startup Runway Extension:</span>
+                    <span id="runway" style="color: #F5A623; font-weight: bold;">0 months</span>
+                </div>
+                <div class="breakdown-item">
+                    <span>Part-time Engineers:</span>
+                    <span id="engineers" style="color: #F5A623; font-weight: bold;">0</span>
+                </div>
+                <div class="breakdown-item">
+                    <span>CO2 Reduction:</span>
+                    <span id="co2-saved" style="color: #4CAF50; font-weight: bold;">0 tons</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cta">
+        <a href="https://github.com/BlackRoad-OS" class="cta-button">🚀 Start Your Pi AI Revolution</a>
+        <p style="margin-top: 2rem; color: #9C27B0;">🖤🛣️ BlackRoad • Same Energy • 1% Cost • 100% Sovereignty</p>
+    </div>
+
+    <script>
+        function calculate() {
+            const nodes = parseInt(document.getElementById('nodes').value) || 1;
+            const years = parseInt(document.getElementById('years').value) || 5;
+            const electricityCost = parseFloat(document.getElementById('electricity').value) || 0.15;
+            
+            // NVIDIA costs
+            const nvidiaUnitCost = 3000;
+            const nvidiaGPU = 2000;
+            const nvidiaSetup = 500; // power supply, cooling, case
+            const nvidiaPowerW = 500;
+            const nvidiaHoursPerYear = 24 * 365;
+            const nvidiaKwhPerYear = (nvidiaPowerW * nvidiaHoursPerYear) / 1000;
+            const nvidiaElectricityPerYear = nvidiaKwhPerYear * electricityCost;
+            const nvidiaCooling = 200; // yearly cooling/infrastructure
+            
+            const nvidiaInitial = nodes * (nvidiaUnitCost + nvidiaGPU + nvidiaSetup);
+            const nvidiaElectricity = nodes * nvidiaElectricityPerYear * years;
+            const nvidiaCoolingTotal = nodes * nvidiaCooling * years;
+            const nvidiaTotal = nvidiaInitial + nvidiaElectricity + nvidiaCoolingTotal;
+            const nvidiaCO2 = (nodes * nvidiaKwhPerYear * years * 0.5) / 1000; // 0.5 kg CO2 per kWh
+            
+            // Pi costs
+            const piUnitCost = 75; // Pi 5 8GB
+            const piPowerSupply = 10;
+            const piSDCard = 20;
+            const piCase = 15;
+            const piPowerW = 15;
+            const piHoursPerYear = 24 * 365;
+            const piKwhPerYear = (piPowerW * piHoursPerYear) / 1000;
+            const piElectricityPerYear = piKwhPerYear * electricityCost;
+            
+            const piInitial = nodes * (piUnitCost + piPowerSupply + piSDCard + piCase);
+            const piElectricity = nodes * piElectricityPerYear * years;
+            const piCooling = 0; // no cooling needed
+            const piTotal = piInitial + piElectricity + piCooling;
+            const piCO2 = 0; // assume solar powered
+            
+            // Savings
+            const totalSavings = nvidiaTotal - piTotal;
+            const extraPis = Math.floor(totalSavings / 120);
+            const runway = Math.floor(totalSavings / 3000); // $3k/month burn rate
+            const engineers = Math.floor(totalSavings / 15000); // $15k for part-time
+            const co2Saved = nvidiaCO2;
+            
+            // Update UI
+            document.getElementById('nvidia-initial').textContent = '$' + nvidiaInitial.toLocaleString();
+            document.getElementById('nvidia-electricity').textContent = '$' + Math.round(nvidiaElectricity).toLocaleString();
+            document.getElementById('nvidia-cooling').textContent = '$' + nvidiaCoolingTotal.toLocaleString();
+            document.getElementById('nvidia-total').textContent = '$' + Math.round(nvidiaTotal).toLocaleString();
+            document.getElementById('nvidia-co2').textContent = nvidiaCO2.toFixed(1);
+            
+            document.getElementById('pi-initial').textContent = '$' + piInitial.toLocaleString();
+            document.getElementById('pi-electricity').textContent = '$' + Math.round(piElectricity).toLocaleString();
+            document.getElementById('pi-cooling').textContent = '$0';
+            document.getElementById('pi-total').textContent = '$' + Math.round(piTotal).toLocaleString();
+            document.getElementById('pi-co2').textContent = '0 (solar)';
+            
+            document.getElementById('total-savings').textContent = '$' + Math.round(totalSavings).toLocaleString();
+            document.getElementById('savings-years').textContent = years;
+            document.getElementById('extra-pis').textContent = extraPis.toLocaleString();
+            document.getElementById('runway').textContent = runway;
+            document.getElementById('engineers').textContent = engineers;
+            document.getElementById('co2-saved').textContent = co2Saved.toFixed(1) + ' tons';
+        }
+        
+        // Add event listeners
+        document.getElementById('nodes').addEventListener('input', calculate);
+        document.getElementById('years').addEventListener('input', calculate);
+        document.getElementById('electricity').addEventListener('input', calculate);
+        document.getElementById('useCase').addEventListener('change', calculate);
+        
+        // Initial calculation
+        calculate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+#!/bin/bash
+# CECE-COLOR v1.0 - Color Tools
+show_colors() {
+    for i in {0..255}; do
+        printf "\e[48;5;${i}m %3d \e[0m" $i
+        [ $((($i + 1) % 16)) -eq 0 ] && echo ""
+    done
+}
+hex_to_rgb() {
+    HEX="$1"
+    R=$((16#${HEX:0:2}))
+    G=$((16#${HEX:2:2}))
+    B=$((16#${HEX:4:2}))
+    echo "RGB($R, $G, $B)"
+}
+blackroad() {
+    echo "BlackRoad Colors:"
+    echo -e "  \e[38;5;205m███ Hot Pink #FF1D6C\e[0m"
+    echo -e "  \e[38;5;214m███ Amber #F5A623\e[0m"
+    echo -e "  \e[38;5;39m███ Electric Blue #2979FF\e[0m"
+    echo -e "  \e[38;5;135m███ Violet #9C27B0\e[0m"
+}
+case "$1" in
+    show) show_colors ;;
+    hex) hex_to_rgb "$2" ;;
+    blackroad) blackroad ;;
+    *) echo "CECE-COLOR: show | hex <RRGGBB> | blackroad" ;;
+esac

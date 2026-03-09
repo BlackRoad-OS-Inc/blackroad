@@ -1,0 +1,32 @@
+#!/bin/bash
+# CECE-FLASH v1.0 - Flashcard System
+FLASH_DIR=~/cece/flashcards
+mkdir -p "$FLASH_DIR"
+create() {
+    DECK="$1"
+    FRONT="$2"
+    BACK="$3"
+    mkdir -p "$FLASH_DIR/$DECK"
+    ID=$(date +%s%N | tail -c 8)
+    echo "{\"front\":\"$FRONT\",\"back\":\"$BACK\"}" > "$FLASH_DIR/$DECK/$ID.json"
+    echo "Card added to $DECK"
+}
+study() {
+    DECK="$1"
+    for card in "$FLASH_DIR/$DECK"/*.json; do
+        [ -f "$card" ] || continue
+        FRONT=$(grep -o '"front":"[^"]*"' "$card" | cut -d\" -f4)
+        BACK=$(grep -o '"back":"[^"]*"' "$card" | cut -d\" -f4)
+        echo "Q: $FRONT"
+        read -p "Press Enter to reveal..."
+        echo "A: $BACK"
+        echo "---"
+    done
+}
+list() { ls "$FLASH_DIR" 2>/dev/null; }
+case "$1" in
+    create) create "$2" "$3" "$4" ;;
+    study) study "$2" ;;
+    list) list ;;
+    *) echo "CECE-FLASH: create <deck> <front> <back> | study <deck> | list" ;;
+esac

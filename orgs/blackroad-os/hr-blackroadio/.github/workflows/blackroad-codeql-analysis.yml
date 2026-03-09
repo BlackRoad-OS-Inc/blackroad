@@ -1,0 +1,85 @@
+name: 🔍 BlackRoad CodeQL Security Analysis
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    # Run at 4 AM UTC every Monday (10 PM CST Sunday)
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Override auto-detection and specify languages manually
+        # Supported: 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby', 'swift'
+        language: [ 'javascript', 'python' ]
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔍 Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Auto-build for compiled languages
+          # For interpreted languages (JS, Python, Ruby), this is not needed
+          queries: +security-and-quality
+
+      - name: 🏗️ Autobuild
+        uses: github/codeql-action/autobuild@v3
+        # Only needed for compiled languages like Java, C++, C#, Go, Swift
+        # For JavaScript and Python, CodeQL analyzes without building
+
+      - name: 🔒 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+      - name: 📊 Upload Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-results-${{ matrix.language }}
+          path: |
+            **/results/*.sarif
+            **/results/*.csv
+          retention-days: 30
+
+      - name: 📝 Create Issue on Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔒 CodeQL Security Analysis Failed',
+              body: `## CodeQL Analysis Failed
+
+              **Language:** ${{ matrix.language }}
+              **Workflow:** ${context.workflow}
+              **Run:** ${context.runId}
+              **URL:** https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+
+              Please review the security findings and address any critical vulnerabilities.
+
+              ---
+              © 2025-2026 BlackRoad OS, Inc.
+              `,
+              labels: ['security', 'codeql', 'automated']
+            });
+            console.log('Created issue:', issue.data.number);

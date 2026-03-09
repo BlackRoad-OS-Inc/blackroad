@@ -1,0 +1,66 @@
+#!/bin/bash
+# CECE-CI v1.0 - Our Own GitHub Actions/Jenkins
+CI_DIR=~/cece/ci
+mkdir -p "$CI_DIR/pipelines" "$CI_DIR/runs"
+
+create_pipeline() {
+    NAME="$1"
+    cat > "$CI_DIR/pipelines/$NAME.pipeline" << EOF
+name: $NAME
+created: $(date -Iseconds)
+steps:
+  - echo "Step 1: Build"
+  - echo "Step 2: Test"
+  - echo "Step 3: Deploy"
+EOF
+    echo "✅ Pipeline created: $NAME"
+}
+
+run_pipeline() {
+    NAME="$1"
+    PIPELINE="$CI_DIR/pipelines/$NAME.pipeline"
+    [ ! -f "$PIPELINE" ] && echo "Pipeline not found" && return
+    
+    RUN_ID=$(date +%s)
+    RUN_LOG="$CI_DIR/runs/${NAME}_${RUN_ID}.log"
+    
+    echo "🚀 Running pipeline: $NAME (Run #$RUN_ID)"
+    echo "═══════════════════════════════════════"
+    echo ""
+    echo "Run started: $(date)" > "$RUN_LOG"
+    
+    grep "^  -" "$PIPELINE" | sed "s/^  - //" | while read -r step; do
+        echo "▶️  $step"
+        eval "$step" >> "$RUN_LOG" 2>&1
+        if [ $? -eq 0 ]; then
+            echo "   ✅ Success"
+        else
+            echo "   ❌ Failed"
+            echo "status: failed" >> "$RUN_LOG"
+            return 1
+        fi
+    done
+    
+    echo "" 
+    echo "status: success" >> "$RUN_LOG"
+    echo "✅ Pipeline completed!"
+}
+
+list_runs() {
+    echo "🏃 RECENT RUNS"
+    for r in $(ls -t "$CI_DIR/runs"/*.log 2>/dev/null | head -10); do
+        NAME=$(basename "$r" .log)
+        STATUS=$(grep "status:" "$r" | cut -d: -f2 | xargs)
+        echo "  $NAME - $STATUS"
+    done
+}
+
+case "$1" in
+    new) create_pipeline "$2" ;;
+    run) run_pipeline "$2" ;;
+    runs) list_runs ;;
+    *) echo "🖤 CECE-CI - Our Own GitHub Actions"
+       echo "  new <name>   Create pipeline"
+       echo "  run <name>   Run pipeline"
+       echo "  runs         List runs" ;;
+esac

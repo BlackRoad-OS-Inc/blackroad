@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Simulation v6 - AUTONOMOUS ACTIONS! | BlackRoad Pixel Metaverse</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      color: #fff;
+    }
+    #canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 2px solid #FF1D6C;
+    }
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 15px;
+      border: 2px solid #F5A623;
+      border-radius: 4px;
+      font-size: 11px;
+      min-width: 280px;
+    }
+    .stat { margin: 5px 0; color: #2979FF; }
+    .stat strong { color: #FF1D6C; }
+    #agent-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.95);
+      padding: 15px;
+      border: 2px solid #9C27B0;
+      border-radius: 4px;
+      width: 360px;
+      font-size: 11px;
+      display: none;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    #agent-panel.active { display: block; }
+    .need-bar {
+      margin: 8px 0;
+      background: #222;
+      height: 16px;
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+    .need-bar-fill {
+      height: 100%;
+      transition: width 0.3s;
+      border-radius: 3px;
+    }
+    .need-label {
+      position: absolute;
+      left: 6px;
+      top: 1px;
+      font-size: 10px;
+      font-weight: bold;
+      color: #000;
+      text-shadow: 0 0 2px #fff;
+      z-index: 2;
+    }
+    .trait { 
+      display: inline-block;
+      background: #2979FF;
+      padding: 3px 8px;
+      border-radius: 3px;
+      margin: 2px;
+      font-size: 9px;
+    }
+    .memory {
+      font-size: 9px;
+      color: #4ECDC4;
+      margin: 4px 0;
+      padding: 4px;
+      background: rgba(78, 205, 196, 0.1);
+      border-left: 2px solid #4ECDC4;
+    }
+    .skill {
+      display: inline-block;
+      margin: 3px;
+      padding: 4px 8px;
+      background: #9C27B0;
+      border-radius: 3px;
+      font-size: 9px;
+    }
+    .emotion-badge {
+      display: inline-block;
+      background: #FF1D6C;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin: 4px 0;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 15px;
+      border: 2px solid #52FF52;
+      border-radius: 4px;
+    }
+    button {
+      background: #FF1D6C;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      margin: 3px;
+      font-weight: bold;
+    }
+    button:hover { background: #F5A623; }
+    button:active { transform: scale(0.95); }
+    #event-log {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 15px;
+      border: 2px solid #4ECDC4;
+      border-radius: 4px;
+      width: 320px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 10px;
+    }
+    .event {
+      margin: 4px 0;
+      padding: 4px;
+      background: rgba(78, 205, 196, 0.1);
+      border-left: 2px solid #4ECDC4;
+      color: #4ECDC4;
+    }
+    .emotion-happy { color: #FFD700; }
+    .emotion-sad { color: #4169E1; }
+    .emotion-angry { color: #FF4444; }
+    .emotion-excited { color: #FF1D6C; }
+    .emotion-stressed { color: #9C27B0; }
+    .emotion-tired { color: #888; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="1280" height="720"></canvas>
+  
+  <div id="hud">
+    <div style="color: #FF1D6C; font-size: 14px; font-weight: bold; margin-bottom: 8px;">
+      🌌 BLACKROAD PIXEL METAVERSE v6
+    </div>
+    <div style="color: #F5A623; font-size: 11px; margin-bottom: 10px;">
+      🤖 AUTONOMOUS ACTIONS ENABLED 🤖
+    </div>
+    <div class="stat"><strong>Agents:</strong> <span id="agent-count">0</span></div>
+    <div class="stat"><strong>Game Time:</strong> <span id="game-time">12:00 AM</span></div>
+    <div class="stat"><strong>Speed:</strong> <span id="speed">1x</span></div>
+    <div class="stat"><strong>Emotions:</strong> <span id="emotion-count">0</span></div>
+    <div class="stat"><strong>Particles:</strong> <span id="particle-count">0</span></div>
+    <div style="margin-top: 10px; font-size: 9px; color: #888;">
+      Click agent to see details<br>
+      Watch emotions come alive!
+    </div>
+  </div>
+
+  <div id="agent-panel"></div>
+
+  <div id="controls">
+    <div style="color: #52FF52; font-weight: bold; margin-bottom: 8px;">CONTROLS</div>
+    <button onclick="togglePause()">⏯ Pause/Play</button>
+    <button onclick="setSpeed(1)">1x</button>
+    <button onclick="setSpeed(2)">2x</button>
+    <button onclick="setSpeed(4)">4x</button>
+    <button onclick="triggerRandomEvent()">🎲 Random Event</button>
+  </div>
+
+  <div id="event-log">
+    <div style="color: #4ECDC4; font-weight: bold; margin-bottom: 8px;">📊 EVENT LOG</div>
+  </div>
+
+  <script>
+    // ========================================
+    // CANVAS SETUP
+    // ========================================
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const WORLD_WIDTH = 1280;
+    const WORLD_HEIGHT = 720;
+    const GRID_SIZE = 50; // For pathfinding
+
+    // ========================================
+    // GAME STATE
+    // ========================================
+    let agents = [];
+    let furniture = [];
+    let particles = []; // NEW: Particle effects
+    let selectedAgent = null;
+    let isPaused = false;
+    let gameSpeed = 1;
+    let gameTime = 0; // In seconds (24 hour clock)
+    let eventCounter = 0;
+
+    // ========================================
+    // PARTICLE CLASS (TODO 39)
+    // ========================================
+    class Particle {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type; // 'sparkle', 'heart', 'tear', 'steam', 'sweat', 'star', 'z'
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = -Math.random() * 2 - 1;
+        this.life = 60;
+        this.maxLife = 60;
+        this.size = Math.random() * 3 + 2;
+        this.alpha = 1;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // Gravity
+        this.life--;
+        this.alpha = this.life / this.maxLife;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        
+        switch(this.type) {
+          case 'sparkle':
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText('✨', this.x, this.y);
+            break;
+          case 'heart':
+            ctx.fillStyle = '#FF1D6C';
+            ctx.fillText('❤️', this.x, this.y);
+            break;
+          case 'tear':
+            ctx.fillStyle = '#4169E1';
+            ctx.fillText('💧', this.x, this.y);
+            break;
+          case 'steam':
+            ctx.fillStyle = '#FF4444';
+            ctx.fillText('💢', this.x, this.y);
+            break;
+          case 'sweat':
+            ctx.fillStyle = '#9C27B0';
+            ctx.fillText('💦', this.x, this.y);
+            break;
+          case 'star':
+            ctx.fillStyle = '#FF1D6C';
+            ctx.fillText('⭐', this.x, this.y);
+            break;
+          case 'z':
+            ctx.fillStyle = '#888';
+            ctx.fillText('💤', this.x, this.y);
+            break;
+        }
+        
+        ctx.restore();
+      }
+
+      isDead() {
+        return this.life <= 0;
+      }
+    }
+
+    // ========================================
+    // A* PATHFINDING
+    // ========================================
+    class Pathfinder {
+      static findPath(startX, startY, endX, endY, furniture) {
+        const startNode = {
+          x: Math.floor(startX / GRID_SIZE),
+          y: Math.floor(startY / GRID_SIZE),
+          g: 0,
+          h: 0,
+          f: 0,
+          parent: null
+        };
+        
+        const endNode = {
+          x: Math.floor(endX / GRID_SIZE),
+          y: Math.floor(endY / GRID_SIZE)
+        };
+
+        const openList = [startNode];
+        const closedList = [];
+        
+        while (openList.length > 0) {
+          openList.sort((a, b) => a.f - b.f);
+          const current = openList.shift();
+          
+          if (current.x === endNode.x && current.y === endNode.y) {
+            const path = [];
+            let temp = current;
+            while (temp) {
+              path.unshift({ x: temp.x * GRID_SIZE + GRID_SIZE/2, y: temp.y * GRID_SIZE + GRID_SIZE/2 });
+              temp = temp.parent;
+            }
+            return path;
+          }
+          
+          closedList.push(current);
+          
+          const neighbors = [
+            { x: current.x + 1, y: current.y },
+            { x: current.x - 1, y: current.y },
+            { x: current.x, y: current.y + 1 },
+            { x: current.x, y: current.y - 1 }
+          ];
+          
+          for (const neighborPos of neighbors) {
+            if (neighborPos.x < 0 || neighborPos.x >= Math.floor(WORLD_WIDTH / GRID_SIZE) ||
+                neighborPos.y < 0 || neighborPos.y >= Math.floor(WORLD_HEIGHT / GRID_SIZE)) {
+              continue;
+            }
+            
+            const isBlocked = furniture.some(f => {
+              const fx = Math.floor(f.x / GRID_SIZE);
+              const fy = Math.floor(f.y / GRID_SIZE);
+              return fx === neighborPos.x && fy === neighborPos.y;
+            });
+            
+            if (isBlocked) continue;
+            
+            if (closedList.some(n => n.x === neighborPos.x && n.y === neighborPos.y)) continue;
+            
+            const g = current.g + 1;
+            const h = Math.abs(neighborPos.x - endNode.x) + Math.abs(neighborPos.y - endNode.y);
+            const f = g + h;
+            
+            const existing = openList.find(n => n.x === neighborPos.x && n.y === neighborPos.y);
+            if (existing && existing.g <= g) continue;
+            
+            const neighbor = {
+              x: neighborPos.x,
+              y: neighborPos.y,
+              g, h, f,
+              parent: current
+            };
+            
+            if (existing) {
+              openList.splice(openList.indexOf(existing), 1);
+            }
+            openList.push(neighbor);
+          }
+        }
+        
+        return null;
+      }
+    }
+
+    // ========================================
+    // AGENT CLASS
+    // ========================================
+    class SimAgent {
+      constructor(x, y, id) {
+        this.x = x;
+        this.y = y;
+        this.id = id;
+        this.name = this.generateName();
+        
+        // Needs (0-100)
+        this.hunger = Math.random() * 40 + 40;
+        this.energy = Math.random() * 40 + 40;
+        this.mood = Math.random() * 40 + 40;
+        this.social = Math.random() * 40 + 40;
+        this.hygiene = Math.random() * 40 + 40;
+        this.health = 100;
+        
+        // Personality traits
+        this.traits = this.generateTraits();
+        
+        // State
+        this.action = null;
+        this.actionProgress = 0;
+        this.actionDuration = 0;
+        this.target = null;
+        this.path = [];
+        this.speed = 2;
+        
+        // Memory
+        this.memories = [];
+        
+        // Favorite activity (expanded with autonomous actions)
+        const activities = ['eat', 'sleep', 'socialize', 'shower', 'browse', 'watch-tv', 'read', 'paint', 'exercise', 'cook', 'play-music', 'write', 'play-game', 'clean'];
+        this.favorite = activities[Math.floor(Math.random() * activities.length)];
+        
+        // Hobby (for autonomous action selection when mood is good)
+        const hobbies = ['browse', 'watch-tv', 'read', 'paint', 'exercise', 'cook', 'play-music', 'write', 'play-game'];
+        this.hobby = hobbies[Math.floor(Math.random() * hobbies.length)];
+        
+        // Skills (expanded for autonomous actions)
+        this.skills = {
+          eating: 0,
+          sleeping: 0,
+          socializing: 0,
+          hygiene: 0,
+          logic: 0,       // TODO 41, 43
+          creativity: 0,  // TODO 44
+          fitness: 0,     // TODO 45
+          cooking: 0,     // TODO 46
+          music: 0,       // TODO 47
+          writing: 0,     // TODO 48
+          gaming: 0       // TODO 49
+        };
+        
+        // Daily routine
+        this.lastRoutineTime = null;
+        this.routineCompleted = false;
+        
+        // Age
+        this.age = 0;
+        
+        // Health/Sickness
+        this.isSick = false;
+        this.sickTimer = 0;
+        
+        // NEW: Emotion state (TODOs 31-37)
+        this.emotion = 'neutral'; // happy, sad, angry, excited, stressed, tired, sick
+        this.emotionTimer = 0;
+        this.bounceOffset = 0; // For happy bounce
+        this.shakeOffset = { x: 0, y: 0 }; // For stressed shake
+        
+        // NEW: Thought bubble (TODO 38)
+        this.thoughtBubble = null;
+        this.thoughtTimer = 0;
+        
+        // Particle spawn timer
+        this.particleTimer = 0;
+      }
+
+      generateName() {
+        const firsts = ['Alex', 'Sam', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery'];
+        const lasts = ['Smith', 'Johnson', 'Code', 'Dev', 'Tech', 'Byte', 'Data', 'Web'];
+        return `${firsts[Math.floor(Math.random() * firsts.length)]} ${lasts[Math.floor(Math.random() * lasts.length)]}`;
+      }
+
+      generateTraits() {
+        const allTraits = ['friendly', 'shy', 'energetic', 'lazy', 'neat', 'messy', 'foodie', 'efficient'];
+        const count = Math.floor(Math.random() * 3) + 2;
+        const selected = [];
+        for (let i = 0; i < count; i++) {
+          const trait = allTraits[Math.floor(Math.random() * allTraits.length)];
+          if (!selected.includes(trait)) selected.push(trait);
+        }
+        return selected;
+      }
+
+      // NEW: Update emotion based on needs/events (TODOs 31-37)
+      updateEmotion() {
+        const criticalNeeds = [this.hunger, this.energy, this.hygiene].filter(n => n < 20).length;
+        
+        if (this.isSick) {
+          this.emotion = 'sick';
+        } else if (this.energy < 25) {
+          this.emotion = 'tired'; // TODO 36
+        } else if (criticalNeeds >= 2) {
+          this.emotion = 'stressed'; // TODO 35
+        } else if (this.mood < 30) {
+          this.emotion = 'sad'; // TODO 32
+        } else if (this.emotionTimer > 0) {
+          // Keep temporary emotion (excited or angry)
+          this.emotionTimer--;
+        } else if (this.mood > 80) {
+          this.emotion = 'happy'; // TODO 31
+        } else {
+          this.emotion = 'neutral';
+        }
+        
+        // Update bounce animation for happy
+        if (this.emotion === 'happy') {
+          this.bounceOffset = Math.sin(Date.now() / 200) * 5;
+        } else {
+          this.bounceOffset = 0;
+        }
+        
+        // Update shake animation for stressed
+        if (this.emotion === 'stressed') {
+          this.shakeOffset.x = (Math.random() - 0.5) * 4;
+          this.shakeOffset.y = (Math.random() - 0.5) * 4;
+        } else {
+          this.shakeOffset.x = 0;
+          this.shakeOffset.y = 0;
+        }
+      }
+
+      // NEW: Spawn emotion particles (TODO 39)
+      spawnParticles() {
+        this.particleTimer++;
+        if (this.particleTimer < 15) return; // Spawn every 15 frames
+        this.particleTimer = 0;
+        
+        switch(this.emotion) {
+          case 'happy':
+            particles.push(new Particle(this.x, this.y - 20, 'sparkle'));
+            break;
+          case 'sad':
+            particles.push(new Particle(this.x, this.y - 10, 'tear'));
+            break;
+          case 'angry':
+            particles.push(new Particle(this.x + 20, this.y - 20, 'steam'));
+            break;
+          case 'excited':
+            particles.push(new Particle(this.x, this.y - 25, 'star'));
+            break;
+          case 'stressed':
+            particles.push(new Particle(this.x - 15, this.y - 15, 'sweat'));
+            break;
+          case 'tired':
+            particles.push(new Particle(this.x + 15, this.y - 20, 'z'));
+            break;
+        }
+      }
+
+      // NEW: Update thought bubble (TODO 38)
+      updateThoughtBubble() {
+        this.thoughtTimer++;
+        if (this.thoughtTimer < 120) return; // Change thought every 2 seconds
+        this.thoughtTimer = 0;
+        
+        // Show the most critical need
+        const needs = [
+          { name: 'hunger', value: this.hunger, icon: '🍔' },
+          { name: 'energy', value: this.energy, icon: '⚡' },
+          { name: 'hygiene', value: this.hygiene, icon: '🚿' },
+          { name: 'social', value: this.social, icon: '👥' },
+          { name: 'mood', value: this.mood, icon: '😊' }
+        ];
+        
+        needs.sort((a, b) => a.value - b.value);
+        this.thoughtBubble = needs[0].icon;
+      }
+
+      update(deltaTime) {
+        if (isPaused) return;
+        
+        const speed = gameSpeed;
+        
+        // Update emotion state
+        this.updateEmotion();
+        
+        // Spawn emotion particles
+        this.spawnParticles();
+        
+        // Update thought bubble
+        this.updateThoughtBubble();
+        
+        // Age increment
+        this.age += 0.001 * speed;
+        
+        // Game time
+        gameTime += 0.016 * speed;
+        
+        // Need decay with personality modifiers
+        let hungerDecay = -0.02 * speed;
+        let energyDecay = -0.015 * speed;
+        let hygieneDecay = -0.012 * speed;
+        let moodDecay = -0.01 * speed;
+        let socialDecay = -0.008 * speed;
+        
+        if (this.traits.includes('friendly')) socialDecay *= 1.2;
+        if (this.traits.includes('shy')) socialDecay *= 0.7;
+        if (this.traits.includes('energetic')) energyDecay *= 0.8;
+        if (this.traits.includes('lazy')) energyDecay *= 1.3;
+        if (this.traits.includes('neat')) hygieneDecay *= 0.7;
+        if (this.traits.includes('messy')) hygieneDecay *= 1.4;
+        if (this.traits.includes('foodie')) hungerDecay *= 1.2;
+        
+        // If sick, needs decay faster
+        if (this.isSick) {
+          hungerDecay *= 1.5;
+          energyDecay *= 1.5;
+          hygieneDecay *= 1.5;
+          moodDecay *= 2;
+          
+          this.sickTimer--;
+          if (this.sickTimer <= 0) {
+            this.isSick = false;
+            this.health = Math.min(100, this.health + 50);
+            this.addMemory('Recovered from sickness! 🎉', 'health');
+            logEvent(`${this.name} recovered from sickness! 🎉`);
+          }
+        }
+        
+        this.hunger = Math.max(0, Math.min(100, this.hunger + hungerDecay));
+        this.energy = Math.max(0, Math.min(100, this.energy + energyDecay));
+        this.hygiene = Math.max(0, Math.min(100, this.hygiene + hygieneDecay));
+        this.mood = Math.max(0, Math.min(100, this.mood + moodDecay));
+        this.social = Math.max(0, Math.min(100, this.social + socialDecay));
+        
+        // Health decay if other needs are critical
+        if (this.hunger < 10 || this.energy < 10 || this.hygiene < 10) {
+          this.health = Math.max(0, this.health - 0.05 * speed);
+          
+          // Chance to get sick
+          if (this.health < 30 && Math.random() < 0.001 && !this.isSick) {
+            this.isSick = true;
+            this.sickTimer = 300;
+            this.addMemory('Got sick! 🤒', 'health');
+            logEvent(`${this.name} got sick! 🤒`);
+          }
+        } else {
+          // Natural health recovery
+          this.health = Math.min(100, this.health + 0.02 * speed);
+        }
+        
+        // Check daily routine
+        this.checkDailyRoutine();
+        
+        // Decide action if idle
+        if (!this.action) {
+          this.decideAction();
+        }
+        
+        // Execute action
+        if (this.action) {
+          if (this.path && this.path.length > 0) {
+            this.followPath(speed);
+          } else if (this.target) {
+            const dist = Math.hypot(this.target.x - this.x, this.target.y - this.y);
+            if (dist < 10) {
+              this.performAction(speed);
+            }
+          }
+        }
+      }
+
+      checkDailyRoutine() {
+        const hour = Math.floor(gameTime / 3600) % 24;
+        const timeOfDay = hour >= 6 && hour < 12 ? 'morning' :
+                         hour >= 12 && hour < 18 ? 'afternoon' :
+                         hour >= 18 && hour < 22 ? 'evening' : 'night';
+        
+        if (this.lastRoutineTime !== timeOfDay) {
+          this.lastRoutineTime = timeOfDay;
+          this.routineCompleted = false;
+        }
+        
+        if (!this.routineCompleted && !this.action) {
+          let routineAction = null;
+          
+          switch(timeOfDay) {
+            case 'morning':
+              if (this.hunger < 80) routineAction = 'eat';
+              break;
+            case 'afternoon':
+              if (this.social < 80) routineAction = 'socialize';
+              break;
+            case 'evening':
+              if (this.hunger < 80) routineAction = 'eat';
+              break;
+            case 'night':
+              if (this.energy < 80) routineAction = 'sleep';
+              break;
+          }
+          
+          if (routineAction) {
+            this.startAction(routineAction, true);
+            this.routineCompleted = true;
+          }
+        }
+      }
+
+      decideAction() {
+        const needs = [
+          { name: 'eat', value: this.hunger, threshold: 30 },
+          { name: 'sleep', value: this.energy, threshold: 30 },
+          { name: 'socialize', value: this.social, threshold: 40 },
+          { name: 'shower', value: this.hygiene, threshold: 35 }
+        ];
+        
+        needs.sort((a, b) => a.value - b.value);
+        
+        // If happy and all needs are satisfied, do hobby (TODO 41-50)
+        if (this.mood > 70 && needs[0].value > needs[0].threshold && Math.random() < 0.3) {
+          this.startAction(this.hobby);
+          return;
+        }
+        
+        // If happy, sometimes do favorite activity
+        if (this.mood > 60 && Math.random() < 0.1) {
+          this.startAction(this.favorite);
+          return;
+        }
+        
+        // If bored (mood low but needs OK), do a fun activity
+        if (this.mood < 50 && needs[0].value > 40 && Math.random() < 0.2) {
+          const funActivities = ['watch-tv', 'play-game', 'read', 'paint', 'play-music'];
+          const activity = funActivities[Math.floor(Math.random() * funActivities.length)];
+          this.startAction(activity);
+          return;
+        }
+        
+        // Otherwise, address most critical need
+        if (needs[0].value < needs[0].threshold) {
+          this.startAction(needs[0].name);
+        }
+      }
+
+      startAction(actionType, isRoutine = false) {
+        const targetFurn = this.findNearestFurniture(actionType);
+        if (!targetFurn) return;
+        
+        this.action = actionType;
+        this.target = targetFurn;
+        this.actionProgress = 0;
+        
+        // Calculate action duration based on skill
+        const skillName = actionType === 'eat' ? 'eating' :
+                         actionType === 'sleep' ? 'sleeping' :
+                         actionType === 'socialize' ? 'socializing' : 'hygiene';
+        
+        const skillBonus = Math.floor(this.skills[skillName] / 5);
+        this.actionDuration = Math.max(60, 120 - skillBonus);
+        
+        // Find path
+        this.path = Pathfinder.findPath(this.x, this.y, targetFurn.x, targetFurn.y, furniture);
+        
+        const routineText = isRoutine ? ' (routine)' : '';
+        this.addMemory(`Going to ${actionType}${routineText}`, 'action');
+      }
+
+      findNearestFurniture(type) {
+        // Map action types to furniture types
+        const typeMap = {
+          'browse': 'computer',
+          'watch-tv': 'tv',
+          'read': 'bookshelf',
+          'paint': 'easel',
+          'exercise': 'gym',
+          'cook': 'stove',
+          'play-music': 'piano',
+          'write': 'desk',
+          'play-game': 'arcade',
+          'clean': null // Cleaning doesn't need furniture
+        };
+        
+        const furnType = typeMap[type] || type;
+        
+        // If cleaning, return random position
+        if (!furnType) {
+          return { x: Math.random() * 1000 + 100, y: Math.random() * 500 + 100, type: 'clean' };
+        }
+        
+        const matching = furniture.filter(f => f.type === furnType);
+        if (matching.length === 0) return null;
+        
+        matching.sort((a, b) => {
+          const distA = Math.hypot(a.x - this.x, a.y - this.y);
+          const distB = Math.hypot(b.x - this.x, b.y - this.y);
+          return distA - distB;
+        });
+        
+        return matching[0];
+      }
+
+      followPath(speed) {
+        if (!this.path || this.path.length === 0) return;
+        
+        const waypoint = this.path[0];
+        const dx = waypoint.x - this.x;
+        const dy = waypoint.y - this.y;
+        const dist = Math.hypot(dx, dy);
+        
+        if (dist < 10) {
+          this.path.shift();
+          return;
+        }
+        
+        // Modify speed based on emotion
+        let moveSpeed = this.speed * speed;
+        if (this.emotion === 'tired') moveSpeed *= 0.7; // Slower when tired
+        if (this.isSick) moveSpeed *= 0.5; // Much slower when sick
+        if (this.emotion === 'excited') moveSpeed *= 1.3; // Faster when excited
+        
+        this.x += (dx / dist) * moveSpeed;
+        this.y += (dy / dist) * moveSpeed;
+      }
+
+      performAction(speed) {
+        this.actionProgress += speed;
+        
+        if (this.actionProgress >= this.actionDuration) {
+          this.completeAction();
+        }
+      }
+
+      completeAction() {
+        const isFavorite = this.action === this.favorite;
+        const effectiveness = isFavorite ? 1.5 : 1;
+        
+        // Map actions to skills
+        const skillMap = {
+          'eat': 'eating',
+          'sleep': 'sleeping',
+          'socialize': 'socializing',
+          'shower': 'hygiene',
+          'browse': 'logic',       // TODO 41
+          'read': 'logic',          // TODO 43
+          'paint': 'creativity',    // TODO 44
+          'exercise': 'fitness',    // TODO 45
+          'cook': 'cooking',        // TODO 46
+          'play-music': 'music',    // TODO 47
+          'write': 'writing',       // TODO 48
+          'play-game': 'gaming',    // TODO 49
+          'clean': 'hygiene'        // TODO 50
+        };
+        
+        const skillName = skillMap[this.action] || 'hygiene';
+        
+        // Improve skill
+        if (this.skills[skillName] !== undefined) {
+          this.skills[skillName] = Math.min(100, this.skills[skillName] + 2);
+          
+          // Notify on skill milestones
+          if (this.skills[skillName] % 20 === 0 && this.skills[skillName] > 0) {
+            logEvent(`${this.name} reached ${skillName} level ${this.skills[skillName]}! 📈`);
+          }
+        }
+        
+        // Apply effects based on action type
+        switch(this.action) {
+          case 'eat':
+            this.hunger = Math.min(100, this.hunger + 40 * effectiveness);
+            this.mood += isFavorite ? 15 : 10;
+            this.addMemory(isFavorite ? 'Had an amazing meal! 😋' : 'Ate some food', 'action');
+            break;
+            
+          case 'sleep':
+            this.energy = Math.min(100, this.energy + 50 * effectiveness);
+            this.mood += isFavorite ? 15 : 5;
+            this.health = Math.min(100, this.health + 10);
+            this.addMemory(isFavorite ? 'Best sleep ever! 😴' : 'Took a nap', 'action');
+            break;
+            
+          case 'socialize':
+            this.social = Math.min(100, this.social + 35 * effectiveness);
+            this.mood += isFavorite ? 15 : 10;
+            this.addMemory(isFavorite ? 'Amazing conversation! 🎉' : 'Had a chat', 'social');
+            break;
+            
+          case 'shower':
+            this.hygiene = Math.min(100, this.hygiene + 45 * effectiveness);
+            this.mood += isFavorite ? 15 : 8;
+            this.addMemory(isFavorite ? 'Refreshing shower! 🚿' : 'Got clean', 'action');
+            break;
+            
+          // TODO 41: Browse web
+          case 'browse':
+            this.mood += isFavorite ? 20 : 12;
+            this.addMemory(isFavorite ? 'Amazing browsing session! 💻' : 'Browsed the web', 'action');
+            break;
+            
+          // TODO 42: Watch TV
+          case 'watch-tv':
+            this.mood += isFavorite ? 25 : 15;
+            this.energy = Math.max(0, this.energy - 5); // Slightly tiring
+            this.addMemory(isFavorite ? 'Loved that show! 📺' : 'Watched TV', 'action');
+            break;
+            
+          // TODO 43: Read books
+          case 'read':
+            this.mood += isFavorite ? 20 : 12;
+            this.addMemory(isFavorite ? 'Great book! 📚' : 'Did some reading', 'action');
+            break;
+            
+          // TODO 44: Paint/create art
+          case 'paint':
+            this.mood += isFavorite ? 25 : 18;
+            this.addMemory(isFavorite ? 'Created a masterpiece! 🎨' : 'Painted something', 'action');
+            break;
+            
+          // TODO 45: Exercise
+          case 'exercise':
+            this.mood += isFavorite ? 20 : 15;
+            this.energy = Math.min(100, this.energy + 10); // Energizing!
+            this.health = Math.min(100, this.health + 5);
+            this.addMemory(isFavorite ? 'Amazing workout! 🏋️' : 'Did some exercise', 'action');
+            break;
+            
+          // TODO 46: Cook meals
+          case 'cook':
+            this.hunger = Math.min(100, this.hunger + 50 * effectiveness);
+            this.mood += isFavorite ? 20 : 12;
+            this.addMemory(isFavorite ? 'Cooked a delicious meal! 🍳' : 'Cooked something', 'action');
+            break;
+            
+          // TODO 47: Play instrument
+          case 'play-music':
+            this.mood += isFavorite ? 25 : 18;
+            this.addMemory(isFavorite ? 'Beautiful music! 🎹' : 'Played some music', 'action');
+            break;
+            
+          // TODO 48: Write stories
+          case 'write':
+            this.mood += isFavorite ? 20 : 15;
+            this.addMemory(isFavorite ? 'Wrote an amazing story! ✍️' : 'Did some writing', 'action');
+            break;
+            
+          // TODO 49: Play games
+          case 'play-game':
+            this.mood += isFavorite ? 25 : 18;
+            this.addMemory(isFavorite ? 'High score! 🎮' : 'Played some games', 'action');
+            break;
+            
+          // TODO 50: Clean/tidy
+          case 'clean':
+            this.hygiene = Math.min(100, this.hygiene + 20);
+            this.mood += isFavorite ? 20 : 10;
+            this.addMemory(isFavorite ? 'Place looks amazing! 🧹' : 'Did some cleaning', 'action');
+            break;
+        }
+        
+        this.action = null;
+        this.target = null;
+        this.path = [];
+      }
+
+      addMemory(text, type = 'general') {
+        const time = new Date().toLocaleTimeString();
+        this.memories.push({ text, type, time, gameTime: Math.floor(gameTime) });
+        if (this.memories.length > 30) this.memories.shift();
+      }
+
+      draw(ctx) {
+        ctx.save();
+        
+        // Apply shake offset for stressed
+        ctx.translate(this.shakeOffset.x, this.shakeOffset.y);
+        
+        // Draw sprite with emotion-based color tints
+        ctx.fillStyle = this.getEmotionColor();
+        
+        // Draw as circle with face (TODO 40)
+        const yOffset = this.bounceOffset; // Bounce for happy
+        ctx.beginPath();
+        ctx.arc(this.x, this.y + yOffset, 32, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw facial expression based on emotion
+        ctx.fillStyle = '#000';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const face = this.getEmotionFace();
+        ctx.fillText(face, this.x, this.y + yOffset);
+        
+        // Draw name
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px "Courier New"';
+        ctx.fillText(this.name, this.x, this.y - 45);
+        
+        // Draw thought bubble (TODO 38)
+        if (this.thoughtBubble) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.beginPath();
+          ctx.arc(this.x + 25, this.y - 35, 15, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = '#000';
+          ctx.font = '14px Arial';
+          ctx.fillText(this.thoughtBubble, this.x + 25, this.y - 35);
+        }
+        
+        // Draw sick emoji if sick
+        if (this.isSick) {
+          ctx.fillStyle = '#fff';
+          ctx.font = '16px Arial';
+          ctx.fillText('🤒', this.x - 25, this.y - 30);
+        }
+        
+        // Draw action progress bar
+        if (this.action && this.actionProgress > 0) {
+          const progress = this.actionProgress / this.actionDuration;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.fillRect(this.x - 25, this.y + 40, 50, 6);
+          ctx.fillStyle = '#52FF52';
+          ctx.fillRect(this.x - 25, this.y + 40, 50 * progress, 6);
+        }
+        
+        ctx.restore();
+      }
+
+      getEmotionColor() {
+        switch(this.emotion) {
+          case 'happy': return '#FFD700'; // Gold
+          case 'sad': return '#4169E1'; // Blue
+          case 'angry': return '#FF4444'; // Red
+          case 'excited': return '#FF1D6C'; // Hot pink
+          case 'stressed': return '#9C27B0'; // Purple
+          case 'tired': return '#888888'; // Gray
+          case 'sick': return '#FF6B6B'; // Light red
+          default: return '#4ECDC4'; // Cyan
+        }
+      }
+
+      getEmotionFace() {
+        switch(this.emotion) {
+          case 'happy': return '😊';
+          case 'sad': return '😢';
+          case 'angry': return '😠';
+          case 'excited': return '🤩';
+          case 'stressed': return '😰';
+          case 'tired': return '😴';
+          case 'sick': return '🤒';
+          default: return '😐';
+        }
+      }
+    }
+
+    // ========================================
+    // FURNITURE (EXPANDED FOR AUTONOMOUS ACTIONS)
+    // ========================================
+    function createFurniture() {
+      furniture = [
+        // Basic needs
+        { type: 'eat', x: 200, y: 150, emoji: '🍔', label: 'Fridge 1' },
+        { type: 'eat', x: 1000, y: 150, emoji: '🍔', label: 'Fridge 2' },
+        { type: 'sleep', x: 200, y: 550, emoji: '🛏️', label: 'Bed 1' },
+        { type: 'sleep', x: 1000, y: 550, emoji: '🛏️', label: 'Bed 2' },
+        { type: 'socialize', x: 500, y: 300, emoji: '🛋️', label: 'Couch 1' },
+        { type: 'socialize', x: 700, y: 300, emoji: '🛋️', label: 'Couch 2' },
+        { type: 'shower', x: 500, y: 550, emoji: '🚿', label: 'Shower 1' },
+        { type: 'shower', x: 700, y: 550, emoji: '🚿', label: 'Shower 2' },
+        
+        // Autonomous action objects (TODOs 41-50)
+        { type: 'computer', x: 350, y: 150, emoji: '💻', label: 'Computer' },
+        { type: 'tv', x: 850, y: 300, emoji: '📺', label: 'TV' },
+        { type: 'bookshelf', x: 150, y: 350, emoji: '📚', label: 'Bookshelf' },
+        { type: 'easel', x: 1100, y: 350, emoji: '🎨', label: 'Easel' },
+        { type: 'gym', x: 350, y: 450, emoji: '🏋️', label: 'Gym' },
+        { type: 'stove', x: 650, y: 150, emoji: '🍳', label: 'Stove' },
+        { type: 'piano', x: 150, y: 650, emoji: '🎹', label: 'Piano' },
+        { type: 'desk', x: 850, y: 450, emoji: '✍️', label: 'Writing Desk' },
+        { type: 'arcade', x: 1100, y: 650, emoji: '🎮', label: 'Arcade' }
+      ];
+    }
+
+    // ========================================
+    // RANDOM EVENTS (TODO 18)
+    // ========================================
+    const eventTypes = [
+      { name: 'Found Money', emoji: '💰', effects: { mood: 25 } },
+      { name: 'Bad News', emoji: '😢', effects: { mood: -30, social: -15 } },
+      { name: 'Great Day', emoji: '🌟', effects: { mood: 20, energy: 15 } },
+      { name: 'Surprise Party', emoji: '🎉', effects: { mood: 25, social: 20 }, emotion: 'excited' },
+      { name: 'Got Sick', emoji: '🤒', effects: { health: -30 }, makeSick: true },
+      { name: 'Good Sleep', emoji: '😴', effects: { energy: 20, mood: 10 } },
+      { name: 'Food Poisoning', emoji: '🤢', effects: { hunger: -25, health: -20 }, makeSick: true },
+      { name: 'Made a Friend', emoji: '🤝', effects: { social: 20, mood: 15 }, emotion: 'excited' }
+    ];
+
+    function triggerRandomEvent() {
+      if (agents.length === 0) return;
+      
+      const agent = agents[Math.floor(Math.random() * agents.length)];
+      const event = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+      
+      // Apply effects
+      for (const [stat, value] of Object.entries(event.effects)) {
+        if (stat === 'mood') agent.mood = Math.max(0, Math.min(100, agent.mood + value));
+        if (stat === 'social') agent.social = Math.max(0, Math.min(100, agent.social + value));
+        if (stat === 'energy') agent.energy = Math.max(0, Math.min(100, agent.energy + value));
+        if (stat === 'hunger') agent.hunger = Math.max(0, Math.min(100, agent.hunger + value));
+        if (stat === 'health') agent.health = Math.max(0, Math.min(100, agent.health + value));
+      }
+      
+      // Set temporary emotion
+      if (event.emotion) {
+        agent.emotion = event.emotion;
+        agent.emotionTimer = 180; // 3 seconds
+      }
+      
+      // Make sick
+      if (event.makeSick && !agent.isSick) {
+        agent.isSick = true;
+        agent.sickTimer = 300;
+      }
+      
+      agent.addMemory(`Event: ${event.name} ${event.emoji}`, 'event');
+      logEvent(`${agent.name}: ${event.name} ${event.emoji}`);
+      
+      eventCounter++;
+    }
+
+    // Auto-trigger random events
+    setInterval(() => {
+      if (!isPaused && Math.random() < 0.3) {
+        triggerRandomEvent();
+      }
+    }, 10000);
+
+    // ========================================
+    // COLLISION DETECTION (TODO 12)
+    // ========================================
+    function handleCollisions() {
+      for (let i = 0; i < agents.length; i++) {
+        for (let j = i + 1; j < agents.length; j++) {
+          const a = agents[i];
+          const b = agents[j];
+          const dist = Math.hypot(a.x - b.x, a.y - b.y);
+          const minDist = 64;
+          
+          if (dist < minDist) {
+            // Push apart
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const pushDist = (minDist - dist) / 2;
+            const angle = Math.atan2(dy, dx);
+            
+            a.x -= Math.cos(angle) * pushDist;
+            a.y -= Math.sin(angle) * pushDist;
+            b.x += Math.cos(angle) * pushDist;
+            b.y += Math.sin(angle) * pushDist;
+            
+            // Social interaction
+            if (Math.random() < 0.01) {
+              a.social = Math.min(100, a.social + 5);
+              b.social = Math.min(100, b.social + 5);
+              a.addMemory(`Met ${b.name}`, 'social');
+              b.addMemory(`Met ${a.name}`, 'social');
+            }
+          }
+        }
+      }
+    }
+
+    // ========================================
+    // EVENT LOG
+    // ========================================
+    function logEvent(message) {
+      const log = document.getElementById('event-log');
+      const entry = document.createElement('div');
+      entry.className = 'event';
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      log.appendChild(entry);
+      
+      // Keep only last 20 events
+      while (log.children.length > 21) {
+        log.removeChild(log.children[1]);
+      }
+      
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    function init() {
+      createFurniture();
+      
+      // Create 8 agents
+      for (let i = 0; i < 8; i++) {
+        const x = Math.random() * (WORLD_WIDTH - 100) + 50;
+        const y = Math.random() * (WORLD_HEIGHT - 100) + 50;
+        agents.push(new SimAgent(x, y, i));
+      }
+      
+      logEvent('🌌 Pixel Metaverse v6 initialized with AUTONOMOUS ACTIONS!');
+      logEvent('🤖 Agents now have hobbies and choose fun activities autonomously!');
+      logEvent('📺💻🎨🏋️🎹📚🎮✍️🍳 9 new activity types available!');
+    }
+
+    // ========================================
+    // RENDER
+    // ========================================
+    function render() {
+      // Clear
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+      
+      // Draw grid
+      ctx.strokeStyle = '#2a2a2a';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < WORLD_WIDTH; x += GRID_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, WORLD_HEIGHT);
+        ctx.stroke();
+      }
+      for (let y = 0; y < WORLD_HEIGHT; y += GRID_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(WORLD_WIDTH, y);
+        ctx.stroke();
+      }
+      
+      // Draw furniture
+      ctx.font = '32px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      furniture.forEach(f => {
+        ctx.fillText(f.emoji, f.x, f.y);
+        ctx.fillStyle = '#888';
+        ctx.font = '10px "Courier New"';
+        ctx.fillText(f.label, f.x, f.y + 30);
+        ctx.font = '32px Arial';
+      });
+      
+      // Draw particles
+      particles.forEach(p => p.draw(ctx));
+      
+      // Draw agents
+      agents.forEach(a => a.draw(ctx));
+      
+      // Update HUD
+      document.getElementById('agent-count').textContent = agents.length;
+      document.getElementById('emotion-count').textContent = agents.filter(a => a.emotion !== 'neutral').length;
+      document.getElementById('particle-count').textContent = particles.length;
+      
+      const hour = Math.floor(gameTime / 3600) % 24;
+      const minute = Math.floor((gameTime % 3600) / 60);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      document.getElementById('game-time').textContent = `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
+      document.getElementById('speed').textContent = `${gameSpeed}x`;
+      
+      // Update agent panel if one is selected
+      if (selectedAgent) {
+        updateAgentPanel(selectedAgent);
+      }
+    }
+
+    // ========================================
+    // AGENT PANEL
+    // ========================================
+    function updateAgentPanel(agent) {
+      const panel = document.getElementById('agent-panel');
+      panel.className = 'active';
+      
+      // Get emotion color class
+      const emotionClass = `emotion-${agent.emotion}`;
+      
+      panel.innerHTML = `
+        <div style="color: #9C27B0; font-size: 13px; font-weight: bold; margin-bottom: 10px;">
+          ${agent.name} <span class="${emotionClass}">${agent.getEmotionFace()}</span>
+        </div>
+        <div class="emotion-badge ${emotionClass}">
+          Feeling: ${agent.emotion.toUpperCase()} ${agent.getEmotionFace()}
+        </div>
+        <div style="margin: 10px 0; font-size: 9px; color: #888;">Age: ${Math.floor(agent.age)} days</div>
+        
+        <div style="margin-top: 12px; font-weight: bold; color: #F5A623;">NEEDS</div>
+        ${createNeedBar('Hunger', agent.hunger, '#FF6B35')}
+        ${createNeedBar('Energy', agent.energy, '#FFD700')}
+        ${createNeedBar('Mood', agent.mood, '#FF1D6C')}
+        ${createNeedBar('Social', agent.social, '#2979FF')}
+        ${createNeedBar('Hygiene', agent.hygiene, '#4ECDC4')}
+        ${createNeedBar('Health', agent.health, '#52FF52')}
+        
+        <div style="margin-top: 12px; font-weight: bold; color: #2979FF;">PERSONALITY</div>
+        <div style="margin-top: 5px;">
+          ${agent.traits.map(t => `<span class="trait">${t}</span>`).join('')}
+        </div>
+        <div style="margin-top: 5px; font-size: 9px; color: #F5A623;">
+          ⭐ Favorite: ${agent.favorite}
+        </div>
+        
+        <div style="margin-top: 12px; font-weight: bold; color: #9C27B0;">SKILLS</div>
+        <div style="margin-top: 5px;">
+          ${Object.entries(agent.skills).map(([name, val]) => 
+            `<span class="skill">${name}: ${Math.floor(val)}%</span>`
+          ).join('')}
+        </div>
+        
+        <div style="margin-top: 12px; font-weight: bold; color: #4ECDC4;">RECENT MEMORIES</div>
+        <div style="margin-top: 5px; max-height: 150px; overflow-y: auto;">
+          ${agent.memories.slice(-12).reverse().map(m => 
+            `<div class="memory">[${m.time}] ${m.text}</div>`
+          ).join('')}
+        </div>
+        
+        <div style="margin-top: 12px; font-weight: bold; color: #52FF52;">STATUS</div>
+        <div style="margin-top: 5px; font-size: 10px;">
+          ${agent.action ? `🎯 Currently: ${agent.action}` : '💤 Idle'}
+          ${agent.isSick ? '<div style="color: #FF4444;">🤒 SICK (recovering...)</div>' : ''}
+          ${agent.emotion !== 'neutral' ? `<div class="${emotionClass}">Emotion: ${agent.emotion}</div>` : ''}
+        </div>
+        
+        <button onclick="selectedAgent = null; document.getElementById('agent-panel').className = '';" 
+                style="margin-top: 15px; width: 100%;">
+          Close
+        </button>
+      `;
+    }
+
+    function createNeedBar(label, value, color) {
+      return `
+        <div class="need-bar">
+          <div class="need-bar-fill" style="width: ${value}%; background: ${color};"></div>
+          <div class="need-label">${label}: ${Math.floor(value)}</div>
+        </div>
+      `;
+    }
+
+    // ========================================
+    // GAME LOOP
+    // ========================================
+    function gameLoop() {
+      if (!isPaused) {
+        agents.forEach(a => a.update(1/60));
+        handleCollisions();
+        
+        // Update particles
+        particles = particles.filter(p => {
+          p.update();
+          return !p.isDead();
+        });
+      }
+      
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // ========================================
+    // CONTROLS
+    // ========================================
+    function togglePause() {
+      isPaused = !isPaused;
+    }
+
+    function setSpeed(speed) {
+      gameSpeed = speed;
+    }
+
+    // ========================================
+    // MOUSE INTERACTION
+    // ========================================
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Check if clicked on an agent
+      for (const agent of agents) {
+        const dist = Math.hypot(agent.x - x, agent.y - y);
+        if (dist < 32) {
+          selectedAgent = agent;
+          return;
+        }
+      }
+      
+      // Clicked elsewhere - deselect
+      selectedAgent = null;
+      document.getElementById('agent-panel').className = '';
+    });
+
+    // ========================================
+    // START
+    // ========================================
+    init();
+    gameLoop();
+  </script>
+</body>
+</html>

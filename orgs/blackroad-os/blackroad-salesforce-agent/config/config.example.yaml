@@ -1,0 +1,59 @@
+# BlackRoad Salesforce Agent Configuration
+# Copy to config.yaml and fill in your credentials
+#
+# Environment variables override these values:
+# - SF_CLIENT_ID
+# - SF_CLIENT_SECRET
+# - SF_USERNAME
+# - SF_PASSWORD
+# - SF_SECURITY_TOKEN
+# - SF_DOMAIN
+
+# Salesforce Connected App credentials
+salesforce:
+  # Connected App OAuth settings
+  client_id: "YOUR_CONNECTED_APP_CLIENT_ID"
+  client_secret: "YOUR_CONNECTED_APP_CLIENT_SECRET"
+
+  # User credentials
+  username: "your.email@company.com"
+  password: "your_password"
+  security_token: "your_security_token"  # Get from Salesforce > Settings > Reset Security Token
+
+  # Salesforce domain
+  # - "login" for production
+  # - "test" for sandbox
+  # - "your-domain" for My Domain (e.g., "securianfinancial-4e-dev-ed.develop")
+  domain: "login"
+
+# Agent settings
+agent:
+  # Unique agent identifier (auto-generated if not specified)
+  # id: "octavia-agent-001"
+
+  # Number of concurrent worker threads
+  # Higher = more throughput but more API calls
+  # Recommended: 4-8 per agent instance
+  max_workers: 4
+
+  # How often to poll for new tasks (seconds)
+  poll_interval: 1.0
+
+  # Records per batch for bulk operations
+  batch_size: 200
+
+# Task queue settings
+queue:
+  # Backend type: "sqlite" or "redis"
+  backend: "sqlite"
+
+  # SQLite database path
+  db_path: "~/.blackroad/task_queue.db"
+
+  # Redis settings (when backend: redis)
+  # redis_url: "redis://localhost:6379/0"
+
+# Logging settings
+logging:
+  level: "INFO"
+  format: "json"  # "json" or "console"

@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-BOOT v1.0 - Startup Manager
+list() { systemctl list-unit-files --type=service --state=enabled 2>/dev/null | head -20 || ls /etc/init.d/; }
+enable() { sudo systemctl enable "$1" 2>/dev/null && echo "Enabled: $1"; }
+disable() { sudo systemctl disable "$1" 2>/dev/null && echo "Disabled: $1"; }
+case "$1" in
+    list) list ;;
+    enable) enable "$2" ;;
+    disable) disable "$2" ;;
+    *) echo "CECE-BOOT: list | enable <service> | disable <service>" ;;
+esac

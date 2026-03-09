@@ -1,0 +1,24 @@
+#!/bin/bash
+# CECE-STRETCH v1.0 - Stretch Reminders
+STRETCHES=(
+"🙆 Neck rolls: Slowly roll your head in circles"
+"🤷 Shoulder shrugs: Raise shoulders to ears, hold, release"
+"🙌 Arm stretches: Reach high, then touch your toes"
+"👐 Wrist circles: Rotate your wrists both directions"
+"🦵 Leg stretches: Stand and touch your toes"
+"🧘 Back stretch: Twist gently left, then right"
+)
+suggest() { echo "${STRETCHES[$RANDOM % ${#STRETCHES[@]}]}"; }
+routine() {
+    for s in "${STRETCHES[@]}"; do
+        echo "$s"
+        echo "Hold for 15 seconds..."
+        sleep 15
+    done
+    echo "✨ Stretch routine complete!"
+}
+case "$1" in
+    suggest) suggest ;;
+    routine) routine ;;
+    *) suggest ;;
+esac

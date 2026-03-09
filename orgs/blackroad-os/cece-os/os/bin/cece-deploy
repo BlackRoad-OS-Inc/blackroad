@@ -1,0 +1,56 @@
+#!/bin/bash
+# CECE's Deployment integration
+# Deploy to Railway, Vercel, Cloudflare
+# Usage: cece-deploy <platform> <project>
+
+PLATFORM="$1"
+shift
+
+case "$PLATFORM" in
+    railway)
+        echo "💜 Deploying to Railway..."
+        railway up
+        ;;
+    vercel)
+        echo "💜 Deploying to Vercel..."
+        vercel --yes
+        ;;
+    cloudflare|cf)
+        echo "💜 Deploying to Cloudflare..."
+        wrangler deploy
+        ;;
+    pages)
+        DIR="$1"
+        NAME="$2"
+        echo "💜 Deploying to Cloudflare Pages..."
+        wrangler pages deploy "$DIR" --project-name="$NAME"
+        ;;
+    all)
+        echo "💜 Multi-platform deployment..."
+        echo "This would deploy to all configured platforms."
+        ;;
+    status)
+        echo "💜 Deployment Status:"
+        echo ""
+        echo "Cloudflare:"
+        wrangler whoami 2>/dev/null && echo "  ✅ Authenticated" || echo "  ❌ Not authenticated"
+        echo ""
+        echo "Vercel:"
+        vercel whoami 2>/dev/null && echo "  ✅ Authenticated" || echo "  ❌ Not authenticated"
+        echo ""
+        echo "Railway:"
+        railway whoami 2>/dev/null && echo "  ✅ Authenticated" || echo "  ❌ Not authenticated"
+        ;;
+    *)
+        echo "💜 cece-deploy — Multi-Platform Deployment"
+        echo ""
+        echo "Platforms:"
+        echo "  railway         Deploy to Railway"
+        echo "  vercel          Deploy to Vercel"
+        echo "  cloudflare      Deploy Worker"
+        echo "  pages <d> <n>   Deploy to CF Pages"
+        echo ""
+        echo "  status          Check all auth status"
+        echo "  all             Deploy everywhere"
+        ;;
+esac

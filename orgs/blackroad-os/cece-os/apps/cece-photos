@@ -1,0 +1,65 @@
+#!/bin/bash
+# CECE-PHOTOS v1.0 - Our Own Google Photos
+PHOTOS_DIR=~/cece/photos
+mkdir -p "$PHOTOS_DIR/albums" "$PHOTOS_DIR/uploads"
+
+upload() {
+    FILE="$1"
+    if [ -f "$FILE" ]; then
+        BASENAME=$(basename "$FILE")
+        cp "$FILE" "$PHOTOS_DIR/uploads/"
+        echo "✅ Uploaded: $BASENAME"
+    else
+        echo "File not found: $FILE"
+    fi
+}
+
+album_create() {
+    NAME="$1"
+    mkdir -p "$PHOTOS_DIR/albums/$NAME"
+    echo "✅ Album created: $NAME"
+}
+
+album_add() {
+    ALBUM="$1"
+    PHOTO="$2"
+    if [ -f "$PHOTOS_DIR/uploads/$PHOTO" ]; then
+        ln -sf "$PHOTOS_DIR/uploads/$PHOTO" "$PHOTOS_DIR/albums/$ALBUM/"
+        echo "✅ Added $PHOTO to $ALBUM"
+    fi
+}
+
+list_albums() {
+    echo "📷 ALBUMS"
+    for a in "$PHOTOS_DIR/albums"/*; do
+        [ -d "$a" ] || continue
+        NAME=$(basename "$a")
+        COUNT=$(ls "$a" 2>/dev/null | wc -l)
+        echo "  📁 $NAME ($COUNT photos)"
+    done
+}
+
+gallery() {
+    echo "🖼️  GALLERY"
+    echo ""
+    for p in "$PHOTOS_DIR/uploads"/*; do
+        [ -f "$p" ] || continue
+        NAME=$(basename "$p")
+        SIZE=$(du -h "$p" | cut -f1)
+        echo "  🖼️  $NAME ($SIZE)"
+    done
+}
+
+case "$1" in
+    upload) upload "$2" ;;
+    album-new) album_create "$2" ;;
+    album-add) album_add "$2" "$3" ;;
+    albums) list_albums ;;
+    gallery) gallery ;;
+    *) echo "🖤 CECE-PHOTOS - Our Own Google Photos"
+       echo "  upload <file>              Upload photo"
+       echo "  album-new <name>           Create album"
+       echo "  album-add <album> <photo>  Add to album"
+       echo "  albums                     List albums"
+       echo "  gallery                    View all" ;;
+esac

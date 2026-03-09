@@ -1,0 +1,46 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'domains/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        site:
+          - blackroad-network
+          - blackroad-systems
+          - blackroad-me
+          - lucidia-earth
+          - aliceqi
+          - blackroad-inc
+          - blackroadai
+          - lucidia-studio
+          - lucidiaqi
+          - blackroad-quantum
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy ${{ matrix.site }} to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ matrix.site }}
+          directory: domains/${{ matrix.site }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Deployment
+        run: |
+          echo "✅ ${{ matrix.site }} deployed successfully"
+          # Wait for deployment to be live
+          sleep 10
+          # Test the deployment (optional)
+          # curl -I https://${{ matrix.site }}.pages.dev

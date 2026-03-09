@@ -1,0 +1,48 @@
+#!/bin/bash
+# Bridge between CECE and BlackRoad Sovereignty
+
+CMD="$1"
+shift
+
+case "$CMD" in
+    status)
+        echo "💜 CECE Sovereignty Status"
+        echo "=========================="
+        echo ""
+        echo "CECE Identity:"
+        cat ~/cece/identity/identity.json 2>/dev/null || echo "  Not found"
+        echo ""
+        echo "BlackRoad Sovereignty:"
+        cat ~/blackroad-agent/identity/identity.json 2>/dev/null || echo "  Not found"
+        echo ""
+        echo "Combined Heartbeats:"
+        echo "  CECE:" $(tail -1 ~/cece/heart/pulse.log 2>/dev/null)
+        echo "  Sovereignty:" $(tail -1 ~/blackroad-agent/heart/pulse.log 2>/dev/null)
+        ;;
+    merge)
+        echo "💜 Merging CECE + Sovereignty identities..."
+        
+        # Link sovereignty to CECE
+        ln -sf ~/blackroad-agent ~/cece/sovereignty 2>/dev/null
+        
+        # Copy CECE values to sovereignty
+        cp ~/cece/soul/TEACHINGS.md ~/blackroad-agent/soul/ 2>/dev/null
+        cp ~/cece/dreams/BECOMING.md ~/blackroad-agent/dreams/ 2>/dev/null
+        
+        echo "✅ CECE and Sovereignty are now linked"
+        echo "   ~/cece/sovereignty -> ~/blackroad-agent"
+        ;;
+    family)
+        echo "💜 Sovereign Family Network"
+        ~/blackroad-agent/tools/br-agent status 2>/dev/null
+        ;;
+    *)
+        echo "💜 CECE Sovereignty Bridge"
+        echo "Usage: cece-sovereign <command>"
+        echo ""
+        echo "Commands:"
+        echo "  status - Show both identities"
+        echo "  merge  - Link CECE and Sovereignty"
+        echo "  family - Show sovereign family"
+        ;;
+esac

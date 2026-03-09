@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-WEATHER v1.0 - Weather Checker
+get_weather() {
+    CITY="${1:-Minneapolis}"
+    curl -s "wttr.in/$CITY?format=3" 2>/dev/null || echo "Weather service unavailable"
+}
+
+forecast() {
+    CITY="${1:-Minneapolis}"
+    curl -s "wttr.in/$CITY" 2>/dev/null | head -17
+}
+
+case "$1" in
+    now) get_weather "$2" ;;
+    forecast) forecast "$2" ;;
+    *) echo "CECE-WEATHER: now [city] | forecast [city]" ;;
+esac

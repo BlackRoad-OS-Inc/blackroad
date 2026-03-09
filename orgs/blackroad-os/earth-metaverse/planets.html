@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Solar System - Procedural Universe</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { overflow: hidden; background: #000205; font-family: 'Courier New', monospace; }
+        canvas { display: block; }
+
+        .hud {
+            position: absolute;
+            color: #0f0;
+            background: rgba(0,0,0,0.95);
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 11px;
+            border: 1px solid #0f0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .planet-btn {
+            cursor: pointer;
+            padding: 3px 6px;
+            margin: 2px 0;
+            border: 1px solid #0f0;
+            border-radius: 3px;
+            transition: all 0.2s;
+            color: #0f0;
+        }
+
+        .planet-btn:hover {
+            background: rgba(0,255,0,0.2);
+            border-color: #0ff;
+            color: #0ff;
+        }
+
+        .planet-btn.active {
+            background: rgba(255,107,0,0.3);
+            border-color: #FF6B00;
+            color: #FF6B00;
+        }
+
+        #info {
+            top: 10px;
+            left: 10px;
+        }
+
+        #info h1 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+        }
+
+        #terrain-info {
+            top: 10px;
+            right: 10px;
+        }
+
+        #location {
+            bottom: 10px;
+            left: 10px;
+        }
+
+        #stats {
+            bottom: 10px;
+            right: 10px;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f0;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .loading-bar {
+            width: 400px;
+            height: 3px;
+            background: #001100;
+            margin-top: 10px;
+            border: 1px solid #0f0;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: #0f0;
+            width: 0%;
+            box-shadow: 0 0 10px #0f0;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div>GENERATING BLACKROAD SOLAR SYSTEM...</div>
+        <div style="font-size: 12px; margin-top: 5px; color: #888;">Procedural universe generation</div>
+        <div class="loading-bar">
+            <div class="loading-progress" id="progress"></div>
+        </div>
+        <div id="load-status" style="font-size: 10px; margin-top: 8px; color: #0f0;"></div>
+    </div>
+
+    <div class="hud" id="info" style="display:none;">
+        <h1 style="background: linear-gradient(135deg, #FF9D00, #FF006B, #0066FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">BLACKROAD SYSTEM</h1>
+        <div style="color: #888; font-size: 9px;">Alien solar system</div>
+        <div id="planet-selector" style="margin-top: 8px; font-size: 10px;">
+            <div style="color: #0ff; margin-bottom: 3px;">SELECT PLANET:</div>
+            <div class="planet-btn" onclick="switchPlanet(0)">☿ Mercury</div>
+            <div class="planet-btn" onclick="switchPlanet(1)">♀ Venus</div>
+            <div class="planet-btn" onclick="switchPlanet(2)">🌍 Earth</div>
+            <div class="planet-btn" onclick="switchPlanet(3)" style="color: #FF6B00;">⬢ BlackRoad</div>
+            <div class="planet-btn" onclick="switchPlanet(4)">♂ Mars</div>
+            <div class="planet-btn" onclick="switchPlanet(5)">♃ Jupiter</div>
+            <div class="planet-btn" onclick="switchPlanet(6)">♄ Saturn</div>
+        </div>
+        <div style="margin-top: 8px; font-size: 10px;">
+            <div>WASD+QE: Fly</div>
+            <div>Scroll: Zoom</div>
+            <div>Drag: Rotate</div>
+            <div>1-7: Quick planet switch</div>
+        </div>
+    </div>
+
+    <div class="hud" id="terrain-info" style="display:none;">
+        <div style="color: #0ff; margin-bottom: 5px;">TERRAIN DATA</div>
+        <div>Elevation: <span id="elevation" style="color:#0f0;">0m</span></div>
+        <div>Biome: <span id="biome" style="color:#0f0;">Ocean</span></div>
+        <div>Temperature: <span id="temp" style="color:#0f0;">15°C</span></div>
+        <div>Chunks Loaded: <span id="chunks" style="color:#0f0;">0</span></div>
+    </div>
+
+    <div class="hud" id="location" style="display:none;">
+        <div>Alt: <span id="altitude" style="color:#0f0;">0 km</span></div>
+        <div>Lat: <span id="lat" style="color:#0f0;">0.00°</span></div>
+        <div>Lon: <span id="lon" style="color:#0f0;">0.00°</span></div>
+        <div>Detail: <span id="detail" style="color:#0f0;">Space</span></div>
+    </div>
+
+    <div class="hud" id="stats" style="display:none;">
+        <div>FPS: <span id="fps" style="color:#0f0;">60</span></div>
+        <div>Triangles: <span id="triangles" style="color:#0f0;">0</span></div>
+        <div>Trees: <span id="tree-count" style="color:#0f0;">0</span></div>
+    </div>
+
+    <script>
+        // Terrain generation using Perlin-like noise
+        class SimplexNoise {
+            constructor(seed = 12345) {
+                this.seed = seed;
+            }
+
+            noise(x, y) {
+                const n = Math.sin(x * 12.9898 + y * 78.233 + this.seed) * 43758.5453;
+                return (n - Math.floor(n)) * 2 - 1;
+            }
+
+            octaveNoise(x, y, octaves = 4, persistence = 0.5) {
+                let total = 0;
+                let frequency = 1;
+                let amplitude = 1;
+                let maxValue = 0;
+
+                for (let i = 0; i < octaves; i++) {
+                    total += this.noise(x * frequency, y * frequency) * amplitude;
+                    maxValue += amplitude;
+                    amplitude *= persistence;
+                    frequency *= 2;
+                }
+
+                return total / maxValue;
+            }
+        }
+
+        const noise = new SimplexNoise();
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x000814, 0.00015);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 10000);
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance"
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        document.body.appendChild(renderer.domElement);
+
+        camera.position.set(0, 0, 3);
+
+        // Lighting - more dramatic and realistic
+        const ambientLight = new THREE.AmbientLight(0x404060, 0.3);
+        scene.add(ambientLight);
+
+        // Main sun - warm golden light
+        const sunLight = new THREE.DirectionalLight(0xfff4e0, 1.5);
+        sunLight.position.set(100, 80, 50);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        scene.add(sunLight);
+
+        // Rim light - cool blue for space
+        const rimLight = new THREE.DirectionalLight(0x6699ff, 0.4);
+        rimLight.position.set(-100, -50, -50);
+        scene.add(rimLight);
+
+        // Hemisphere light for realistic sky gradient
+        const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x1a1a2e, 0.3);
+        scene.add(hemiLight);
+
+        // Stars - more varied and colorful
+        const starsGeometry = new THREE.BufferGeometry();
+        const starVertices = [];
+        const starColors = [];
+        for (let i = 0; i < 40000; i++) {
+            const x = (Math.random() - 0.5) * 2000;
+            const y = (Math.random() - 0.5) * 2000;
+            const z = (Math.random() - 0.5) * 2000;
+            starVertices.push(x, y, z);
+
+            // Varied star colors (white, blue, yellow, red)
+            const starType = Math.random();
+            if (starType > 0.9) {
+                starColors.push(0.8, 0.8, 1.0); // Blue stars
+            } else if (starType > 0.7) {
+                starColors.push(1.0, 0.9, 0.7); // Yellow stars
+            } else if (starType > 0.95) {
+                starColors.push(1.0, 0.6, 0.5); // Red stars
+            } else {
+                starColors.push(1.0, 1.0, 1.0); // White stars
+            }
+        }
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+        starsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
+        const starsMaterial = new THREE.PointsMaterial({
+            size: 0.3,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9,
+            sizeAttenuation: true
+        });
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // Solar system container
+        const solarSystem = new THREE.Group();
+        scene.add(solarSystem);
+
+        // Current planet
+        let currentPlanet = null;
+        let currentPlanetIndex = 3; // Start with BlackRoad
+
+        // Planet definitions
+        const planets = [
+            {
+                name: 'Mercury',
+                radius: 0.4,
+                seed: 1000,
+                colors: { base: 0x8c7853, secondary: 0x9c8a7a },
+                hasAtmosphere: false,
+                hasClouds: false,
+                description: 'Barren rocky world'
+            },
+            {
+                name: 'Venus',
+                radius: 0.95,
+                seed: 2000,
+                colors: { base: 0xe8c47c, secondary: 0xffd89b },
+                hasAtmosphere: true,
+                atmosphereColor: [0.9, 0.7, 0.3],
+                hasClouds: true,
+                cloudOpacity: 0.9,
+                description: 'Toxic atmosphere'
+            },
+            {
+                name: 'Earth',
+                radius: 1.0,
+                seed: 3000,
+                colors: { base: 0x1e90ff, secondary: 0x2e7d32 },
+                hasAtmosphere: true,
+                atmosphereColor: [0.3, 0.6, 1.0],
+                hasClouds: true,
+                cloudOpacity: 0.6,
+                description: 'Blue marble of life'
+            },
+            {
+                name: 'BlackRoad',
+                radius: 1.1,
+                seed: 4000,
+                colors: { base: 0xFF006B, secondary: 0x0066FF, tertiary: 0xFF9D00 },
+                hasAtmosphere: true,
+                atmosphereColor: [1.0, 0.4, 0.7],
+                hasClouds: true,
+                cloudOpacity: 0.5,
+                description: 'Alien homeworld',
+                isAlien: true
+            },
+            {
+                name: 'Mars',
+                radius: 0.53,
+                seed: 5000,
+                colors: { base: 0xcd5c5c, secondary: 0x8b4513 },
+                hasAtmosphere: true,
+                atmosphereColor: [0.8, 0.3, 0.2],
+                hasClouds: false,
+                description: 'The red planet'
+            },
+            {
+                name: 'Jupiter',
+                radius: 2.5,
+                seed: 6000,
+                colors: { base: 0xdaa520, secondary: 0xf4a460, tertiary: 0xcd853f },
+                hasAtmosphere: true,
+                atmosphereColor: [0.9, 0.7, 0.5],
+                hasClouds: true,
+                cloudOpacity: 0.8,
+                description: 'Gas giant',
+                isGasGiant: true
+            },
+            {
+                name: 'Saturn',
+                radius: 2.2,
+                seed: 7000,
+                colors: { base: 0xf4e4c1, secondary: 0xffe4b5 },
+                hasAtmosphere: true,
+                atmosphereColor: [0.95, 0.9, 0.75],
+                hasClouds: true,
+                cloudOpacity: 0.7,
+                hasRings: true,
+                description: 'Ringed beauty',
+                isGasGiant: true
+            }
+        ];
+
+        // Atmosphere glow - more vibrant and realistic
+        function createAtmosphere(planetConfig = planets[3]) {
+            const radius = (planetConfig.radius || 1.0) * 1.18;
+            const atmosphereGeometry = new THREE.SphereGeometry(radius, 64, 64);
+            const atmoColor = planetConfig.atmosphereColor || [0.3, 0.6, 1.0];
+            const atmosphereMaterial = new THREE.ShaderMaterial({
+                vertexShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        vPosition = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    void main() {
+                        float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
+
+                        // Atmosphere color
+                        vec3 atmosphereColor = vec3(${atmoColor[0]}, ${atmoColor[1]}, ${atmoColor[2]});
+
+                        gl_FragColor = vec4(atmosphereColor, 1.0) * intensity * 1.2;
+                    }
+                `,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                transparent: true
+            });
+            const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+            return atmosphere;
+        }
+
+        // Cloud layer - fluffy and volumetric
+        function createClouds(planetConfig = planets[3]) {
+            const radius = (planetConfig.radius || 1.0) * 1.06;
+            const cloudGeometry = new THREE.SphereGeometry(radius, 128, 128);
+            const vertices = cloudGeometry.attributes.position.array;
+            const colors = [];
+
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i];
+                const y = vertices[i + 1];
+                const z = vertices[i + 2];
+
+                const length = Math.sqrt(x*x + y*y + z*z);
+                const lat = Math.asin(y / length);
+                const lon = Math.atan2(x, z);
+
+                // Multi-layered cloud density
+                const cloudDensity = noise.octaveNoise(lat * 6, lon * 6, 5, 0.55);
+
+                // Make clouds whiter where denser
+                if (cloudDensity > 0.15) {
+                    const density = (cloudDensity - 0.15) * 2;
+                    colors.push(1, 1, 1);
+
+                    // Slightly puff out cloud areas
+                    const puff = density * 0.008;
+                    vertices[i] = (x / length) * (1.06 + puff);
+                    vertices[i + 1] = (y / length) * (1.06 + puff);
+                    vertices[i + 2] = (z / length) * (1.06 + puff);
+                } else {
+                    colors.push(1, 1, 1);
+                }
+            }
+
+            cloudGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            cloudGeometry.computeVertexNormals();
+
+            const cloudMaterial = new THREE.MeshPhongMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: planetConfig.cloudOpacity || 0.6,
+                shininess: 10,
+                vertexColors: true
+            });
+
+            const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            clouds.castShadow = true;
+            clouds.receiveShadow = true;
+            return clouds;
+        }
+
+        // Create LOD terrain chunks
+        const terrainChunks = new Map();
+        let totalTrees = 0;
+
+        function latLonToVector3(lat, lon, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+            const x = -(radius * Math.sin(phi) * Math.cos(theta));
+            const z = (radius * Math.sin(phi) * Math.sin(theta));
+            const y = (radius * Math.cos(phi));
+            return new THREE.Vector3(x, y, z);
+        }
+
+        function getBiome(elevation, temperature, moisture) {
+            // OCEAN DEPTHS - Like real ocean zones
+            if (elevation < -0.5) return { name: 'Abyssal Trench', color: 0x000033 }; // Deepest trenches
+            if (elevation < -0.3) return { name: 'Abyssal Plain', color: 0x001a4d }; // Deep ocean floor
+            if (elevation < -0.15) return { name: 'Deep Ocean', color: 0x003d7a };
+            if (elevation < -0.05) return { name: 'Ocean', color: 0x0066cc };
+            if (elevation < 0) return { name: 'Shallow Ocean', color: 0x1e90ff };
+            if (elevation < 0.02) return { name: 'Continental Shelf', color: 0x4db8ff };
+
+            // COASTLINES - Transition zones
+            if (elevation < 0.05) return { name: 'Beach', color: 0xffd89b };
+            if (elevation < 0.08) return { name: 'Coastal Lowlands', color: 0xd4e7c5 };
+
+            // HIGH MOUNTAINS - Altitude-based (like real mountain zones)
+            if (elevation > 0.9) return { name: 'Glacial Peak', color: 0xffffff }; // Perpetual snow
+            if (elevation > 0.75) return { name: 'Alpine Tundra', color: 0xe8f0f2 };
+            if (elevation > 0.6) return { name: 'High Mountains', color: 0x9e9e9e };
+            if (elevation > 0.5) return { name: 'Mountains', color: 0x795548 };
+            if (elevation > 0.4) return { name: 'Highlands', color: 0xa1887f };
+            if (elevation > 0.3) return { name: 'Hills', color: 0xbcaaa4 };
+
+            // POLAR REGIONS - Temperature-based (like real climate zones)
+            if (temperature < -0.5) return { name: 'Polar Ice Cap', color: 0xfafafa };
+            if (temperature < -0.3) return { name: 'Polar Desert', color: 0xeceff1 };
+            if (temperature < -0.1) return { name: 'Tundra', color: 0xcfd8dc };
+
+            // VEGETATION ZONES - Moisture + temperature based (like real biomes)
+
+            // Tropical (hot + wet)
+            if (temperature > 0.3 && moisture > 0.5) return { name: 'Tropical Rainforest', color: 0x1b5e20 };
+            if (temperature > 0.3 && moisture > 0.2) return { name: 'Tropical Seasonal Forest', color: 0x2e7d32 };
+
+            // Temperate forests (moderate temp + moisture)
+            if (moisture > 0.45) return { name: 'Temperate Rainforest', color: 0x1b5e20 };
+            if (moisture > 0.3) return { name: 'Temperate Forest', color: 0x388e3c };
+            if (moisture > 0.15) return { name: 'Deciduous Forest', color: 0x558b2f };
+            if (moisture > 0.05) return { name: 'Mixed Forest', color: 0x689f38 };
+
+            // Grasslands (moderate moisture)
+            if (moisture > -0.05 && moisture < 0.15) return { name: 'Savanna', color: 0x9ccc65 };
+            if (moisture > -0.15) return { name: 'Grassland', color: 0x8bc34a };
+            if (moisture > -0.25) return { name: 'Steppe', color: 0xc5e1a5 };
+
+            // Deserts (hot + dry)
+            if (temperature > 0.2 && moisture < -0.3) return { name: 'Hot Desert', color: 0xffd54f };
+            if (moisture < -0.4) return { name: 'Extreme Desert', color: 0xffc947 };
+            if (moisture < -0.25) return { name: 'Desert', color: 0xffe082 };
+            if (moisture < -0.15) return { name: 'Semi-Arid', color: 0xfff9c4 };
+
+            // Taiga/Boreal (cold + moderate moisture)
+            if (temperature < 0 && moisture > 0.1) return { name: 'Boreal Forest', color: 0x2e7d32 };
+
+            // Default
+            return { name: 'Shrubland', color: 0xaed581 };
+        }
+
+        function createSphericalTerrain(resolution = 128, planetConfig = planets[3]) {
+            // Create a sphere geometry
+            const radius = planetConfig.radius || 1.0;
+            const seed = planetConfig.seed || 0;
+            const geometry = new THREE.SphereGeometry(radius, resolution, resolution);
+            const vertices = geometry.attributes.position.array;
+            const colors = [];
+
+            // Deform the sphere with terrain
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i];
+                const y = vertices[i + 1];
+                const z = vertices[i + 2];
+
+                // Convert to spherical coordinates
+                const length = Math.sqrt(x*x + y*y + z*z);
+                const lat = Math.asin(y / length);
+                const lon = Math.atan2(x, z);
+
+                // 1. TECTONIC PLATES - Large continental drift patterns
+                const tectonicPlates = noise.octaveNoise(
+                    lat * 1.5,
+                    lon * 1.5,
+                    2,
+                    0.7
+                );
+
+                // 2. CONTINENTAL CRUST - Define land vs ocean at tectonic boundaries
+                const continentalCrust = noise.octaveNoise(
+                    lat * 2.8,
+                    lon * 2.8,
+                    4,
+                    0.6
+                );
+
+                // 3. MOUNTAIN RANGES - Form at plate boundaries (convergent zones)
+                const plateBoundary = Math.abs(tectonicPlates);
+                const mountainRidges = noise.octaveNoise(
+                    lat * 8,
+                    lon * 8,
+                    6,
+                    0.45
+                ) * plateBoundary * 2;
+
+                // 4. EROSION & WEATHERING - Smooths out terrain over time
+                const erosion = noise.octaveNoise(
+                    lat * 5,
+                    lon * 5,
+                    5,
+                    0.55
+                ) * 0.3;
+
+                // 5. VOLCANIC ACTIVITY - Hotspots and island chains
+                const volcanic = noise.octaveNoise(
+                    lat * 12 + 500,
+                    lon * 12 + 500,
+                    3,
+                    0.4
+                );
+                const volcanicPeaks = volcanic > 0.6 ? (volcanic - 0.6) * 0.5 : 0;
+
+                // 6. RIVER VALLEYS - Carve through landscape
+                const drainagePattern = noise.octaveNoise(
+                    lat * 15,
+                    lon * 15,
+                    4,
+                    0.35
+                );
+                const riverValleys = drainagePattern < -0.3 ? Math.abs(drainagePattern + 0.3) * 0.15 : 0;
+
+                // COMBINE ALL GEOLOGICAL PROCESSES
+                let elevation = continentalCrust * 0.4 + erosion * 0.3;
+
+                // Determine if land or ocean based on continental crust
+                if (continentalCrust > 0.15) {
+                    // LAND - Continental crust
+                    elevation = 0.08 + elevation * 0.18;
+
+                    // Add mountains at plate boundaries
+                    elevation += mountainRidges * 0.12;
+
+                    // Add volcanic peaks
+                    elevation += volcanicPeaks * 0.08;
+
+                    // Subtract river valleys
+                    elevation -= riverValleys * 0.04;
+
+                } else {
+                    // OCEAN - Oceanic crust (denser, sinks lower)
+                    elevation = elevation * 0.12 - 0.08;
+
+                    // Ocean trenches at subduction zones (where plates collide)
+                    if (plateBoundary > 0.7) {
+                        elevation -= plateBoundary * 0.08; // Deep trenches
+                    }
+
+                    // Mid-ocean ridges (divergent boundaries)
+                    if (plateBoundary > 0.5 && continentalCrust > 0.05) {
+                        elevation += plateBoundary * 0.03;
+                    }
+                }
+
+                // Add fine detail (local terrain variation)
+                const fineDetail = noise.octaveNoise(
+                    lat * 25,
+                    lon * 25,
+                    3,
+                    0.5
+                ) * 0.015;
+                elevation += fineDetail;
+
+                const moisture = noise.octaveNoise(
+                    lat * 3 + 100,
+                    lon * 3 + 100,
+                    4,
+                    0.6
+                );
+
+                const temperature = noise.octaveNoise(
+                    lat * 2 + 200,
+                    lon * 2 + 200,
+                    3,
+                    0.5
+                );
+
+                // Apply elevation by extending the vertex outward
+                const newRadius = radius + elevation;
+                vertices[i] = (x / length) * newRadius;
+                vertices[i + 1] = (y / length) * newRadius;
+                vertices[i + 2] = (z / length) * newRadius;
+
+                // Determine biome and color (normalize elevation to -1 to 1 range)
+                const normalizedElevation = elevation / 0.2;
+                const biome = getBiome(normalizedElevation, temperature, moisture);
+                const color = new THREE.Color(biome.color);
+
+                // Add subtle variation for organic look
+                const variation = (Math.random() - 0.5) * 0.12;
+                color.offsetHSL(variation * 0.1, variation * 0.15, variation);
+
+                colors.push(color.r, color.g, color.b);
+            }
+
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                shininess: 25,
+                flatShading: false,
+                specular: 0x444444
+            });
+
+            const planet = new THREE.Mesh(geometry, material);
+            planet.castShadow = true;
+            planet.receiveShadow = true;
+
+            return planet;
+        }
+
+        function addTreesToSphere(planetGroup, count = 5000, planetConfig = planets[3]) {
+            const radius = planetConfig.radius || 1.0;
+            for (let i = 0; i < count; i++) {
+                // Random point on sphere
+                const lat = (Math.random() - 0.5) * Math.PI;
+                const lon = Math.random() * Math.PI * 2;
+
+                // Check terrain at this location
+                const elevation = noise.octaveNoise(lat * 5, lon * 5, 6, 0.5) * 0.15;
+                const moisture = noise.octaveNoise(lat * 3 + 100, lon * 3 + 100, 4, 0.6);
+                const temperature = noise.octaveNoise(lat * 2 + 200, lon * 2 + 200, 3, 0.5);
+
+                const biome = getBiome(elevation / 0.15, temperature, moisture);
+
+                // Only place trees in suitable biomes
+                if ((biome.name === 'Forest' || biome.name === 'Dense Forest' || biome.name === 'Grassland') && elevation > 0.01) {
+                    const treeHeight = (0.008 + Math.random() * 0.015) * radius;
+                    const treeRadius = radius + elevation;
+
+                    // Convert spherical to cartesian
+                    const x = treeRadius * Math.cos(lat) * Math.sin(lon);
+                    const y = treeRadius * Math.sin(lat);
+                    const z = treeRadius * Math.cos(lat) * Math.cos(lon);
+
+                    const treeGeometry = new THREE.ConeGeometry(0.002 * radius, treeHeight, 6);
+
+                    // Alien trees for BlackRoad
+                    let treeColor = biome.name === 'Dense Forest' ? 0x1a3d1a : 0x2d5016;
+                    if (planetConfig.isAlien) {
+                        treeColor = Math.random() > 0.5 ? 0x9D00FF : 0x00DDFF; // Purple or cyan alien vegetation
+                    }
+
+                    const treeMaterial = new THREE.MeshPhongMaterial({
+                        color: treeColor
+                    });
+                    const tree = new THREE.Mesh(treeGeometry, treeMaterial);
+
+                    tree.position.set(x, y, z);
+                    tree.lookAt(0, 0, 0);
+                    tree.rotateX(Math.PI);
+                    tree.castShadow = true;
+
+                    planetGroup.add(tree);
+                    totalTrees++;
+                }
+            }
+        }
+
+        // Switch between planets
+        window.switchPlanet = function(index) {
+            currentPlanetIndex = index;
+            if (currentPlanet) {
+                solarSystem.remove(currentPlanet);
+            }
+            generatePlanet(planets[index]);
+
+            // Update UI
+            document.querySelectorAll('.planet-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+        };
+
+        // Keyboard shortcuts for planet switching
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '1' && e.key <= '7') {
+                switchPlanet(parseInt(e.key) - 1);
+            }
+        });
+
+        // Generate initial planet terrain
+        async function generatePlanet(planetConfig = planets[3]) {
+            const updateProgress = (percent, status) => {
+                document.getElementById('progress').style.width = percent + '%';
+                document.getElementById('load-status').textContent = status;
+            };
+
+            const planetGroup = new THREE.Group();
+            currentPlanet = planetGroup;
+
+            updateProgress(5, `Forming ${planetConfig.name}...`);
+            await new Promise(r => setTimeout(r, 100));
+
+            if (!planetConfig.isGasGiant) {
+                updateProgress(10, 'Simulating tectonic plate movement...');
+                await new Promise(r => setTimeout(r, 100));
+
+                updateProgress(20, 'Forming continental and oceanic crust...');
+                await new Promise(r => setTimeout(r, 100));
+
+                updateProgress(30, 'Building mountain ranges...');
+                await new Promise(r => setTimeout(r, 100));
+            } else {
+                updateProgress(20, 'Forming atmospheric bands...');
+                await new Promise(r => setTimeout(r, 100));
+
+                updateProgress(30, 'Generating storm systems...');
+                await new Promise(r => setTimeout(r, 100));
+            }
+
+            // Create the spherical planet with terrain
+            const planet = createSphericalTerrain(256, planetConfig);
+            planetGroup.add(planet);
+
+            updateProgress(50, 'Forming atmosphere...');
+            await new Promise(r => setTimeout(r, 100));
+
+            // Add atmosphere if planet has one
+            if (planetConfig.hasAtmosphere) {
+                const atmosphere = createAtmosphere(planetConfig);
+                planetGroup.add(atmosphere);
+            }
+
+            updateProgress(60, 'Generating weather systems...');
+            await new Promise(r => setTimeout(r, 100));
+
+            // Add clouds if planet has them
+            if (planetConfig.hasClouds) {
+                const clouds = createClouds(planetConfig);
+                planetGroup.add(clouds);
+                planetGroup.cloudsLayer = clouds;
+            }
+
+            // Add rings if planet has them
+            if (planetConfig.hasRings) {
+                updateProgress(70, 'Forming planetary rings...');
+                await new Promise(r => setTimeout(r, 100));
+                const rings = createRings(planetConfig);
+                planetGroup.add(rings);
+            }
+
+            if (planetConfig.isAlien) {
+                updateProgress(80, 'Growing alien biosphere...');
+                await new Promise(r => setTimeout(r, 100));
+                addTreesToSphere(planetGroup, 10000, planetConfig);
+            } else if (planetConfig.name === 'Earth') {
+                updateProgress(80, 'Growing forests and vegetation...');
+                await new Promise(r => setTimeout(r, 100));
+                addTreesToSphere(planetGroup, 10000, planetConfig);
+            }
+
+            updateProgress(95, 'Finalizing planet...');
+            await new Promise(r => setTimeout(r, 100));
+
+            solarSystem.add(planetGroup);
+
+            updateProgress(100, 'Complete!');
+            await new Promise(r => setTimeout(r, 500));
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('info').style.display = 'block';
+            document.getElementById('terrain-info').style.display = 'block';
+            document.getElementById('location').style.display = 'block';
+            document.getElementById('stats').style.display = 'block';
+
+            document.getElementById('chunks').textContent = '1 (Unified Sphere)';
+            document.getElementById('tree-count').textContent = totalTrees.toLocaleString();
+
+            // Set active planet button
+            document.querySelectorAll('.planet-btn')[currentPlanetIndex].classList.add('active');
+        }
+
+        // Create rings for Saturn
+        function createRings(planetConfig) {
+            const ringGroup = new THREE.Group();
+            const innerRadius = planetConfig.radius * 1.2;
+            const outerRadius = planetConfig.radius * 2.0;
+
+            const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 64);
+            const ringMaterial = new THREE.MeshPhongMaterial({
+                color: 0xd4c5a0,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.rotation.x = Math.PI / 2;
+            ringGroup.add(ring);
+
+            return ringGroup;
+        }
+
+        // Controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 0.01;
+        controls.maxDistance = 500;
+        controls.zoomSpeed = 2;
+
+        // WASD movement
+        const moveSpeed = 0.02;
+        const keys = {};
+        document.addEventListener('keydown', (e) => { keys[e.code] = true; });
+        document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+        function updateMovement() {
+            if (keys['KeyW']) camera.position.z -= moveSpeed;
+            if (keys['KeyS']) camera.position.z += moveSpeed;
+            if (keys['KeyA']) camera.position.x -= moveSpeed;
+            if (keys['KeyD']) camera.position.x += moveSpeed;
+            if (keys['KeyQ']) camera.position.y += moveSpeed;
+            if (keys['KeyE']) camera.position.y -= moveSpeed;
+        }
+
+        function updateHUD() {
+            const distance = camera.position.length();
+            const altitude = (distance - 1) * 6371;
+            document.getElementById('altitude').textContent = altitude.toFixed(2) + ' km';
+
+            const dir = camera.position.clone().normalize();
+            const lat = Math.asin(dir.y) * (180 / Math.PI);
+            const lon = Math.atan2(dir.x, dir.z) * (180 / Math.PI);
+            document.getElementById('lat').textContent = lat.toFixed(3) + '°';
+            document.getElementById('lon').textContent = lon.toFixed(3) + '°';
+
+            const elevation = noise.octaveNoise(lat * 0.01, lon * 0.01, 6, 0.5) * 2000;
+            document.getElementById('elevation').textContent = Math.floor(elevation) + 'm';
+
+            const temp = noise.octaveNoise(lat * 0.01 + 200, lon * 0.01 + 200, 3, 0.5) * 30;
+            document.getElementById('temp').textContent = Math.floor(temp) + '°C';
+
+            const moisture = noise.octaveNoise(lat * 0.01 + 100, lon * 0.01 + 100, 4, 0.6);
+            const biome = getBiome(elevation / 2000, temp / 30, moisture);
+            document.getElementById('biome').textContent = biome.name;
+
+            if (distance > 10) document.getElementById('detail').textContent = 'Orbital';
+            else if (distance > 2) document.getElementById('detail').textContent = 'Continental';
+            else if (distance > 0.5) document.getElementById('detail').textContent = 'Regional';
+            else if (distance > 0.1) document.getElementById('detail').textContent = 'Valley';
+            else document.getElementById('detail').textContent = 'Ground';
+        }
+
+        let frameCount = 0;
+        let lastTime = performance.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            planetGroup.rotation.y += 0.0002;
+            stars.rotation.y += 0.00005;
+
+            // Slowly rotate clouds independently
+            if (planetGroup.cloudsLayer) {
+                planetGroup.cloudsLayer.rotation.y += 0.0003;
+            }
+
+            updateMovement();
+            controls.update();
+            updateHUD();
+
+            frameCount++;
+            const currentTime = performance.now();
+            if (currentTime >= lastTime + 1000) {
+                document.getElementById('fps').textContent = frameCount;
+
+                let totalTriangles = 0;
+                scene.traverse((obj) => {
+                    if (obj.geometry) {
+                        totalTriangles += obj.geometry.index ? obj.geometry.index.count / 3 : obj.geometry.attributes.position.count / 3;
+                    }
+                });
+                document.getElementById('triangles').textContent = Math.floor(totalTriangles).toLocaleString();
+
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        generatePlanet().then(() => {
+            animate();
+            console.log('🌍 Primordial Earth loaded');
+            console.log(`Trees generated: ${totalTrees}`);
+        });
+    </script>
+</body>
+</html>

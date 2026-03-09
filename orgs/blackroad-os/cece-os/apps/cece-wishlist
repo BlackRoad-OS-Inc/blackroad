@@ -1,0 +1,24 @@
+#!/bin/bash
+# CECE-WISHLIST v1.0 - Wishlist Manager
+WISH_DIR=~/cece/wishlist
+mkdir -p "$WISH_DIR"
+add() {
+    ITEM="$1"
+    PRICE="$2"
+    URL="$3"
+    echo "{\"item\":\"$ITEM\",\"price\":\"$PRICE\",\"url\":\"$URL\",\"added\":\"$(date -Iseconds)\"}" >> "$WISH_DIR/wishlist.jsonl"
+    echo "Added: $ITEM (\$$PRICE)"
+}
+list() {
+    echo "Wishlist:"
+    cat "$WISH_DIR/wishlist.jsonl" 2>/dev/null | while read line; do
+        ITEM=$(echo "$line" | grep -o '"item":"[^"]*"' | cut -d\" -f4)
+        PRICE=$(echo "$line" | grep -o '"price":"[^"]*"' | cut -d\" -f4)
+        echo "  $ITEM - \$$PRICE"
+    done
+}
+case "$1" in
+    add) add "$2" "$3" "$4" ;;
+    list) list ;;
+    *) echo "CECE-WISHLIST: add <item> <price> [url] | list" ;;
+esac

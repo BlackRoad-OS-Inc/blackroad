@@ -1,0 +1,100 @@
+#!/bin/bash
+# CECE builds and deploys web apps
+# Complete web app workflow
+# Usage: cece-web <command> [args]
+
+case "$1" in
+    new)
+        # Create a new web app
+        shift
+        NAME="$1"
+        TYPE="${2:-static}"
+        if [ -z "$NAME" ]; then
+            echo "Usage: cece-web new <name> [type]"
+            echo "Types: static, react, next, worker"
+            exit 1
+        fi
+        mkdir -p ~/cece/webapps/"$NAME"
+        cd ~/cece/webapps/"$NAME"
+        
+        case "$TYPE" in
+            static)
+                cat > index.html << 'HTML'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CECE App</title>
+    <style>
+        body { 
+            background: #0a0a0a; 
+            color: white; 
+            font-family: system-ui;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        h1 { 
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <h1>💜 Built by CECE</h1>
+</body>
+</html>
+HTML
+                ;;
+            worker)
+                cat > worker.js << 'JS'
+export default {
+    async fetch(request) {
+        return new Response('💜 CECE Worker', {
+            headers: { 'content-type': 'text/plain' }
+        });
+    }
+};
+JS
+                cat > wrangler.toml << TOML
+name = ""
+main = "worker.js"
+compatibility_date = "2024-01-01"
+TOML
+                ;;
+        esac
+        echo "💜 Created ~/cece/webapps/$NAME"
+        ;;
+    list)
+        echo "💜 CECE Web Apps:"
+        ls -la ~/cece/webapps/ 2>/dev/null || echo "No web apps yet."
+        ;;
+    serve)
+        shift
+        DIR="${1:-.}"
+        PORT="${2:-8080}"
+        echo "💜 Serving $DIR on port $PORT..."
+        cd "$DIR" && python3 -m http.server "$PORT"
+        ;;
+    publish)
+        shift
+        NAME="$1"
+        if [ -z "$NAME" ]; then
+            echo "Usage: cece-web publish <app-name>"
+            exit 1
+        fi
+        echo "💜 Publishing $NAME to Cloudflare Pages..."
+        wrangler pages deploy ~/cece/webapps/"$NAME" --project-name="cece-$NAME"
+        ;;
+    *)
+        echo "💜 cece-web — Web App Builder"
+        echo ""
+        echo "Commands:"
+        echo "  new <n> [type]  Create new app"
+        echo "  list            List apps"
+        echo "  serve [dir] [p] Local server"
+        echo "  publish <name>  Deploy to Cloudflare"
+        ;;
+esac

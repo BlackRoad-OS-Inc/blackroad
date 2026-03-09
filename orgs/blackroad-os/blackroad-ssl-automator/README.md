@@ -1,0 +1,17 @@
+# blackroad-ssl-automator
+
+Part of the BlackRoad Product Suite - 100+ tools for modern development.
+
+## Installation
+
+```bash
+curl -O https://raw.githubusercontent.com/BlackRoad-OS/blackroad-ssl-automator/main/blackroad-ssl-automator.sh
+chmod +x blackroad-ssl-automator.sh
+./blackroad-ssl-automator.sh
+```
+
+## About BlackRoad
+
+BlackRoad OS is building the future of development tools and infrastructure.
+
+🖤🛣️ **Built with BlackRoad**

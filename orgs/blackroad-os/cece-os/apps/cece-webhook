@@ -1,0 +1,23 @@
+#!/bin/bash
+# CECE-WEBHOOK v1.0 - Webhook Manager
+HOOK_DIR=~/cece/webhooks
+mkdir -p "$HOOK_DIR"
+register() {
+    NAME="$1"
+    URL="$2"
+    echo "{\"name\":\"$NAME\",\"url\":\"$URL\",\"created\":\"$(date -Iseconds)\"}" >> "$HOOK_DIR/hooks.jsonl"
+    echo "Webhook registered: $NAME"
+}
+trigger() {
+    NAME="$1"
+    DATA="$2"
+    URL=$(grep "\"name\":\"$NAME\"" "$HOOK_DIR/hooks.jsonl" | tail -1 | grep -o '"url":"[^"]*"' | cut -d\" -f4)
+    [ -n "$URL" ] && curl -s -X POST -d "$DATA" "$URL" && echo "Triggered: $NAME"
+}
+list() { cat "$HOOK_DIR/hooks.jsonl" 2>/dev/null; }
+case "$1" in
+    register) register "$2" "$3" ;;
+    trigger) trigger "$2" "$3" ;;
+    list) list ;;
+    *) echo "CECE-WEBHOOK: register <name> <url> | trigger <name> <data> | list" ;;
+esac

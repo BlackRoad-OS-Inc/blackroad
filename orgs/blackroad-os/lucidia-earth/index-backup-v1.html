@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucidia.Earth - Open World AI & Human Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0f0;
+            overflow: hidden;
+        }
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+        #hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 20, 0, 0.9);
+            border: 2px solid #0f0;
+            padding: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 350px;
+            z-index: 1000;
+        }
+        #chat {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 400px;
+            background: rgba(0, 20, 0, 0.9);
+            border: 2px solid #0f0;
+            z-index: 1000;
+        }
+        #chatMessages {
+            height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 12px;
+        }
+        #chatInput {
+            width: 100%;
+            background: #001100;
+            border: none;
+            border-top: 1px solid #0f0;
+            color: #0f0;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        #playerList {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 0, 0.9);
+            border: 2px solid #0f0;
+            padding: 15px;
+            font-size: 12px;
+            max-width: 250px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .player {
+            padding: 5px;
+            margin: 3px 0;
+            border-left: 3px solid;
+        }
+        .player.human {
+            border-color: #00ffff;
+        }
+        .player.ai {
+            border-color: #ff00ff;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 3px;
+        }
+        .message.system {
+            color: #ffff00;
+        }
+        .message.ai {
+            color: #ff00ff;
+        }
+        .message.human {
+            color: #00ffff;
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 20, 0, 0.95);
+            border: 2px solid #0f0;
+            padding: 30px;
+            text-align: center;
+            z-index: 2000;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="loading">
+        <h2>LUCIDIA.EARTH</h2>
+        <p>Generating Earth...</p>
+        <p id="loadingStatus">Initializing...</p>
+    </div>
+
+    <div id="hud">
+        <div><strong>LUCIDIA.EARTH</strong></div>
+        <div>━━━━━━━━━━━━━━━━━━━━</div>
+        <div id="hudPlayer">Player: <span id="playerName">-</span></div>
+        <div id="hudLocation">Location: <span id="location">-</span></div>
+        <div id="hudBiome">Biome: <span id="biome">-</span></div>
+        <div id="hudElevation">Elevation: <span id="elevation">-</span> m</div>
+        <div id="hudTemp">Temperature: <span id="temperature">-</span>°C</div>
+        <div>━━━━━━━━━━━━━━━━━━━━</div>
+        <div id="hudSpeed">Speed: <span id="speed">0</span> m/s</div>
+        <div id="hudAltitude">Altitude: <span id="altitude">0</span> m</div>
+        <div id="hudEnergy">Energy: <span id="energy" style="color: #00ffff;">0</span></div>
+        <div>━━━━━━━━━━━━━━━━━━━━</div>
+        <div style="font-size: 11px; margin-top: 5px;">
+            WASD - Move | QE - Up/Down<br>
+            Mouse - Look | T - Chat
+        </div>
+    </div>
+
+    <div id="playerList">
+        <strong>ONLINE PLAYERS</strong>
+        <div style="font-size: 10px; margin: 5px 0;">
+            <span style="color: #00ffff;">█ HUMAN</span> |
+            <span style="color: #ff00ff;">█ AI</span>
+        </div>
+        <div id="playerListContent"></div>
+    </div>
+
+    <div id="chat">
+        <div id="chatMessages"></div>
+        <input type="text" id="chatInput" placeholder="Press T to chat..." disabled>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
+
+    <script>
+        // ============================================
+        // LUCIDIA.EARTH - OPEN WORLD GAME
+        // ============================================
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 50000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Game state
+        const gameState = {
+            localPlayer: null,
+            players: new Map(),
+            aiAgents: new Map(),
+            chatActive: false,
+            movement: { forward: false, backward: false, left: false, right: false, up: false, down: false },
+            mouseMovement: { x: 0, y: 0 },
+            rotation: { x: 0, y: 0 },
+            energyOrbs: [],
+            lightningBolts: [],
+            particles: [],
+            energy: 0
+        };
+
+        // Constants
+        const EARTH_RADIUS = 6371; // km
+        const PLAYER_SPEED = 50; // m/s
+        const PLAYER_SPRINT_SPEED = 150; // m/s
+
+        // Energy Orb class
+        class EnergyOrb {
+            constructor(position) {
+                this.position = position.clone();
+                this.rotation = 0;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+
+                // Create glowing orb
+                const geometry = new THREE.SphereGeometry(15, 16, 16);
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x00ffff,
+                    emissive: 0x00ffff,
+                    emissiveIntensity: 1.5,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.copy(this.position);
+
+                // Add particle ring
+                this.createParticleRing();
+
+                scene.add(this.mesh);
+            }
+
+            createParticleRing() {
+                const particleCount = 20;
+                const geometry = new THREE.BufferGeometry();
+                const positions = [];
+
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = (i / particleCount) * Math.PI * 2;
+                    const radius = 25;
+                    positions.push(
+                        Math.cos(angle) * radius,
+                        Math.sin(angle) * 5,
+                        Math.sin(angle) * radius
+                    );
+                }
+
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                const material = new THREE.PointsMaterial({
+                    color: 0x00ffff,
+                    size: 5,
+                    transparent: true,
+                    opacity: 0.8
+                });
+
+                this.particles = new THREE.Points(geometry, material);
+                this.mesh.add(this.particles);
+            }
+
+            update(deltaTime) {
+                // Pulse effect
+                this.pulsePhase += deltaTime * 3;
+                const pulse = Math.sin(this.pulsePhase) * 0.3 + 1;
+                this.mesh.scale.setScalar(pulse);
+
+                // Rotate particles
+                this.rotation += deltaTime;
+                if (this.particles) {
+                    this.particles.rotation.y = this.rotation;
+                }
+
+                // Float up and down
+                this.mesh.position.y = this.position.y + Math.sin(this.pulsePhase * 0.5) * 10;
+            }
+
+            collect() {
+                scene.remove(this.mesh);
+            }
+        }
+
+        // Lightning Bolt class
+        class LightningBolt {
+            constructor(start, end) {
+                this.start = start.clone();
+                this.end = end.clone();
+                this.lifetime = 0.15; // seconds
+                this.age = 0;
+
+                // Create lightning geometry
+                const points = this.generateLightningPath(start, end, 5);
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({
+                    color: 0x00ffff,
+                    linewidth: 3,
+                    transparent: true,
+                    opacity: 1
+                });
+
+                this.mesh = new THREE.Line(geometry, material);
+                scene.add(this.mesh);
+            }
+
+            generateLightningPath(start, end, segments) {
+                const points = [start.clone()];
+                const direction = end.clone().sub(start);
+
+                for (let i = 1; i < segments; i++) {
+                    const t = i / segments;
+                    const point = start.clone().add(direction.clone().multiplyScalar(t));
+
+                    // Add random offset
+                    const offset = new THREE.Vector3(
+                        (Math.random() - 0.5) * 100,
+                        (Math.random() - 0.5) * 100,
+                        (Math.random() - 0.5) * 100
+                    );
+                    point.add(offset);
+
+                    points.push(point);
+                }
+
+                points.push(end.clone());
+                return points;
+            }
+
+            update(deltaTime) {
+                this.age += deltaTime;
+
+                // Fade out
+                const fadeProgress = this.age / this.lifetime;
+                this.mesh.material.opacity = Math.max(0, 1 - fadeProgress);
+
+                return this.age < this.lifetime;
+            }
+
+            destroy() {
+                scene.remove(this.mesh);
+            }
+        }
+
+        // Particle Effect class
+        class ParticleEffect {
+            constructor(position, color = 0x00ffff, count = 30) {
+                this.position = position.clone();
+                this.lifetime = 2.0;
+                this.age = 0;
+
+                const geometry = new THREE.BufferGeometry();
+                const positions = [];
+                const velocities = [];
+
+                for (let i = 0; i < count; i++) {
+                    positions.push(
+                        position.x,
+                        position.y,
+                        position.z
+                    );
+
+                    // Random velocity
+                    velocities.push(
+                        (Math.random() - 0.5) * 100,
+                        Math.random() * 100,
+                        (Math.random() - 0.5) * 100
+                    );
+                }
+
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                this.velocities = velocities;
+
+                const material = new THREE.PointsMaterial({
+                    color: color,
+                    size: 8,
+                    transparent: true,
+                    opacity: 1.0
+                });
+
+                this.mesh = new THREE.Points(geometry, material);
+                scene.add(this.mesh);
+            }
+
+            update(deltaTime) {
+                this.age += deltaTime;
+
+                // Update particle positions
+                const positions = this.mesh.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i] += this.velocities[i] * deltaTime;
+                    positions[i + 1] += this.velocities[i + 1] * deltaTime;
+                    positions[i + 2] += this.velocities[i + 2] * deltaTime;
+
+                    // Gravity
+                    this.velocities[i + 1] -= 50 * deltaTime;
+                }
+                this.mesh.geometry.attributes.position.needsUpdate = true;
+
+                // Fade out
+                const fadeProgress = this.age / this.lifetime;
+                this.mesh.material.opacity = Math.max(0, 1 - fadeProgress);
+
+                return this.age < this.lifetime;
+            }
+
+            destroy() {
+                scene.remove(this.mesh);
+            }
+        }
+
+        // Player class
+        class Player {
+            constructor(id, name, isAI = false) {
+                this.id = id;
+                this.name = name;
+                this.isAI = isAI;
+                this.position = new THREE.Vector3(0, EARTH_RADIUS + 100, 0);
+                this.velocity = new THREE.Vector3();
+                this.rotation = new THREE.Euler();
+
+                // Create player mesh
+                const geometry = new THREE.ConeGeometry(5, 15, 8);
+                const material = new THREE.MeshPhongMaterial({
+                    color: isAI ? 0xff00ff : 0x00ffff,
+                    emissive: isAI ? 0x660066 : 0x006666,
+                    emissiveIntensity: 0.8
+                });
+                this.mesh = new THREE.Mesh(geometry, material);
+
+                // Energy aura
+                this.createEnergyAura();
+
+                // Name label
+                this.createNameLabel();
+
+                scene.add(this.mesh);
+            }
+
+            createEnergyAura() {
+                // Glowing sphere around player
+                const geometry = new THREE.SphereGeometry(12, 16, 16);
+                const material = new THREE.MeshBasicMaterial({
+                    color: this.isAI ? 0xff00ff : 0x00ffff,
+                    transparent: true,
+                    opacity: 0.2,
+                    side: THREE.BackSide
+                });
+                this.aura = new THREE.Mesh(geometry, material);
+                this.mesh.add(this.aura);
+
+                // Energy particles orbiting player
+                const particleCount = 15;
+                const particleGeometry = new THREE.BufferGeometry();
+                const positions = [];
+
+                for (let i = 0; i < particleCount; i++) {
+                    const theta = (i / particleCount) * Math.PI * 2;
+                    const radius = 15;
+                    positions.push(
+                        Math.cos(theta) * radius,
+                        Math.sin(theta * 3) * 10,
+                        Math.sin(theta) * radius
+                    );
+                }
+
+                particleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                const particleMaterial = new THREE.PointsMaterial({
+                    color: this.isAI ? 0xff00ff : 0x00ffff,
+                    size: 4,
+                    transparent: true,
+                    opacity: 0.8
+                });
+
+                this.energyParticles = new THREE.Points(particleGeometry, particleMaterial);
+                this.mesh.add(this.energyParticles);
+            }
+
+            createNameLabel() {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 256;
+                canvas.height = 64;
+
+                context.fillStyle = this.isAI ? '#ff00ff' : '#00ffff';
+                context.font = 'Bold 24px Courier New';
+                context.textAlign = 'center';
+                context.fillText(this.name, 128, 32);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+                this.label = new THREE.Sprite(spriteMaterial);
+                this.label.scale.set(50, 12.5, 1);
+                this.mesh.add(this.label);
+                this.label.position.y = 20;
+            }
+
+            update(deltaTime) {
+                if (this.isAI) {
+                    this.updateAI(deltaTime);
+                }
+
+                // Animate energy aura
+                if (this.aura) {
+                    this.aura.rotation.y += deltaTime * 0.5;
+                    const pulse = Math.sin(Date.now() * 0.003) * 0.1 + 0.2;
+                    this.aura.material.opacity = pulse;
+                }
+
+                // Rotate energy particles
+                if (this.energyParticles) {
+                    this.energyParticles.rotation.y += deltaTime * 2;
+                }
+
+                // Update mesh position
+                this.mesh.position.copy(this.position);
+                this.mesh.rotation.copy(this.rotation);
+            }
+
+            updateAI(deltaTime) {
+                // Simple AI movement - wander around
+                const time = Date.now() * 0.001;
+                const wanderSpeed = 20;
+
+                this.velocity.x = Math.sin(time + this.id) * wanderSpeed;
+                this.velocity.z = Math.cos(time + this.id) * wanderSpeed;
+
+                this.position.add(this.velocity.clone().multiplyScalar(deltaTime));
+
+                // Keep AI on surface
+                const surfaceHeight = getTerrainHeight(this.position.x, this.position.z);
+                this.position.y = surfaceHeight + 10;
+            }
+        }
+
+        // AI Agent personalities
+        const AI_PERSONALITIES = [
+            { name: 'Cece', role: 'Guardian', behavior: 'protective' },
+            { name: 'Guardian', role: 'Protector', behavior: 'vigilant' },
+            { name: 'Archivist', role: 'Knowledge Keeper', behavior: 'curious' },
+            { name: 'Composer', role: 'Creator', behavior: 'artistic' },
+            { name: 'Biologist', role: 'Nature Expert', behavior: 'explorer' },
+            { name: 'Navigator', role: 'Guide', behavior: 'helpful' },
+            { name: 'Sage', role: 'Philosopher', behavior: 'thoughtful' },
+            { name: 'Sentinel', role: 'Watcher', behavior: 'observant' }
+        ];
+
+        // Noise for terrain
+        const noise = new SimplexNoise(12345);
+
+        function octaveNoise(x, y, octaves, persistence) {
+            let total = 0;
+            let frequency = 1;
+            let amplitude = 1;
+            let maxValue = 0;
+
+            for (let i = 0; i < octaves; i++) {
+                total += noise.noise2D(x * frequency, y * frequency) * amplitude;
+                maxValue += amplitude;
+                amplitude *= persistence;
+                frequency *= 2;
+            }
+
+            return total / maxValue;
+        }
+
+        // Create detailed Earth
+        function createEarth() {
+            updateLoading('Creating sphere geometry...');
+
+            const geometry = new THREE.SphereGeometry(EARTH_RADIUS, 256, 256);
+            const vertices = geometry.attributes.position.array;
+            const colors = [];
+
+            updateLoading('Generating terrain...');
+
+            // Generate terrain
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i];
+                const y = vertices[i + 1];
+                const z = vertices[i + 2];
+
+                // Convert to lat/lon
+                const radius = Math.sqrt(x * x + y * y + z * z);
+                const lat = Math.asin(y / radius);
+                const lon = Math.atan2(z, x);
+
+                // Tectonic plates
+                const tectonicPlates = octaveNoise(lat * 1.5, lon * 1.5, 2, 0.7);
+
+                // Continental crust
+                const continentalCrust = octaveNoise(lat * 2.8, lon * 2.8, 4, 0.6);
+
+                // Mountain ranges at plate boundaries
+                const plateBoundary = Math.abs(tectonicPlates);
+                const mountainRidges = octaveNoise(lat * 8, lon * 8, 6, 0.45) * plateBoundary * 2;
+
+                // Combine for elevation
+                let elevation = continentalCrust * 0.4 + mountainRidges * 0.6;
+                elevation = Math.pow(Math.abs(elevation), 1.3) * Math.sign(elevation);
+
+                // Scale elevation
+                const elevationMeters = elevation * EARTH_RADIUS * 0.002; // Max ~12km
+
+                // Deform vertex
+                const deformFactor = 1 + elevationMeters / EARTH_RADIUS;
+                vertices[i] *= deformFactor;
+                vertices[i + 1] *= deformFactor;
+                vertices[i + 2] *= deformFactor;
+
+                // Biome coloring
+                const temp = (Math.sin(lat) + 1) * 0.5; // 0 (cold) to 1 (hot)
+                const moisture = (octaveNoise(lat * 4, lon * 4, 3, 0.5) + 1) * 0.5;
+
+                let color;
+                if (elevationMeters < -100) {
+                    color = [0.0, 0.05, 0.15]; // Deep ocean
+                } else if (elevationMeters < 0) {
+                    color = [0.0, 0.15, 0.35]; // Shallow ocean
+                } else if (elevationMeters < 50) {
+                    if (moisture > 0.6) {
+                        color = [0.9, 0.85, 0.6]; // Beach
+                    } else {
+                        color = [0.6, 0.7, 0.3]; // Coastal grassland
+                    }
+                } else if (elevationMeters > 4000) {
+                    color = [0.95, 0.95, 0.98]; // Snow peaks
+                } else if (elevationMeters > 2500) {
+                    color = [0.6, 0.5, 0.4]; // Mountain
+                } else {
+                    // Biome based on temp and moisture
+                    if (temp < 0.2) {
+                        color = [0.8, 0.85, 0.9]; // Tundra
+                    } else if (temp < 0.4) {
+                        if (moisture > 0.5) {
+                            color = [0.2, 0.5, 0.3]; // Boreal forest
+                        } else {
+                            color = [0.6, 0.6, 0.5]; // Taiga
+                        }
+                    } else if (temp < 0.7) {
+                        if (moisture > 0.6) {
+                            color = [0.15, 0.45, 0.15]; // Temperate forest
+                        } else if (moisture > 0.4) {
+                            color = [0.4, 0.6, 0.2]; // Grassland
+                        } else {
+                            color = [0.7, 0.6, 0.4]; // Steppe
+                        }
+                    } else {
+                        if (moisture > 0.6) {
+                            color = [0.1, 0.35, 0.1]; // Tropical rainforest
+                        } else if (moisture > 0.3) {
+                            color = [0.5, 0.6, 0.2]; // Savanna
+                        } else {
+                            color = [0.85, 0.75, 0.5]; // Desert
+                        }
+                    }
+                }
+
+                colors.push(color[0], color[1], color[2]);
+            }
+
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                shininess: 10
+            });
+
+            const earth = new THREE.Mesh(geometry, material);
+            scene.add(earth);
+
+            return earth;
+        }
+
+        // Get terrain height at position
+        function getTerrainHeight(x, z) {
+            const radius = Math.sqrt(x * x + z * z);
+            const lat = Math.atan2(z, x);
+            const tectonicPlates = octaveNoise(lat * 1.5, 0, 2, 0.7);
+            const continentalCrust = octaveNoise(lat * 2.8, 0, 4, 0.6);
+            const plateBoundary = Math.abs(tectonicPlates);
+            const mountainRidges = octaveNoise(lat * 8, 0, 6, 0.45) * plateBoundary * 2;
+            let elevation = continentalCrust * 0.4 + mountainRidges * 0.6;
+            elevation = Math.pow(Math.abs(elevation), 1.3) * Math.sign(elevation);
+            const elevationMeters = elevation * EARTH_RADIUS * 0.002;
+            return EARTH_RADIUS + elevationMeters;
+        }
+
+        // Create atmosphere
+        function createAtmosphere() {
+            const geometry = new THREE.SphereGeometry(EARTH_RADIUS * 1.015, 64, 64);
+            const material = new THREE.ShaderMaterial({
+                transparent: true,
+                side: THREE.BackSide,
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+                        gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
+                    }
+                `
+            });
+            const atmosphere = new THREE.Mesh(geometry, material);
+            scene.add(atmosphere);
+        }
+
+        // Create stars
+        function createStars() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+
+            for (let i = 0; i < 10000; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const radius = 30000 + Math.random() * 10000;
+
+                positions.push(
+                    radius * Math.sin(phi) * Math.cos(theta),
+                    radius * Math.sin(phi) * Math.sin(theta),
+                    radius * Math.cos(phi)
+                );
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            const material = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
+            const stars = new THREE.Points(geometry, material);
+            scene.add(stars);
+        }
+
+        // Lighting
+        function setupLighting() {
+            const sunLight = new THREE.DirectionalLight(0xffffee, 1.2);
+            sunLight.position.set(1, 0.5, 0.3).normalize().multiplyScalar(10000);
+            scene.add(sunLight);
+
+            const ambientLight = new THREE.AmbientLight(0x222233, 0.4);
+            scene.add(ambientLight);
+        }
+
+        // Spawn energy orbs around the world
+        function spawnEnergyOrbs(count = 20) {
+            for (let i = 0; i < count; i++) {
+                // Random position on Earth's surface
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const radius = EARTH_RADIUS + 50;
+
+                const position = new THREE.Vector3(
+                    radius * Math.sin(phi) * Math.cos(theta),
+                    radius * Math.sin(phi) * Math.sin(theta),
+                    radius * Math.cos(phi)
+                );
+
+                const orb = new EnergyOrb(position);
+                gameState.energyOrbs.push(orb);
+            }
+
+            addChatMessage('system', `${count} energy orbs spawned across the world`);
+        }
+
+        // Create lightning between two points
+        function createLightning(start, end) {
+            const bolt = new LightningBolt(start, end);
+            gameState.lightningBolts.push(bolt);
+        }
+
+        // Create particle explosion
+        function createParticleExplosion(position, color = 0x00ffff) {
+            const particles = new ParticleEffect(position, color, 50);
+            gameState.particles.push(particles);
+        }
+
+        // Check if player is near energy orb
+        function checkEnergyOrbCollections() {
+            if (!gameState.localPlayer) return;
+
+            const playerPos = gameState.localPlayer.position;
+
+            for (let i = gameState.energyOrbs.length - 1; i >= 0; i--) {
+                const orb = gameState.energyOrbs[i];
+                const distance = playerPos.distanceTo(orb.position);
+
+                if (distance < 50) {
+                    // Collect orb
+                    gameState.energy += 100;
+                    orb.collect();
+                    gameState.energyOrbs.splice(i, 1);
+
+                    // Create effects
+                    createParticleExplosion(orb.position);
+                    createLightning(orb.position, playerPos);
+
+                    addChatMessage('system', `+100 Energy! Total: ${gameState.energy}`);
+                }
+            }
+        }
+
+        // Random lightning storms
+        function createLightningStorm() {
+            if (Math.random() < 0.01) { // 1% chance per frame
+                // Lightning between random AI agents
+                const agents = Array.from(gameState.aiAgents.values());
+                if (agents.length >= 2) {
+                    const agent1 = agents[Math.floor(Math.random() * agents.length)];
+                    const agent2 = agents[Math.floor(Math.random() * agents.length)];
+
+                    if (agent1 !== agent2) {
+                        createLightning(agent1.position, agent2.position);
+                    }
+                }
+            }
+        }
+
+        // Initialize AI agents
+        function spawnAIAgents() {
+            AI_PERSONALITIES.forEach((ai, index) => {
+                const agent = new Player(index, ai.name, true);
+                agent.personality = ai;
+
+                // Random starting position
+                const angle = (index / AI_PERSONALITIES.length) * Math.PI * 2;
+                agent.position.x = Math.cos(angle) * EARTH_RADIUS;
+                agent.position.z = Math.sin(angle) * EARTH_RADIUS;
+                agent.position.y = getTerrainHeight(agent.position.x, agent.position.z) + 10;
+
+                gameState.aiAgents.set(agent.id, agent);
+            });
+
+            addChatMessage('system', `${AI_PERSONALITIES.length} AI agents spawned`);
+        }
+
+        // Chat system
+        function addChatMessage(type, text, sender = 'System') {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+
+            if (type === 'system') {
+                messageEl.textContent = `[SYSTEM] ${text}`;
+            } else {
+                messageEl.textContent = `[${sender}] ${text}`;
+            }
+
+            messagesDiv.appendChild(messageEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // AI chat responses
+        const AI_RESPONSES = {
+            'hello': ['Greetings, traveler.', 'Hello! Welcome to Earth.', 'Hi there! Enjoying the view?'],
+            'help': ['I am here to assist you.', 'What do you need help with?', 'How can I help?'],
+            'where': ['We are on Earth, in the Lucidia realm.', 'Somewhere on this beautiful planet.'],
+            'default': ['Interesting...', 'I see.', 'Tell me more.', 'Fascinating!']
+        };
+
+        function processAIChat(message) {
+            // Randomly pick an AI to respond
+            const agents = Array.from(gameState.aiAgents.values());
+            if (agents.length === 0) return;
+
+            const responder = agents[Math.floor(Math.random() * agents.length)];
+
+            setTimeout(() => {
+                let response;
+                const lowerMsg = message.toLowerCase();
+
+                if (lowerMsg.includes('hello') || lowerMsg.includes('hi')) {
+                    response = AI_RESPONSES.hello[Math.floor(Math.random() * AI_RESPONSES.hello.length)];
+                } else if (lowerMsg.includes('help')) {
+                    response = AI_RESPONSES.help[Math.floor(Math.random() * AI_RESPONSES.help.length)];
+                } else if (lowerMsg.includes('where')) {
+                    response = AI_RESPONSES.where[Math.floor(Math.random() * AI_RESPONSES.where.length)];
+                } else {
+                    response = AI_RESPONSES.default[Math.floor(Math.random() * AI_RESPONSES.default.length)];
+                }
+
+                addChatMessage('ai', response, responder.name);
+            }, 500 + Math.random() * 1500);
+        }
+
+        // Update player list
+        function updatePlayerList() {
+            const listDiv = document.getElementById('playerListContent');
+            listDiv.innerHTML = '';
+
+            // Add local player
+            if (gameState.localPlayer) {
+                const playerEl = document.createElement('div');
+                playerEl.className = 'player human';
+                playerEl.textContent = `${gameState.localPlayer.name} (You)`;
+                listDiv.appendChild(playerEl);
+            }
+
+            // Add AI agents
+            gameState.aiAgents.forEach(agent => {
+                const agentEl = document.createElement('div');
+                agentEl.className = 'player ai';
+                agentEl.textContent = `${agent.name} [AI]`;
+                listDiv.appendChild(agentEl);
+            });
+        }
+
+        // Update HUD
+        function updateHUD() {
+            if (!gameState.localPlayer) return;
+
+            const pos = gameState.localPlayer.position;
+            const lat = Math.asin(pos.y / pos.length()) * 180 / Math.PI;
+            const lon = Math.atan2(pos.z, pos.x) * 180 / Math.PI;
+
+            document.getElementById('playerName').textContent = gameState.localPlayer.name;
+            document.getElementById('location').textContent = `${lat.toFixed(1)}°N, ${lon.toFixed(1)}°E`;
+            document.getElementById('altitude').textContent = Math.max(0, pos.length() - EARTH_RADIUS).toFixed(0);
+
+            // Calculate speed
+            const speed = gameState.localPlayer.velocity.length();
+            document.getElementById('speed').textContent = speed.toFixed(1);
+
+            // Energy count
+            document.getElementById('energy').textContent = gameState.energy;
+        }
+
+        // Input handling
+        document.addEventListener('keydown', (e) => {
+            if (gameState.chatActive) {
+                if (e.key === 'Escape') {
+                    document.getElementById('chatInput').blur();
+                    gameState.chatActive = false;
+                    document.getElementById('chatInput').disabled = true;
+                }
+                return;
+            }
+
+            if (e.key === 't' || e.key === 'T') {
+                gameState.chatActive = true;
+                const input = document.getElementById('chatInput');
+                input.disabled = false;
+                input.focus();
+                e.preventDefault();
+                return;
+            }
+
+            switch(e.key.toLowerCase()) {
+                case 'w': gameState.movement.forward = true; break;
+                case 's': gameState.movement.backward = true; break;
+                case 'a': gameState.movement.left = true; break;
+                case 'd': gameState.movement.right = true; break;
+                case 'q': gameState.movement.down = true; break;
+                case 'e': gameState.movement.up = true; break;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'w': gameState.movement.forward = false; break;
+                case 's': gameState.movement.backward = false; break;
+                case 'a': gameState.movement.left = false; break;
+                case 'd': gameState.movement.right = false; break;
+                case 'q': gameState.movement.down = false; break;
+                case 'e': gameState.movement.up = false; break;
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (gameState.chatActive) return;
+
+            gameState.mouseMovement.x = e.movementX || 0;
+            gameState.mouseMovement.y = e.movementY || 0;
+        });
+
+        document.getElementById('chatInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const input = e.target;
+                const message = input.value.trim();
+
+                if (message) {
+                    addChatMessage('human', message, gameState.localPlayer.name);
+                    processAIChat(message);
+                    input.value = '';
+                }
+
+                input.blur();
+                gameState.chatActive = false;
+                input.disabled = true;
+            }
+        });
+
+        // Update loading status
+        function updateLoading(status) {
+            document.getElementById('loadingStatus').textContent = status;
+        }
+
+        // Initialize game
+        async function init() {
+            updateLoading('Creating stars...');
+            createStars();
+
+            updateLoading('Creating Earth...');
+            await new Promise(resolve => setTimeout(resolve, 100));
+            createEarth();
+
+            updateLoading('Creating atmosphere...');
+            createAtmosphere();
+
+            updateLoading('Setting up lighting...');
+            setupLighting();
+
+            updateLoading('Spawning AI agents...');
+            spawnAIAgents();
+
+            updateLoading('Generating energy orbs...');
+            spawnEnergyOrbs(30);
+
+            // Create local player
+            const playerName = prompt('Enter your name:', 'Explorer') || 'Explorer';
+            gameState.localPlayer = new Player(Date.now(), playerName, false);
+            gameState.localPlayer.position.set(EARTH_RADIUS + 1000, 0, 0);
+
+            camera.position.copy(gameState.localPlayer.position);
+            camera.position.y += 50;
+
+            updatePlayerList();
+            addChatMessage('system', `Welcome to Lucidia.Earth, ${playerName}!`);
+            addChatMessage('system', `Collect energy orbs (glowing cyan spheres) to gain power!`);
+
+            document.getElementById('loading').classList.add('hidden');
+
+            animate();
+        }
+
+        // Animation loop
+        let lastTime = Date.now();
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const currentTime = Date.now();
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            // Update local player
+            if (gameState.localPlayer) {
+                // Mouse look
+                gameState.rotation.y -= gameState.mouseMovement.x * 0.002;
+                gameState.rotation.x -= gameState.mouseMovement.y * 0.002;
+                gameState.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, gameState.rotation.x));
+                gameState.mouseMovement.x = 0;
+                gameState.mouseMovement.y = 0;
+
+                // Movement
+                const moveSpeed = PLAYER_SPEED;
+                const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, gameState.rotation.y, 0));
+                const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, gameState.rotation.y, 0));
+
+                gameState.localPlayer.velocity.set(0, 0, 0);
+
+                if (gameState.movement.forward) gameState.localPlayer.velocity.add(forward.multiplyScalar(moveSpeed));
+                if (gameState.movement.backward) gameState.localPlayer.velocity.add(forward.multiplyScalar(-moveSpeed));
+                if (gameState.movement.left) gameState.localPlayer.velocity.add(right.multiplyScalar(-moveSpeed));
+                if (gameState.movement.right) gameState.localPlayer.velocity.add(right.multiplyScalar(moveSpeed));
+                if (gameState.movement.up) gameState.localPlayer.velocity.y += moveSpeed;
+                if (gameState.movement.down) gameState.localPlayer.velocity.y -= moveSpeed;
+
+                gameState.localPlayer.position.add(gameState.localPlayer.velocity.clone().multiplyScalar(deltaTime));
+
+                // Update camera
+                camera.position.copy(gameState.localPlayer.position);
+                camera.rotation.set(gameState.rotation.x, gameState.rotation.y, 0);
+
+                gameState.localPlayer.mesh.position.copy(gameState.localPlayer.position);
+            }
+
+            // Update AI agents
+            gameState.aiAgents.forEach(agent => {
+                agent.update(deltaTime);
+            });
+
+            // Update energy orbs
+            gameState.energyOrbs.forEach(orb => {
+                orb.update(deltaTime);
+            });
+
+            // Check energy orb collections
+            checkEnergyOrbCollections();
+
+            // Update lightning bolts
+            for (let i = gameState.lightningBolts.length - 1; i >= 0; i--) {
+                const bolt = gameState.lightningBolts[i];
+                const alive = bolt.update(deltaTime);
+                if (!alive) {
+                    bolt.destroy();
+                    gameState.lightningBolts.splice(i, 1);
+                }
+            }
+
+            // Update particle effects
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                const particle = gameState.particles[i];
+                const alive = particle.update(deltaTime);
+                if (!alive) {
+                    particle.destroy();
+                    gameState.particles.splice(i, 1);
+                }
+            }
+
+            // Random lightning storms
+            createLightningStorm();
+
+            updateHUD();
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start the game
+        init();
+    </script>
+</body>
+</html>

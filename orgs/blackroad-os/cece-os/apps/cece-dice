@@ -1,0 +1,26 @@
+#!/bin/bash
+# CECE-DICE v1.0 - Dice Roller
+roll() {
+    SIDES="${1:-6}"
+    RESULT=$((RANDOM % SIDES + 1))
+    echo "🎲 Rolled a d$SIDES: $RESULT"
+}
+
+multiple() {
+    COUNT="$1"
+    SIDES="${2:-6}"
+    TOTAL=0
+    echo "Rolling ${COUNT}d${SIDES}:"
+    for i in $(seq 1 $COUNT); do
+        R=$((RANDOM % SIDES + 1))
+        echo "  Die $i: $R"
+        TOTAL=$((TOTAL + R))
+    done
+    echo "Total: $TOTAL"
+}
+
+case "$1" in
+    roll) roll "$2" ;;
+    multi) multiple "$2" "$3" ;;
+    *) echo "CECE-DICE: roll [sides] | multi <count> [sides]" ;;
+esac

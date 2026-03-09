@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-BLUETOOTH v1.0 - Bluetooth Manager
+scan() { bluetoothctl scan on & sleep 5; bluetoothctl scan off; bluetoothctl devices; }
+pair() { bluetoothctl pair "$1"; }
+connect() { bluetoothctl connect "$1"; }
+status() { bluetoothctl show 2>/dev/null || echo "Bluetooth status unavailable"; }
+case "$1" in
+    scan) scan ;;
+    pair) pair "$2" ;;
+    connect) connect "$2" ;;
+    status) status ;;
+    *) echo "CECE-BLUETOOTH: scan | pair <mac> | connect <mac> | status" ;;
+esac

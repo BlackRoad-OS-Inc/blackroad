@@ -1,0 +1,12 @@
+#!/bin/bash
+# CECE-TABLE v1.0 - Table Generator
+create() {
+    HEADERS="$1"
+    echo "$HEADERS" | tr ',' '\t' | column -t
+}
+from_file() { column -t -s, "$1"; }
+case "$1" in
+    create) create "$2" ;;
+    file) from_file "$2" ;;
+    *) echo "CECE-TABLE: create <col1,col2,col3> | file <csv>" ;;
+esac

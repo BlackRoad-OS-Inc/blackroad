@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadLog - Real-Time Logging & Monitoring Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Pro Display', -apple-system, sans-serif;
+            background: #000;
+            color: #FFF;
+            line-height: 1.618;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 89px 34px;
+            background: linear-gradient(135deg, rgba(255,29,108,0.1) 0%, rgba(41,121,255,0.1) 100%);
+            text-align: center;
+        }
+        h1 {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+        .subtitle {
+            font-size: 24px;
+            opacity: 0.8;
+            margin-bottom: 55px;
+            max-width: 900px;
+        }
+        .stats-bar {
+            display: flex;
+            gap: 55px;
+            margin-bottom: 55px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+        .btn {
+            padding: 21px 55px;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            color: #FFF;
+            border: none;
+            border-radius: 13px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 13px 34px rgba(255,29,108,0.4);
+        }
+        .features {
+            padding: 144px 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .section-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            border-color: #FF1D6C;
+            transform: translateY(-5px);
+            box-shadow: 0 13px 34px rgba(255,29,108,0.2);
+        }
+        .feature-icon { font-size: 55px; margin-bottom: 21px; }
+        .feature-title { font-size: 24px; font-weight: 600; margin-bottom: 13px; color: #2979FF; }
+        .feature-desc { font-size: 16px; opacity: 0.8; line-height: 1.618; }
+        .demo {
+            padding: 144px 34px;
+            background: rgba(255,255,255,0.02);
+        }
+        .log-viewer {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+        }
+        .log-entry {
+            padding: 13px 21px;
+            border-left: 3px solid;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .log-info {
+            border-left-color: #2979FF;
+            background: rgba(41,121,255,0.1);
+        }
+        .log-warn {
+            border-left-color: #F5A623;
+            background: rgba(245,166,35,0.1);
+        }
+        .log-error {
+            border-left-color: #FF1D6C;
+            background: rgba(255,29,108,0.1);
+        }
+        .log-success {
+            border-left-color: #2ECC71;
+            background: rgba(46,204,113,0.1);
+        }
+        .pricing {
+            padding: 144px 34px;
+        }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .pricing-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .pricing-card:hover {
+            border-color: #FF1D6C;
+            transform: translateY(-5px);
+        }
+        .plan-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 13px;
+            color: #FF1D6C;
+        }
+        .plan-price {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+        .plan-features {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 34px;
+        }
+        .plan-features li {
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            opacity: 0.8;
+        }
+        .plan-features li::before {
+            content: '✓ ';
+            color: #2ECC71;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        footer {
+            padding: 89px 34px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div style="font-size: 89px; margin-bottom: 21px;">📊</div>
+        <h1>RoadLog</h1>
+        <p class="subtitle">Real-Time Logging & Monitoring. Centralized Logs. Instant Alerts. Built for Production Scale.</p>
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-number">1TB+</div>
+                <div class="stat-label">Logs per Day</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number"><100ms</div>
+                <div class="stat-label">Query Latency</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">99.99%</div>
+                <div class="stat-label">Uptime SLA</div>
+            </div>
+        </div>
+        <a href="#features" class="btn">Explore Features</a>
+    </section>
+
+    <section class="features" id="features">
+        <h2 class="section-title">Production-Grade Logging</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📡</div>
+                <h3 class="feature-title">Real-Time Log Streaming</h3>
+                <p class="feature-desc">Live log tailing. Sub-second ingestion. WebSocket streaming. Real-time dashboards.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3 class="feature-title">Full-Text Search</h3>
+                <p class="feature-desc">Elasticsearch-powered search. Regex queries. Field filtering. Instant results.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚨</div>
+                <h3 class="feature-title">Smart Alerts</h3>
+                <p class="feature-desc">Pattern-based alerts. Anomaly detection. Slack/Email/PagerDuty integration. Custom webhooks.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Analytics & Metrics</h3>
+                <p class="feature-desc">Log aggregation. Time-series metrics. Custom dashboards. Grafana integration.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Secure & Compliant</h3>
+                <p class="feature-desc">End-to-end encryption. RBAC. Audit trails. SOC 2 compliant. GDPR ready.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">High Performance</h3>
+                <p class="feature-desc">1TB+ daily ingestion. <100ms queries. Auto-scaling. Global edge network.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="demo">
+        <h2 class="section-title">Live Log Viewer</h2>
+        <div class="log-viewer">
+            <div class="log-entry log-info">
+                [INFO] 2026-01-09 23:28:15 - API request completed - GET /api/users - 200 OK - 45ms
+            </div>
+            <div class="log-entry log-success">
+                [SUCCESS] 2026-01-09 23:28:16 - Payment processed - Order #12345 - $299.00
+            </div>
+            <div class="log-entry log-info">
+                [INFO] 2026-01-09 23:28:17 - Database query executed - users.find() - 12ms
+            </div>
+            <div class="log-entry log-warn">
+                [WARN] 2026-01-09 23:28:18 - High memory usage detected - 87% - PID 4567
+            </div>
+            <div class="log-entry log-info">
+                [INFO] 2026-01-09 23:28:19 - Cache hit - key:user:1234 - Redis
+            </div>
+            <div class="log-entry log-error">
+                [ERROR] 2026-01-09 23:28:20 - Database connection timeout - retrying... (attempt 1/3)
+            </div>
+            <div class="log-entry log-success">
+                [SUCCESS] 2026-01-09 23:28:21 - Database connection restored - PostgreSQL
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing">
+        <h2 class="section-title">Flexible Pricing</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="plan-name">Starter</div>
+                <div class="plan-price">$29<span style="font-size: 18px; opacity: 0.7;">/mo</span></div>
+                <ul class="plan-features">
+                    <li>10 GB logs/day</li>
+                    <li>7-day retention</li>
+                    <li>Full-text search</li>
+                    <li>5 alerting rules</li>
+                    <li>Community support</li>
+                </ul>
+                <button class="btn">Get Started</button>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">Pro</div>
+                <div class="plan-price">$199<span style="font-size: 18px; opacity: 0.7;">/mo</span></div>
+                <ul class="plan-features">
+                    <li>100 GB logs/day</li>
+                    <li>30-day retention</li>
+                    <li>Everything in Starter</li>
+                    <li>Unlimited alerts</li>
+                    <li>Grafana integration</li>
+                    <li>Priority support</li>
+                </ul>
+                <button class="btn">Upgrade to Pro</button>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-price">Custom</div>
+                <ul class="plan-features">
+                    <li>Unlimited logs</li>
+                    <li>Custom retention</li>
+                    <li>Everything in Pro</li>
+                    <li>Dedicated infrastructure</li>
+                    <li>24/7 dedicated support</li>
+                    <li>Custom SLAs</li>
+                </ul>
+                <button class="btn">Contact Sales</button>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div style="font-size: 34px; margin-bottom: 21px;">📊 RoadLog</div>
+        <p style="opacity: 0.6; font-size: 14px;">Built by BlackRoad OS | Real-time logging and monitoring</p>
+        <p style="opacity: 0.6; font-size: 14px; margin-top: 13px;">🖤🛣️ Log. Monitor. Scale.</p>
+    </footer>
+
+    <script>
+        // Simulate live logs
+        const logViewer = document.querySelector('.log-viewer');
+        const logTypes = ['info', 'success', 'warn', 'error'];
+        const logMessages = [
+            '[INFO] API request completed',
+            '[SUCCESS] Payment processed',
+            '[WARN] High CPU usage detected',
+            '[ERROR] Connection timeout',
+            '[INFO] Cache hit',
+            '[SUCCESS] User registered'
+        ];
+
+        setInterval(() => {
+            const type = logTypes[Math.floor(Math.random() * logTypes.length)];
+            const message = logMessages[Math.floor(Math.random() * logMessages.length)];
+            const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `${message} - ${timestamp}`;
+            
+            logViewer.appendChild(entry);
+            
+            // Keep only last 10 logs
+            if (logViewer.children.length > 10) {
+                logViewer.removeChild(logViewer.firstChild);
+            }
+        }, 3000);
+
+        // Animate on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.feature-card, .pricing-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

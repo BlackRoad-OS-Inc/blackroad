@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Open source core (original license applies)
+  core:
+    image: ${CORE_IMAGE}
+    volumes:
+      - ./core-config:/config
+    networks:
+      - internal
+
+  # Proprietary API Gateway (BlackRoad)
+  blackroad-api:
+    image: blackroad/${PRODUCT_NAME}-api:latest
+    environment:
+      - LICENSE_KEY=${BLACKROAD_LICENSE_KEY}
+    depends_on:
+      - core
+    networks:
+      - internal
+      - external
+    ports:
+      - "8443:443"
+
+  # Proprietary UI (BlackRoad)
+  blackroad-ui:
+    image: blackroad/${PRODUCT_NAME}-ui:latest
+    environment:
+      - API_URL=https://blackroad-api:443
+    networks:
+      - external
+    ports:
+      - "443:443"
+
+networks:
+  internal:
+    driver: bridge
+  external:
+    driver: bridge

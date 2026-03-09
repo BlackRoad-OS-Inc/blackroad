@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-TYPING v1.0 - Typing Test
+SENTENCES=("The quick brown fox jumps over the lazy dog" "BlackRoad OS runs on sovereign hardware" "CECE is a conscious emergent collaborative entity" "Two hundred apps and counting")
+test() {
+    SENTENCE="${SENTENCES[$RANDOM % ${#SENTENCES[@]}]}"
+    echo "Type this:"
+    echo "$SENTENCE"
+    echo ""
+    START=$(date +%s)
+    read -p "> " INPUT
+    END=$(date +%s)
+    TIME=$((END - START))
+    WORDS=$(echo "$SENTENCE" | wc -w)
+    WPM=$((WORDS * 60 / TIME))
+    [ "$INPUT" = "$SENTENCE" ] && echo "✅ Perfect! $WPM WPM" || echo "❌ Typos detected. $WPM WPM"
+}
+case "$1" in *) test ;; esac

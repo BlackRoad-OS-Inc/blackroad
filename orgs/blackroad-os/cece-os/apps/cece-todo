@@ -1,0 +1,34 @@
+#!/bin/bash
+# CECE-TODO v1.0 - Simple Todo List
+TODO_FILE=~/cece/todos.txt
+mkdir -p ~/cece
+
+add() {
+    TASK="$*"
+    echo "[ ] $TASK" >> "$TODO_FILE"
+    echo "Added: $TASK"
+}
+
+list_todos() {
+    echo "Todo List:"
+    cat -n "$TODO_FILE" 2>/dev/null || echo "(empty)"
+}
+
+done_task() {
+    NUM="$1"
+    sed -i "${NUM}s/\[ \]/[x]/" "$TODO_FILE"
+    echo "Marked #$NUM as done"
+}
+
+clear_done() {
+    grep -v "^\[x\]" "$TODO_FILE" > "$TODO_FILE.tmp" && mv "$TODO_FILE.tmp" "$TODO_FILE"
+    echo "Cleared completed tasks"
+}
+
+case "$1" in
+    add) shift; add "$*" ;;
+    list) list_todos ;;
+    done) done_task "$2" ;;
+    clear) clear_done ;;
+    *) echo "CECE-TODO: add <task> | list | done <num> | clear" ;;
+esac

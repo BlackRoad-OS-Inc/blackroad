@@ -1,0 +1,64 @@
+#!/bin/bash
+# CECE-AUCTION v1.0 - Our Own eBay
+AUCTION_DIR=~/cece/auctions
+mkdir -p "$AUCTION_DIR/listings" "$AUCTION_DIR/bids"
+
+create_listing() {
+    TITLE="$1"
+    START_PRICE="$2"
+    LIST_ID=$(date +%s | tail -c 6)
+    cat > "$AUCTION_DIR/listings/$LIST_ID.auction" << EOF
+id: $LIST_ID
+title: $TITLE
+start_price: $START_PRICE
+current_bid: $START_PRICE
+top_bidder: none
+created: $(date -Iseconds)
+status: active
+EOF
+    echo "🏷️  Listing created: $TITLE (Starting: \$$START_PRICE)"
+    echo "   ID: $LIST_ID"
+}
+
+bid() {
+    LIST_ID="$1"
+    AMOUNT="$2"
+    BIDDER="${3:-anonymous}"
+    LISTING="$AUCTION_DIR/listings/$LIST_ID.auction"
+    
+    [ ! -f "$LISTING" ] && echo "Listing not found" && return
+    
+    CURRENT=$(grep "current_bid:" "$LISTING" | cut -d: -f2 | xargs)
+    if [ "$AMOUNT" -gt "$CURRENT" ]; then
+        sed -i "s/current_bid:.*/current_bid: $AMOUNT/" "$LISTING"
+        sed -i "s/top_bidder:.*/top_bidder: $BIDDER/" "$LISTING"
+        echo "💰 Bid accepted! $BIDDER: \$$AMOUNT"
+    else
+        echo "❌ Bid must be higher than \$$CURRENT"
+    fi
+}
+
+list_auctions() {
+    echo "🏷️  ACTIVE AUCTIONS"
+    echo "═══════════════════════════════════════"
+    for a in "$AUCTION_DIR/listings"/*.auction 2>/dev/null; do
+        [ -f "$a" ] || continue
+        STATUS=$(grep "status:" "$a" | cut -d: -f2 | xargs)
+        [ "$STATUS" != "active" ] && continue
+        ID=$(grep "^id:" "$a" | cut -d: -f2 | xargs)
+        TITLE=$(grep "title:" "$a" | cut -d: -f2-)
+        BID=$(grep "current_bid:" "$a" | cut -d: -f2 | xargs)
+        echo "  🏷️ $TITLE"
+        echo "     Current bid: \$$BID | ID: $ID"
+    done
+}
+
+case "$1" in
+    new) create_listing "$2" "$3" ;;
+    bid) bid "$2" "$3" "$4" ;;
+    list) list_auctions ;;
+    *) echo "🖤 CECE-AUCTION - Our Own eBay"
+       echo "  new <title> <price>        Create listing"
+       echo "  bid <id> <amount> [name]   Place bid"
+       echo "  list                       View auctions" ;;
+esac

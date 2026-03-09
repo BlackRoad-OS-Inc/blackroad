@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-SOUND v1.0 - Sound Effects
+beep() { echo -e '\a'; }
+bell() { for i in 1 2 3; do echo -e '\a'; sleep 0.3; done; }
+say() { espeak "$1" 2>/dev/null || say "$1" 2>/dev/null || echo "[SOUND] $1"; }
+case "$1" in
+    beep) beep ;;
+    bell) bell ;;
+    say) say "$2" ;;
+    *) echo "CECE-SOUND: beep | bell | say <text>" ;;
+esac

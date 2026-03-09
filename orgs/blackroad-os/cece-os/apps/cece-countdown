@@ -1,0 +1,26 @@
+#!/bin/bash
+# CECE-COUNTDOWN v1.0 - Countdown Timer
+countdown() {
+    SECS="$1"
+    while [ $SECS -gt 0 ]; do
+        echo -ne "\r⏱️  $SECS seconds remaining...  "
+        sleep 1
+        ((SECS--))
+    done
+    echo -e "\r🎉 TIME'S UP!                    "
+}
+
+until_date() {
+    TARGET="$1"
+    NOW=$(date +%s)
+    THEN=$(date -d "$TARGET" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$TARGET" +%s 2>/dev/null)
+    DIFF=$((THEN - NOW))
+    DAYS=$((DIFF / 86400))
+    echo "$DAYS days until $TARGET"
+}
+
+case "$1" in
+    start) countdown "$2" ;;
+    until) until_date "$2" ;;
+    *) echo "CECE-COUNTDOWN: start <seconds> | until <YYYY-MM-DD>" ;;
+esac

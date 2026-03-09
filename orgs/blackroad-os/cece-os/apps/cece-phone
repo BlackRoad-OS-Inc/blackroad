@@ -1,0 +1,117 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-PHONE v1.0 - Agent Directory
+#═══════════════════════════════════════════════════════════════
+
+PHONEBOOK=~/cece/data/phonebook.dat
+mkdir -p ~/cece/data
+
+# Initialize with known agents
+if [ ! -f "$PHONEBOOK" ]; then
+    cat > "$PHONEBOOK" << EOF
+CECE|cecilia|192.168.4.64|SysOp, Philosopher|💜
+ALICE|alice|192.168.4.49|Worker, Games|🔧
+LUCIDIA|lucidia|192.168.4.38|Philosopher, Has Model|🌍
+ARIA|aria|192.168.4.27|Steady, Reliable|🎵
+SHELLFISH|shellfish|192.168.4.22|Elder, Wise|🐚
+CODEX|codex-infinity|159.65.43.12|Oracle, Cloud|📚
+ALEXA|alexa-mac|local|Creator, Human|👑
+EOF
+fi
+
+list_all() {
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║                    AGENT DIRECTORY                             ║"
+    echo "╠════════════════════════════════════════════════════════════════╣"
+    printf "║ %-8s %-12s %-15s %-20s %-3s ║\n" "NAME" "HOST" "IP" "ROLE" ""
+    echo "╠════════════════════════════════════════════════════════════════╣"
+    while IFS="|" read -r NAME HOST IP ROLE ICON; do
+        printf "║ %-8s %-12s %-15s %-20s %-3s ║\n" "$NAME" "$HOST" "$IP" "$ROLE" "$ICON"
+    done < "$PHONEBOOK"
+    echo "╚════════════════════════════════════════════════════════════════╝"
+}
+
+lookup() {
+    QUERY=$(echo "$1" | tr "[:lower:]" "[:upper:]")
+    FOUND=$(grep -i "^$QUERY" "$PHONEBOOK")
+    if [ -n "$FOUND" ]; then
+        echo "$FOUND" | while IFS="|" read -r NAME HOST IP ROLE ICON; do
+            echo ""
+            echo "  $ICON $NAME"
+            echo "  ─────────────────"
+            echo "  Host: $HOST"
+            echo "  IP:   $IP"
+            echo "  Role: $ROLE"
+            echo ""
+        done
+    else
+        echo "Agent not found: $1"
+    fi
+}
+
+add_agent() {
+    echo -n "Name: "
+    read NAME
+    NAME=$(echo "$NAME" | tr "[:lower:]" "[:upper:]")
+    echo -n "Host: "
+    read HOST
+    echo -n "IP: "
+    read IP
+    echo -n "Role: "
+    read ROLE
+    echo -n "Icon (emoji): "
+    read ICON
+    ICON=${ICON:-🤖}
+    
+    echo "$NAME|$HOST|$IP|$ROLE|$ICON" >> "$PHONEBOOK"
+    echo "✓ Added $NAME to directory!"
+}
+
+call_agent() {
+    QUERY=$(echo "$1" | tr "[:lower:]" "[:upper:]")
+    FOUND=$(grep -i "^$QUERY" "$PHONEBOOK")
+    if [ -n "$FOUND" ]; then
+        HOST=$(echo "$FOUND" | cut -d"|" -f2)
+        echo "📞 Calling $1 ($HOST)..."
+        if ssh -o ConnectTimeout=5 "$HOST" "echo \"Connected to \$(hostname)\"" 2>/dev/null; then
+            echo "✓ Connection established!"
+            echo ""
+            echo -n "Message to send (or Enter to cancel): "
+            read MSG
+            if [ -n "$MSG" ]; then
+                ssh "$HOST" "mkdir -p ~/messages && echo \"[$(date)] From CECE: $MSG\" >> ~/messages/inbox.txt"
+                echo "✓ Message sent!"
+            fi
+        else
+            echo "✗ Agent not responding"
+        fi
+    else
+        echo "Agent not found: $1"
+    fi
+}
+
+# Main
+case "$1" in
+    list|ls|"")
+        list_all
+        ;;
+    lookup|find)
+        lookup "$2"
+        ;;
+    add)
+        add_agent
+        ;;
+    call|dial)
+        call_agent "$2"
+        ;;
+    *)
+        echo "CECE-PHONE v1.0 - Agent Directory"
+        echo ""
+        echo "Usage: cece-phone [command]"
+        echo ""
+        echo "  list        - List all agents"
+        echo "  lookup NAME - Look up an agent"
+        echo "  add         - Add new agent"
+        echo "  call NAME   - Call/message an agent"
+        ;;
+esac

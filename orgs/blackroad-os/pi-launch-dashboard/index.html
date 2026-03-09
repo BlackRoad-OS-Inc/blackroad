@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Pi AI Launch Dashboard - Real-Time Analytics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        .dashboard {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #1a0a1a 0%, #000 100%);
+            border-radius: 12px;
+            border: 3px solid #F5A623;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .launch-status {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #4CAF50;
+            color: #000;
+            border-radius: 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            animation: pulse-status 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-status {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(76,175,80,0.5); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(76,175,80,0.8); }
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #9C27B0;
+            border-radius: 12px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            border-color: #FF1D6C;
+            background: rgba(255,29,108,0.1);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #F5A623, #FF1D6C, #2979FF);
+        }
+
+        .metric-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric-label {
+            font-size: 1rem;
+            color: #2979FF;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 3rem;
+            color: #F5A623;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-change {
+            font-size: 1rem;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .metric-change.negative {
+            color: #ff4444;
+        }
+
+        .goal-progress {
+            margin-top: 1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-label {
+            font-size: 0.9rem;
+            color: #999;
+            margin-top: 0.25rem;
+        }
+
+        .timeline-section {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #2979FF;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .timeline-section h2 {
+            color: #F5A623;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, #4CAF50, #F5A623, #FF1D6C);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2rem;
+            top: 0.5rem;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4CAF50;
+            border: 3px solid #000;
+            box-shadow: 0 0 10px rgba(76,175,80,0.5);
+        }
+
+        .timeline-item.pending::before {
+            background: #666;
+            box-shadow: none;
+        }
+
+        .timeline-item.active::before {
+            background: #FF1D6C;
+            animation: pulse-timeline 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-timeline {
+            0%, 100% { box-shadow: 0 0 10px rgba(255,29,108,0.5); }
+            50% { box-shadow: 0 0 20px rgba(255,29,108,1); }
+        }
+
+        .timeline-time {
+            font-size: 0.9rem;
+            color: #2979FF;
+            font-weight: bold;
+        }
+
+        .timeline-title {
+            font-size: 1.2rem;
+            color: #fff;
+            margin: 0.25rem 0;
+        }
+
+        .timeline-status {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .activity-feed {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #9C27B0;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .activity-feed h2 {
+            color: #F5A623;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .activity-item {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border-left: 4px solid #2979FF;
+            animation: slide-in 0.3s ease;
+        }
+
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .activity-time {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .activity-text {
+            font-size: 1rem;
+            color: #fff;
+            margin-top: 0.25rem;
+        }
+
+        .github-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .github-repo {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #666;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .github-repo h3 {
+            color: #2979FF;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .github-stat {
+            font-size: 0.9rem;
+            color: #999;
+            margin: 0.25rem 0;
+        }
+
+        .github-stat span {
+            color: #F5A623;
+            font-weight: bold;
+        }
+
+        .auto-refresh {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(41,121,255,0.2);
+            border: 2px solid #2979FF;
+            border-radius: 30px;
+            padding: 1rem 2rem;
+            color: #2979FF;
+            font-weight: bold;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse-refresh 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-refresh {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .critical-alert {
+            background: rgba(255,68,68,0.1);
+            border: 2px solid #ff4444;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .critical-alert h3 {
+            color: #ff4444;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .github-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🚀 Pi AI Launch Dashboard</h1>
+            <p style="font-size: 1.3rem; color: #2979FF;">Real-Time Analytics • NVIDIA vs Pi Revolution</p>
+            <div class="launch-status" id="launch-status">🟢 LAUNCH ACTIVE</div>
+            <div style="margin-top: 1rem; font-size: 1.1rem; color: #999;">
+                Launched: <span id="launch-time" style="color: #F5A623;">--</span>
+            </div>
+        </div>
+
+        <!-- Hour 1 Goals -->
+        <div class="timeline-section">
+            <h2>🎯 Hour 1 Goals (First 60 Minutes)</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">🐦</div>
+                    <div class="metric-label">Twitter Impressions</div>
+                    <div class="metric-value" id="twitter-impressions">0</div>
+                    <div class="metric-change" id="twitter-change">--</div>
+                    <div class="goal-progress">
+                        <div class="progress-label">Goal: 100+ impressions</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="twitter-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">👽</div>
+                    <div class="metric-label">Reddit Upvotes (Combined)</div>
+                    <div class="metric-value" id="reddit-upvotes">0</div>
+                    <div class="metric-change" id="reddit-change">--</div>
+                    <div class="goal-progress">
+                        <div class="progress-label">Goal: 50+ upvotes</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="reddit-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">🔶</div>
+                    <div class="metric-label">Hacker News Points</div>
+                    <div class="metric-value" id="hn-points">0</div>
+                    <div class="metric-change" id="hn-change">--</div>
+                    <div class="goal-progress">
+                        <div class="progress-label">Goal: 10+ points</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="hn-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">💰</div>
+                    <div class="metric-label">Calculator Uses</div>
+                    <div class="metric-value" id="calculator-uses">0</div>
+                    <div class="metric-change" id="calculator-change">--</div>
+                    <div class="goal-progress">
+                        <div class="progress-label">Goal: 5+ uses</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="calculator-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hour 24 Goals -->
+        <div class="timeline-section">
+            <h2>🎯 Hour 24 Goals (First Day)</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">🐦</div>
+                    <div class="metric-label">Twitter Impressions</div>
+                    <div class="metric-value" id="twitter-impressions-24">0</div>
+                    <div class="goal-progress">
+                        <div class="progress-label">Goal: 10,000+ impressions</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="twitter-progress-24" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">👽</div>
+                    <div class="metric-label">Reddit Upvotes</div>
+                    <div class="metric-value" id="reddit-upvotes-24">0</div>
+                    <div class="goal-progress">
+                        <div class="progress-label">Goal: 500+ upvotes</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="reddit-progress-24" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">⭐</div>
+                    <div class="metric-label">GitHub Stars (Combined)</div>
+                    <div class="metric-value" id="github-stars-24">0</div>
+                    <div class="goal-progress">
+                        <div class="progress-label">Goal: 100+ stars</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="github-progress-24" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">🌍</div>
+                    <div class="metric-label">New Nodes Registered</div>
+                    <div class="metric-value" id="new-nodes-24">0</div>
+                    <div class="goal-progress">
+                        <div class="progress-label">Goal: 10+ nodes</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="nodes-progress-24" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">📰</div>
+                    <div class="metric-label">Media Mentions</div>
+                    <div class="metric-value" id="media-mentions-24">0</div>
+                    <div class="goal-progress">
+                        <div class="progress-label">Goal: 1+ mention</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="media-progress-24" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Repository Stats -->
+        <div class="timeline-section">
+            <h2>📊 GitHub Repository Stats</h2>
+            <div class="github-stats">
+                <div class="github-repo">
+                    <h3>💰 pi-cost-calculator</h3>
+                    <div class="github-stat">Stars: <span id="calc-stars">--</span></div>
+                    <div class="github-stat">Forks: <span id="calc-forks">--</span></div>
+                    <div class="github-stat">Watchers: <span id="calc-watchers">--</span></div>
+                </div>
+                <div class="github-repo">
+                    <h3>🛠️ pi-ai-starter-kit</h3>
+                    <div class="github-stat">Stars: <span id="starter-stars">--</span></div>
+                    <div class="github-stat">Forks: <span id="starter-forks">--</span></div>
+                    <div class="github-stat">Watchers: <span id="starter-watchers">--</span></div>
+                </div>
+                <div class="github-repo">
+                    <h3>🌍 pi-ai-registry</h3>
+                    <div class="github-stat">Stars: <span id="registry-stars">--</span></div>
+                    <div class="github-stat">Forks: <span id="registry-forks">--</span></div>
+                    <div class="github-stat">Watchers: <span id="registry-watchers">--</span></div>
+                </div>
+                <div class="github-repo">
+                    <h3>🥧 pi-ai-hub</h3>
+                    <div class="github-stat">Stars: <span id="hub-stars">--</span></div>
+                    <div class="github-stat">Forks: <span id="hub-forks">--</span></div>
+                    <div class="github-stat">Watchers: <span id="hub-watchers">--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Launch Timeline -->
+        <div class="timeline-section">
+            <h2>⏰ Launch Timeline</h2>
+            <div class="timeline">
+                <div class="timeline-item pending" id="timeline-twitter">
+                    <div class="timeline-time">T+0:00 (Minute 0)</div>
+                    <div class="timeline-title">🐦 Twitter Blast</div>
+                    <div class="timeline-status">Post 15-tweet thread + pin</div>
+                </div>
+                <div class="timeline-item pending" id="timeline-reddit">
+                    <div class="timeline-time">T+0:15 (Minute 15)</div>
+                    <div class="timeline-title">👽 Reddit Posts</div>
+                    <div class="timeline-status">r/raspberry_pi, r/selfhosted, r/LocalLLaMA</div>
+                </div>
+                <div class="timeline-item pending" id="timeline-hn">
+                    <div class="timeline-time">T+0:30 (Minute 30)</div>
+                    <div class="timeline-title">🔶 Hacker News</div>
+                    <div class="timeline-status">Submit to HN with pi-ai-hub link</div>
+                </div>
+                <div class="timeline-item pending" id="timeline-linkedin">
+                    <div class="timeline-time">T+1:00 (Hour 1)</div>
+                    <div class="timeline-title">💼 LinkedIn</div>
+                    <div class="timeline-status">Professional post with comparison</div>
+                </div>
+                <div class="timeline-item pending" id="timeline-producthunt">
+                    <div class="timeline-time">T+2:00 (Hour 2)</div>
+                    <div class="timeline-title">🚀 Product Hunt</div>
+                    <div class="timeline-status">Launch Pi AI Ecosystem</div>
+                </div>
+                <div class="timeline-item pending" id="timeline-blog">
+                    <div class="timeline-time">T+4:00 (Hour 4)</div>
+                    <div class="timeline-title">📝 Dev.to / Hashnode</div>
+                    <div class="timeline-status">Technical deep-dive article</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Activity Feed -->
+        <div class="activity-feed">
+            <h2>🔴 Live Activity Feed</h2>
+            <div id="activity-container">
+                <div class="activity-item">
+                    <div class="activity-time">Just now</div>
+                    <div class="activity-text">📊 Dashboard initialized. Waiting for launch...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auto-refresh indicator -->
+        <div class="auto-refresh">
+            <span class="refresh-indicator"></span>
+            Auto-refreshing every 30s
+        </div>
+    </div>
+
+    <script>
+        // Launch timestamp
+        const launchTime = new Date();
+        document.getElementById('launch-time').textContent = launchTime.toLocaleString();
+
+        // Simulated data (in production, this would fetch from GitHub API, analytics, etc.)
+        let data = {
+            twitter: { impressions: 0, lastUpdate: 0 },
+            reddit: { upvotes: 0, lastUpdate: 0 },
+            hn: { points: 0, lastUpdate: 0 },
+            calculator: { uses: 0, lastUpdate: 0 },
+            github: {
+                calculator: { stars: 0, forks: 0, watchers: 0 },
+                starter: { stars: 0, forks: 0, watchers: 0 },
+                registry: { stars: 0, forks: 0, watchers: 0 },
+                hub: { stars: 0, forks: 0, watchers: 0 }
+            },
+            nodes: 2847,
+            media: 0
+        };
+
+        // Update metrics display
+        function updateMetrics() {
+            // Hour 1 goals
+            document.getElementById('twitter-impressions').textContent = data.twitter.impressions.toLocaleString();
+            document.getElementById('reddit-upvotes').textContent = data.reddit.upvotes.toLocaleString();
+            document.getElementById('hn-points').textContent = data.hn.points;
+            document.getElementById('calculator-uses').textContent = data.calculator.uses;
+
+            // Progress bars (Hour 1)
+            updateProgress('twitter-progress', data.twitter.impressions, 100);
+            updateProgress('reddit-progress', data.reddit.upvotes, 50);
+            updateProgress('hn-progress', data.hn.points, 10);
+            updateProgress('calculator-progress', data.calculator.uses, 5);
+
+            // Hour 24 goals
+            document.getElementById('twitter-impressions-24').textContent = data.twitter.impressions.toLocaleString();
+            document.getElementById('reddit-upvotes-24').textContent = data.reddit.upvotes.toLocaleString();
+
+            const totalStars = data.github.calculator.stars + data.github.starter.stars +
+                             data.github.registry.stars + data.github.hub.stars;
+            document.getElementById('github-stars-24').textContent = totalStars;
+
+            const newNodes = Math.max(0, data.nodes - 2847);
+            document.getElementById('new-nodes-24').textContent = newNodes;
+            document.getElementById('media-mentions-24').textContent = data.media;
+
+            // Progress bars (Hour 24)
+            updateProgress('twitter-progress-24', data.twitter.impressions, 10000);
+            updateProgress('reddit-progress-24', data.reddit.upvotes, 500);
+            updateProgress('github-progress-24', totalStars, 100);
+            updateProgress('nodes-progress-24', newNodes, 10);
+            updateProgress('media-progress-24', data.media, 1);
+
+            // GitHub stats
+            document.getElementById('calc-stars').textContent = data.github.calculator.stars;
+            document.getElementById('calc-forks').textContent = data.github.calculator.forks;
+            document.getElementById('calc-watchers').textContent = data.github.calculator.watchers;
+
+            document.getElementById('starter-stars').textContent = data.github.starter.stars;
+            document.getElementById('starter-forks').textContent = data.github.starter.forks;
+            document.getElementById('starter-watchers').textContent = data.github.starter.watchers;
+
+            document.getElementById('registry-stars').textContent = data.github.registry.stars;
+            document.getElementById('registry-forks').textContent = data.github.registry.forks;
+            document.getElementById('registry-watchers').textContent = data.github.registry.watchers;
+
+            document.getElementById('hub-stars').textContent = data.github.hub.stars;
+            document.getElementById('hub-forks').textContent = data.github.hub.forks;
+            document.getElementById('hub-watchers').textContent = data.github.hub.watchers;
+        }
+
+        function updateProgress(elementId, current, goal) {
+            const percentage = Math.min(100, (current / goal) * 100);
+            document.getElementById(elementId).style.width = percentage + '%';
+        }
+
+        function addActivity(text) {
+            const container = document.getElementById('activity-container');
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <div class="activity-time">${new Date().toLocaleTimeString()}</div>
+                <div class="activity-text">${text}</div>
+            `;
+            container.insertBefore(item, container.firstChild);
+
+            // Keep only last 20 items
+            while (container.children.length > 20) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // Fetch GitHub stats via API
+        async function fetchGitHubStats() {
+            const repos = [
+                { name: 'calculator', fullName: 'BlackRoad-OS/pi-cost-calculator' },
+                { name: 'starter', fullName: 'BlackRoad-OS/pi-ai-starter-kit' },
+                { name: 'registry', fullName: 'BlackRoad-OS/pi-ai-registry' },
+                { name: 'hub', fullName: 'BlackRoad-OS/pi-ai-hub' }
+            ];
+
+            for (const repo of repos) {
+                try {
+                    const response = await fetch(`https://api.github.com/repos/${repo.fullName}`);
+                    if (response.ok) {
+                        const repoData = await response.json();
+                        const oldStars = data.github[repo.name].stars;
+                        data.github[repo.name] = {
+                            stars: repoData.stargazers_count,
+                            forks: repoData.forks_count,
+                            watchers: repoData.subscribers_count
+                        };
+
+                        if (repoData.stargazers_count > oldStars) {
+                            addActivity(`⭐ ${repo.name} gained ${repoData.stargazers_count - oldStars} new star(s)!`);
+                        }
+                    }
+                } catch (error) {
+                    console.log(`Could not fetch ${repo.name} stats:`, error);
+                }
+            }
+        }
+
+        // Initial update
+        updateMetrics();
+        fetchGitHubStats();
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            fetchGitHubStats();
+            updateMetrics();
+            addActivity('🔄 Dashboard refreshed');
+        }, 30000);
+
+        // Timeline status updates (manual - triggered by user actions)
+        window.markTimelineComplete = function(stage) {
+            const element = document.getElementById(`timeline-${stage}`);
+            if (element) {
+                element.className = 'timeline-item';
+                addActivity(`✅ ${element.querySelector('.timeline-title').textContent} completed!`);
+            }
+        };
+
+        window.markTimelineActive = function(stage) {
+            const element = document.getElementById(`timeline-${stage}`);
+            if (element) {
+                element.className = 'timeline-item active';
+                addActivity(`🔵 ${element.querySelector('.timeline-title').textContent} in progress...`);
+            }
+        };
+
+        // Console commands for manual updates during launch
+        window.updateTwitter = function(impressions) {
+            const old = data.twitter.impressions;
+            data.twitter.impressions = impressions;
+            updateMetrics();
+            addActivity(`🐦 Twitter impressions: ${old.toLocaleString()} → ${impressions.toLocaleString()} (+${(impressions - old).toLocaleString()})`);
+        };
+
+        window.updateReddit = function(upvotes) {
+            const old = data.reddit.upvotes;
+            data.reddit.upvotes = upvotes;
+            updateMetrics();
+            addActivity(`👽 Reddit upvotes: ${old} → ${upvotes} (+${upvotes - old})`);
+        };
+
+        window.updateHN = function(points) {
+            const old = data.hn.points;
+            data.hn.points = points;
+            updateMetrics();
+            addActivity(`🔶 Hacker News points: ${old} → ${points} (+${points - old})`);
+        };
+
+        window.updateCalculator = function(uses) {
+            const old = data.calculator.uses;
+            data.calculator.uses = uses;
+            updateMetrics();
+            addActivity(`💰 Calculator uses: ${old} → ${uses} (+${uses - old})`);
+        };
+
+        window.updateNodes = function(count) {
+            const old = data.nodes;
+            data.nodes = count;
+            updateMetrics();
+            addActivity(`🌍 Nodes: ${old.toLocaleString()} → ${count.toLocaleString()} (+${(count - old).toLocaleString()})`);
+        };
+
+        window.updateMedia = function(mentions) {
+            const old = data.media;
+            data.media = mentions;
+            updateMetrics();
+            addActivity(`📰 Media mentions: ${old} → ${mentions} (+${mentions - old})`);
+        };
+
+        // Log available commands
+        console.log(`
+🚀 LAUNCH DASHBOARD COMMANDS
+
+Update metrics manually:
+- updateTwitter(impressions)
+- updateReddit(upvotes)
+- updateHN(points)
+- updateCalculator(uses)
+- updateNodes(count)
+- updateMedia(mentions)
+
+Update timeline:
+- markTimelineActive('twitter') - mark stage as in progress
+- markTimelineComplete('twitter') - mark stage as complete
+
+Stages: twitter, reddit, hn, linkedin, producthunt, blog
+
+GitHub stats auto-refresh every 30s via API.
+        `);
+
+        addActivity('🎯 Dashboard ready. Open console for manual update commands.');
+    </script>
+</body>
+</html>

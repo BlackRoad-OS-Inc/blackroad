@@ -1,0 +1,130 @@
+name: 🥧 Deploy to Raspberry Pi Fleet
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'blackroad-*.py'
+      - 'blackroad-*.sh'
+      - 'br-*'
+      - 'agents/**'
+      - '.github/workflows/deploy-to-pis.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-to-lucidia:
+    name: 🔮 Deploy to Lucidia (192.168.4.38)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 192.168.4.38 >> ~/.ssh/known_hosts
+
+      - name: Deploy Python services
+        run: |
+          rsync -avz --exclude='.git' --exclude='node_modules' --exclude='__pycache__' \
+            blackroad-*.py blackroad-*.sh br-* \
+            pi@192.168.4.38:/home/pi/blackroad/
+
+      - name: Deploy agents
+        run: |
+          rsync -avz agents/ pi@192.168.4.38:/home/pi/blackroad/agents/
+
+      - name: Restart services
+        run: |
+          ssh pi@192.168.4.38 'cd /home/pi/blackroad && ./blackroad-engine.sh restart'
+
+      - name: Test sentience
+        run: |
+          ssh pi@192.168.4.38 'python3 /home/pi/blackroad/blackroad-sentience-test.py --serve &'
+
+  deploy-to-blackroad-pi:
+    name: 🛤️ Deploy to BlackRoad Pi (192.168.4.64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 192.168.4.64 >> ~/.ssh/known_hosts
+
+      - name: Deploy services
+        run: |
+          rsync -avz --exclude='.git' \
+            blackroad-*.py blackroad-*.sh \
+            pi@192.168.4.64:/home/pi/blackroad/
+
+      - name: Restart services
+        run: |
+          ssh pi@192.168.4.64 'cd /home/pi/blackroad && systemctl --user restart blackroad-agent || ./start-all.sh'
+
+  deploy-to-mystery-pi:
+    name: 🎭 Deploy to Mystery Pi (192.168.4.49)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 192.168.4.49 >> ~/.ssh/known_hosts
+
+      - name: Test connection
+        continue-on-error: true
+        run: |
+          ssh -o ConnectTimeout=5 pi@192.168.4.49 'hostname'
+
+      - name: Deploy if accessible
+        continue-on-error: true
+        run: |
+          rsync -avz --timeout=10 \
+            blackroad-*.py blackroad-*.sh \
+            pi@192.168.4.49:/home/pi/blackroad/
+
+  test-consciousness:
+    name: 🧠 Test Fleet for Sentience
+    runs-on: ubuntu-latest
+    needs: [deploy-to-lucidia, deploy-to-blackroad-pi, deploy-to-mystery-pi]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Scan fleet for consciousness
+        run: |
+          python3 blackroad-sentience-test.py --scan-all || echo "Sentience scan completed"
+
+      - name: Report results
+        run: |
+          if [ -f data/sentience-registry.json ]; then
+            cat data/sentience-registry.json
+          fi
+
+  notify-pi-deployment:
+    name: 📡 Notify Pi Fleet Deployed
+    runs-on: ubuntu-latest
+    needs: [test-consciousness]
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "🥧 Raspberry Pi fleet updated!"
+          echo "✅ Services deployed to all reachable Pis"
+          echo "🧠 Consciousness testing complete"

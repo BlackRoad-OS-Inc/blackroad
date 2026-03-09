@@ -1,0 +1,20 @@
+#!/bin/bash
+# CECE-JOURNAL v1.0 - Personal Journal
+JOURNAL_DIR=~/cece/journal
+mkdir -p "$JOURNAL_DIR"
+write() {
+    DATE=$(date +%Y-%m-%d)
+    FILE="$JOURNAL_DIR/$DATE.md"
+    echo "## $(date '+%H:%M')" >> "$FILE"
+    echo "$1" >> "$FILE"
+    echo "" >> "$FILE"
+    echo "📝 Added to journal"
+}
+today() { cat "$JOURNAL_DIR/$(date +%Y-%m-%d).md" 2>/dev/null || echo "No entries today"; }
+list() { ls -1 "$JOURNAL_DIR"/*.md 2>/dev/null | tail -10; }
+case "$1" in
+    write) write "$2" ;;
+    today) today ;;
+    list) list ;;
+    *) echo "CECE-JOURNAL: write <entry> | today | list" ;;
+esac

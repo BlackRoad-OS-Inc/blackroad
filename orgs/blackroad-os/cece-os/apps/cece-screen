@@ -1,0 +1,18 @@
+#!/bin/bash
+# CECE-SCREEN v1.0 - Screen Tools
+brightness() {
+    VAL="$1"
+    echo "$VAL" > /sys/class/backlight/*/brightness 2>/dev/null || echo "Brightness: $VAL%"
+}
+resolution() { xrandr 2>/dev/null | grep '*' || echo "Resolution info unavailable"; }
+screenshot() {
+    NAME="screenshot_$(date +%Y%m%d_%H%M%S).png"
+    scrot "$NAME" 2>/dev/null || import -window root "$NAME" 2>/dev/null || echo "Install scrot for screenshots"
+    echo "📸 Saved: $NAME"
+}
+case "$1" in
+    brightness) brightness "$2" ;;
+    resolution) resolution ;;
+    screenshot) screenshot ;;
+    *) echo "CECE-SCREEN: brightness <0-100> | resolution | screenshot" ;;
+esac

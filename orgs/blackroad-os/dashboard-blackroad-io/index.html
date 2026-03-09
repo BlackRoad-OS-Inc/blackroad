@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BlackRoad OS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff00;
+            --warning: #ffff00;
+            --error: #ff0000;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 2rem 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-plan {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .nav {
+            padding: 2rem 0;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-section h3 {
+            padding: 0 1.5rem 0.75rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(119, 0, 255, 0.1);
+            color: var(--accent-purple);
+            border-left: 3px solid var(--accent-purple);
+        }
+
+        .nav-icon {
+            font-size: 1.25rem;
+        }
+
+        /* Main Content */
+        .main {
+            padding: 2rem;
+            max-width: 1400px;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--error); }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .card-action {
+            color: var(--accent-purple);
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Chart */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Table */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge.success { background: rgba(0, 255, 0, 0.2); color: var(--success); }
+        .badge.warning { background: rgba(255, 255, 0, 0.2); color: var(--warning); }
+        .badge.error { background: rgba(255, 0, 0, 0.2); color: var(--error); }
+
+        /* Progress */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .usage-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .usage-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .usage-label { font-weight: 600; }
+        .usage-value { color: var(--text-muted); }
+
+        /* Activity Feed */
+        .activity-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .action-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .action-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .action-label {
+            font-weight: 600;
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">BlackRoad</div>
+            <div class="user-info">
+                <div class="user-avatar">AQ</div>
+                <div class="user-details">
+                    <div class="user-name">Alexa Quinn</div>
+                    <div class="user-plan">Pro Plan</div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-section">
+                <h3>Main</h3>
+                <a class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item">
+                    <span class="nav-icon">🤖</span>
+                    <span>AI Agents</span>
+                </a>
+                <a class="nav-item">
+                    <span class="nav-icon">⚛️</span>
+                    <span>Quantum</span>
+                </a>
+                <a class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span>Analytics</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <h3>Settings</h3>
+                <a class="nav-item">
+                    <span class="nav-icon">💳</span>
+                    <span>Billing</span>
+                </a>
+                <a class="nav-item">
+                    <span class="nav-icon">🔑</span>
+                    <span>API Keys</span>
+                </a>
+                <a class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span>Team</span>
+                </a>
+                <a class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="header">
+            <h1>Welcome back, Alexa 👋</h1>
+            <p>Here's what's happening with your projects today</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">API Requests</span>
+                    <span class="stat-icon">📡</span>
+                </div>
+                <div class="stat-value">47,382</div>
+                <div class="stat-change positive">
+                    <span>↑</span> 12.5% from last month
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Active Agents</span>
+                    <span class="stat-icon">🤖</span>
+                </div>
+                <div class="stat-value">12</div>
+                <div class="stat-change positive">
+                    <span>↑</span> 3 new this week
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Quantum Sims</span>
+                    <span class="stat-icon">⚛️</span>
+                </div>
+                <div class="stat-value">1,234</div>
+                <div class="stat-change positive">
+                    <span>↑</span> 8.2% from last month
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Usage Cost</span>
+                    <span class="stat-icon">💰</span>
+                </div>
+                <div class="stat-value">$23.45</div>
+                <div class="stat-change negative">
+                    <span>↓</span> 5.3% from last month
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Chart -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">API Usage</h2>
+                <span class="card-action">View Details →</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="usageChart"></canvas>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <!-- Resource Usage -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Resource Usage</h2>
+                    <span class="card-action">Manage →</span>
+                </div>
+
+                <div class="usage-item">
+                    <div class="usage-header">
+                        <span class="usage-label">API Requests</span>
+                        <span class="usage-value">47,382 / 100,000</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 47%"></div>
+                    </div>
+                </div>
+
+                <div class="usage-item">
+                    <div class="usage-header">
+                        <span class="usage-label">Storage</span>
+                        <span class="usage-value">15.2 GB / 100 GB</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 15%"></div>
+                    </div>
+                </div>
+
+                <div class="usage-item">
+                    <div class="usage-header">
+                        <span class="usage-label">Bandwidth</span>
+                        <span class="usage-value">234 GB / 1 TB</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 23%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Activity</h2>
+                    <span class="card-action">View All →</span>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon">🚀</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Deployed agent "lucidia-v2"</div>
+                        <div class="activity-time">2 hours ago</div>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon">⚛️</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Quantum simulation completed</div>
+                        <div class="activity-time">5 hours ago</div>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon">💳</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Payment received - $49.00</div>
+                        <div class="activity-time">1 day ago</div>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon">🔑</div>
+                    <div class="activity-content">
+                        <div class="activity-title">New API key created</div>
+                        <div class="activity-time">3 days ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Deployments -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Recent Deployments</h2>
+                <span class="card-action">View All →</span>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Status</th>
+                        <th>Requests</th>
+                        <th>Uptime</th>
+                        <th>Last Deploy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>lucidia-v2</strong></td>
+                        <td><span class="badge success">Running</span></td>
+                        <td>12,482</td>
+                        <td>99.98%</td>
+                        <td>2 hours ago</td>
+                    </tr>
+                    <tr>
+                        <td><strong>alice-migration</strong></td>
+                        <td><span class="badge success">Running</span></td>
+                        <td>8,934</td>
+                        <td>99.95%</td>
+                        <td>1 day ago</td>
+                    </tr>
+                    <tr>
+                        <td><strong>quantum-sim-01</strong></td>
+                        <td><span class="badge warning">Building</span></td>
+                        <td>0</td>
+                        <td>--</td>
+                        <td>Just now</td>
+                    </tr>
+                    <tr>
+                        <td><strong>code-analyzer</strong></td>
+                        <td><span class="badge success">Running</span></td>
+                        <td>5,621</td>
+                        <td>99.99%</td>
+                        <td>3 days ago</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Quick Actions</h2>
+            </div>
+            <div class="quick-actions">
+                <a class="action-btn" href="/agents/new">
+                    <div class="action-icon">🤖</div>
+                    <div class="action-label">Deploy Agent</div>
+                </a>
+                <a class="action-btn" href="/quantum/simulate">
+                    <div class="action-icon">⚛️</div>
+                    <div class="action-label">Run Simulation</div>
+                </a>
+                <a class="action-btn" href="/api-keys">
+                    <div class="action-icon">🔑</div>
+                    <div class="action-label">Create API Key</div>
+                </a>
+                <a class="action-btn" href="/billing">
+                    <div class="action-icon">💳</div>
+                    <div class="action-label">Manage Billing</div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Chart
+        const ctx = document.getElementById('usageChart').getContext('2d');
+
+        // Generate data for last 30 days
+        const labels = [];
+        const data = [];
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            data.push(Math.floor(Math.random() * 1000) + 500);
+        }
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'API Requests',
+                    data: data,
+                    borderColor: '#7700FF',
+                    backgroundColor: 'rgba(119, 0, 255, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#888888'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#888888'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Simulate real-time updates
+        setInterval(() => {
+            const statCards = document.querySelectorAll('.stat-value');
+            statCards.forEach(card => {
+                const currentValue = parseInt(card.textContent.replace(/[^0-9]/g, ''));
+                const change = Math.floor(Math.random() * 10) - 5;
+                const newValue = Math.max(0, currentValue + change);
+
+                if (card.textContent.includes('$')) {
+                    card.textContent = '$' + newValue.toFixed(2);
+                } else if (card.textContent.includes(',')) {
+                    card.textContent = newValue.toLocaleString();
+                } else {
+                    card.textContent = newValue;
+                }
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

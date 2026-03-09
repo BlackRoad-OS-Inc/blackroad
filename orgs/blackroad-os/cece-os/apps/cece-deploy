@@ -1,0 +1,37 @@
+#!/bin/bash
+# CECE-DEPLOY v1.0 - Deploy Anywhere
+DEPLOY_DIR=~/cece/deployments
+mkdir -p "$DEPLOY_DIR"
+
+deploy_static() {
+    SOURCE="$1"
+    NAME="$2"
+    DEPLOY_PATH="$DEPLOY_DIR/$NAME"
+    
+    cp -r "$SOURCE" "$DEPLOY_PATH"
+    echo "Deployed: $DEPLOY_PATH"
+    echo "{\"name\":\"$NAME\",\"source\":\"$SOURCE\",\"time\":\"$(date -Iseconds)\"}" >> "$DEPLOY_DIR/log.jsonl"
+}
+
+serve() {
+    PORT="${1:-8000}"
+    DIR="${2:-.}"
+    echo "Serving $DIR on port $PORT..."
+    cd "$DIR" && python3 -m http.server "$PORT"
+}
+
+list_deployments() {
+    echo "Deployments:"
+    cat "$DEPLOY_DIR/log.jsonl" 2>/dev/null | while read line; do
+        NAME=$(echo "$line" | grep -o '"name":"[^"]*"' | cut -d\" -f4)
+        TIME=$(echo "$line" | grep -o '"time":"[^"]*"' | cut -d\" -f4 | cut -dT -f1)
+        echo "  $NAME ($TIME)"
+    done
+}
+
+case "$1" in
+    static) deploy_static "$2" "$3" ;;
+    serve) serve "$2" "$3" ;;
+    list) list_deployments ;;
+    *) echo "CECE-DEPLOY: static <source> <name> | serve [port] [dir] | list" ;;
+esac

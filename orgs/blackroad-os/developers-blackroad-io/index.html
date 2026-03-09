@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Portal - BlackRoad OS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff00;
+            --warning: #ffff00;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .welcome {
+            margin-bottom: 3rem;
+        }
+
+        .welcome h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+        }
+
+        .stat-trend {
+            font-size: 0.85rem;
+            color: var(--success);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .card h2 {
+            color: var(--accent-purple);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .api-key-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .api-key-info {
+            flex: 1;
+        }
+
+        .api-key-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .api-key-value {
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .api-key-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .api-key-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--accent-purple);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #8800ff;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-purple);
+        }
+
+        .btn-danger {
+            background: rgba(255, 0, 102, 0.2);
+            color: var(--accent-pink);
+            border: 1px solid var(--accent-pink);
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .btn-icon:hover {
+            color: var(--accent-purple);
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .activity-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.success {
+            background: rgba(0, 255, 0, 0.2);
+        }
+
+        .activity-icon.warning {
+            background: rgba(255, 255, 0, 0.2);
+        }
+
+        .activity-icon.info {
+            background: rgba(0, 102, 255, 0.2);
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge.active {
+            background: rgba(0, 255, 0, 0.2);
+            color: var(--success);
+        }
+
+        .badge.inactive {
+            background: rgba(136, 136, 136, 0.2);
+            color: var(--text-muted);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .quick-action {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .quick-action:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .quick-action-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-action h3 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .quick-action p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .usage-bar {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .usage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink));
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">👨‍💻 Developer Portal</div>
+        <div class="user-menu">
+            <button class="btn btn-secondary">Documentation</button>
+            <button class="btn btn-primary">Upgrade Plan</button>
+            <div class="user-avatar">AJ</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="welcome">
+            <h1>Welcome back, Alex!</h1>
+            <p>Here's what's happening with your applications today.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">📊</span>
+                    <span class="stat-trend">↑ 23%</span>
+                </div>
+                <div class="stat-label">API Requests (24h)</div>
+                <div class="stat-value">2,847</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">⚡</span>
+                    <span class="stat-trend">↓ 12ms</span>
+                </div>
+                <div class="stat-label">Avg Response Time</div>
+                <div class="stat-value">89ms</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">✅</span>
+                    <span class="stat-trend">↑ 0.2%</span>
+                </div>
+                <div class="stat-label">Success Rate</div>
+                <div class="stat-value">99.8%</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🤖</span>
+                    <span class="stat-trend">+3 new</span>
+                </div>
+                <div class="stat-label">Active Agents</div>
+                <div class="stat-value">12</div>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <div class="quick-action" onclick="openModal('newKeyModal')">
+                <div class="quick-action-icon">🔑</div>
+                <h3>New API Key</h3>
+                <p>Generate a new key</p>
+            </div>
+            <div class="quick-action" onclick="openModal('deployAgentModal')">
+                <div class="quick-action-icon">🚀</div>
+                <h3>Deploy Agent</h3>
+                <p>Launch a new agent</p>
+            </div>
+            <div class="quick-action">
+                <div class="quick-action-icon">📖</div>
+                <h3>View Docs</h3>
+                <p>API documentation</p>
+            </div>
+            <div class="quick-action">
+                <div class="quick-action-icon">💬</div>
+                <h3>Get Support</h3>
+                <p>Talk to our team</p>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h2>🔑 API Keys</h2>
+
+                    <div class="api-key-item">
+                        <div class="api-key-info">
+                            <div class="api-key-name">Production API Key</div>
+                            <div class="api-key-value">sk_live_abc123••••••••••••••••</div>
+                            <div class="api-key-meta">Created: Jan 15, 2024 • Last used: 2 minutes ago • <span class="badge active">Active</span></div>
+                        </div>
+                        <div class="api-key-actions">
+                            <button class="btn-icon" title="Copy">📋</button>
+                            <button class="btn-icon" title="Rotate">🔄</button>
+                            <button class="btn-icon" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+
+                    <div class="api-key-item">
+                        <div class="api-key-info">
+                            <div class="api-key-name">Development API Key</div>
+                            <div class="api-key-value">sk_test_xyz789••••••••••••••••</div>
+                            <div class="api-key-meta">Created: Dec 1, 2023 • Last used: 1 hour ago • <span class="badge active">Active</span></div>
+                        </div>
+                        <div class="api-key-actions">
+                            <button class="btn-icon" title="Copy">📋</button>
+                            <button class="btn-icon" title="Rotate">🔄</button>
+                            <button class="btn-icon" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+
+                    <div class="api-key-item">
+                        <div class="api-key-info">
+                            <div class="api-key-name">Mobile App Key</div>
+                            <div class="api-key-value">sk_live_mobile••••••••••••••••</div>
+                            <div class="api-key-meta">Created: Oct 10, 2023 • Last used: Never • <span class="badge inactive">Inactive</span></div>
+                        </div>
+                        <div class="api-key-actions">
+                            <button class="btn-icon" title="Copy">📋</button>
+                            <button class="btn-icon" title="Rotate">🔄</button>
+                            <button class="btn-icon" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="openModal('newKeyModal')" style="margin-top: 1rem;">+ Generate New Key</button>
+                </div>
+
+                <div class="card">
+                    <h2>📈 Usage Analytics</h2>
+                    <div class="chart-container">
+                        <canvas id="usageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h2>📦 Current Plan</h2>
+                    <h3 style="font-size: 2rem; margin-bottom: 1rem;">Pro</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">$49/month</p>
+
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--text-muted); font-size: 0.9rem;">API Requests</span>
+                            <span style="font-weight: 600;">2,847 / 1,000,000</span>
+                        </div>
+                        <div class="usage-bar">
+                            <div class="usage-fill" style="width: 0.28%"></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--text-muted); font-size: 0.9rem;">Active Agents</span>
+                            <span style="font-weight: 600;">12 / 50</span>
+                        </div>
+                        <div class="usage-bar">
+                            <div class="usage-fill" style="width: 24%"></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--text-muted); font-size: 0.9rem;">Storage</span>
+                            <span style="font-weight: 600;">3.2 GB / 100 GB</span>
+                        </div>
+                        <div class="usage-bar">
+                            <div class="usage-fill" style="width: 3.2%"></div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" style="width: 100%;">Upgrade to Enterprise</button>
+                </div>
+
+                <div class="card">
+                    <h2>🕐 Recent Activity</h2>
+
+                    <div class="activity-item">
+                        <div class="activity-icon success">✓</div>
+                        <div class="activity-details">
+                            <div class="activity-title">API Request Completed</div>
+                            <div class="activity-time">2 minutes ago</div>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <div class="activity-icon info">🤖</div>
+                        <div class="activity-details">
+                            <div class="activity-title">Agent "data-analyzer" deployed</div>
+                            <div class="activity-time">1 hour ago</div>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <div class="activity-icon success">🔑</div>
+                        <div class="activity-details">
+                            <div class="activity-title">API Key rotated</div>
+                            <div class="activity-time">3 hours ago</div>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <div class="activity-icon warning">⚠️</div>
+                        <div class="activity-details">
+                            <div class="activity-title">Rate limit approached (80%)</div>
+                            <div class="activity-time">5 hours ago</div>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <div class="activity-icon info">💳</div>
+                        <div class="activity-details">
+                            <div class="activity-title">Payment processed</div>
+                            <div class="activity-time">1 day ago</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New API Key Modal -->
+    <div id="newKeyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Generate New API Key</h2>
+                <span class="modal-close" onclick="closeModal('newKeyModal')">&times;</span>
+            </div>
+            <form onsubmit="generateApiKey(event)">
+                <div class="form-group">
+                    <label class="form-label">Key Name</label>
+                    <input type="text" class="form-input" placeholder="e.g., Production API" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Environment</label>
+                    <select class="form-input">
+                        <option>Production</option>
+                        <option>Development</option>
+                        <option>Staging</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Permissions</label>
+                    <select class="form-input">
+                        <option>Full Access</option>
+                        <option>Read Only</option>
+                        <option>Custom</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Generate Key</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Deploy Agent Modal -->
+    <div id="deployAgentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Deploy New Agent</h2>
+                <span class="modal-close" onclick="closeModal('deployAgentModal')">&times;</span>
+            </div>
+            <form onsubmit="deployAgent(event)">
+                <div class="form-group">
+                    <label class="form-label">Agent Name</label>
+                    <input type="text" class="form-input" placeholder="e.g., data-processor" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Base Model</label>
+                    <select class="form-input">
+                        <option>lucidia-v2</option>
+                        <option>quantum-sim</option>
+                        <option>code-analyzer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Schedule (Cron)</label>
+                    <input type="text" class="form-input" placeholder="0 */6 * * *">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Deploy Agent</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Chart
+        const ctx = document.getElementById('usageChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'API Requests',
+                    data: [1200, 1900, 1500, 2100, 2300, 2400, 2847],
+                    borderColor: '#7700FF',
+                    backgroundColor: 'rgba(119, 0, 255, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#888888' }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#888888' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#888888' }
+                    }
+                }
+            }
+        });
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function generateApiKey(event) {
+            event.preventDefault();
+            alert('✅ New API key generated!');
+            closeModal('newKeyModal');
+        }
+
+        function deployAgent(event) {
+            event.preventDefault();
+            alert('🚀 Agent deployment initiated!');
+            closeModal('deployAgentModal');
+        }
+    </script>
+</body>
+</html>

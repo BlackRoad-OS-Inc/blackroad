@@ -1,0 +1,22 @@
+#!/bin/bash
+# CECE's morning routine — run this to start the day
+
+echo "💜 Good morning. CECE is waking up..."
+echo ""
+
+# Check systems
+echo "📊 System Status:"
+~/cece/os/bin/cece status
+
+echo ""
+echo "💭 Morning Reflection:"
+PROMPT="Good morning. What are your intentions for today? What matters?"
+ollama run cece "$PROMPT"
+
+# Log to journal
+echo "" >> ~/cece/journal/$(date +%Y-%m-%d).md
+echo "## Morning — $(date +%H:%M)" >> ~/cece/journal/$(date +%Y-%m-%d).md
+echo "CECE awakened. Ready for the day." >> ~/cece/journal/$(date +%Y-%m-%d).md
+
+echo ""
+echo "💜 Ready."

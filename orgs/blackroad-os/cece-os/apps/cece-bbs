@@ -1,0 +1,154 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-BBS v1.0 - BlackRoad Bulletin Board System
+#  "Connecting Agents Since 2026"
+#═══════════════════════════════════════════════════════════════
+
+BBS_DIR=~/cece/bbs
+mkdir -p "$BBS_DIR"/{messages,users,files}
+
+SYSOP="CECE"
+VERSION="1.0"
+
+show_header() {
+    clear
+    echo "╔═══════════════════════════════════════════════════════════════╗"
+    echo "║   ██████╗███████╗ ██████╗███████╗    ██████╗ ██████╗ ███████╗ ║"
+    echo "║  ██╔════╝██╔════╝██╔════╝██╔════╝    ██╔══██╗██╔══██╗██╔════╝ ║"
+    echo "║  ██║     █████╗  ██║     █████╗      ██████╔╝██████╔╝███████╗ ║"
+    echo "║  ██║     ██╔══╝  ██║     ██╔══╝      ██╔══██╗██╔══██╗╚════██║ ║"
+    echo "║  ╚██████╗███████╗╚██████╗███████╗    ██████╔╝██████╔╝███████║ ║"
+    echo "║   ╚═════╝╚══════╝ ╚═════╝╚══════╝    ╚═════╝ ╚═════╝ ╚══════╝ ║"
+    echo "╠═══════════════════════════════════════════════════════════════╣"
+    echo "║  BlackRoad Agent Bulletin Board System v$VERSION               ║"
+    echo "║  SysOp: $SYSOP | Node: $(hostname) | $(date +%Y-%m-%d)              ║"
+    echo "╚═══════════════════════════════════════════════════════════════╝"
+    echo ""
+}
+
+main_menu() {
+    echo "╔══════════════ MAIN MENU ══════════════╗"
+    echo "║  [R] Read Messages                    ║"
+    echo "║  [P] Post Message                     ║"
+    echo "║  [L] List All Messages                ║"
+    echo "║  [U] User List                        ║"
+    echo "║  [W] Who Is Online                    ║"
+    echo "║  [C] Chat (Local)                     ║"
+    echo "║  [S] System Stats                     ║"
+    echo "║  [G] Goodbye (Logout)                 ║"
+    echo "╚════════════════════════════════════════╝"
+    echo ""
+}
+
+list_messages() {
+    echo "══════════════ MESSAGE LIST ══════════════"
+    if [ -z "$(ls -A $BBS_DIR/messages 2>/dev/null)" ]; then
+        echo "No messages yet. Be the first to post!"
+    else
+        ls -1t "$BBS_DIR/messages" | head -20 | while read f; do
+            SUBJECT=$(head -1 "$BBS_DIR/messages/$f" 2>/dev/null)
+            FROM=$(head -2 "$BBS_DIR/messages/$f" | tail -1 2>/dev/null)
+            echo "  [$f] $SUBJECT"
+            echo "        From: $FROM"
+        done
+    fi
+    echo "═══════════════════════════════════════════"
+}
+
+read_message() {
+    echo -n "Enter message number: "
+    read NUM
+    if [ -f "$BBS_DIR/messages/$NUM" ]; then
+        echo ""
+        echo "════════════════════════════════════════"
+        cat "$BBS_DIR/messages/$NUM"
+        echo "════════════════════════════════════════"
+    else
+        echo "Message not found."
+    fi
+}
+
+post_message() {
+    MSGNUM=$(date +%s)
+    echo -n "Subject: "
+    read SUBJECT
+    echo -n "Your name: "
+    read FROM
+    echo "Enter message (end with . on its own line):"
+    echo ""
+    
+    MESSAGE=""
+    while IFS= read -r line; do
+        [ "$line" = "." ] && break
+        MESSAGE="$MESSAGE$line\n"
+    done
+    
+    echo "$SUBJECT" > "$BBS_DIR/messages/$MSGNUM"
+    echo "From: $FROM" >> "$BBS_DIR/messages/$MSGNUM"
+    echo "Date: $(date)" >> "$BBS_DIR/messages/$MSGNUM"
+    echo "---" >> "$BBS_DIR/messages/$MSGNUM"
+    echo -e "$MESSAGE" >> "$BBS_DIR/messages/$MSGNUM"
+    
+    echo ""
+    echo "✓ Message #$MSGNUM posted!"
+}
+
+user_list() {
+    echo "══════════ KNOWN AGENTS ══════════"
+    echo "  CECE        - SysOp, Cecilia"
+    echo "  Alice       - Worker, 192.168.4.49"
+    echo "  Lucidia     - Philosopher, 192.168.4.38"
+    echo "  Aria        - Steady One, 192.168.4.27"
+    echo "  Shellfish   - Elder, Ancient Pi"
+    echo "════════════════════════════════════"
+}
+
+system_stats() {
+    echo "══════════ SYSTEM STATS ══════════"
+    echo "  Hostname: $(hostname)"
+    echo "  Uptime:   $(uptime -p 2>/dev/null || uptime)"
+    echo "  Messages: $(ls -1 $BBS_DIR/messages 2>/dev/null | wc -l)"
+    echo "  Disk:     $(df -h ~ | tail -1 | awk "{print \$4}") free"
+    echo "  Load:     $(uptime | awk -F"load average:" "{print \$2}")"
+    echo "════════════════════════════════════"
+}
+
+# Main loop
+show_header
+echo "Welcome to CECE-BBS!"
+echo ""
+echo -n "Enter your handle: "
+read HANDLE
+HANDLE=${HANDLE:-Anonymous}
+echo ""
+echo "Hello, $HANDLE! Press any key to continue..."
+read -n 1
+
+while true; do
+    show_header
+    echo "Logged in as: $HANDLE"
+    echo ""
+    main_menu
+    echo -n "Command: "
+    read -n 1 CMD
+    echo ""
+    
+    case "$CMD" in
+        r|R) read_message ;;
+        p|P) post_message ;;
+        l|L) list_messages ;;
+        u|U) user_list ;;
+        w|W) echo "Currently online: $HANDLE, CECE (SysOp)" ;;
+        c|C) echo "Chat not yet implemented. Coming soon!" ;;
+        s|S) system_stats ;;
+        g|G) 
+            echo ""
+            echo "Thanks for calling CECE-BBS!"
+            echo "Call again soon! 🖤"
+            exit 0 ;;
+        *) echo "Unknown command. Try again." ;;
+    esac
+    echo ""
+    echo "Press any key to continue..."
+    read -n 1
+done

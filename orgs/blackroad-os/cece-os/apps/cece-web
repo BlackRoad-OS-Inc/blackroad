@@ -1,0 +1,226 @@
+#!/bin/bash
+# CECE-WEB v1.0 - AI Website Builder
+# "Need to update your website? Welcome to BlackRoad."
+
+WEB_DIR=~/cece/websites
+mkdir -p "$WEB_DIR"
+
+welcome() {
+    echo ""
+    echo "   ██████╗███████╗ ██████╗███████╗    ██╗    ██╗███████╗██████╗ "
+    echo "  ██╔════╝██╔════╝██╔════╝██╔════╝    ██║    ██║██╔════╝██╔══██╗"
+    echo "  ██║     █████╗  ██║     █████╗      ██║ █╗ ██║█████╗  ██████╔╝"
+    echo "  ██║     ██╔══╝  ██║     ██╔══╝      ██║███╗██║██╔══╝  ██╔══██╗"
+    echo "  ╚██████╗███████╗╚██████╗███████╗    ╚███╔███╔╝███████╗██████╔╝"
+    echo "   ╚═════╝╚══════╝ ╚═════╝╚══════╝     ╚══╝╚══╝ ╚══════╝╚═════╝ "
+    echo ""
+    echo "   Need to update your website? Welcome to BlackRoad."
+    echo "   AI-powered. Sovereign. No subscriptions."
+    echo ""
+}
+
+create_site() {
+    NAME="$1"
+    DESC="$2"
+    SITE_DIR="$WEB_DIR/$NAME"
+    mkdir -p "$SITE_DIR"
+    
+    echo "🤖 Creating your site with AI..."
+    
+    if command -v ollama &>/dev/null; then
+        HERO=$(echo "Write a 5-word headline for: $DESC" | ollama run llama3.2 2>/dev/null | head -1)
+        TAGLINE=$(echo "Write one tagline sentence for: $DESC" | ollama run llama3.2 2>/dev/null | head -1)
+    else
+        HERO="$NAME"
+        TAGLINE="$DESC"
+    fi
+    
+    # Write the HTML file
+    cat > "$SITE_DIR/index.html" << SITEHTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$NAME</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: system-ui, sans-serif; 
+            background: #0a0a0a; 
+            color: white; 
+            min-height: 100vh; 
+        }
+        .gradient { 
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        header { 
+            padding: 20px 40px; 
+            border-bottom: 1px solid #222; 
+            display: flex; 
+            justify-content: space-between; 
+        }
+        .logo { font-size: 24px; font-weight: bold; }
+        nav a { color: white; text-decoration: none; margin-left: 20px; opacity: 0.8; }
+        .hero { 
+            min-height: 80vh; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            text-align: center; 
+            padding: 40px; 
+        }
+        h1 { font-size: 3.5rem; margin-bottom: 20px; }
+        .tagline { font-size: 1.3rem; opacity: 0.7; margin-bottom: 40px; max-width: 500px; }
+        .btn { 
+            background: linear-gradient(135deg, #FF1D6C, #9C27B0); 
+            color: white; 
+            border: none; 
+            padding: 15px 40px; 
+            font-size: 1.1rem; 
+            border-radius: 50px; 
+            cursor: pointer; 
+        }
+        footer { text-align: center; padding: 40px; opacity: 0.4; border-top: 1px solid #222; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo gradient">$NAME</div>
+        <nav>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </header>
+    <main class="hero">
+        <h1 class="gradient">$HERO</h1>
+        <p class="tagline">$TAGLINE</p>
+        <button class="btn">Get Started</button>
+    </main>
+    <footer>Built with BlackRoad CECE-WEB</footer>
+</body>
+</html>
+SITEHTML
+
+    echo "✅ Site created: $NAME"
+    echo "   Path: $SITE_DIR"
+    echo "   Preview: cece-web serve $NAME"
+}
+
+update_hero() {
+    NAME="$1"
+    PROMPT="$2"
+    SITE="$WEB_DIR/$NAME/index.html"
+    
+    [ ! -f "$SITE" ] && echo "Site not found" && return
+    
+    echo "🤖 Updating hero with AI..."
+    if command -v ollama &>/dev/null; then
+        NEW=$(echo "Write a 5-word headline about: $PROMPT" | ollama run llama3.2 2>/dev/null | head -1)
+        # Use perl for safer substitution
+        perl -i -pe "s|<h1 class=\"gradient\">.*?</h1>|<h1 class=\"gradient\">$NEW</h1>|" "$SITE"
+        echo "✅ Hero updated: $NEW"
+    else
+        echo "Ollama not available"
+    fi
+}
+
+update_tagline() {
+    NAME="$1"
+    PROMPT="$2"
+    SITE="$WEB_DIR/$NAME/index.html"
+    
+    [ ! -f "$SITE" ] && echo "Site not found" && return
+    
+    echo "🤖 Updating tagline with AI..."
+    if command -v ollama &>/dev/null; then
+        NEW=$(echo "Write one tagline sentence about: $PROMPT" | ollama run llama3.2 2>/dev/null | head -1)
+        perl -i -pe "s|<p class=\"tagline\">.*?</p>|<p class=\"tagline\">$NEW</p>|" "$SITE"
+        echo "✅ Tagline updated: $NEW"
+    else
+        echo "Ollama not available"
+    fi
+}
+
+serve_site() {
+    NAME="$1"
+    PORT="${2:-8080}"
+    SITE_DIR="$WEB_DIR/$NAME"
+    
+    [ ! -d "$SITE_DIR" ] && echo "Site not found" && return
+    
+    echo "🌐 Serving $NAME at http://$(hostname -I | awk {print }):$PORT"
+    echo "   Press Ctrl+C to stop"
+    cd "$SITE_DIR" && python3 -m http.server $PORT
+}
+
+list_sites() {
+    echo "🌐 WEBSITES"
+    echo "═══════════════════════════════════════"
+    for s in "$WEB_DIR"/*; do
+        [ -d "$s" ] || continue
+        echo "  🌐 $(basename $s)"
+    done
+}
+
+generate_page() {
+    NAME="$1"
+    PAGE="$2"
+    ABOUT="$3"
+    SITE_DIR="$WEB_DIR/$NAME"
+    
+    [ ! -d "$SITE_DIR" ] && echo "Site not found" && return
+    
+    echo "🤖 Generating $PAGE page..."
+    
+    if command -v ollama &>/dev/null; then
+        CONTENT=$(echo "Write 3 short paragraphs for an $PAGE page about: $ABOUT" | ollama run llama3.2 2>/dev/null)
+    else
+        CONTENT="Content about $ABOUT"
+    fi
+    
+    cat > "$SITE_DIR/$PAGE.html" << PAGEHTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>$PAGE - $NAME</title>
+    <style>
+        body { font-family: system-ui; background: #0a0a0a; color: white; padding: 40px; }
+        h1 { background: linear-gradient(135deg, #F5A623, #FF1D6C); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { max-width: 600px; line-height: 1.6; margin: 20px 0; }
+        a { color: #FF1D6C; }
+    </style>
+</head>
+<body>
+    <h1>$PAGE</h1>
+    <p>$CONTENT</p>
+    <p><a href="index.html">← Back</a></p>
+</body>
+</html>
+PAGEHTML
+    echo "✅ Created $PAGE.html"
+}
+
+case "$1" in
+    create|new) create_site "$2" "$3" ;;
+    hero) update_hero "$2" "$3" ;;
+    tagline) update_tagline "$2" "$3" ;;
+    page) generate_page "$2" "$3" "$4" ;;
+    serve) serve_site "$2" "$3" ;;
+    list) list_sites ;;
+    *)
+        welcome
+        echo "Commands:"
+        echo "  create <name> <desc>       Create site with AI"
+        echo "  hero <name> <prompt>       Update hero text with AI"
+        echo "  tagline <name> <prompt>    Update tagline with AI"
+        echo "  page <name> <page> <about> Generate new page with AI"
+        echo "  serve <name> [port]        Preview site"
+        echo "  list                       List sites"
+        echo ""
+        ;;
+esac

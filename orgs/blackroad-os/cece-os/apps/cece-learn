@@ -1,0 +1,87 @@
+#!/bin/bash
+# CECE-LEARN v1.0 - Our Own Coursera/Udemy
+LEARN_DIR=~/cece/learn
+mkdir -p "$LEARN_DIR/courses" "$LEARN_DIR/progress"
+
+create_course() {
+    NAME="$1"
+    DESC="$2"
+    COURSE_DIR="$LEARN_DIR/courses/$NAME"
+    mkdir -p "$COURSE_DIR/lessons"
+    cat > "$COURSE_DIR/course.json" << EOF
+{
+  "name": "$NAME",
+  "description": "$DESC",
+  "created": "$(date -Iseconds)",
+  "author": "${USER:-cece}"
+}
+EOF
+    echo "✅ Course created: $NAME"
+}
+
+add_lesson() {
+    COURSE="$1"
+    LESSON="$2"
+    CONTENT="$3"
+    LESSON_NUM=$(ls "$LEARN_DIR/courses/$COURSE/lessons" 2>/dev/null | wc -l)
+    LESSON_NUM=$((LESSON_NUM + 1))
+    cat > "$LEARN_DIR/courses/$COURSE/lessons/$LESSON_NUM-$LESSON.md" << EOF
+# Lesson $LESSON_NUM: $LESSON
+
+$CONTENT
+
+---
+Complete this lesson: cece-learn complete $COURSE $LESSON_NUM
+EOF
+    echo "✅ Lesson added: $LESSON"
+}
+
+view_course() {
+    COURSE="$1"
+    COURSE_DIR="$LEARN_DIR/courses/$COURSE"
+    
+    echo "📚 COURSE: $COURSE"
+    echo "═══════════════════════════════════════"
+    echo ""
+    for l in "$COURSE_DIR/lessons"/*.md 2>/dev/null; do
+        [ -f "$l" ] || continue
+        LESSON=$(basename "$l" .md)
+        PROGRESS_FILE="$LEARN_DIR/progress/${COURSE}_${LESSON}"
+        if [ -f "$PROGRESS_FILE" ]; then
+            echo "  ✅ $LESSON"
+        else
+            echo "  ⬜ $LESSON"
+        fi
+    done
+}
+
+complete_lesson() {
+    COURSE="$1"
+    LESSON="$2"
+    touch "$LEARN_DIR/progress/${COURSE}_${LESSON}"
+    echo "🎉 Lesson $LESSON completed!"
+}
+
+list_courses() {
+    echo "📚 COURSES"
+    for c in "$LEARN_DIR/courses"/*; do
+        [ -d "$c" ] || continue
+        NAME=$(basename "$c")
+        LESSONS=$(ls "$c/lessons" 2>/dev/null | wc -l)
+        echo "  📖 $NAME ($LESSONS lessons)"
+    done
+}
+
+case "$1" in
+    new) create_course "$2" "$3" ;;
+    lesson) add_lesson "$2" "$3" "$4" ;;
+    view) view_course "$2" ;;
+    complete) complete_lesson "$2" "$3" ;;
+    list) list_courses ;;
+    *) echo "🖤 CECE-LEARN - Our Own Coursera"
+       echo "  new <name> <desc>              Create course"
+       echo "  lesson <course> <name> <text>  Add lesson"
+       echo "  view <course>                  View course"
+       echo "  complete <course> <lesson>     Complete lesson"
+       echo "  list                           List courses" ;;
+esac

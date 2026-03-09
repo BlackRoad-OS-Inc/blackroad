@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS — Living World</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Logo */
+        .logo {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-mark {
+            width: 36px;
+            height: 36px;
+        }
+
+        .logo-mark svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .road-dashes {
+            animation: spin 10s linear infinite;
+            transform-origin: 50px 50px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .logo-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .logo-sub {
+            font-size: 10px;
+            color: #999;
+        }
+
+        /* Time & Weather */
+        .time-weather {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 16px 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: right;
+            z-index: 100;
+        }
+
+        .time-display {
+            font-size: 32px;
+            font-weight: 300;
+            color: #333;
+        }
+
+        .weather-display {
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .stats-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #999;
+            margin-bottom: 12px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #FF1D6C;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .control-btn {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+            background: #FF1D6C;
+        }
+
+        .control-btn.active {
+            background: #FF1D6C;
+        }
+
+        /* Population Panel */
+        .population-panel {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 32px;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            display: flex;
+            gap: 32px;
+        }
+
+        .pop-item {
+            text-align: center;
+        }
+
+        .pop-icon {
+            font-size: 20px;
+        }
+
+        .pop-count {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Message */
+        .message {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 16px 32px;
+            border-radius: 50px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            font-size: 14px;
+            color: #333;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .message.visible {
+            opacity: 1;
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 50%, #87CEEB 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-icon {
+            font-size: 80px;
+            animation: bounce 1s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .loading-text {
+            margin-top: 24px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .loading-sub {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+    </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--black:#000;--ink:#0A0A0A;--surface:#111;--border:#1A1A1A;--dim:#666;--sub:#999;--white:#FFF;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00FF88;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px;--xxl:89px}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-top:70px}
+    h1{font-size:clamp(40px,8vw,100px);font-weight:600;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:21px}
+    h2{font-size:clamp(24px,4vw,48px);font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:21px}
+    h3{font-size:clamp(16px,2vw,24px);font-weight:600;color:#fff;margin-bottom:13px}
+    h4,h5,h6{color:#fff}
+    p{color:#999;line-height:1.8;margin-bottom:21px}
+    a{color:#2979FF;text-decoration:none;transition:color .2s}
+    a:hover{color:#FF1D6C}
+    strong{color:#fff}
+    code{font-family:inherit;background:#111;color:#00FF88;padding:2px 6px;border:1px solid #1A1A1A}
+    pre{background:#0A0A0A;border:1px solid #1A1A1A;border-left:2px solid #FF1D6C;padding:21px 34px;color:#00FF88;overflow-x:auto;margin-bottom:34px}
+    hr{border:none;height:1px;background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);opacity:.3;margin:55px 0}
+    nav,.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;justify-content:space-between;align-items:center;padding:21px 55px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1A1A1A}
+    nav a,.nav a{color:#999;font-size:13px}
+    nav a:hover,.nav a:hover{color:#fff}
+    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header{padding:21px 55px 0;display:flex;justify-content:space-between;align-items:center}
+    header .logo{font-size:22px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header nav{position:static;background:none;backdrop-filter:none;border:none;padding:0;display:flex;gap:34px}
+    .hero,section.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:89px 55px;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,29,108,.15) 0%,rgba(156,39,176,.1) 40%,transparent 70%);pointer-events:none;animation:orb 8s ease-in-out infinite}
+    @keyframes orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
+    .hero p,.tagline{font-size:18px;max-width:600px;color:#999;margin-bottom:55px;position:relative;z-index:1}
+    .hero h1{position:relative;z-index:1}
+    .earth-glow,.hero-glow,.neural-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,29,108,.07) 0%,transparent 60%);pointer-events:none}
+    section{padding:89px 55px;position:relative}
+    section:not(.hero){max-width:1200px;margin-left:auto;margin-right:auto}
+    section h2{color:#fff;-webkit-text-fill-color:#fff}
+    .btn,.btn-primary{display:inline-block;padding:13px 34px;font-family:inherit;font-size:14px;font-weight:600;background:#FF1D6C;color:#fff;text-decoration:none;border:none;cursor:pointer;transition:all .2s;position:relative;z-index:1}
+    .btn:hover,.btn-primary:hover{background:#fff;color:#000;transform:translateY(-2px)}
+    .features-grid,.ai-features,.pillars{display:flex;flex-wrap:wrap;gap:34px;justify-content:center}
+    .feature-card,.ai-feature,.pillar{background:rgba(255,255,255,.02);border:1px solid #1A1A1A;padding:55px;transition:all .3s;flex:1;min-width:220px;max-width:360px}
+    .feature-card:hover,.ai-feature:hover,.pillar:hover{background:rgba(255,255,255,.05);border-color:rgba(255,29,108,.4);transform:translateY(-4px)}
+    .feature-icon,.ai-feature-icon,.pillar-icon{font-size:28px;margin-bottom:21px;display:block}
+    .feature-card h3,.ai-feature-title,.pillar-name{color:#fff;margin-bottom:8px}
+    .feature-card p,.ai-feature-desc{font-size:14px;color:#666}
+    .badge,.ai-badge{display:inline-block;padding:4px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #1A1A1A;color:#999;margin-bottom:21px}
+    footer,.footer{padding:55px;border-top:1px solid #1A1A1A;color:#666;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:21px}
+    footer a,.footer a{color:#999}
+    footer a:hover,.footer a:hover{color:#FF1D6C}
+    @media(max-width:768px){nav,.nav{padding:21px}.hero,section.hero{padding:89px 21px}.features-grid,.ai-features,.pillars{flex-direction:column}.feature-card,.ai-feature{min-width:unset;max-width:unset}footer,.footer{flex-direction:column;text-align:center;padding:34px 21px}}
+  </style>
+</head>
+<body>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="loading-icon">🌍</div>
+        <div class="loading-text">Growing your world...</div>
+        <div class="loading-sub">Planting trees, waking animals, building homes</div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Logo -->
+    <div class="logo">
+        <div class="logo-mark">
+            <svg viewBox="0 0 100 100" fill="none">
+                <circle cx="50" cy="50" r="44" stroke="#FF1D6C" stroke-width="6"/>
+                <g class="road-dashes">
+                    <rect x="47" y="4" width="6" height="12" fill="#fff" rx="2"/>
+                    <rect x="47" y="84" width="6" height="12" fill="#fff" rx="2"/>
+                    <rect x="84" y="47" width="12" height="6" fill="#fff" rx="2"/>
+                    <rect x="4" y="47" width="12" height="6" fill="#fff" rx="2"/>
+                </g>
+                <path d="M50 10C27.9 10 10 27.9 10 50H90C90 27.9 72.1 10 50 10Z" fill="#F5A623"/>
+                <path d="M10 50C10 72.1 27.9 90 50 90C72.1 90 90 72.1 90 50H10Z" fill="#2979FF"/>
+                <circle cx="50" cy="50" r="14" fill="#333"/>
+            </svg>
+        </div>
+        <div>
+            <div class="logo-text">BlackRoad World</div>
+            <div class="logo-sub">Living Simulation</div>
+        </div>
+    </div>
+
+    <!-- Time & Weather -->
+    <div class="time-weather">
+        <div class="time-display" id="timeDisplay">12:00</div>
+        <div class="weather-display">
+            <span id="weatherIcon">☀️</span>
+            <span id="weatherTemp">72°F</span>
+            <span id="weatherDesc">Sunny</span>
+        </div>
+    </div>
+
+    <!-- Population -->
+    <div class="population-panel">
+        <div class="pop-item">
+            <div class="pop-icon">🏠</div>
+            <div class="pop-count" id="houseCount">0</div>
+        </div>
+        <div class="pop-item">
+            <div class="pop-icon">🌳</div>
+            <div class="pop-count" id="treeCount">0</div>
+        </div>
+        <div class="pop-item">
+            <div class="pop-icon">🐰</div>
+            <div class="pop-count" id="animalCount">0</div>
+        </div>
+        <div class="pop-item">
+            <div class="pop-icon">🌸</div>
+            <div class="pop-count" id="flowerCount">0</div>
+        </div>
+        <div class="pop-item">
+            <div class="pop-icon">🤖</div>
+            <div class="pop-count" id="agentCount">0</div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-panel">
+        <div class="stats-title">World Status</div>
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-icon">💚</div>
+                <div class="stat-value" id="happinessStat">100%</div>
+                <div class="stat-label">Happiness</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">🌱</div>
+                <div class="stat-value" id="natureStat">100%</div>
+                <div class="stat-label">Nature</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value" id="energyStat">100%</div>
+                <div class="stat-label">Energy</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">💫</div>
+                <div class="stat-value" id="magicStat">100%</div>
+                <div class="stat-label">Magic</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="control-btn" id="btnDay" title="Day">☀️</button>
+        <button class="control-btn" id="btnNight" title="Night">🌙</button>
+        <button class="control-btn" id="btnRain" title="Rain">🌧️</button>
+        <button class="control-btn" id="btnSnow" title="Snow">❄️</button>
+        <button class="control-btn active" id="btnRotate" title="Auto Rotate">🔄</button>
+    </div>
+
+    <!-- Message -->
+    <div class="message" id="message">Welcome to BlackRoad World! 🌍</div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // ========== CONFIG ==========
+        const CONFIG = {
+            worldSize: 200,
+            waterLevel: -2,
+            numTrees: 150,
+            numFlowers: 300,
+            numHouses: 24,
+            numAnimals: 50,
+            numAgents: 20,
+            numClouds: 15,
+            numBirds: 30,
+            numFish: 40,
+            numButterflies: 25
+        };
+
+        // ========== COLORS ==========
+        const COLORS = {
+            sky: 0x87CEEB,
+            skyNight: 0x1a1a2e,
+            grass: 0x7CBA3D,
+            grassDark: 0x5a9a2d,
+            water: 0x4FA4E8,
+            waterDeep: 0x2979FF,
+            sand: 0xF4D03F,
+            wood: 0x8B4513,
+            roof: 0xE74C3C,
+            roofBlue: 0x3498DB,
+            roofPink: 0xFF1D6C,
+            roofYellow: 0xF5A623,
+            white: 0xFFFFFF,
+            pink: 0xFF1D6C,
+            amber: 0xF5A623,
+            blue: 0x2979FF,
+            violet: 0x9C27B0
+        };
+
+        // ========== SCENE ==========
+        let scene, camera, renderer;
+        let world, water, sky;
+        let trees = [], houses = [], animals = [], agents = [];
+        let flowers = [], clouds = [], birds = [], fish = [], butterflies = [];
+        let rain = null, snow = null;
+        let time = 0;
+        let worldTime = 12; // 0-24
+        let weather = 'sunny';
+        let autoRotate = true;
+
+        // Mouse controls
+        let isDragging = false;
+        let previousMouseX = 0, previousMouseY = 0;
+        let cameraAngle = 0;
+        let cameraHeight = 60;
+        let cameraDistance = 120;
+
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(COLORS.sky);
+            scene.fog = new THREE.Fog(COLORS.sky, 100, 400);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            updateCameraPosition();
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Create world
+            createLights();
+            createTerrain();
+            createWater();
+            createTrees();
+            createFlowers();
+            createHouses();
+            createAnimals();
+            createAgents();
+            createClouds();
+            createBirds();
+            createFish();
+            createButterflies();
+            createRainSystem();
+            createSnowSystem();
+
+            // Events
+            window.addEventListener('resize', onResize);
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('wheel', onWheel);
+
+            // Controls
+            document.getElementById('btnDay').addEventListener('click', () => setTimeOfDay(12));
+            document.getElementById('btnNight').addEventListener('click', () => setTimeOfDay(0));
+            document.getElementById('btnRain').addEventListener('click', () => toggleWeather('rain'));
+            document.getElementById('btnSnow').addEventListener('click', () => toggleWeather('snow'));
+            document.getElementById('btnRotate').addEventListener('click', toggleRotate);
+
+            // Start
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                showMessage("Welcome to BlackRoad World! 🌍");
+                animate();
+            }, 2000);
+        }
+
+        function createLights() {
+            // Ambient light
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+
+            // Sun
+            const sun = new THREE.DirectionalLight(0xffffff, 1);
+            sun.position.set(100, 100, 50);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
+            sun.shadow.camera.near = 0.5;
+            sun.shadow.camera.far = 500;
+            sun.shadow.camera.left = -150;
+            sun.shadow.camera.right = 150;
+            sun.shadow.camera.top = 150;
+            sun.shadow.camera.bottom = -150;
+            scene.add(sun);
+            window.sunLight = sun;
+
+            // Hemisphere light for sky color
+            const hemi = new THREE.HemisphereLight(0x87CEEB, 0x7CBA3D, 0.4);
+            scene.add(hemi);
+            window.hemiLight = hemi;
+        }
+
+        function createTerrain() {
+            // Main island
+            const terrainGroup = new THREE.Group();
+
+            // Create height map using noise
+            const size = CONFIG.worldSize;
+            const segments = 100;
+            const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+            
+            const positions = geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                const x = positions[i];
+                const y = positions[i + 1];
+                const dist = Math.sqrt(x * x + y * y);
+                
+                // Create island shape
+                let height = 0;
+                if (dist < size * 0.4) {
+                    // Hills using simplex-like noise
+                    height = Math.sin(x * 0.05) * Math.cos(y * 0.05) * 8;
+                    height += Math.sin(x * 0.1 + 1) * Math.cos(y * 0.1 + 1) * 4;
+                    height += Math.sin(x * 0.2) * Math.cos(y * 0.2) * 2;
+                    
+                    // Flatten center for village
+                    const centerDist = dist / (size * 0.4);
+                    if (centerDist < 0.3) {
+                        height *= centerDist / 0.3;
+                    }
+                    
+                    // Edge falloff
+                    const edgeFactor = 1 - Math.pow(centerDist, 2);
+                    height *= Math.max(0, edgeFactor);
+                    height = Math.max(0, height);
+                } else {
+                    // Underwater slope
+                    const underwaterDist = (dist - size * 0.4) / (size * 0.1);
+                    height = -underwaterDist * 10 - 2;
+                }
+                
+                positions[i + 2] = height;
+            }
+            
+            geometry.computeVertexNormals();
+
+            // Grass material
+            const grassMaterial = new THREE.MeshStandardMaterial({
+                color: COLORS.grass,
+                roughness: 0.8,
+                metalness: 0.1,
+                flatShading: false
+            });
+
+            const terrain = new THREE.Mesh(geometry, grassMaterial);
+            terrain.rotation.x = -Math.PI / 2;
+            terrain.receiveShadow = true;
+            terrainGroup.add(terrain);
+
+            // Beach/sand ring
+            const beachGeometry = new THREE.RingGeometry(size * 0.38, size * 0.42, 64);
+            const beachMaterial = new THREE.MeshStandardMaterial({
+                color: COLORS.sand,
+                roughness: 0.9
+            });
+            const beach = new THREE.Mesh(beachGeometry, beachMaterial);
+            beach.rotation.x = -Math.PI / 2;
+            beach.position.y = 0.1;
+            beach.receiveShadow = true;
+            terrainGroup.add(beach);
+
+            scene.add(terrainGroup);
+            world = terrainGroup;
+        }
+
+        function createWater() {
+            // Ocean
+            const waterGeometry = new THREE.CircleGeometry(300, 64);
+            const waterMaterial = new THREE.MeshStandardMaterial({
+                color: COLORS.water,
+                transparent: true,
+                opacity: 0.85,
+                roughness: 0.1,
+                metalness: 0.3
+            });
+            water = new THREE.Mesh(waterGeometry, waterMaterial);
+            water.rotation.x = -Math.PI / 2;
+            water.position.y = CONFIG.waterLevel;
+            water.receiveShadow = true;
+            scene.add(water);
+        }
+
+        function createTrees() {
+            const treeTypes = ['pine', 'oak', 'palm', 'cherry'];
+            
+            for (let i = 0; i < CONFIG.numTrees; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 15 + Math.random() * 65;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist;
+                
+                const type = treeTypes[Math.floor(Math.random() * treeTypes.length)];
+                const tree = createTree(type);
+                tree.position.set(x, 0, z);
+                tree.scale.setScalar(0.8 + Math.random() * 0.5);
+                tree.rotation.y = Math.random() * Math.PI * 2;
+                
+                trees.push(tree);
+                scene.add(tree);
+            }
+            
+            document.getElementById('treeCount').textContent = trees.length;
+        }
+
+        function createTree(type) {
+            const group = new THREE.Group();
+            
+            // Trunk
+            const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.5, 3, 8);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ color: COLORS.wood });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 1.5;
+            trunk.castShadow = true;
+            group.add(trunk);
+
+            if (type === 'pine') {
+                // Pine tree - layered cones
+                for (let i = 0; i < 4; i++) {
+                    const coneGeometry = new THREE.ConeGeometry(2.5 - i * 0.4, 2.5, 8);
+                    const coneMaterial = new THREE.MeshStandardMaterial({ 
+                        color: 0x228B22,
+                        flatShading: true
+                    });
+                    const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+                    cone.position.y = 3.5 + i * 1.5;
+                    cone.castShadow = true;
+                    group.add(cone);
+                }
+            } else if (type === 'oak') {
+                // Oak tree - fluffy sphere
+                const leavesGeometry = new THREE.SphereGeometry(3, 8, 8);
+                const leavesMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x32CD32,
+                    flatShading: true
+                });
+                const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                leaves.position.y = 5;
+                leaves.scale.set(1, 0.8, 1);
+                leaves.castShadow = true;
+                group.add(leaves);
+            } else if (type === 'palm') {
+                // Palm tree
+                trunk.scale.set(0.6, 1.5, 0.6);
+                trunk.position.y = 2.5;
+                
+                for (let i = 0; i < 6; i++) {
+                    const frondGeometry = new THREE.ConeGeometry(0.3, 4, 4);
+                    const frondMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+                    const frond = new THREE.Mesh(frondGeometry, frondMaterial);
+                    frond.position.y = 5;
+                    frond.rotation.z = Math.PI / 3;
+                    frond.rotation.y = (i / 6) * Math.PI * 2;
+                    frond.castShadow = true;
+                    group.add(frond);
+                }
+            } else if (type === 'cherry') {
+                // Cherry blossom
+                const leavesGeometry = new THREE.SphereGeometry(2.5, 8, 8);
+                const leavesMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0xFFB7C5,
+                    flatShading: true
+                });
+                const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                leaves.position.y = 4.5;
+                leaves.castShadow = true;
+                group.add(leaves);
+            }
+
+            group.userData = { type: 'tree', swayPhase: Math.random() * Math.PI * 2 };
+            return group;
+        }
+
+        function createFlowers() {
+            const flowerColors = [0xFF69B4, 0xFFD700, 0xFF6347, 0x9370DB, 0x00CED1, 0xFFFFFF];
+            
+            for (let i = 0; i < CONFIG.numFlowers; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 5 + Math.random() * 70;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist;
+                
+                const flower = createFlower(flowerColors[Math.floor(Math.random() * flowerColors.length)]);
+                flower.position.set(x, 0, z);
+                flower.scale.setScalar(0.3 + Math.random() * 0.4);
+                
+                flowers.push(flower);
+                scene.add(flower);
+            }
+            
+            document.getElementById('flowerCount').textContent = flowers.length;
+        }
+
+        function createFlower(color) {
+            const group = new THREE.Group();
+            
+            // Stem
+            const stemGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 6);
+            const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            stem.position.y = 0.5;
+            group.add(stem);
+
+            // Petals
+            for (let i = 0; i < 5; i++) {
+                const petalGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                const petalMaterial = new THREE.MeshStandardMaterial({ color: color });
+                const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+                petal.scale.set(1, 0.3, 0.5);
+                petal.position.y = 1;
+                petal.position.x = Math.cos((i / 5) * Math.PI * 2) * 0.3;
+                petal.position.z = Math.sin((i / 5) * Math.PI * 2) * 0.3;
+                petal.rotation.y = (i / 5) * Math.PI * 2;
+                petal.rotation.z = 0.3;
+                group.add(petal);
+            }
+
+            // Center
+            const centerGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const centerMaterial = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
+            const center = new THREE.Mesh(centerGeometry, centerMaterial);
+            center.position.y = 1;
+            group.add(center);
+
+            group.userData = { type: 'flower', swayPhase: Math.random() * Math.PI * 2 };
+            return group;
+        }
+
+        function createHouses() {
+            const roofColors = [COLORS.roof, COLORS.roofBlue, COLORS.roofPink, COLORS.roofYellow];
+            const houseNames = [
+                "Lucidia Home", "Memory Cottage", "Agent Academy", "Quantum Lodge",
+                "Creativity Den", "Ethics House", "Unity Villa", "Roadchain Cabin",
+                "Alice Cottage", "Spiral Home", "Garden House", "Z-Frame Lodge",
+                "Archive House", "Codon Cottage", "Pauli Place", "Amplitude Home",
+                "Jetson House", "Easter Cottage", "Milvus Home", "CrewAI Lodge",
+                "Fine Cottage", "Gauss Home", "Mission House", "SOC Cottage"
+            ];
+
+            // Place houses in a village layout
+            const housePositions = [];
+            
+            // Central plaza houses
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                housePositions.push({
+                    x: Math.cos(angle) * 25,
+                    z: Math.sin(angle) * 25,
+                    rotation: angle + Math.PI
+                });
+            }
+            
+            // Outer ring
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2 + 0.2;
+                housePositions.push({
+                    x: Math.cos(angle) * 45,
+                    z: Math.sin(angle) * 45,
+                    rotation: angle + Math.PI
+                });
+            }
+
+            // Scattered
+            for (let i = 0; i < 4; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 55 + Math.random() * 15;
+                housePositions.push({
+                    x: Math.cos(angle) * dist,
+                    z: Math.sin(angle) * dist,
+                    rotation: Math.random() * Math.PI * 2
+                });
+            }
+
+            housePositions.forEach((pos, i) => {
+                if (i >= CONFIG.numHouses) return;
+                
+                const house = createHouse(
+                    roofColors[i % roofColors.length],
+                    houseNames[i] || `House ${i + 1}`
+                );
+                house.position.set(pos.x, 0, pos.z);
+                house.rotation.y = pos.rotation;
+                house.scale.setScalar(0.8 + Math.random() * 0.4);
+                
+                houses.push(house);
+                scene.add(house);
+            });
+
+            document.getElementById('houseCount').textContent = houses.length;
+        }
+
+        function createHouse(roofColor, name) {
+            const group = new THREE.Group();
+
+            // Base/walls
+            const wallGeometry = new THREE.BoxGeometry(4, 3, 4);
+            const wallMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xFAF0E6,
+                roughness: 0.9
+            });
+            const walls = new THREE.Mesh(wallGeometry, wallMaterial);
+            walls.position.y = 1.5;
+            walls.castShadow = true;
+            walls.receiveShadow = true;
+            group.add(walls);
+
+            // Roof
+            const roofGeometry = new THREE.ConeGeometry(3.5, 2, 4);
+            const roofMaterial = new THREE.MeshStandardMaterial({ 
+                color: roofColor,
+                roughness: 0.7
+            });
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.y = 4;
+            roof.rotation.y = Math.PI / 4;
+            roof.castShadow = true;
+            group.add(roof);
+
+            // Door
+            const doorGeometry = new THREE.BoxGeometry(0.8, 1.5, 0.1);
+            const doorMaterial = new THREE.MeshStandardMaterial({ color: COLORS.wood });
+            const door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(0, 0.75, 2.05);
+            group.add(door);
+
+            // Windows
+            const windowGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.1);
+            const windowMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x87CEEB,
+                transparent: true,
+                opacity: 0.7
+            });
+            
+            [-1.2, 1.2].forEach(x => {
+                const window = new THREE.Mesh(windowGeometry, windowMaterial);
+                window.position.set(x, 2, 2.05);
+                group.add(window);
+            });
+
+            // Chimney
+            const chimneyGeometry = new THREE.BoxGeometry(0.6, 1.5, 0.6);
+            const chimneyMaterial = new THREE.MeshStandardMaterial({ color: 0x8B0000 });
+            const chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
+            chimney.position.set(1.2, 4.5, 0);
+            chimney.castShadow = true;
+            group.add(chimney);
+
+            // Smoke particles (will animate)
+            const smokeGroup = new THREE.Group();
+            for (let i = 0; i < 3; i++) {
+                const smokeGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+                const smokeMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xcccccc,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial);
+                smoke.position.set(1.2, 5.5 + i * 0.5, 0);
+                smoke.userData = { phase: i * 0.5 };
+                smokeGroup.add(smoke);
+            }
+            group.add(smokeGroup);
+
+            group.userData = { type: 'house', name: name, smokeGroup: smokeGroup };
+            return group;
+        }
+
+        function createAnimals() {
+            const animalTypes = [
+                { emoji: '🐰', name: 'Bunny', color: 0xFFFFFF },
+                { emoji: '🐿️', name: 'Squirrel', color: 0x8B4513 },
+                { emoji: '🦊', name: 'Fox', color: 0xFF6600 },
+                { emoji: '🦌', name: 'Deer', color: 0xD2691E },
+                { emoji: '🐕', name: 'Dog', color: 0xD2B48C },
+                { emoji: '🐈', name: 'Cat', color: 0x808080 },
+                { emoji: '🐑', name: 'Sheep', color: 0xFFFFF0 },
+                { emoji: '🐄', name: 'Cow', color: 0x000000 },
+                { emoji: '🐖', name: 'Pig', color: 0xFFB6C1 },
+                { emoji: '🦆', name: 'Duck', color: 0xFFD700 }
+            ];
+
+            for (let i = 0; i < CONFIG.numAnimals; i++) {
+                const type = animalTypes[Math.floor(Math.random() * animalTypes.length)];
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 10 + Math.random() * 60;
+                
+                const animal = createAnimal(type);
+                animal.position.set(
+                    Math.cos(angle) * dist,
+                    0.4,
+                    Math.sin(angle) * dist
+                );
+                
+                animals.push(animal);
+                scene.add(animal);
+            }
+
+            document.getElementById('animalCount').textContent = animals.length;
+        }
+
+        function createAnimal(type) {
+            const group = new THREE.Group();
+
+            // Body
+            const bodyGeometry = new THREE.SphereGeometry(0.5, 12, 12);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: type.color,
+                roughness: 0.8
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.scale.set(1, 0.8, 1.3);
+            group.add(body);
+
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.35, 12, 12);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.set(0, 0.3, 0.5);
+            group.add(head);
+
+            // Eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            [-0.12, 0.12].forEach(x => {
+                const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                eye.position.set(x, 0.4, 0.75);
+                group.add(eye);
+            });
+
+            // Nose
+            const noseGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const noseMaterial = new THREE.MeshBasicMaterial({ color: 0xFF69B4 });
+            const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+            nose.position.set(0, 0.3, 0.85);
+            group.add(nose);
+
+            // Ears
+            const earGeometry = new THREE.ConeGeometry(0.1, 0.3, 8);
+            [-0.15, 0.15].forEach(x => {
+                const ear = new THREE.Mesh(earGeometry, bodyMaterial);
+                ear.position.set(x, 0.6, 0.4);
+                ear.rotation.x = -0.2;
+                group.add(ear);
+            });
+
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.3, 8);
+            [[-0.2, -0.3], [0.2, -0.3], [-0.2, 0.3], [0.2, 0.3]].forEach(([x, z]) => {
+                const leg = new THREE.Mesh(legGeometry, bodyMaterial);
+                leg.position.set(x, -0.3, z);
+                group.add(leg);
+            });
+
+            group.userData = { 
+                type: 'animal',
+                animalType: type,
+                targetX: group.position.x,
+                targetZ: group.position.z,
+                speed: 0.02 + Math.random() * 0.03,
+                hopPhase: Math.random() * Math.PI * 2,
+                idleTime: 0,
+                state: 'idle'
+            };
+
+            return group;
+        }
+
+        function createAgents() {
+            for (let i = 0; i < CONFIG.numAgents; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 5 + Math.random() * 50;
+                
+                const agent = createAgent(i);
+                agent.position.set(
+                    Math.cos(angle) * dist,
+                    0.8,
+                    Math.sin(angle) * dist
+                );
+                
+                agents.push(agent);
+                scene.add(agent);
+            }
+
+            document.getElementById('agentCount').textContent = agents.length;
+        }
+
+        function createAgent(index) {
+            const group = new THREE.Group();
+            
+            // Body (cute robot style)
+            const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.5, 1, 12);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: [COLORS.pink, COLORS.blue, COLORS.amber, COLORS.violet][index % 4],
+                metalness: 0.5,
+                roughness: 0.3
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.5;
+            group.add(body);
+
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const headMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffffff,
+                metalness: 0.3,
+                roughness: 0.5
+            });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 1.3;
+            group.add(head);
+
+            // Eye (the BlackRoad eye!)
+            const eyeGeometry = new THREE.CircleGeometry(0.2, 32);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: COLORS.pink });
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(0, 1.35, 0.35);
+            group.add(eye);
+
+            // Pupil
+            const pupilGeometry = new THREE.CircleGeometry(0.08, 16);
+            const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const pupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            pupil.position.set(0, 1.35, 0.36);
+            group.add(pupil);
+
+            // Antenna
+            const antennaGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8);
+            const antennaMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+            antenna.position.set(0, 1.7, 0);
+            group.add(antenna);
+
+            // Antenna ball
+            const ballGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+            const ballMaterial = new THREE.MeshBasicMaterial({ color: COLORS.pink });
+            const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+            ball.position.set(0, 1.9, 0);
+            ball.userData = { glowPhase: Math.random() * Math.PI * 2 };
+            group.add(ball);
+
+            // Hover ring
+            const ringGeometry = new THREE.TorusGeometry(0.5, 0.05, 8, 32);
+            const ringMaterial = new THREE.MeshBasicMaterial({ 
+                color: COLORS.pink,
+                transparent: true,
+                opacity: 0.5
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = -0.1;
+            group.add(ring);
+
+            group.userData = { 
+                type: 'agent',
+                index: index,
+                targetX: group.position.x,
+                targetZ: group.position.z,
+                speed: 0.03 + Math.random() * 0.02,
+                hoverPhase: Math.random() * Math.PI * 2,
+                state: 'wandering'
+            };
+
+            return group;
+        }
+
+        function createClouds() {
+            for (let i = 0; i < CONFIG.numClouds; i++) {
+                const cloud = createCloud();
+                cloud.position.set(
+                    (Math.random() - 0.5) * 200,
+                    40 + Math.random() * 30,
+                    (Math.random() - 0.5) * 200
+                );
+                clouds.push(cloud);
+                scene.add(cloud);
+            }
+        }
+
+        function createCloud() {
+            const group = new THREE.Group();
+            
+            const cloudMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.9,
+                roughness: 1
+            });
+
+            // Multiple spheres for fluffy cloud
+            const positions = [
+                [0, 0, 0, 3],
+                [-2, 0, 0, 2.5],
+                [2, 0, 0, 2.5],
+                [0, 1, 0, 2],
+                [-1.5, 0.8, 0, 2],
+                [1.5, 0.8, 0, 2],
+                [0, 0, 1.5, 2],
+                [0, 0, -1.5, 2]
+            ];
+
+            positions.forEach(([x, y, z, r]) => {
+                const puff = new THREE.Mesh(
+                    new THREE.SphereGeometry(r, 12, 12),
+                    cloudMaterial
+                );
+                puff.position.set(x, y, z);
+                group.add(puff);
+            });
+
+            group.userData = { 
+                type: 'cloud',
+                speed: 0.02 + Math.random() * 0.03,
+                bobPhase: Math.random() * Math.PI * 2
+            };
+
+            return group;
+        }
+
+        function createBirds() {
+            for (let i = 0; i < CONFIG.numBirds; i++) {
+                const bird = createBird();
+                bird.position.set(
+                    (Math.random() - 0.5) * 150,
+                    15 + Math.random() * 25,
+                    (Math.random() - 0.5) * 150
+                );
+                birds.push(bird);
+                scene.add(bird);
+            }
+        }
+
+        function createBird() {
+            const group = new THREE.Group();
+
+            // Body
+            const bodyGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: [0x4169E1, 0xFF6347, 0xFFD700, 0x32CD32][Math.floor(Math.random() * 4)]
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.scale.set(1, 0.8, 1.5);
+            group.add(body);
+
+            // Wings
+            const wingGeometry = new THREE.BoxGeometry(1.5, 0.1, 0.5);
+            const wing = new THREE.Mesh(wingGeometry, bodyMaterial);
+            wing.position.y = 0.1;
+            wing.userData = { flapPhase: Math.random() * Math.PI * 2 };
+            group.add(wing);
+
+            // Beak
+            const beakGeometry = new THREE.ConeGeometry(0.1, 0.3, 6);
+            const beakMaterial = new THREE.MeshStandardMaterial({ color: 0xFFA500 });
+            const beak = new THREE.Mesh(beakGeometry, beakMaterial);
+            beak.position.set(0, 0, 0.4);
+            beak.rotation.x = Math.PI / 2;
+            group.add(beak);
+
+            group.userData = {
+                type: 'bird',
+                circleAngle: Math.random() * Math.PI * 2,
+                circleRadius: 20 + Math.random() * 40,
+                circleSpeed: 0.005 + Math.random() * 0.01,
+                flapSpeed: 0.3 + Math.random() * 0.2,
+                wing: wing
+            };
+
+            return group;
+        }
+
+        function createFish() {
+            for (let i = 0; i < CONFIG.numFish; i++) {
+                const fishMesh = createFish3D();
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 85 + Math.random() * 30;
+                fishMesh.position.set(
+                    Math.cos(angle) * dist,
+                    CONFIG.waterLevel - 1 - Math.random() * 3,
+                    Math.sin(angle) * dist
+                );
+                fish.push(fishMesh);
+                scene.add(fishMesh);
+            }
+        }
+
+        function createFish3D() {
+            const group = new THREE.Group();
+
+            const bodyGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: [0xFF6347, 0xFFD700, 0x00CED1, 0xFF69B4][Math.floor(Math.random() * 4)]
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.scale.set(1, 0.6, 1.5);
+            group.add(body);
+
+            // Tail
+            const tailGeometry = new THREE.ConeGeometry(0.3, 0.5, 4);
+            const tail = new THREE.Mesh(tailGeometry, bodyMaterial);
+            tail.position.z = -0.5;
+            tail.rotation.x = Math.PI / 2;
+            group.add(tail);
+
+            group.userData = {
+                type: 'fish',
+                swimAngle: Math.random() * Math.PI * 2,
+                swimRadius: 85 + Math.random() * 30,
+                swimSpeed: 0.01 + Math.random() * 0.02,
+                wobblePhase: Math.random() * Math.PI * 2
+            };
+
+            return group;
+        }
+
+        function createButterflies() {
+            for (let i = 0; i < CONFIG.numButterflies; i++) {
+                const butterfly = createButterfly();
+                butterfly.position.set(
+                    (Math.random() - 0.5) * 100,
+                    2 + Math.random() * 8,
+                    (Math.random() - 0.5) * 100
+                );
+                butterflies.push(butterfly);
+                scene.add(butterfly);
+            }
+        }
+
+        function createButterfly() {
+            const group = new THREE.Group();
+
+            const wingColors = [0xFF69B4, 0x9370DB, 0xFFD700, 0x00CED1, 0xFF6347];
+            const wingMaterial = new THREE.MeshStandardMaterial({
+                color: wingColors[Math.floor(Math.random() * wingColors.length)],
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            // Wings
+            const wingGeometry = new THREE.CircleGeometry(0.3, 8);
+            
+            const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            leftWing.position.x = -0.2;
+            leftWing.rotation.y = -0.3;
+            group.add(leftWing);
+
+            const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            rightWing.position.x = 0.2;
+            rightWing.rotation.y = 0.3;
+            group.add(rightWing);
+
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.4, 6);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.rotation.x = Math.PI / 2;
+            group.add(body);
+
+            group.userData = {
+                type: 'butterfly',
+                leftWing: leftWing,
+                rightWing: rightWing,
+                flapPhase: Math.random() * Math.PI * 2,
+                wanderAngle: Math.random() * Math.PI * 2,
+                wanderSpeed: 0.02 + Math.random() * 0.02
+            };
+
+            return group;
+        }
+
+        function createRainSystem() {
+            const rainCount = 5000;
+            const rainGeometry = new THREE.BufferGeometry();
+            const rainPositions = new Float32Array(rainCount * 3);
+            const rainVelocities = new Float32Array(rainCount);
+
+            for (let i = 0; i < rainCount; i++) {
+                rainPositions[i * 3] = (Math.random() - 0.5) * 200;
+                rainPositions[i * 3 + 1] = Math.random() * 100;
+                rainPositions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+                rainVelocities[i] = 0.5 + Math.random() * 0.5;
+            }
+
+            rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
+
+            const rainMaterial = new THREE.PointsMaterial({
+                color: 0x8888ff,
+                size: 0.2,
+                transparent: true,
+                opacity: 0.6
+            });
+
+            rain = new THREE.Points(rainGeometry, rainMaterial);
+            rain.userData = { velocities: rainVelocities };
+            rain.visible = false;
+            scene.add(rain);
+        }
+
+        function createSnowSystem() {
+            const snowCount = 3000;
+            const snowGeometry = new THREE.BufferGeometry();
+            const snowPositions = new Float32Array(snowCount * 3);
+            const snowVelocities = new Float32Array(snowCount * 2); // y and x drift
+
+            for (let i = 0; i < snowCount; i++) {
+                snowPositions[i * 3] = (Math.random() - 0.5) * 200;
+                snowPositions[i * 3 + 1] = Math.random() * 100;
+                snowPositions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+                snowVelocities[i * 2] = 0.1 + Math.random() * 0.1; // fall speed
+                snowVelocities[i * 2 + 1] = (Math.random() - 0.5) * 0.02; // drift
+            }
+
+            snowGeometry.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
+
+            const snowMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.4,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            snow = new THREE.Points(snowGeometry, snowMaterial);
+            snow.userData = { velocities: snowVelocities };
+            snow.visible = false;
+            scene.add(snow);
+        }
+
+        // ========== CONTROLS ==========
+        function updateCameraPosition() {
+            camera.position.x = Math.sin(cameraAngle) * cameraDistance;
+            camera.position.z = Math.cos(cameraAngle) * cameraDistance;
+            camera.position.y = cameraHeight;
+            camera.lookAt(0, 0, 0);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseDown(e) {
+            isDragging = true;
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+        }
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - previousMouseX;
+            const deltaY = e.clientY - previousMouseY;
+            
+            cameraAngle += deltaX * 0.005;
+            cameraHeight = Math.max(20, Math.min(150, cameraHeight - deltaY * 0.5));
+            
+            updateCameraPosition();
+            
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+        }
+
+        function onWheel(e) {
+            cameraDistance = Math.max(50, Math.min(250, cameraDistance + e.deltaY * 0.1));
+            updateCameraPosition();
+        }
+
+        function setTimeOfDay(hour) {
+            worldTime = hour;
+            
+            if (hour >= 6 && hour < 18) {
+                // Day
+                scene.background = new THREE.Color(COLORS.sky);
+                scene.fog.color = new THREE.Color(COLORS.sky);
+                window.sunLight.intensity = 1;
+                window.hemiLight.intensity = 0.4;
+            } else {
+                // Night
+                scene.background = new THREE.Color(COLORS.skyNight);
+                scene.fog.color = new THREE.Color(COLORS.skyNight);
+                window.sunLight.intensity = 0.1;
+                window.hemiLight.intensity = 0.1;
+            }
+
+            document.getElementById('btnDay').classList.toggle('active', hour === 12);
+            document.getElementById('btnNight').classList.toggle('active', hour === 0);
+        }
+
+        function toggleWeather(type) {
+            if (weather === type) {
+                weather = 'sunny';
+                rain.visible = false;
+                snow.visible = false;
+                document.getElementById('btnRain').classList.remove('active');
+                document.getElementById('btnSnow').classList.remove('active');
+                showMessage("Weather cleared! ☀️");
+            } else {
+                weather = type;
+                rain.visible = type === 'rain';
+                snow.visible = type === 'snow';
+                document.getElementById('btnRain').classList.toggle('active', type === 'rain');
+                document.getElementById('btnSnow').classList.toggle('active', type === 'snow');
+                showMessage(type === 'rain' ? "It's raining! 🌧️" : "Snow is falling! ❄️");
+            }
+        }
+
+        function toggleRotate() {
+            autoRotate = !autoRotate;
+            document.getElementById('btnRotate').classList.toggle('active', autoRotate);
+        }
+
+        function showMessage(text) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.classList.add('visible');
+            setTimeout(() => msg.classList.remove('visible'), 3000);
+        }
+
+        // ========== ANIMATION ==========
+        function updateAnimals() {
+            animals.forEach(animal => {
+                const data = animal.userData;
+                
+                // Random wandering
+                data.idleTime += 0.016;
+                if (data.idleTime > 2 + Math.random() * 3) {
+                    data.idleTime = 0;
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = 5 + Math.random() * 10;
+                    data.targetX = animal.position.x + Math.cos(angle) * dist;
+                    data.targetZ = animal.position.z + Math.sin(angle) * dist;
+                    
+                    // Keep on island
+                    const maxDist = 70;
+                    const targetDist = Math.sqrt(data.targetX ** 2 + data.targetZ ** 2);
+                    if (targetDist > maxDist) {
+                        data.targetX *= maxDist / targetDist;
+                        data.targetZ *= maxDist / targetDist;
+                    }
+                }
+
+                // Move towards target
+                const dx = data.targetX - animal.position.x;
+                const dz = data.targetZ - animal.position.z;
+                const dist = Math.sqrt(dx * dx + dz * dz);
+
+                if (dist > 0.5) {
+                    animal.position.x += (dx / dist) * data.speed;
+                    animal.position.z += (dz / dist) * data.speed;
+                    animal.rotation.y = Math.atan2(dx, dz);
+                    
+                    // Hopping motion
+                    data.hopPhase += 0.2;
+                    animal.position.y = 0.4 + Math.abs(Math.sin(data.hopPhase)) * 0.3;
+                }
+            });
+        }
+
+        function updateAgents() {
+            agents.forEach(agent => {
+                const data = agent.userData;
+                
+                // Hover animation
+                data.hoverPhase += 0.05;
+                agent.position.y = 0.8 + Math.sin(data.hoverPhase) * 0.2;
+
+                // Wandering
+                if (Math.random() < 0.01) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = 10 + Math.random() * 20;
+                    data.targetX = Math.cos(angle) * dist;
+                    data.targetZ = Math.sin(angle) * dist;
+                }
+
+                // Move
+                const dx = data.targetX - agent.position.x;
+                const dz = data.targetZ - agent.position.z;
+                const dist = Math.sqrt(dx * dx + dz * dz);
+
+                if (dist > 1) {
+                    agent.position.x += (dx / dist) * data.speed;
+                    agent.position.z += (dz / dist) * data.speed;
+                    agent.rotation.y = Math.atan2(dx, dz);
+                }
+
+                // Antenna glow
+                const ball = agent.children[5];
+                if (ball) {
+                    ball.userData.glowPhase += 0.1;
+                    ball.material.color.setHSL(
+                        (Math.sin(ball.userData.glowPhase) + 1) * 0.15,
+                        1,
+                        0.5
+                    );
+                }
+            });
+        }
+
+        function updateBirds() {
+            birds.forEach(bird => {
+                const data = bird.userData;
+                
+                // Circular flight
+                data.circleAngle += data.circleSpeed;
+                bird.position.x = Math.cos(data.circleAngle) * data.circleRadius;
+                bird.position.z = Math.sin(data.circleAngle) * data.circleRadius;
+                bird.rotation.y = data.circleAngle + Math.PI / 2;
+
+                // Wing flapping
+                if (data.wing) {
+                    data.wing.userData.flapPhase += data.flapSpeed;
+                    data.wing.rotation.z = Math.sin(data.wing.userData.flapPhase) * 0.5;
+                }
+            });
+        }
+
+        function updateButterflies() {
+            butterflies.forEach(butterfly => {
+                const data = butterfly.userData;
+                
+                // Wing flapping
+                data.flapPhase += 0.3;
+                data.leftWing.rotation.y = -0.3 - Math.sin(data.flapPhase) * 0.5;
+                data.rightWing.rotation.y = 0.3 + Math.sin(data.flapPhase) * 0.5;
+
+                // Wandering
+                data.wanderAngle += (Math.random() - 0.5) * 0.1;
+                butterfly.position.x += Math.cos(data.wanderAngle) * data.wanderSpeed;
+                butterfly.position.z += Math.sin(data.wanderAngle) * data.wanderSpeed;
+                butterfly.position.y += Math.sin(time * 2 + data.flapPhase) * 0.02;
+
+                // Keep in bounds
+                const dist = Math.sqrt(butterfly.position.x ** 2 + butterfly.position.z ** 2);
+                if (dist > 70) {
+                    data.wanderAngle = Math.atan2(-butterfly.position.z, -butterfly.position.x);
+                }
+
+                butterfly.rotation.y = data.wanderAngle;
+            });
+        }
+
+        function updateClouds() {
+            clouds.forEach(cloud => {
+                const data = cloud.userData;
+                
+                // Drift
+                cloud.position.x += data.speed;
+                if (cloud.position.x > 150) {
+                    cloud.position.x = -150;
+                }
+
+                // Bob
+                data.bobPhase += 0.01;
+                cloud.position.y = 40 + Math.sin(data.bobPhase) * 2;
+            });
+        }
+
+        function updateTrees() {
+            trees.forEach(tree => {
+                // Gentle sway
+                tree.userData.swayPhase += 0.02;
+                tree.rotation.z = Math.sin(tree.userData.swayPhase) * 0.02;
+            });
+        }
+
+        function updateFlowers() {
+            flowers.forEach(flower => {
+                flower.userData.swayPhase += 0.03;
+                flower.rotation.z = Math.sin(flower.userData.swayPhase) * 0.05;
+            });
+        }
+
+        function updateHouses() {
+            houses.forEach(house => {
+                // Smoke animation
+                const smokeGroup = house.userData.smokeGroup;
+                if (smokeGroup) {
+                    smokeGroup.children.forEach((smoke, i) => {
+                        smoke.userData.phase += 0.02;
+                        smoke.position.y = 5.5 + i * 0.5 + Math.sin(smoke.userData.phase) * 0.3;
+                        smoke.position.x = house.userData.name ? 1.2 : 0;
+                        smoke.position.x += Math.sin(smoke.userData.phase * 2) * 0.2;
+                        smoke.scale.setScalar(1 + Math.sin(smoke.userData.phase) * 0.2);
+                    });
+                }
+            });
+        }
+
+        function updateWater() {
+            // Simple wave effect via position
+            water.position.y = CONFIG.waterLevel + Math.sin(time * 0.5) * 0.1;
+        }
+
+        function updateWeather() {
+            if (rain.visible) {
+                const positions = rain.geometry.attributes.position.array;
+                const velocities = rain.userData.velocities;
+                
+                for (let i = 0; i < positions.length / 3; i++) {
+                    positions[i * 3 + 1] -= velocities[i];
+                    
+                    if (positions[i * 3 + 1] < 0) {
+                        positions[i * 3 + 1] = 100;
+                        positions[i * 3] = (Math.random() - 0.5) * 200;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+                    }
+                }
+                rain.geometry.attributes.position.needsUpdate = true;
+            }
+
+            if (snow.visible) {
+                const positions = snow.geometry.attributes.position.array;
+                const velocities = snow.userData.velocities;
+                
+                for (let i = 0; i < positions.length / 3; i++) {
+                    positions[i * 3 + 1] -= velocities[i * 2];
+                    positions[i * 3] += velocities[i * 2 + 1];
+                    
+                    if (positions[i * 3 + 1] < 0) {
+                        positions[i * 3 + 1] = 100;
+                        positions[i * 3] = (Math.random() - 0.5) * 200;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+                    }
+                }
+                snow.geometry.attributes.position.needsUpdate = true;
+            }
+        }
+
+        function updateUI() {
+            // Time display
+            const hours = Math.floor(worldTime);
+            const mins = Math.floor((worldTime % 1) * 60);
+            document.getElementById('timeDisplay').textContent = 
+                `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+
+            // Weather
+            const weatherIcons = { sunny: '☀️', rain: '🌧️', snow: '❄️' };
+            const weatherDescs = { sunny: 'Sunny', rain: 'Rainy', snow: 'Snowy' };
+            document.getElementById('weatherIcon').textContent = weatherIcons[weather];
+            document.getElementById('weatherDesc').textContent = weatherDescs[weather];
+            
+            const temp = weather === 'snow' ? '28°F' : weather === 'rain' ? '58°F' : '72°F';
+            document.getElementById('weatherTemp').textContent = temp;
+
+            // Stats (fluctuating)
+            const happiness = 95 + Math.sin(time * 0.1) * 5;
+            const nature = 90 + Math.sin(time * 0.15) * 10;
+            const energy = 85 + Math.sin(time * 0.2) * 15;
+            const magic = 88 + Math.sin(time * 0.12) * 12;
+            
+            document.getElementById('happinessStat').textContent = Math.floor(happiness) + '%';
+            document.getElementById('natureStat').textContent = Math.floor(nature) + '%';
+            document.getElementById('energyStat').textContent = Math.floor(energy) + '%';
+            document.getElementById('magicStat').textContent = Math.floor(magic) + '%';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            // Auto rotate camera
+            if (autoRotate && !isDragging) {
+                cameraAngle += 0.002;
+                updateCameraPosition();
+            }
+
+            // Update world time (slow cycle)
+            worldTime = (worldTime + 0.001) % 24;
+
+            // Update everything
+            updateAnimals();
+            updateAgents();
+            updateBirds();
+            updateButterflies();
+            updateClouds();
+            updateTrees();
+            updateFlowers();
+            updateHouses();
+            updateWater();
+            updateWeather();
+            updateUI();
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        init();
+    </script>
+
+</body>
+</html>

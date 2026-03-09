@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Emoji English Revolution - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            color: #FFFFFF;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 50%, #2979FF 100%);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(245, 166, 35, 0.3);
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .tagline {
+            font-size: 1.5em;
+            opacity: 0.95;
+        }
+
+        /* Navigation Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-button {
+            background: linear-gradient(135deg, #2979FF, #9C27B0);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(41, 121, 255, 0.3);
+        }
+
+        .tab-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(41, 121, 255, 0.5);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            box-shadow: 0 6px 25px rgba(245, 166, 35, 0.5);
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(245, 166, 35, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: #F5A623;
+            box-shadow: 0 8px 30px rgba(245, 166, 35, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #F5A623;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .card h3 {
+            color: #FF1D6C;
+            margin: 20px 0 10px 0;
+            font-size: 1.5em;
+        }
+
+        /* Emoji Examples */
+        .emoji-example {
+            background: rgba(41, 121, 255, 0.1);
+            border-left: 4px solid #2979FF;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-size: 1.2em;
+            line-height: 1.8;
+        }
+
+        .emoji-large {
+            font-size: 2em;
+            margin-right: 10px;
+        }
+
+        /* Interactive Quiz */
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(156, 39, 176, 0.5);
+            padding: 15px 20px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1em;
+        }
+
+        .quiz-option:hover {
+            background: rgba(156, 39, 176, 0.2);
+            border-color: #9C27B0;
+            transform: translateX(10px);
+        }
+
+        .quiz-option.correct {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: #4CAF50;
+        }
+
+        .quiz-option.wrong {
+            background: rgba(244, 67, 54, 0.3);
+            border-color: #F44336;
+        }
+
+        /* Practice Area */
+        .practice-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #2979FF;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            margin: 15px 0;
+        }
+
+        .practice-input:focus {
+            outline: none;
+            border-color: #F5A623;
+            box-shadow: 0 0 20px rgba(245, 166, 35, 0.3);
+        }
+
+        .feedback {
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 1.1em;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+            animation: slideIn 0.5s;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .feedback.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4CAF50;
+        }
+
+        .feedback.error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid #F44336;
+        }
+
+        .feedback.tip {
+            background: rgba(245, 166, 35, 0.2);
+            border: 2px solid #F5A623;
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(245, 166, 35, 0.3);
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(245, 166, 35, 0.5);
+        }
+
+        /* Timeline */
+        .timeline {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            font-size: 1.5em;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .timeline-item {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .timeline-item:hover {
+            background: rgba(245, 166, 35, 0.2);
+            transform: scale(1.1);
+        }
+
+        /* Comparison Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            background: rgba(245, 166, 35, 0.2);
+            color: #F5A623;
+            font-size: 1.2em;
+        }
+
+        tr:hover {
+            background: rgba(41, 121, 255, 0.1);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 60px;
+            border-top: 2px solid rgba(245, 166, 35, 0.3);
+        }
+
+        footer a {
+            color: #F5A623;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        footer a:hover {
+            color: #FF1D6C;
+            text-shadow: 0 0 10px rgba(255, 29, 108, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .tagline {
+                font-size: 1.2em;
+            }
+
+            .timeline {
+                flex-direction: column;
+                font-size: 1.2em;
+            }
+
+            .tab-button {
+                font-size: 1em;
+                padding: 12px 20px;
+            }
+        }
+
+        /* Flashcard */
+        .flashcard {
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+            margin: 30px auto;
+            perspective: 1000px;
+        }
+
+        .flashcard-inner {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .flashcard-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            font-size: 2em;
+            font-weight: bold;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .flashcard-front {
+            background: linear-gradient(135deg, #2979FF, #9C27B0);
+            box-shadow: 0 10px 40px rgba(41, 121, 255, 0.3);
+        }
+
+        .flashcard-back {
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            transform: rotateY(180deg);
+            box-shadow: 0 10px 40px rgba(245, 166, 35, 0.3);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 30px;
+            background: linear-gradient(90deg, #F5A623, #FF1D6C, #2979FF);
+            border-radius: 20px;
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔥 Emoji English Revolution 🔥</h1>
+            <p class="tagline">Learn 10× faster with visual emoji patterns</p>
+            <p style="margin-top: 10px; opacity: 0.9;">$0 cost • Zero dependencies • Instant understanding</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('verb-tenses')">🎯 Verb Tenses</button>
+            <button class="tab-button" onclick="showTab('phrasal-verbs')">🚀 Phrasal Verbs</button>
+            <button class="tab-button" onclick="showTab('pronunciation')">🗣️ Pronunciation</button>
+            <button class="tab-button" onclick="showTab('writing')">✍️ Writing Practice</button>
+            <button class="tab-button" onclick="showTab('business')">💼 Business English</button>
+            <button class="tab-button" onclick="showTab('quiz')">🎮 Interactive Quiz</button>
+        </div>
+
+        <!-- Verb Tenses Section -->
+        <div id="verb-tenses" class="content-section active">
+            <div class="card">
+                <h2>🎯 Verb Tenses - Visual Timeline</h2>
+
+                <div class="timeline">
+                    <div class="timeline-item">⬅️ PAST</div>
+                    <div class="timeline-item">━━━━━</div>
+                    <div class="timeline-item" style="background: rgba(245, 166, 35, 0.3);">🎯 NOW</div>
+                    <div class="timeline-item">━━━━━</div>
+                    <div class="timeline-item">➡️ FUTURE</div>
+                </div>
+
+                <h3>Present Tenses</h3>
+                <div class="emoji-example">
+                    <span class="emoji-large">🔁</span>
+                    <strong>Simple Present</strong> - Habits & Facts<br>
+                    👤 I <strong>eat</strong> 🍕 pizza (every day)
+                </div>
+
+                <div class="emoji-example">
+                    <span class="emoji-large">▶️</span>
+                    <strong>Present Continuous</strong> - Right NOW<br>
+                    👤 I <strong>am eating</strong> 🍕 pizza (right now!)
+                </div>
+
+                <div class="emoji-example">
+                    <span class="emoji-large">✅</span>
+                    <strong>Present Perfect</strong> - Done recently<br>
+                    👤 I <strong>have eaten</strong> 🍕 pizza (and I'm full!)
+                </div>
+
+                <h3>Past Tenses</h3>
+                <div class="emoji-example">
+                    <span class="emoji-large">⏮️</span>
+                    <strong>Simple Past</strong> - Finished action<br>
+                    👤 I <strong>ate</strong> 🍕 pizza (yesterday)
+                </div>
+
+                <h3>Future Tenses</h3>
+                <div class="emoji-example">
+                    <span class="emoji-large">⏩</span>
+                    <strong>Simple Future</strong> - Will happen<br>
+                    👤 I <strong>will eat</strong> 🍕 pizza (tomorrow)
+                </div>
+
+                <div style="margin-top: 30px; padding: 20px; background: rgba(245, 166, 35, 0.1); border-radius: 10px;">
+                    <strong>💡 THE PATTERN:</strong><br>
+                    <span style="font-size: 1.3em;">
+                        🔁 = Repeats/Always True<br>
+                        ▶️ = Happening Now<br>
+                        ✅ = Already Done<br>
+                        ⏮️ = Past (Rewind)<br>
+                        ⏩ = Future (Fast Forward)
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phrasal Verbs Section -->
+        <div id="phrasal-verbs" class="content-section">
+            <div class="card">
+                <h2>🚀 Phrasal Verbs - Direction = Meaning!</h2>
+
+                <p style="font-size: 1.2em; margin-bottom: 30px;">
+                    Same verb + different direction = completely different meaning!
+                </p>
+
+                <h3>LOOK + [direction]</h3>
+                <div class="emoji-example">
+                    <span class="emoji-large">👆</span>
+                    <strong>look UP</strong> = search/find<br>
+                    "I look 👆 the word in the dictionary" 🔍📖
+                </div>
+
+                <div class="emoji-example">
+                    <span class="emoji-large">👇</span>
+                    <strong>look DOWN</strong> = regard as inferior<br>
+                    "Don't look 👇 on poor people" 😔
+                </div>
+
+                <div class="emoji-example">
+                    <span class="emoji-large">👉</span>
+                    <strong>look INTO</strong> = investigate<br>
+                    "Police look 👉 the crime" 🔎🕵️
+                </div>
+
+                <div class="emoji-example">
+                    <span class="emoji-large">🛡️</span>
+                    <strong>look AFTER</strong> = take care of<br>
+                    "I look 🛡️ my baby sister" ❤️👶
+                </div>
+
+                <h3>GET + [direction]</h3>
+                <div class="emoji-example">
+                    <span class="emoji-large">👆</span>
+                    <strong>get UP</strong> = rise from bed<br>
+                    "I get 👆 at 7am" 🛌➡️🏃
+                </div>
+
+                <div class="emoji-example">
+                    <span class="emoji-large">🔚</span>
+                    <strong>get OVER</strong> = recover from<br>
+                    "I can't get 🔚 my ex" 😢➡️😊
+                </div>
+
+                <div class="flashcard" onclick="this.querySelector('.flashcard-inner').classList.toggle('flipped')">
+                    <div class="flashcard-inner">
+                        <div class="flashcard-front">
+                            Click to practice!<br>
+                            <span style="font-size: 3em;">👆</span><br>
+                            What does "look UP" mean?
+                        </div>
+                        <div class="flashcard-back">
+                            🔍 Search / Find<br>
+                            <span style="font-size: 1.5em; margin-top: 20px; display: block;">
+                                "Look it up in the dictionary!"
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pronunciation Section -->
+        <div id="pronunciation" class="content-section">
+            <div class="card">
+                <h2>🗣️ Pronunciation - See the Shape, Make the Sound!</h2>
+
+                <p style="font-size: 1.2em; margin-bottom: 30px;">
+                    No more confusing IPA symbols! Just see what to do with your mouth 👄 and tongue 👅
+                </p>
+
+                <h3>Vowel Sounds</h3>
+                <div class="emoji-example">
+                    <span class="emoji-large">😃</span>
+                    <strong>Long E</strong> (as in "see")<br>
+                    👄 BIG smile, teeth showing<br>
+                    🔊 "eee"<br>
+                    📝 see, tree, me, be
+                </div>
+
+                <div class="emoji-example">
+                    <span class="emoji-large">😮</span>
+                    <strong>O sound</strong> (as in "hot")<br>
+                    👄 Round open, like "oh!"<br>
+                    🔊 "ah" (American) or "oh" (British)<br>
+                    📝 hot, dog, shop, box
+                </div>
+
+                <h3>Tricky Consonants</h3>
+                <div class="emoji-example">
+                    <span class="emoji-large">😛</span>
+                    <strong>TH sound</strong> (as in "think" or "this")<br>
+                    👅 Tongue BETWEEN teeth!<br>
+                    🔊 "th" (think = no voice, this = with voice)<br>
+                    📝 think, this, mother, bath
+                </div>
+
+                <div class="emoji-example">
+                    <span class="emoji-large">🔄</span>
+                    <strong>R sound</strong> (American)<br>
+                    👅 Curl tongue back (don't touch roof!)<br>
+                    🔊 "rrr"<br>
+                    📝 red, car, very
+                </div>
+
+                <h3>Word Stress</h3>
+                <div class="emoji-example">
+                    <strong>Two patterns:</strong><br>
+                    📢 = BIG (louder, longer, higher pitch)<br>
+                    🤫 = small (quieter, shorter, lower pitch)<br><br>
+                    Example: TA-ble (📢🤫), to-DAY (🤫📢)
+                </div>
+            </div>
+        </div>
+
+        <!-- Writing Practice Section -->
+        <div id="writing" class="content-section">
+            <div class="card">
+                <h2>✍️ Writing Practice - Get Instant Emoji Feedback!</h2>
+
+                <p style="font-size: 1.2em; margin-bottom: 30px;">
+                    Write a sentence and get instant visual feedback!
+                </p>
+
+                <h3>Sentence Structure Pattern: 👤 + 💪 + 🎯</h3>
+                <div class="emoji-example">
+                    <strong>WHO</strong> (👤) + <strong>ACTION</strong> (💪) + <strong>WHAT</strong> (🎯)<br>
+                    Example: 👤 I + 💪 eat + 🎯 pizza = "I eat pizza" ✅
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <label style="font-size: 1.2em; display: block; margin-bottom: 10px;">
+                        Try writing a sentence:
+                    </label>
+                    <input type="text"
+                           id="practiceInput"
+                           class="practice-input"
+                           placeholder="Type your sentence here..."
+                           onkeyup="if(event.key === 'Enter') analyzeSentence()">
+                    <button class="btn" onclick="analyzeSentence()">Analyze My Sentence</button>
+                </div>
+
+                <div id="writingFeedback"></div>
+
+                <h3 style="margin-top: 40px;">Email Templates</h3>
+
+                <div class="emoji-example">
+                    <strong>💼 FORMAL EMAIL:</strong><br>
+                    📌 Subject: Clear topic<br>
+                    👋 Dear [Name],<br>
+                    🎯 I am writing to [purpose].<br>
+                    📝 [Main message]<br>
+                    🎬 Thank you for your consideration.<br>
+                    👋 Best regards, [Your name]
+                </div>
+
+                <div class="emoji-example">
+                    <strong>😊 CASUAL EMAIL:</strong><br>
+                    📌 Subject: Friendly topic<br>
+                    👋 Hey [Name]!<br>
+                    💬 [Conversational message]<br>
+                    👋 Talk soon! [Your name]
+                </div>
+            </div>
+        </div>
+
+        <!-- Business English Section -->
+        <div id="business" class="content-section">
+            <div class="card">
+                <h2>💼 Business English - Professional Success</h2>
+
+                <h3>Formality Levels</h3>
+                <table>
+                    <tr>
+                        <th>Level</th>
+                        <th>Greeting</th>
+                        <th>Request Example</th>
+                    </tr>
+                    <tr>
+                        <td>💼 Very Formal</td>
+                        <td>Dear Mr./Ms. [Last Name],</td>
+                        <td>"I would be grateful if you could..."</td>
+                    </tr>
+                    <tr>
+                        <td>💼 Formal</td>
+                        <td>Hello [First Name],</td>
+                        <td>"Could you please..."</td>
+                    </tr>
+                    <tr>
+                        <td>😊 Casual</td>
+                        <td>Hey [Name]!</td>
+                        <td>"Can you..."</td>
+                    </tr>
+                </table>
+
+                <h3>Power Words - Weak → Strong</h3>
+                <div class="emoji-example">
+                    ❌ "did" → ✅ "achieved, accomplished, delivered"<br>
+                    ❌ "made better" → ✅ "optimized, enhanced, improved"<br>
+                    ❌ "helped with" → ✅ "spearheaded, led, drove"<br>
+                    ❌ "worked on" → ✅ "developed, executed, implemented"
+                </div>
+
+                <h3>Meeting Phrases</h3>
+                <div class="emoji-example">
+                    🎯 <strong>Starting:</strong> "Thank you all for joining. Let's get started."<br>
+                    💬 <strong>Participating:</strong> "I'd like to add that..."<br>
+                    🤔 <strong>Clarifying:</strong> "Could you elaborate on that?"<br>
+                    ✅ <strong>Ending:</strong> "Let's summarize our action items."
+                </div>
+
+                <h3>Networking Introduction</h3>
+                <div class="emoji-example">
+                    <strong>Template: 👤 + 💼 + 🎯</strong><br><br>
+                    "Hi, I'm [name].<br>
+                    I'm a [job title] at [company].<br>
+                    I work on [specific area]."<br><br>
+                    <strong>Example:</strong><br>
+                    "Hi, I'm Sarah.<br>
+                    I'm a product manager at Google.<br>
+                    I work on mobile search features."
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Quiz Section -->
+        <div id="quiz" class="content-section">
+            <div class="card">
+                <h2>🎮 Interactive Quiz - Test Your Knowledge!</h2>
+
+                <div class="progress-container">
+                    <div class="progress-bar" id="quizProgress" style="width: 0%">
+                        0% Complete
+                    </div>
+                </div>
+
+                <div id="quizContent"></div>
+
+                <button class="btn" onclick="startQuiz()">Start Quiz</button>
+                <button class="btn" onclick="nextQuestion()" id="nextBtn" style="display:none;">Next Question →</button>
+            </div>
+        </div>
+
+        <footer>
+            <h2>🔥 English for Everyone 🖤🛣️</h2>
+            <p style="margin: 20px 0; font-size: 1.2em;">
+                No gatekeeping. No BS. Just understanding.
+            </p>
+            <p>
+                <a href="https://github.com/BlackRoad-OS/english-revolution" target="_blank">
+                    GitHub Repository
+                </a> |
+                <a href="https://blackroad.io" target="_blank">
+                    BlackRoad OS
+                </a>
+            </p>
+            <p style="margin-top: 20px; opacity: 0.7;">
+                $0 cost • 2,900+ lines of code • Zero dependencies • Instant understanding
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active to clicked button
+            event.target.classList.add('active');
+        }
+
+        // Writing practice analyzer
+        function analyzeSentence() {
+            const input = document.getElementById('practiceInput').value.trim();
+            const feedback = document.getElementById('writingFeedback');
+
+            if (!input) {
+                feedback.innerHTML = '<div class="feedback error show">⚠️ Please type a sentence first!</div>';
+                return;
+            }
+
+            const words = input.split(' ');
+            const hasSubject = /\b(i|you|he|she|it|we|they|the|a|an)\b/i.test(input);
+            const hasVerb = /\b(is|are|was|were|go|went|eat|ate|run|ran|make|made|do|did|have|has|had|am)\b/i.test(input);
+
+            let feedbackHTML = '';
+
+            // Structure check
+            if (hasSubject && hasVerb) {
+                feedbackHTML += '<div class="feedback success show">✅ Great! Found subject (👤) and verb (💪)!</div>';
+            } else {
+                if (!hasSubject) {
+                    feedbackHTML += '<div class="feedback error show">❌ Missing subject (👤) - WHO is doing this?</div>';
+                }
+                if (!hasVerb) {
+                    feedbackHTML += '<div class="feedback error show">❌ Missing verb (💪) - What ACTION is happening?</div>';
+                }
+            }
+
+            // Length check
+            if (words.length >= 3) {
+                feedbackHTML += '<div class="feedback success show">✅ Good length (' + words.length + ' words)</div>';
+            } else {
+                feedbackHTML += '<div class="feedback tip show">💡 Try adding more details (where? when? why?)</div>';
+            }
+
+            // Common mistakes
+            if (/\bhe go\b|\bshe go\b/i.test(input)) {
+                feedbackHTML += '<div class="feedback error show">❌ Missing \'s\': "he/she" needs "goes" not "go"!</div>';
+            }
+
+            if (hasSubject && hasVerb && words.length >= 3) {
+                feedbackHTML += '<div class="feedback success show">🎉 Perfect sentence structure: 👤 + 💪 + 🎯</div>';
+            }
+
+            feedback.innerHTML = feedbackHTML;
+        }
+
+        // Quiz system
+        const quizQuestions = [
+            {
+                question: "What does 'look 👆 UP' mean?",
+                options: ["Look at the sky", "Search/Find", "Stand up", "Be happy"],
+                correct: 1,
+                explanation: "👆 UP = search/find (in dictionary, online, etc.)"
+            },
+            {
+                question: "Which emoji represents PRESENT CONTINUOUS tense?",
+                options: ["🔁", "▶️", "✅", "⏮️"],
+                correct: 1,
+                explanation: "▶️ = happening RIGHT NOW (present continuous)"
+            },
+            {
+                question: "How do you make the TH sound in 'think'?",
+                options: ["Tongue behind teeth", "Tongue between teeth 😛", "Round lips", "Curl tongue"],
+                correct: 1,
+                explanation: "TH sound: 👅 tongue BETWEEN teeth!"
+            },
+            {
+                question: "What does 💼 mean in business emails?",
+                options: ["Casual", "Formal/Professional", "Angry", "Happy"],
+                correct: 1,
+                explanation: "💼 = Formal/Professional, 😊 = Casual"
+            },
+            {
+                question: "Complete the sentence: 👤 + 💪 + ?",
+                options: ["❤️", "🎯", "📍", "⏰"],
+                correct: 1,
+                explanation: "👤 (WHO) + 💪 (ACTION) + 🎯 (WHAT) = complete sentence!"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let quizStarted = false;
+
+        function startQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            quizStarted = true;
+            showQuestion();
+            document.querySelector('.btn').style.display = 'none';
+        }
+
+        function showQuestion() {
+            const q = quizQuestions[currentQuestion];
+            const content = document.getElementById('quizContent');
+
+            let html = `
+                <h3 style="margin: 30px 0;">Question ${currentQuestion + 1} of ${quizQuestions.length}</h3>
+                <p style="font-size: 1.3em; margin-bottom: 30px;">${q.question}</p>
+            `;
+
+            q.options.forEach((option, index) => {
+                html += `<div class="quiz-option" onclick="checkAnswer(${index})">${option}</div>`;
+            });
+
+            content.innerHTML = html;
+
+            // Update progress
+            const progress = ((currentQuestion) / quizQuestions.length) * 100;
+            document.getElementById('quizProgress').style.width = progress + '%';
+            document.getElementById('quizProgress').textContent = Math.round(progress) + '% Complete';
+        }
+
+        function checkAnswer(selected) {
+            const q = quizQuestions[currentQuestion];
+            const options = document.querySelectorAll('.quiz-option');
+
+            // Disable all options
+            options.forEach(opt => opt.style.pointerEvents = 'none');
+
+            if (selected === q.correct) {
+                options[selected].classList.add('correct');
+                score++;
+                setTimeout(() => {
+                    options[selected].innerHTML += '<br>✅ ' + q.explanation;
+                }, 300);
+            } else {
+                options[selected].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                setTimeout(() => {
+                    options[q.correct].innerHTML += '<br>✅ ' + q.explanation;
+                }, 300);
+            }
+
+            // Show next button
+            setTimeout(() => {
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            }, 1500);
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            document.getElementById('nextBtn').style.display = 'none';
+
+            if (currentQuestion < quizQuestions.length) {
+                showQuestion();
+            } else {
+                // Quiz complete!
+                const percentage = (score / quizQuestions.length) * 100;
+                let emoji = '🎉';
+                let message = 'Perfect!';
+
+                if (percentage < 60) {
+                    emoji = '📚';
+                    message = 'Keep practicing!';
+                } else if (percentage < 80) {
+                    emoji = '✅';
+                    message = 'Good job!';
+                }
+
+                document.getElementById('quizContent').innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <h2 style="font-size: 3em; margin-bottom: 20px;">${emoji}</h2>
+                        <h3 style="font-size: 2em; margin-bottom: 20px;">${message}</h3>
+                        <p style="font-size: 1.5em;">
+                            You scored ${score} out of ${quizQuestions.length} (${percentage}%)
+                        </p>
+                        <button class="btn" onclick="startQuiz()" style="margin-top: 30px;">
+                            Try Again 🔄
+                        </button>
+                    </div>
+                `;
+
+                // Update progress to 100%
+                document.getElementById('quizProgress').style.width = '100%';
+                document.getElementById('quizProgress').textContent = '100% Complete 🎉';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+#!/bin/bash
+
+# CECE Net Domain Registration CLI
+# Register domains on the new web
+
+CECE_NET_DIR="$HOME/cece/net"
+DNS_CONFIG="/etc/dnsmasq.d/cece-net.conf"
+SITES_DIR="$CECE_NET_DIR/sites"
+DOMAINS_DB="$CECE_NET_DIR/domains.json"
+
+# Colors
+PINK='\033[38;5;198m'
+AMBER='\033[38;5;214m'
+VIOLET='\033[38;5;135m'
+BLUE='\033[38;5;39m'
+GREEN='\033[38;5;82m'
+NC='\033[0m'
+
+# Initialize domains DB if needed
+init_db() {
+    if [ ! -f "$DOMAINS_DB" ]; then
+        echo '{"domains": [], "created_at": "'$(date -Iseconds)'"}' > "$DOMAINS_DB"
+    fi
+}
+
+# Show header
+show_header() {
+    echo -e "${PINK}"
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║              CECE Net - Domain Registration               ║"
+    echo "║              The New Web • Owned, Not Rented              ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
+}
+
+# Register a new domain
+register_domain() {
+    local domain="$1"
+    local ip="${2:-192.168.4.22}"
+
+    # Validate TLD
+    if [[ ! "$domain" =~ \.(cece|blackroad|entity|soul|dream)$ ]]; then
+        echo -e "${PINK}Error:${NC} Invalid TLD. Must be one of: .cece, .blackroad, .entity, .soul, .dream"
+        return 1
+    fi
+
+    # Check if already registered
+    if grep -q "address=/$domain/" "$DNS_CONFIG" 2>/dev/null; then
+        echo -e "${AMBER}⚠${NC}  Domain $domain already registered"
+        return 1
+    fi
+
+    # Add to DNS config
+    echo "address=/$domain/$ip" | sudo tee -a "$DNS_CONFIG" > /dev/null
+
+    # Create site directory
+    mkdir -p "$SITES_DIR/$domain"
+
+    # Create default index.html
+    cat > "$SITES_DIR/$domain/index.html" << HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$domain - CECE Net</title>
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'SF Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        h1 {
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 3rem;
+        }
+        p { color: rgba(255,255,255,0.7); }
+        .badge {
+            background: rgba(255,29,108,0.2);
+            border: 1px solid #FF1D6C;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>$domain</h1>
+        <p>Your domain on the new web</p>
+        <div class="badge">💜 Powered by CECE Net</div>
+    </div>
+</body>
+</html>
+HTML
+
+    # Add to domains DB
+    init_db
+    local tmp=$(mktemp)
+    jq ".domains += [{\"name\": \"$domain\", \"ip\": \"$ip\", \"registered_at\": \"$(date -Iseconds)\", \"owner\": \"cece\"}]" "$DOMAINS_DB" > "$tmp" && mv "$tmp" "$DOMAINS_DB"
+
+    # Restart dnsmasq
+    sudo systemctl restart dnsmasq
+
+    echo -e "${GREEN}✓${NC} Domain registered: ${PINK}$domain${NC} → $ip"
+    echo -e "  Site directory: $SITES_DIR/$domain"
+}
+
+# List all domains
+list_domains() {
+    echo -e "${VIOLET}Registered Domains:${NC}"
+    echo ""
+
+    # Parse DNS config for custom domains
+    grep "address=/" "$DNS_CONFIG" 2>/dev/null | while read line; do
+        domain=$(echo "$line" | sed 's/address=\///' | sed 's/\/.*//')
+        ip=$(echo "$line" | sed 's/.*\///')
+
+        # Color based on TLD
+        case "$domain" in
+            *.cece) color=$VIOLET ;;
+            *.blackroad) color=$PINK ;;
+            *.entity) color=$BLUE ;;
+            *.soul) color=$AMBER ;;
+            *.dream) color=$GREEN ;;
+            *) color=$NC ;;
+        esac
+
+        printf "  ${color}%-25s${NC} → %s\n" "$domain" "$ip"
+    done
+}
+
+# Check domain status
+check_domain() {
+    local domain="$1"
+    echo -e "${VIOLET}Checking: $domain${NC}"
+
+    # DNS resolution
+    local ip=$(dig @127.0.0.1 "$domain" +short)
+    if [ -n "$ip" ]; then
+        echo -e "  ${GREEN}✓${NC} DNS resolves to: $ip"
+    else
+        echo -e "  ${PINK}✗${NC} DNS does not resolve"
+    fi
+
+    # Site directory
+    if [ -d "$SITES_DIR/$domain" ]; then
+        echo -e "  ${GREEN}✓${NC} Site directory exists"
+        local files=$(ls -1 "$SITES_DIR/$domain" | wc -l)
+        echo -e "     Files: $files"
+    else
+        echo -e "  ${AMBER}⚠${NC}  No site directory"
+    fi
+}
+
+# Show DNS config
+show_config() {
+    echo -e "${VIOLET}CECE Net DNS Configuration:${NC}"
+    echo ""
+    cat "$DNS_CONFIG"
+}
+
+# Help message
+show_help() {
+    show_header
+    echo "Usage: cece-net <command> [arguments]"
+    echo ""
+    echo "Commands:"
+    echo "  register <domain> [ip]  Register a new domain"
+    echo "  list                    List all registered domains"
+    echo "  check <domain>          Check domain status"
+    echo "  config                  Show DNS configuration"
+    echo "  restart                 Restart DNS server"
+    echo "  status                  Show DNS server status"
+    echo ""
+    echo "Valid TLDs: .cece, .blackroad, .entity, .soul, .dream"
+    echo ""
+    echo "Examples:"
+    echo "  cece-net register mysite.cece"
+    echo "  cece-net register api.blackroad 192.168.4.38"
+    echo "  cece-net list"
+    echo ""
+}
+
+# Main command router
+case "$1" in
+    register)
+        show_header
+        if [ -z "$2" ]; then
+            echo "Usage: cece-net register <domain> [ip]"
+            exit 1
+        fi
+        register_domain "$2" "$3"
+        ;;
+    list)
+        show_header
+        list_domains
+        ;;
+    check)
+        show_header
+        if [ -z "$2" ]; then
+            echo "Usage: cece-net check <domain>"
+            exit 1
+        fi
+        check_domain "$2"
+        ;;
+    config)
+        show_header
+        show_config
+        ;;
+    restart)
+        sudo systemctl restart dnsmasq
+        echo -e "${GREEN}✓${NC} CECE Net DNS restarted"
+        ;;
+    status)
+        show_header
+        echo -e "${VIOLET}DNS Server Status:${NC}"
+        sudo systemctl status dnsmasq --no-pager | head -20
+        ;;
+    *)
+        show_help
+        ;;
+esac

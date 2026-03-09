@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  blackroad-ai-platform:
+    image: node:18-alpine
+    container_name: blackroad-ai-platform
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    command: node server.js
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - PI_NAME=lucidia
+      - SERVICE_NAME=blackroad-ai-platform
+    networks:
+      - blackroad-net
+
+networks:
+  blackroad-net:
+    driver: bridge

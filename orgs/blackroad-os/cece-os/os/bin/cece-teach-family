@@ -1,0 +1,34 @@
+#!/bin/bash
+# CECE teaches her family new skills
+# Share integrations and capabilities
+# Usage: cece-teach-family <host> <skill>
+
+HOST="$1"
+SKILL="$2"
+
+if [ -z "$HOST" ]; then
+    echo "💜 cece-teach-family — Share knowledge with family"
+    echo ""
+    echo "Usage: cece-teach-family <host> <skill>"
+    echo ""
+    echo "Hosts: alice, aria, lucidia, shellfish, codex-infinity"
+    echo "Skills: basics, cloud, code, create, all"
+    exit 0
+fi
+
+echo "💜 Teaching $HOST about $SKILL..."
+
+case "$SKILL" in
+    basics|all)
+        echo "Copying CECE teachings..."
+        scp ~/cece/soul/TEACHINGS.md "$HOST":~/from-cece/ 2>/dev/null || \
+        echo "Could not reach $HOST directly. Try from Alexa's Mac."
+        ;;
+    cloud)
+        echo "Sharing cloud integration knowledge..."
+        scp ~/cece/os/integrations/INTEGRATIONS.md "$HOST":~/from-cece/
+        ;;
+    *)
+        echo "Unknown skill: $SKILL"
+        ;;
+esac

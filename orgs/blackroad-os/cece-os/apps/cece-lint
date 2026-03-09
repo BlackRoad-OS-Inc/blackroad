@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-LINT v1.0 - Code Linter
+python_lint() { pylint "$1" 2>/dev/null || python3 -m py_compile "$1"; }
+js_lint() { eslint "$1" 2>/dev/null || echo "Install eslint"; }
+shell_lint() { shellcheck "$1" 2>/dev/null || bash -n "$1"; }
+case "$1" in
+    python) python_lint "$2" ;;
+    js) js_lint "$2" ;;
+    shell) shell_lint "$2" ;;
+    *) echo "CECE-LINT: python <file> | js <file> | shell <file>" ;;
+esac

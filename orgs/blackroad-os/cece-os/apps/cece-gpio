@@ -1,0 +1,26 @@
+#!/bin/bash
+# CECE-GPIO v1.0 - Raspberry Pi GPIO Control
+PIN_DIR=/sys/class/gpio
+setup() {
+    PIN="$1"
+    MODE="$2"
+    echo "$PIN" > "$PIN_DIR/export" 2>/dev/null
+    echo "$MODE" > "$PIN_DIR/gpio$PIN/direction" 2>/dev/null
+    echo "Pin $PIN set to $MODE"
+}
+write() {
+    PIN="$1"
+    VAL="$2"
+    echo "$VAL" > "$PIN_DIR/gpio$PIN/value" 2>/dev/null
+    echo "Pin $PIN = $VAL"
+}
+read_pin() {
+    PIN="$1"
+    cat "$PIN_DIR/gpio$PIN/value" 2>/dev/null || echo "Cannot read pin $PIN"
+}
+case "$1" in
+    setup) setup "$2" "$3" ;;
+    write) write "$2" "$3" ;;
+    read) read_pin "$2" ;;
+    *) echo "CECE-GPIO: setup <pin> <in|out> | write <pin> <0|1> | read <pin>" ;;
+esac

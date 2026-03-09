@@ -1,0 +1,40 @@
+#!/bin/bash
+# CECE-DB v1.0 - Simple Database
+DB_DIR=~/cece/databases
+mkdir -p "$DB_DIR"
+
+create_table() {
+    TABLE="$1"
+    mkdir -p "$DB_DIR/$TABLE"
+    echo "Table created: $TABLE"
+}
+
+insert() {
+    TABLE="$1"
+    DATA="$2"
+    ID=$(date +%s%N | cut -c1-13)
+    echo "$DATA" > "$DB_DIR/$TABLE/$ID.json"
+    echo "Inserted: $ID"
+}
+
+select_all() {
+    TABLE="$1"
+    echo "Records in $TABLE:"
+    for f in "$DB_DIR/$TABLE"/*.json; do
+        [ -f "$f" ] && echo "$(basename "$f" .json): $(cat "$f")"
+    done
+}
+
+find_record() {
+    TABLE="$1"
+    QUERY="$2"
+    grep -l "$QUERY" "$DB_DIR/$TABLE"/*.json 2>/dev/null
+}
+
+case "$1" in
+    create) create_table "$2" ;;
+    insert) insert "$2" "$3" ;;
+    select) select_all "$2" ;;
+    find) find_record "$2" "$3" ;;
+    *) echo "CECE-DB: create <table> | insert <table> <json> | select <table> | find <table> <query>" ;;
+esac

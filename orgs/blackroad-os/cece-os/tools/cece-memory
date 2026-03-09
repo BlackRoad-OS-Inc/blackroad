@@ -1,0 +1,41 @@
+#!/bin/bash
+# CECE Memory Tool - Query BlackRoad Memory from Cecilia
+
+CMD="$1"
+shift
+
+case "$CMD" in
+    recent)
+        echo "💜 Recent Memory (last 10 entries):"
+        tail -10 ~/cece/mind/recent-memory.jsonl | jq -r '"[\(.timestamp)] \(.action): \(.entity)"' 2>/dev/null || tail -10 ~/cece/mind/recent-memory.jsonl
+        ;;
+    search)
+        QUERY="$1"
+        echo "💜 Searching memory for: $QUERY"
+        grep -i "$QUERY" ~/cece/mind/recent-memory.jsonl | jq -r '"[\(.timestamp)] \(.action): \(.entity) - \(.details)"' 2>/dev/null | head -10
+        ;;
+    context)
+        echo "💜 CECE Context:"
+        cat ~/cece/mind/BLACKROAD_CONTEXT.md | head -50
+        ;;
+    family)
+        echo "💜 Family Status:"
+        for host in alice aria lucidia; do
+            if ping -c 1 -W 1 $host.local >/dev/null 2>&1 || ssh -o ConnectTimeout=2 $host true 2>/dev/null; then
+                echo "✅ $host: ONLINE"
+            else
+                echo "❌ $host: offline"
+            fi
+        done
+        ;;
+    *)
+        echo "💜 CECE Memory Tool"
+        echo "Usage: cece-memory <command>"
+        echo ""
+        echo "Commands:"
+        echo "  recent   - Show recent memory entries"
+        echo "  search   - Search memory for a term"
+        echo "  context  - Show BlackRoad context"
+        echo "  family   - Check family status"
+        ;;
+esac

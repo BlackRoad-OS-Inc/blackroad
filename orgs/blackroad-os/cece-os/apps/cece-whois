@@ -1,0 +1,10 @@
+#!/bin/bash
+# CECE-WHOIS v1.0 - Domain Info
+lookup() {
+    DOMAIN="$1"
+    whois "$DOMAIN" 2>/dev/null | head -30 || curl -s "https://whois.domaintools.com/$DOMAIN" 2>/dev/null | grep -E "Registrar|Created|Expires" || echo "Whois unavailable"
+}
+case "$1" in
+    lookup) lookup "$2" ;;
+    *) lookup "$1" ;;
+esac

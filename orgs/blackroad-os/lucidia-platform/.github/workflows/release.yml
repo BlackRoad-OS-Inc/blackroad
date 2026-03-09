@@ -1,0 +1,104 @@
+# ============================================================================
+# BlackRoad OS - Release Pipeline
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Automated release workflow triggered by version tags.
+# Creates GitHub releases with changelogs and artifacts.
+#
+# Trigger: Push tags matching v*.*.* (e.g., v0.2.0, v1.0.0-beta.1)
+# ============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changelog
+
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "Generating changelog from $PREV_TAG to ${{ steps.version.outputs.tag }}"
+            CHANGES=$(git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD)
+          else
+            echo "First release - including all commits"
+            CHANGES=$(git log --pretty=format:"- %s (%h)" HEAD~20..HEAD)
+          fi
+
+          # Write to file for multi-line output
+          echo "$CHANGES" > changelog.txt
+          echo "Generated changelog with $(echo "$CHANGES" | wc -l) entries"
+
+      - name: Create release archive
+        run: |
+          # Create a clean archive of the release
+          mkdir -p dist
+
+          # Archive Python files
+          tar -czvf dist/blackroad-os-${{ steps.version.outputs.version }}-python.tar.gz \
+            --exclude='*.pyc' \
+            --exclude='__pycache__' \
+            --exclude='.git' \
+            *.py 2>/dev/null || echo "No Python files in root"
+
+          # Archive shell scripts
+          tar -czvf dist/blackroad-os-${{ steps.version.outputs.version }}-scripts.tar.gz \
+            --exclude='.git' \
+            *.sh br-* 2>/dev/null || echo "No shell scripts in root"
+
+          # Archive config files
+          if [ -d "config" ]; then
+            tar -czvf dist/blackroad-os-${{ steps.version.outputs.version }}-config.tar.gz config/
+          fi
+
+          ls -la dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: BlackRoad OS v${{ steps.version.outputs.version }}
+          body_path: changelog.txt
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+          files: |
+            dist/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ steps.version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          ls dist/*.tar.gz 2>/dev/null | while read f; do
+            echo "- $(basename $f)" >> $GITHUB_STEP_SUMMARY
+          done

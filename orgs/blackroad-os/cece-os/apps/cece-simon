@@ -1,0 +1,16 @@
+#!/bin/bash
+# CECE-SIMON v1.0 - Simon Says
+play() {
+    COLORS=("R" "G" "B" "Y")
+    SEQ=""
+    ROUND=1
+    while true; do
+        SEQ="$SEQ${COLORS[$RANDOM % 4]}"
+        echo "Round $ROUND: $SEQ"
+        sleep 2
+        clear 2>/dev/null
+        read -p "Repeat: " INPUT
+        [ "$INPUT" = "$SEQ" ] && echo "✅ Correct!" && ((ROUND++)) || (echo "❌ Game over at round $ROUND"; break)
+    done
+}
+case "$1" in *) play ;; esac

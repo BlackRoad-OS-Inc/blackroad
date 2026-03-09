@@ -1,0 +1,27 @@
+#!/bin/bash
+# CECE-AGENDA v1.0 - Daily Agenda
+AGENDA_DIR=~/cece/agenda
+mkdir -p "$AGENDA_DIR"
+today() {
+    DATE=$(date +%Y-%m-%d)
+    FILE="$AGENDA_DIR/$DATE.md"
+    [ -f "$FILE" ] && cat "$FILE" || echo "No agenda for today"
+}
+add() {
+    DATE=$(date +%Y-%m-%d)
+    echo "- $1" >> "$AGENDA_DIR/$DATE.md"
+    echo "Added to today's agenda"
+}
+week() {
+    for i in {0..6}; do
+        DATE=$(date -d "+$i days" +%Y-%m-%d 2>/dev/null || date -v+${i}d +%Y-%m-%d)
+        echo "=== $DATE ==="
+        cat "$AGENDA_DIR/$DATE.md" 2>/dev/null || echo "(empty)"
+    done
+}
+case "$1" in
+    today) today ;;
+    add) add "$2" ;;
+    week) week ;;
+    *) echo "CECE-AGENDA: today | add <item> | week" ;;
+esac

@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad World — The Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            overflow: hidden; 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #000;
+        }
+        #canvas-container { position: fixed; inset: 0; }
+
+        /* === TOP BAR === */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .logo-text {
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Resources */
+        .resources {
+            display: flex;
+            gap: 16px;
+            margin-left: auto;
+        }
+        .resource {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+        }
+        .resource-icon { font-size: 16px; }
+        .resource-value { font-weight: 600; }
+
+        /* Level */
+        .level-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+        .level-badge {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .xp-bar {
+            width: 100px;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF1D6C, #F5A623);
+            transition: width 0.3s;
+        }
+
+        /* === LEFT PANEL - QUESTS === */
+        .quest-panel {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            width: 280px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 16px;
+            padding: 16px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .panel-title {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .quest-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quest-item:hover { background: rgba(255,255,255,0.1); }
+        .quest-item.completed { opacity: 0.5; }
+        .quest-name {
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .quest-desc {
+            color: rgba(255,255,255,0.6);
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+        .quest-progress {
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .quest-progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s;
+        }
+        .quest-reward {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #F5A623;
+        }
+
+        /* === RIGHT PANEL - INVENTORY === */
+        .inventory-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 280px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 16px;
+            padding: 16px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .inv-slot {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            border: 2px solid transparent;
+        }
+        .inv-slot:hover { background: rgba(255,255,255,0.1); }
+        .inv-slot.selected { border-color: #FF1D6C; }
+        .inv-slot-icon { font-size: 24px; }
+        .inv-slot-count {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 10px;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* === BOTTOM BAR - BUILD MENU === */
+        .build-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,0.85);
+            padding: 12px 20px;
+            border-radius: 50px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .build-btn {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 12px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+        }
+        .build-btn:hover { background: rgba(255,255,255,0.2); transform: translateY(-4px); }
+        .build-btn.active { background: #FF1D6C; }
+        .build-btn.locked { opacity: 0.4; cursor: not-allowed; }
+        .build-btn-cost {
+            font-size: 9px;
+            color: #F5A623;
+            position: absolute;
+            bottom: 4px;
+        }
+        .build-btn-key {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* === STATS PANEL === */
+        .stats-panel {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 16px;
+            padding: 16px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .stat-icon { font-size: 18px; }
+        .stat-bar {
+            width: 100px;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .stat-fill { height: 100%; transition: width 0.3s; }
+        .stat-fill.happiness { background: #FF69B4; }
+        .stat-fill.nature { background: #4CAF50; }
+        .stat-fill.energy { background: #F5A623; }
+        .stat-fill.magic { background: #9C27B0; }
+        .stat-value {
+            color: white;
+            font-size: 12px;
+            width: 35px;
+        }
+
+        /* === CONTROLS === */
+        .controls {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+        .ctrl-btn {
+            width: 48px;
+            height: 48px;
+            background: rgba(0,0,0,0.85);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.2); }
+        .ctrl-btn.active { background: #FF1D6C; border-color: #FF1D6C; }
+
+        /* === TIME & WEATHER === */
+        .time-display {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            padding: 10px 24px;
+            border-radius: 50px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .time-text {
+            color: white;
+            font-size: 20px;
+            font-weight: 300;
+        }
+        .day-text {
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+        }
+        .weather-icon { font-size: 24px; }
+
+        /* === NOTIFICATIONS === */
+        .notifications {
+            position: fixed;
+            top: 140px;
+            right: 20px;
+            width: 280px;
+            z-index: 200;
+            pointer-events: none;
+        }
+        .notification {
+            background: rgba(0,0,0,0.9);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            color: white;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+            border-left: 3px solid #4CAF50;
+        }
+        .notification.warning { border-left-color: #F5A623; }
+        .notification.error { border-left-color: #f44336; }
+        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } }
+        @keyframes fadeOut { to { opacity: 0; } }
+
+        /* === TOOLTIP === */
+        .tooltip {
+            position: fixed;
+            background: rgba(0,0,0,0.95);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: white;
+            font-size: 12px;
+            z-index: 300;
+            pointer-events: none;
+            max-width: 200px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: none;
+        }
+        .tooltip-title { font-weight: 600; margin-bottom: 4px; }
+        .tooltip-desc { color: rgba(255,255,255,0.7); }
+
+        /* === LOADING === */
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+        .loading.hidden { opacity: 0; pointer-events: none; }
+        .loading-title {
+            font-size: 32px;
+            color: white;
+            margin-bottom: 8px;
+            font-weight: 300;
+        }
+        .loading-sub { color: rgba(255,255,255,0.6); margin-bottom: 30px; }
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #FF1D6C;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-tip {
+            margin-top: 30px;
+            color: rgba(255,255,255,0.5);
+            font-size: 13px;
+        }
+
+        /* === LEVEL UP MODAL === */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal.visible { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .modal.visible .modal-content { transform: scale(1); }
+        .modal-icon { font-size: 60px; margin-bottom: 16px; }
+        .modal-title { color: white; font-size: 28px; margin-bottom: 8px; }
+        .modal-desc { color: rgba(255,255,255,0.7); margin-bottom: 24px; }
+        .modal-rewards {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .modal-reward {
+            background: rgba(255,255,255,0.1);
+            padding: 12px 20px;
+            border-radius: 10px;
+        }
+        .modal-btn {
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            border: none;
+            padding: 12px 32px;
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-btn:hover { transform: scale(1.05); }
+    </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--black:#000;--ink:#0A0A0A;--surface:#111;--border:#1A1A1A;--dim:#666;--sub:#999;--white:#FFF;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00FF88;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px;--xxl:89px}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-top:70px}
+    h1{font-size:clamp(40px,8vw,100px);font-weight:600;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:21px}
+    h2{font-size:clamp(24px,4vw,48px);font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:21px}
+    h3{font-size:clamp(16px,2vw,24px);font-weight:600;color:#fff;margin-bottom:13px}
+    h4,h5,h6{color:#fff}
+    p{color:#999;line-height:1.8;margin-bottom:21px}
+    a{color:#2979FF;text-decoration:none;transition:color .2s}
+    a:hover{color:#FF1D6C}
+    strong{color:#fff}
+    code{font-family:inherit;background:#111;color:#00FF88;padding:2px 6px;border:1px solid #1A1A1A}
+    pre{background:#0A0A0A;border:1px solid #1A1A1A;border-left:2px solid #FF1D6C;padding:21px 34px;color:#00FF88;overflow-x:auto;margin-bottom:34px}
+    hr{border:none;height:1px;background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);opacity:.3;margin:55px 0}
+    nav,.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;justify-content:space-between;align-items:center;padding:21px 55px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1A1A1A}
+    nav a,.nav a{color:#999;font-size:13px}
+    nav a:hover,.nav a:hover{color:#fff}
+    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header{padding:21px 55px 0;display:flex;justify-content:space-between;align-items:center}
+    header .logo{font-size:22px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header nav{position:static;background:none;backdrop-filter:none;border:none;padding:0;display:flex;gap:34px}
+    .hero,section.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:89px 55px;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,29,108,.15) 0%,rgba(156,39,176,.1) 40%,transparent 70%);pointer-events:none;animation:orb 8s ease-in-out infinite}
+    @keyframes orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
+    .hero p,.tagline{font-size:18px;max-width:600px;color:#999;margin-bottom:55px;position:relative;z-index:1}
+    .hero h1{position:relative;z-index:1}
+    .earth-glow,.hero-glow,.neural-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,29,108,.07) 0%,transparent 60%);pointer-events:none}
+    section{padding:89px 55px;position:relative}
+    section:not(.hero){max-width:1200px;margin-left:auto;margin-right:auto}
+    section h2{color:#fff;-webkit-text-fill-color:#fff}
+    .btn,.btn-primary{display:inline-block;padding:13px 34px;font-family:inherit;font-size:14px;font-weight:600;background:#FF1D6C;color:#fff;text-decoration:none;border:none;cursor:pointer;transition:all .2s;position:relative;z-index:1}
+    .btn:hover,.btn-primary:hover{background:#fff;color:#000;transform:translateY(-2px)}
+    .features-grid,.ai-features,.pillars{display:flex;flex-wrap:wrap;gap:34px;justify-content:center}
+    .feature-card,.ai-feature,.pillar{background:rgba(255,255,255,.02);border:1px solid #1A1A1A;padding:55px;transition:all .3s;flex:1;min-width:220px;max-width:360px}
+    .feature-card:hover,.ai-feature:hover,.pillar:hover{background:rgba(255,255,255,.05);border-color:rgba(255,29,108,.4);transform:translateY(-4px)}
+    .feature-icon,.ai-feature-icon,.pillar-icon{font-size:28px;margin-bottom:21px;display:block}
+    .feature-card h3,.ai-feature-title,.pillar-name{color:#fff;margin-bottom:8px}
+    .feature-card p,.ai-feature-desc{font-size:14px;color:#666}
+    .badge,.ai-badge{display:inline-block;padding:4px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #1A1A1A;color:#999;margin-bottom:21px}
+    footer,.footer{padding:55px;border-top:1px solid #1A1A1A;color:#666;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:21px}
+    footer a,.footer a{color:#999}
+    footer a:hover,.footer a:hover{color:#FF1D6C}
+    @media(max-width:768px){nav,.nav{padding:21px}.hero,section.hero{padding:89px 21px}.features-grid,.ai-features,.pillars{flex-direction:column}.feature-card,.ai-feature{min-width:unset;max-width:unset}footer,.footer{flex-direction:column;text-align:center;padding:34px 21px}}
+  </style>
+</head>
+<body>
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="loading-title">BlackRoad World</div>
+        <div class="loading-sub">Building your world...</div>
+        <div class="loading-spinner"></div>
+        <div class="loading-tip">💡 Tip: Collect resources to build and expand your world!</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">
+            <div class="logo-icon">🌍</div>
+            <span class="logo-text">BlackRoad World</span>
+        </div>
+        
+        <div class="level-display">
+            <div class="level-badge" id="levelBadge">1</div>
+            <div>
+                <div style="color: white; font-size: 12px;">Level <span id="levelNum">1</span></div>
+                <div class="xp-bar">
+                    <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="resources">
+            <div class="resource">
+                <span class="resource-icon">🪵</span>
+                <span class="resource-value" id="resWood">50</span>
+            </div>
+            <div class="resource">
+                <span class="resource-icon">🪨</span>
+                <span class="resource-value" id="resStone">30</span>
+            </div>
+            <div class="resource">
+                <span class="resource-icon">🌾</span>
+                <span class="resource-value" id="resFood">100</span>
+            </div>
+            <div class="resource">
+                <span class="resource-icon">💎</span>
+                <span class="resource-value" id="resGems">10</span>
+            </div>
+            <div class="resource">
+                <span class="resource-icon">⚡</span>
+                <span class="resource-value" id="resEnergy">100</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Display -->
+    <div class="time-display">
+        <span class="weather-icon" id="weatherIcon">☀️</span>
+        <div>
+            <div class="time-text" id="timeText">12:00</div>
+            <div class="day-text">Day <span id="dayNum">1</span></div>
+        </div>
+    </div>
+
+    <!-- Quest Panel -->
+    <div class="quest-panel">
+        <div class="panel-title">📜 Active Quests</div>
+        <div id="questList"></div>
+    </div>
+
+    <!-- Inventory Panel -->
+    <div class="inventory-panel">
+        <div class="panel-title">🎒 Inventory</div>
+        <div class="inventory-grid" id="inventoryGrid"></div>
+    </div>
+
+    <!-- Stats Panel -->
+    <div class="stats-panel">
+        <div class="stat-row">
+            <span class="stat-icon">💚</span>
+            <div class="stat-bar"><div class="stat-fill happiness" id="statHappiness" style="width:80%"></div></div>
+            <span class="stat-value" id="valHappiness">80%</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-icon">🌱</span>
+            <div class="stat-bar"><div class="stat-fill nature" id="statNature" style="width:70%"></div></div>
+            <span class="stat-value" id="valNature">70%</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-icon">⚡</span>
+            <div class="stat-bar"><div class="stat-fill energy" id="statEnergy" style="width:90%"></div></div>
+            <span class="stat-value" id="valEnergy">90%</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-icon">✨</span>
+            <div class="stat-bar"><div class="stat-fill magic" id="statMagic" style="width:50%"></div></div>
+            <span class="stat-value" id="valMagic">50%</span>
+        </div>
+    </div>
+
+    <!-- Build Bar -->
+    <div class="build-bar">
+        <button class="build-btn" data-build="tree" title="Plant Tree">
+            🌳
+            <span class="build-btn-cost">5🪵</span>
+            <span class="build-btn-key">1</span>
+        </button>
+        <button class="build-btn" data-build="flower" title="Plant Flower">
+            🌸
+            <span class="build-btn-cost">2🌾</span>
+            <span class="build-btn-key">2</span>
+        </button>
+        <button class="build-btn" data-build="house" title="Build House">
+            🏠
+            <span class="build-btn-cost">20🪵 10🪨</span>
+            <span class="build-btn-key">3</span>
+        </button>
+        <button class="build-btn" data-build="farm" title="Build Farm">
+            🌾
+            <span class="build-btn-cost">15🪵 5🪨</span>
+            <span class="build-btn-key">4</span>
+        </button>
+        <button class="build-btn" data-build="windmill" title="Build Windmill">
+            🏭
+            <span class="build-btn-cost">30🪵 20🪨</span>
+            <span class="build-btn-key">5</span>
+        </button>
+        <button class="build-btn" data-build="agent" title="Spawn Agent">
+            🤖
+            <span class="build-btn-cost">50💎</span>
+            <span class="build-btn-key">6</span>
+        </button>
+        <button class="build-btn locked" data-build="portal" title="Build Portal (Lvl 5)">
+            🌀
+            <span class="build-btn-cost">100💎</span>
+            <span class="build-btn-key">7</span>
+        </button>
+        <button class="build-btn locked" data-build="castle" title="Build Castle (Lvl 10)">
+            🏰
+            <span class="build-btn-cost">200🪵 150🪨</span>
+            <span class="build-btn-key">8</span>
+        </button>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="ctrl-btn active" id="btnRotate" title="Auto Rotate">🔄</button>
+        <button class="ctrl-btn" id="btnDay" title="Day">☀️</button>
+        <button class="ctrl-btn" id="btnNight" title="Night">🌙</button>
+        <button class="ctrl-btn" id="btnRain" title="Rain">🌧️</button>
+        <button class="ctrl-btn" id="btnSpeed" title="Speed x2">⏩</button>
+    </div>
+
+    <!-- Notifications -->
+    <div class="notifications" id="notifications"></div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-title"></div>
+        <div class="tooltip-desc"></div>
+    </div>
+
+    <!-- Level Up Modal -->
+    <div class="modal" id="levelModal">
+        <div class="modal-content">
+            <div class="modal-icon">🎉</div>
+            <div class="modal-title">Level Up!</div>
+            <div class="modal-desc">You reached level <span id="modalLevel">2</span>!</div>
+            <div class="modal-rewards">
+                <div class="modal-reward">+50 🪵</div>
+                <div class="modal-reward">+30 🪨</div>
+                <div class="modal-reward">+10 💎</div>
+            </div>
+            <button class="modal-btn" onclick="closeModal()">Continue</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    // ==================== GAME STATE ====================
+    const GAME = {
+        level: 1,
+        xp: 0,
+        xpNeeded: 100,
+        day: 1,
+        hour: 12,
+        minute: 0,
+        speed: 1,
+        
+        resources: {
+            wood: 50,
+            stone: 30,
+            food: 100,
+            gems: 10,
+            energy: 100
+        },
+        
+        stats: {
+            happiness: 80,
+            nature: 70,
+            energy: 90,
+            magic: 50
+        },
+        
+        inventory: [
+            { id: 'axe', name: 'Axe', icon: '🪓', count: 1, desc: 'Chop trees faster' },
+            { id: 'pickaxe', name: 'Pickaxe', icon: '⛏️', count: 1, desc: 'Mine stone' },
+            { id: 'seeds', name: 'Seeds', icon: '🌱', count: 10, desc: 'Plant crops' },
+            { id: 'water', name: 'Water Bucket', icon: '🪣', count: 5, desc: 'Water plants' },
+            { id: 'magic_wand', name: 'Magic Wand', icon: '🪄', count: 1, desc: 'Cast spells' },
+            { id: 'compass', name: 'Compass', icon: '🧭', count: 1, desc: 'Navigate the world' },
+            { id: 'map', name: 'World Map', icon: '🗺️', count: 1, desc: 'View your territory' },
+            { id: 'lantern', name: 'Lantern', icon: '🏮', count: 3, desc: 'Light up the night' },
+        ],
+        
+        quests: [
+            { id: 'plant_trees', name: 'Forest Guardian', desc: 'Plant 10 trees', icon: '🌳', progress: 0, goal: 10, reward: { xp: 50, wood: 20 }, completed: false },
+            { id: 'build_houses', name: 'Village Builder', desc: 'Build 5 houses', icon: '🏠', progress: 0, goal: 5, reward: { xp: 100, gems: 5 }, completed: false },
+            { id: 'spawn_agents', name: 'AI Revolution', desc: 'Create 3 agents', icon: '🤖', progress: 0, goal: 3, reward: { xp: 150, magic: 20 }, completed: false },
+            { id: 'flowers', name: 'Garden Master', desc: 'Plant 20 flowers', icon: '🌸', progress: 0, goal: 20, reward: { xp: 30, food: 50 }, completed: false },
+            { id: 'survive_night', name: 'Night Owl', desc: 'Survive 3 nights', icon: '🌙', progress: 0, goal: 3, reward: { xp: 75, gems: 10 }, completed: false },
+        ],
+        
+        unlocks: {
+            5: ['portal'],
+            10: ['castle']
+        },
+        
+        counts: {
+            trees: 0,
+            flowers: 0,
+            houses: 0,
+            agents: 0,
+            animals: 0
+        }
+    };
+
+    // ==================== THREE.JS SETUP ====================
+    let scene, camera, renderer;
+    let world, water;
+    let trees = [], flowers = [], houses = [], animals = [], agents = [];
+    let clouds = [], birds = [], rain = null;
+    let time = 0;
+    let autoRotate = true;
+    let isNight = false;
+    let isRaining = false;
+    let buildMode = null;
+    let selectedSlot = null;
+
+    // Camera
+    let isDragging = false;
+    let prevMouse = { x: 0, y: 0 };
+    let camAngle = 0, camHeight = 50, camDist = 100;
+
+    const COLORS = {
+        sky: 0x87CEEB,
+        skyNight: 0x1a1a2e,
+        grass: 0x7CBA3D,
+        water: 0x4FA4E8,
+        sand: 0xF4D03F
+    };
+
+    function init() {
+        // Scene
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(COLORS.sky);
+        scene.fog = new THREE.Fog(COLORS.sky, 80, 300);
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        updateCamera();
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Build world
+        createLights();
+        createTerrain();
+        createWater();
+        createInitialWorld();
+        createClouds();
+        createRain();
+
+        // Events
+        setupEvents();
+
+        // UI
+        updateUI();
+        renderQuests();
+        renderInventory();
+
+        // Start
+        setTimeout(() => {
+            document.getElementById('loading').classList.add('hidden');
+            notify('🌍 Welcome to BlackRoad World!', 'success');
+            animate();
+        }, 1500);
+    }
+
+    function createLights() {
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        
+        window.sunLight = new THREE.DirectionalLight(0xffffff, 1);
+        window.sunLight.position.set(80, 100, 50);
+        window.sunLight.castShadow = true;
+        window.sunLight.shadow.mapSize.set(2048, 2048);
+        window.sunLight.shadow.camera.near = 0.5;
+        window.sunLight.shadow.camera.far = 300;
+        window.sunLight.shadow.camera.left = -100;
+        window.sunLight.shadow.camera.right = 100;
+        window.sunLight.shadow.camera.top = 100;
+        window.sunLight.shadow.camera.bottom = -100;
+        scene.add(window.sunLight);
+
+        window.hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x7CBA3D, 0.3);
+        scene.add(window.hemiLight);
+    }
+
+    function createTerrain() {
+        const size = 150;
+        const geo = new THREE.PlaneGeometry(size, size, 80, 80);
+        const pos = geo.attributes.position.array;
+        
+        for (let i = 0; i < pos.length; i += 3) {
+            const x = pos[i], y = pos[i + 1];
+            const dist = Math.sqrt(x * x + y * y);
+            let h = 0;
+            
+            if (dist < size * 0.4) {
+                h = Math.sin(x * 0.06) * Math.cos(y * 0.06) * 6;
+                h += Math.sin(x * 0.12) * Math.cos(y * 0.12) * 3;
+                const edge = 1 - Math.pow(dist / (size * 0.4), 2);
+                h *= Math.max(0, edge);
+                h = Math.max(0, h);
+            } else {
+                h = -5;
+            }
+            pos[i + 2] = h;
+        }
+        geo.computeVertexNormals();
+
+        const mat = new THREE.MeshStandardMaterial({ color: COLORS.grass, roughness: 0.8 });
+        world = new THREE.Mesh(geo, mat);
+        world.rotation.x = -Math.PI / 2;
+        world.receiveShadow = true;
+        scene.add(world);
+
+        // Beach
+        const beach = new THREE.Mesh(
+            new THREE.RingGeometry(size * 0.38, size * 0.42, 64),
+            new THREE.MeshStandardMaterial({ color: COLORS.sand })
+        );
+        beach.rotation.x = -Math.PI / 2;
+        beach.position.y = 0.1;
+        scene.add(beach);
+    }
+
+    function createWater() {
+        water = new THREE.Mesh(
+            new THREE.CircleGeometry(200, 64),
+            new THREE.MeshStandardMaterial({ 
+                color: COLORS.water, 
+                transparent: true, 
+                opacity: 0.8,
+                roughness: 0.1
+            })
+        );
+        water.rotation.x = -Math.PI / 2;
+        water.position.y = -2;
+        scene.add(water);
+    }
+
+    function createInitialWorld() {
+        // Initial trees
+        for (let i = 0; i < 60; i++) spawnTree(null, true);
+        
+        // Initial flowers
+        for (let i = 0; i < 100; i++) spawnFlower(null, true);
+        
+        // Initial houses
+        for (let i = 0; i < 8; i++) spawnHouse(null, true);
+        
+        // Initial animals
+        for (let i = 0; i < 20; i++) spawnAnimal();
+        
+        // Initial agents
+        for (let i = 0; i < 5; i++) spawnAgent(null, true);
+        
+        // Birds
+        for (let i = 0; i < 15; i++) spawnBird();
+        
+        updateCounts();
+    }
+
+    function createClouds() {
+        for (let i = 0; i < 12; i++) {
+            const cloud = createCloud();
+            cloud.position.set(
+                (Math.random() - 0.5) * 150,
+                30 + Math.random() * 20,
+                (Math.random() - 0.5) * 150
+            );
+            clouds.push(cloud);
+            scene.add(cloud);
+        }
+    }
+
+    function createCloud() {
+        const group = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+        
+        [[0,0,0,2.5], [-1.5,0,0,2], [1.5,0,0,2], [0,0.8,0,1.5], [-1,0.5,0,1.5], [1,0.5,0,1.5]].forEach(([x,y,z,r]) => {
+            const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), mat);
+            puff.position.set(x, y, z);
+            group.add(puff);
+        });
+        
+        group.userData = { speed: 0.01 + Math.random() * 0.02 };
+        return group;
+    }
+
+    function createRain() {
+        const count = 5000;
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(count * 3);
+        const vel = new Float32Array(count);
+        
+        for (let i = 0; i < count; i++) {
+            pos[i * 3] = (Math.random() - 0.5) * 150;
+            pos[i * 3 + 1] = Math.random() * 80;
+            pos[i * 3 + 2] = (Math.random() - 0.5) * 150;
+            vel[i] = 0.5 + Math.random() * 0.5;
+        }
+        
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        rain = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x8888ff, size: 0.15, transparent: true, opacity: 0.6 }));
+        rain.userData = { velocities: vel };
+        rain.visible = false;
+        scene.add(rain);
+    }
+
+    // ==================== SPAWNERS ====================
+    function getRandomPosition() {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 10 + Math.random() * 45;
+        return { x: Math.cos(angle) * dist, z: Math.sin(angle) * dist };
+    }
+
+    function spawnTree(pos, initial = false) {
+        const group = new THREE.Group();
+        const types = ['pine', 'oak', 'cherry'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        
+        // Trunk
+        const trunk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.2, 0.35, 2, 6),
+            new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+        );
+        trunk.position.y = 1;
+        trunk.castShadow = true;
+        group.add(trunk);
+
+        // Leaves
+        if (type === 'pine') {
+            for (let i = 0; i < 3; i++) {
+                const cone = new THREE.Mesh(
+                    new THREE.ConeGeometry(1.8 - i * 0.4, 2, 6),
+                    new THREE.MeshStandardMaterial({ color: 0x228B22 })
+                );
+                cone.position.y = 2.5 + i * 1.2;
+                cone.castShadow = true;
+                group.add(cone);
+            }
+        } else if (type === 'cherry') {
+            const leaves = new THREE.Mesh(
+                new THREE.SphereGeometry(2, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0xFFB7C5 })
+            );
+            leaves.position.y = 3.5;
+            leaves.castShadow = true;
+            group.add(leaves);
+        } else {
+            const leaves = new THREE.Mesh(
+                new THREE.SphereGeometry(2, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0x32CD32 })
+            );
+            leaves.position.y = 3.5;
+            leaves.castShadow = true;
+            group.add(leaves);
+        }
+
+        const p = pos || getRandomPosition();
+        group.position.set(p.x, 0, p.z);
+        group.scale.setScalar(0.6 + Math.random() * 0.4);
+        group.userData = { type: 'tree', sway: Math.random() * Math.PI * 2 };
+        
+        trees.push(group);
+        scene.add(group);
+        
+        if (!initial) {
+            GAME.counts.trees++;
+            updateQuest('plant_trees', 1);
+        }
+        
+        return group;
+    }
+
+    function spawnFlower(pos, initial = false) {
+        const group = new THREE.Group();
+        const colors = [0xFF69B4, 0xFFD700, 0xFF6347, 0x9370DB, 0x00CED1, 0xFFFFFF];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        const stem = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.03, 0.03, 0.6, 4),
+            new THREE.MeshStandardMaterial({ color: 0x228B22 })
+        );
+        stem.position.y = 0.3;
+        group.add(stem);
+
+        for (let i = 0; i < 5; i++) {
+            const petal = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 6, 6),
+                new THREE.MeshStandardMaterial({ color })
+            );
+            petal.scale.set(1, 0.3, 0.5);
+            petal.position.y = 0.6;
+            petal.position.x = Math.cos((i / 5) * Math.PI * 2) * 0.15;
+            petal.position.z = Math.sin((i / 5) * Math.PI * 2) * 0.15;
+            group.add(petal);
+        }
+
+        const center = new THREE.Mesh(
+            new THREE.SphereGeometry(0.08, 6, 6),
+            new THREE.MeshStandardMaterial({ color: 0xFFD700 })
+        );
+        center.position.y = 0.6;
+        group.add(center);
+
+        const p = pos || getRandomPosition();
+        group.position.set(p.x, 0, p.z);
+        group.scale.setScalar(0.5 + Math.random() * 0.5);
+        group.userData = { type: 'flower', sway: Math.random() * Math.PI * 2 };
+
+        flowers.push(group);
+        scene.add(group);
+        
+        if (!initial) {
+            GAME.counts.flowers++;
+            updateQuest('flowers', 1);
+        }
+        
+        return group;
+    }
+
+    function spawnHouse(pos, initial = false) {
+        const group = new THREE.Group();
+        const roofColors = [0xE74C3C, 0x3498DB, 0xFF1D6C, 0xF5A623, 0x9C27B0];
+        
+        // Walls
+        const walls = new THREE.Mesh(
+            new THREE.BoxGeometry(3, 2.5, 3),
+            new THREE.MeshStandardMaterial({ color: 0xFAF0E6 })
+        );
+        walls.position.y = 1.25;
+        walls.castShadow = true;
+        walls.receiveShadow = true;
+        group.add(walls);
+
+        // Roof
+        const roof = new THREE.Mesh(
+            new THREE.ConeGeometry(2.8, 1.5, 4),
+            new THREE.MeshStandardMaterial({ color: roofColors[Math.floor(Math.random() * roofColors.length)] })
+        );
+        roof.position.y = 3.25;
+        roof.rotation.y = Math.PI / 4;
+        roof.castShadow = true;
+        group.add(roof);
+
+        // Door
+        const door = new THREE.Mesh(
+            new THREE.BoxGeometry(0.6, 1.2, 0.1),
+            new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+        );
+        door.position.set(0, 0.6, 1.55);
+        group.add(door);
+
+        // Windows
+        const windowMat = new THREE.MeshStandardMaterial({ color: 0x87CEEB, emissive: 0x000000 });
+        [[-0.8, 1.5, 1.55], [0.8, 1.5, 1.55]].forEach(([x, y, z]) => {
+            const win = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.1), windowMat);
+            win.position.set(x, y, z);
+            group.add(win);
+        });
+
+        const p = pos || getRandomPosition();
+        group.position.set(p.x, 0, p.z);
+        group.rotation.y = Math.random() * Math.PI * 2;
+        group.scale.setScalar(0.7 + Math.random() * 0.3);
+        group.userData = { type: 'house', windows: windowMat };
+
+        houses.push(group);
+        scene.add(group);
+        
+        if (!initial) {
+            GAME.counts.houses++;
+            updateQuest('build_houses', 1);
+            GAME.stats.happiness = Math.min(100, GAME.stats.happiness + 5);
+        }
+        
+        return group;
+    }
+
+    function spawnAnimal() {
+        const group = new THREE.Group();
+        const colors = [0xFFFFFF, 0x8B4513, 0xFF6600, 0xD2B48C, 0x808080];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const mat = new THREE.MeshStandardMaterial({ color });
+
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), mat);
+        body.scale.set(1, 0.7, 1.2);
+        group.add(body);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), mat);
+        head.position.set(0, 0.2, 0.4);
+        group.add(head);
+
+        // Eyes
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        [[-0.08, 0.3, 0.55], [0.08, 0.3, 0.55]].forEach(([x, y, z]) => {
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), eyeMat);
+            eye.position.set(x, y, z);
+            group.add(eye);
+        });
+
+        // Ears
+        [[-0.1, 0.4, 0.3], [0.1, 0.4, 0.3]].forEach(([x, y, z]) => {
+            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.2, 6), mat);
+            ear.position.set(x, y, z);
+            group.add(ear);
+        });
+
+        const p = getRandomPosition();
+        group.position.set(p.x, 0.4, p.z);
+        group.scale.setScalar(0.5 + Math.random() * 0.3);
+        group.userData = {
+            type: 'animal',
+            targetX: p.x,
+            targetZ: p.z,
+            speed: 0.02 + Math.random() * 0.02,
+            hop: Math.random() * Math.PI * 2,
+            idle: 0
+        };
+
+        animals.push(group);
+        scene.add(group);
+        GAME.counts.animals++;
+        return group;
+    }
+
+    function spawnAgent(pos, initial = false) {
+        const group = new THREE.Group();
+        const colors = [0xFF1D6C, 0x2979FF, 0xF5A623, 0x9C27B0];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        // Body
+        const body = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.3, 0.4, 0.8, 8),
+            new THREE.MeshStandardMaterial({ color, metalness: 0.5, roughness: 0.3 })
+        );
+        body.position.y = 0.4;
+        group.add(body);
+
+        // Head
+        const head = new THREE.Mesh(
+            new THREE.SphereGeometry(0.3, 12, 12),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.3 })
+        );
+        head.position.y = 1;
+        group.add(head);
+
+        // Eye
+        const eye = new THREE.Mesh(
+            new THREE.CircleGeometry(0.15, 16),
+            new THREE.MeshBasicMaterial({ color: 0xFF1D6C })
+        );
+        eye.position.set(0, 1.05, 0.28);
+        group.add(eye);
+
+        // Antenna
+        const antenna = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 0.2, 6),
+            new THREE.MeshStandardMaterial({ color: 0x333333 })
+        );
+        antenna.position.set(0, 1.35, 0);
+        group.add(antenna);
+
+        const ball = new THREE.Mesh(
+            new THREE.SphereGeometry(0.06, 8, 8),
+            new THREE.MeshBasicMaterial({ color: 0xFF1D6C })
+        );
+        ball.position.set(0, 1.5, 0);
+        ball.userData = { glow: 0 };
+        group.add(ball);
+
+        // Hover ring
+        const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(0.4, 0.04, 6, 24),
+            new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4 })
+        );
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = -0.1;
+        group.add(ring);
+
+        const p = pos || getRandomPosition();
+        group.position.set(p.x, 0.8, p.z);
+        group.userData = {
+            type: 'agent',
+            targetX: p.x,
+            targetZ: p.z,
+            speed: 0.03 + Math.random() * 0.02,
+            hover: Math.random() * Math.PI * 2,
+            ball
+        };
+
+        agents.push(group);
+        scene.add(group);
+        
+        if (!initial) {
+            GAME.counts.agents++;
+            updateQuest('spawn_agents', 1);
+            GAME.stats.magic = Math.min(100, GAME.stats.magic + 10);
+        }
+        
+        return group;
+    }
+
+    function spawnBird() {
+        const group = new THREE.Group();
+        const colors = [0x4169E1, 0xFF6347, 0xFFD700, 0x32CD32];
+        const mat = new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)] });
+
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6), mat);
+        body.scale.set(1, 0.7, 1.3);
+        group.add(body);
+
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(1, 0.05, 0.3), mat);
+        wing.position.y = 0.05;
+        wing.userData = { flap: Math.random() * Math.PI * 2 };
+        group.add(wing);
+
+        const beak = new THREE.Mesh(
+            new THREE.ConeGeometry(0.05, 0.15, 4),
+            new THREE.MeshStandardMaterial({ color: 0xFFA500 })
+        );
+        beak.position.set(0, 0, 0.25);
+        beak.rotation.x = Math.PI / 2;
+        group.add(beak);
+
+        group.position.set(
+            (Math.random() - 0.5) * 100,
+            15 + Math.random() * 15,
+            (Math.random() - 0.5) * 100
+        );
+        group.userData = {
+            type: 'bird',
+            angle: Math.random() * Math.PI * 2,
+            radius: 15 + Math.random() * 30,
+            speed: 0.005 + Math.random() * 0.01,
+            wing
+        };
+
+        birds.push(group);
+        scene.add(group);
+        return group;
+    }
+
+    // ==================== BUILD SYSTEM ====================
+    const BUILD_COSTS = {
+        tree: { wood: 5 },
+        flower: { food: 2 },
+        house: { wood: 20, stone: 10 },
+        farm: { wood: 15, stone: 5 },
+        windmill: { wood: 30, stone: 20 },
+        agent: { gems: 50 },
+        portal: { gems: 100 },
+        castle: { wood: 200, stone: 150 }
+    };
+
+    function canAfford(type) {
+        const costs = BUILD_COSTS[type];
+        if (!costs) return false;
+        for (const [res, amount] of Object.entries(costs)) {
+            if (GAME.resources[res] < amount) return false;
+        }
+        return true;
+    }
+
+    function spendResources(type) {
+        const costs = BUILD_COSTS[type];
+        for (const [res, amount] of Object.entries(costs)) {
+            GAME.resources[res] -= amount;
+        }
+        updateUI();
+    }
+
+    function build(type) {
+        if (!canAfford(type)) {
+            notify('⚠️ Not enough resources!', 'warning');
+            return;
+        }
+
+        // Check level requirements
+        if (type === 'portal' && GAME.level < 5) {
+            notify('🔒 Unlock at Level 5', 'warning');
+            return;
+        }
+        if (type === 'castle' && GAME.level < 10) {
+            notify('🔒 Unlock at Level 10', 'warning');
+            return;
+        }
+
+        spendResources(type);
+
+        switch (type) {
+            case 'tree':
+                spawnTree();
+                notify('🌳 Tree planted!');
+                GAME.stats.nature = Math.min(100, GAME.stats.nature + 2);
+                addXP(5);
+                break;
+            case 'flower':
+                spawnFlower();
+                notify('🌸 Flower planted!');
+                GAME.stats.nature = Math.min(100, GAME.stats.nature + 1);
+                addXP(2);
+                break;
+            case 'house':
+                spawnHouse();
+                notify('🏠 House built!');
+                addXP(25);
+                break;
+            case 'farm':
+                notify('🌾 Farm built! +10 food/day');
+                addXP(20);
+                break;
+            case 'windmill':
+                notify('🏭 Windmill built! +5 energy/day');
+                addXP(30);
+                break;
+            case 'agent':
+                spawnAgent();
+                notify('🤖 Agent spawned!');
+                addXP(50);
+                break;
+            case 'portal':
+                notify('🌀 Portal opened!');
+                addXP(100);
+                break;
+            case 'castle':
+                notify('🏰 Castle constructed!');
+                addXP(200);
+                break;
+        }
+
+        updateCounts();
+    }
+
+    // ==================== PROGRESSION ====================
+    function addXP(amount) {
+        GAME.xp += amount;
+        
+        while (GAME.xp >= GAME.xpNeeded) {
+            GAME.xp -= GAME.xpNeeded;
+            GAME.level++;
+            GAME.xpNeeded = Math.floor(GAME.xpNeeded * 1.5);
+            levelUp();
+        }
+        
+        updateUI();
+    }
+
+    function levelUp() {
+        // Rewards
+        GAME.resources.wood += 50;
+        GAME.resources.stone += 30;
+        GAME.resources.gems += 10;
+        
+        // Check unlocks
+        if (GAME.unlocks[GAME.level]) {
+            GAME.unlocks[GAME.level].forEach(item => {
+                document.querySelector(`[data-build="${item}"]`)?.classList.remove('locked');
+                notify(`🔓 Unlocked: ${item.toUpperCase()}!`);
+            });
+        }
+        
+        // Show modal
+        document.getElementById('modalLevel').textContent = GAME.level;
+        document.getElementById('levelModal').classList.add('visible');
+        
+        updateUI();
+    }
+
+    function closeModal() {
+        document.getElementById('levelModal').classList.remove('visible');
+    }
+
+    function updateQuest(id, amount) {
+        const quest = GAME.quests.find(q => q.id === id);
+        if (!quest || quest.completed) return;
+        
+        quest.progress += amount;
+        
+        if (quest.progress >= quest.goal) {
+            quest.completed = true;
+            
+            // Give rewards
+            if (quest.reward.xp) addXP(quest.reward.xp);
+            if (quest.reward.wood) GAME.resources.wood += quest.reward.wood;
+            if (quest.reward.stone) GAME.resources.stone += quest.reward.stone;
+            if (quest.reward.food) GAME.resources.food += quest.reward.food;
+            if (quest.reward.gems) GAME.resources.gems += quest.reward.gems;
+            if (quest.reward.magic) GAME.stats.magic = Math.min(100, GAME.stats.magic + quest.reward.magic);
+            
+            notify(`🎉 Quest Complete: ${quest.name}!`);
+            updateUI();
+        }
+        
+        renderQuests();
+    }
+
+    // ==================== TIME & WEATHER ====================
+    function updateTime() {
+        GAME.minute += 0.5 * GAME.speed;
+        if (GAME.minute >= 60) {
+            GAME.minute = 0;
+            GAME.hour++;
+            
+            // Resource generation
+            GAME.resources.food = Math.min(999, GAME.resources.food + 1);
+            GAME.resources.wood = Math.min(999, GAME.resources.wood + Math.floor(GAME.counts.trees / 20));
+            GAME.resources.energy = Math.min(100, GAME.resources.energy + 1);
+            
+            if (GAME.hour >= 24) {
+                GAME.hour = 0;
+                GAME.day++;
+                notify(`☀️ Day ${GAME.day} begins!`);
+                
+                // Daily bonuses
+                GAME.resources.gems += 1;
+            }
+            
+            // Night check
+            if (GAME.hour === 20) {
+                setNight(true);
+                updateQuest('survive_night', 1);
+            } else if (GAME.hour === 6) {
+                setNight(false);
+            }
+        }
+        
+        updateUI();
+    }
+
+    function setNight(night) {
+        isNight = night;
+        
+        if (night) {
+            scene.background = new THREE.Color(COLORS.skyNight);
+            scene.fog.color = new THREE.Color(COLORS.skyNight);
+            window.sunLight.intensity = 0.1;
+            window.hemiLight.intensity = 0.1;
+            
+            // Light up windows
+            houses.forEach(h => {
+                if (h.userData.windows) {
+                    h.userData.windows.emissive.setHex(0xFFAA00);
+                    h.userData.windows.emissiveIntensity = 0.5;
+                }
+            });
+        } else {
+            scene.background = new THREE.Color(COLORS.sky);
+            scene.fog.color = new THREE.Color(COLORS.sky);
+            window.sunLight.intensity = 1;
+            window.hemiLight.intensity = 0.3;
+            
+            houses.forEach(h => {
+                if (h.userData.windows) {
+                    h.userData.windows.emissive.setHex(0x000000);
+                }
+            });
+        }
+        
+        document.getElementById('btnDay').classList.toggle('active', !night);
+        document.getElementById('btnNight').classList.toggle('active', night);
+    }
+
+    function toggleRain() {
+        isRaining = !isRaining;
+        rain.visible = isRaining;
+        document.getElementById('btnRain').classList.toggle('active', isRaining);
+        
+        if (isRaining) {
+            notify('🌧️ It started raining!');
+            GAME.stats.nature = Math.min(100, GAME.stats.nature + 5);
+        }
+    }
+
+    // ==================== UI ====================
+    function updateUI() {
+        // Resources
+        document.getElementById('resWood').textContent = GAME.resources.wood;
+        document.getElementById('resStone').textContent = GAME.resources.stone;
+        document.getElementById('resFood').textContent = GAME.resources.food;
+        document.getElementById('resGems').textContent = GAME.resources.gems;
+        document.getElementById('resEnergy').textContent = GAME.resources.energy;
+        
+        // Level
+        document.getElementById('levelBadge').textContent = GAME.level;
+        document.getElementById('levelNum').textContent = GAME.level;
+        document.getElementById('xpFill').style.width = (GAME.xp / GAME.xpNeeded * 100) + '%';
+        
+        // Time
+        const h = GAME.hour.toString().padStart(2, '0');
+        const m = Math.floor(GAME.minute).toString().padStart(2, '0');
+        document.getElementById('timeText').textContent = `${h}:${m}`;
+        document.getElementById('dayNum').textContent = GAME.day;
+        document.getElementById('weatherIcon').textContent = isRaining ? '🌧️' : (isNight ? '🌙' : '☀️');
+        
+        // Stats
+        ['happiness', 'nature', 'energy', 'magic'].forEach(stat => {
+            const val = GAME.stats[stat];
+            document.getElementById(`stat${stat.charAt(0).toUpperCase() + stat.slice(1)}`).style.width = val + '%';
+            document.getElementById(`val${stat.charAt(0).toUpperCase() + stat.slice(1)}`).textContent = Math.floor(val) + '%';
+        });
+    }
+
+    function updateCounts() {
+        GAME.counts.trees = trees.length;
+        GAME.counts.flowers = flowers.length;
+        GAME.counts.houses = houses.length;
+        GAME.counts.agents = agents.length;
+        GAME.counts.animals = animals.length;
+    }
+
+    function renderQuests() {
+        const container = document.getElementById('questList');
+        container.innerHTML = '';
+        
+        GAME.quests.slice(0, 4).forEach(quest => {
+            const el = document.createElement('div');
+            el.className = 'quest-item' + (quest.completed ? ' completed' : '');
+            el.innerHTML = `
+                <div class="quest-name">${quest.icon} ${quest.name}</div>
+                <div class="quest-desc">${quest.desc}</div>
+                <div class="quest-progress">
+                    <div class="quest-progress-fill" style="width: ${Math.min(100, quest.progress / quest.goal * 100)}%"></div>
+                </div>
+                <div class="quest-reward">Reward: +${quest.reward.xp} XP ${quest.reward.gems ? `+${quest.reward.gems}💎` : ''}</div>
+            `;
+            container.appendChild(el);
+        });
+    }
+
+    function renderInventory() {
+        const grid = document.getElementById('inventoryGrid');
+        grid.innerHTML = '';
+        
+        for (let i = 0; i < 16; i++) {
+            const item = GAME.inventory[i];
+            const slot = document.createElement('div');
+            slot.className = 'inv-slot' + (selectedSlot === i ? ' selected' : '');
+            
+            if (item) {
+                slot.innerHTML = `
+                    <span class="inv-slot-icon">${item.icon}</span>
+                    ${item.count > 1 ? `<span class="inv-slot-count">${item.count}</span>` : ''}
+                `;
+                slot.onclick = () => {
+                    selectedSlot = selectedSlot === i ? null : i;
+                    renderInventory();
+                };
+            }
+            
+            grid.appendChild(slot);
+        }
+    }
+
+    function notify(message, type = 'success') {
+        const container = document.getElementById('notifications');
+        const el = document.createElement('div');
+        el.className = 'notification ' + type;
+        el.textContent = message;
+        container.appendChild(el);
+        
+        setTimeout(() => el.remove(), 3000);
+    }
+
+    // ==================== EVENTS ====================
+    function setupEvents() {
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Mouse
+        renderer.domElement.addEventListener('mousedown', e => {
+            isDragging = true;
+            prevMouse = { x: e.clientX, y: e.clientY };
+        });
+        renderer.domElement.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const dx = e.clientX - prevMouse.x;
+            const dy = e.clientY - prevMouse.y;
+            camAngle += dx * 0.005;
+            camHeight = Math.max(20, Math.min(100, camHeight - dy * 0.3));
+            updateCamera();
+            prevMouse = { x: e.clientX, y: e.clientY };
+        });
+        renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+        renderer.domElement.addEventListener('wheel', e => {
+            camDist = Math.max(50, Math.min(200, camDist + e.deltaY * 0.1));
+            updateCamera();
+        });
+
+        // Touch
+        renderer.domElement.addEventListener('touchstart', e => {
+            isDragging = true;
+            prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }, { passive: true });
+        renderer.domElement.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            const dx = e.touches[0].clientX - prevMouse.x;
+            const dy = e.touches[0].clientY - prevMouse.y;
+            camAngle += dx * 0.005;
+            camHeight = Math.max(20, Math.min(100, camHeight - dy * 0.3));
+            updateCamera();
+            prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }, { passive: true });
+        renderer.domElement.addEventListener('touchend', () => isDragging = false);
+
+        // Keyboard
+        document.addEventListener('keydown', e => {
+            const num = parseInt(e.key);
+            if (num >= 1 && num <= 8) {
+                const types = ['tree', 'flower', 'house', 'farm', 'windmill', 'agent', 'portal', 'castle'];
+                build(types[num - 1]);
+            }
+        });
+
+        // Build buttons
+        document.querySelectorAll('.build-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.build;
+                if (!btn.classList.contains('locked')) {
+                    build(type);
+                }
+            });
+        });
+
+        // Control buttons
+        document.getElementById('btnRotate').addEventListener('click', function() {
+            autoRotate = !autoRotate;
+            this.classList.toggle('active', autoRotate);
+        });
+        document.getElementById('btnDay').addEventListener('click', () => setNight(false));
+        document.getElementById('btnNight').addEventListener('click', () => setNight(true));
+        document.getElementById('btnRain').addEventListener('click', toggleRain);
+        document.getElementById('btnSpeed').addEventListener('click', function() {
+            GAME.speed = GAME.speed === 1 ? 3 : 1;
+            this.classList.toggle('active', GAME.speed > 1);
+            notify(GAME.speed > 1 ? '⏩ Speed x3' : '▶️ Normal speed');
+        });
+    }
+
+    function updateCamera() {
+        camera.position.x = Math.sin(camAngle) * camDist;
+        camera.position.z = Math.cos(camAngle) * camDist;
+        camera.position.y = camHeight;
+        camera.lookAt(0, 0, 0);
+    }
+
+    // ==================== ANIMATION ====================
+    function animate() {
+        requestAnimationFrame(animate);
+        time += 0.016;
+
+        // Auto rotate
+        if (autoRotate && !isDragging) {
+            camAngle += 0.002;
+            updateCamera();
+        }
+
+        // Time
+        updateTime();
+
+        // Trees sway
+        trees.forEach(t => {
+            t.userData.sway += 0.015;
+            t.rotation.z = Math.sin(t.userData.sway) * 0.02;
+        });
+
+        // Flowers sway
+        flowers.forEach(f => {
+            f.userData.sway += 0.02;
+            f.rotation.z = Math.sin(f.userData.sway) * 0.04;
+        });
+
+        // Animals
+        animals.forEach(a => {
+            const d = a.userData;
+            d.idle += 0.016;
+            
+            if (d.idle > 2) {
+                d.idle = 0;
+                const angle = Math.random() * Math.PI * 2;
+                d.targetX = Math.cos(angle) * (10 + Math.random() * 40);
+                d.targetZ = Math.sin(angle) * (10 + Math.random() * 40);
+            }
+
+            const dx = d.targetX - a.position.x;
+            const dz = d.targetZ - a.position.z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+
+            if (dist > 0.5) {
+                a.position.x += (dx / dist) * d.speed;
+                a.position.z += (dz / dist) * d.speed;
+                a.rotation.y = Math.atan2(dx, dz);
+                d.hop += 0.15;
+                a.position.y = 0.4 + Math.abs(Math.sin(d.hop)) * 0.2;
+            }
+        });
+
+        // Agents
+        agents.forEach(ag => {
+            const d = ag.userData;
+            d.hover += 0.04;
+            ag.position.y = 0.8 + Math.sin(d.hover) * 0.15;
+
+            if (Math.random() < 0.005) {
+                const angle = Math.random() * Math.PI * 2;
+                d.targetX = Math.cos(angle) * (5 + Math.random() * 40);
+                d.targetZ = Math.sin(angle) * (5 + Math.random() * 40);
+            }
+
+            const dx = d.targetX - ag.position.x;
+            const dz = d.targetZ - ag.position.z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+
+            if (dist > 1) {
+                ag.position.x += (dx / dist) * d.speed;
+                ag.position.z += (dz / dist) * d.speed;
+                ag.rotation.y = Math.atan2(dx, dz);
+            }
+
+            // Antenna glow
+            if (d.ball) {
+                d.ball.userData.glow += 0.1;
+                const h = (Math.sin(d.ball.userData.glow) + 1) * 0.15;
+                d.ball.material.color.setHSL(h, 1, 0.5);
+            }
+        });
+
+        // Birds
+        birds.forEach(b => {
+            const d = b.userData;
+            d.angle += d.speed;
+            b.position.x = Math.cos(d.angle) * d.radius;
+            b.position.z = Math.sin(d.angle) * d.radius;
+            b.rotation.y = d.angle + Math.PI / 2;
+
+            if (d.wing) {
+                d.wing.userData.flap += 0.25;
+                d.wing.rotation.z = Math.sin(d.wing.userData.flap) * 0.4;
+            }
+        });
+
+        // Clouds
+        clouds.forEach(c => {
+            c.position.x += c.userData.speed;
+            if (c.position.x > 100) c.position.x = -100;
+        });
+
+        // Rain
+        if (rain.visible) {
+            const pos = rain.geometry.attributes.position.array;
+            const vel = rain.userData.velocities;
+            for (let i = 0; i < pos.length / 3; i++) {
+                pos[i * 3 + 1] -= vel[i];
+                if (pos[i * 3 + 1] < 0) {
+                    pos[i * 3 + 1] = 80;
+                    pos[i * 3] = (Math.random() - 0.5) * 150;
+                    pos[i * 3 + 2] = (Math.random() - 0.5) * 150;
+                }
+            }
+            rain.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // Water wave
+        water.position.y = -2 + Math.sin(time * 0.5) * 0.1;
+
+        // Stats decay
+        GAME.stats.happiness = Math.max(0, GAME.stats.happiness - 0.001);
+        GAME.stats.energy = Math.max(0, GAME.stats.energy - 0.002);
+
+        renderer.render(scene, camera);
+    }
+
+    // Start
+    init();
+    </script>
+</body>
+</html>

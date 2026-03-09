@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadCommand - AI Operations Platform | BlackRoad OS</title>
+    <style>
+        :root {
+            --hot-pink: #FF1D6C;
+            --amber: #F5A623;
+            --violet: #9C27B0;
+            --electric-blue: #2979FF;
+            --black: #000000;
+            --white: #FFFFFF;
+            --phi: 1.618;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--black);
+            color: var(--white);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated grid background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 29, 108, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 29, 108, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Glowing orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: float 20s infinite;
+            z-index: 1;
+        }
+
+        .orb1 {
+            width: 400px;
+            height: 400px;
+            background: var(--hot-pink);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .orb2 {
+            width: 300px;
+            height: 300px;
+            background: var(--electric-blue);
+            top: 50%;
+            right: 10%;
+            animation-delay: 7s;
+        }
+
+        .orb3 {
+            width: 350px;
+            height: 350px;
+            background: var(--amber);
+            bottom: 10%;
+            left: 30%;
+            animation-delay: 14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, -100px) scale(1.1); }
+            66% { transform: translate(-100px, 100px) scale(0.9); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+        }
+
+        /* Header */
+        header {
+            padding: calc(8px * var(--phi) * var(--phi)) 0; /* 21px */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--amber), var(--hot-pink), var(--violet), var(--electric-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            margin-left: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--hot-pink);
+        }
+
+        /* Hero section */
+        .hero {
+            text-align: center;
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)) 0; /* 89px */
+        }
+
+        h1 {
+            font-size: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)); /* 89px */
+            font-weight: 900;
+            margin-bottom: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            background: linear-gradient(135deg, var(--electric-blue), var(--violet), var(--hot-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+        }
+
+        .problem {
+            font-size: calc(8px * var(--phi)); /* 13px */
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: calc(8px * var(--phi)); /* 13px */
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: calc(8px * var(--phi)) calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 13px 34px */
+            font-size: calc(8px * var(--phi)); /* 13px */
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--hot-pink), var(--violet));
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 29, 108, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid var(--hot-pink);
+        }
+
+        .btn-secondary:hover {
+            background: var(--hot-pink);
+        }
+
+        /* Architecture diagram */
+        .architecture {
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)) 0; /* 89px */
+            text-align: center;
+        }
+
+        .arch-diagram {
+            max-width: 1000px;
+            margin: calc(8px * var(--phi) * var(--phi) * var(--phi)) auto;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 21px;
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi));
+        }
+
+        .layer {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid;
+            border-radius: 13px;
+            padding: calc(8px * var(--phi) * var(--phi));
+            margin-bottom: calc(8px * var(--phi) * var(--phi));
+        }
+
+        .layer:last-child {
+            margin-bottom: 0;
+        }
+
+        .layer-title {
+            font-weight: 700;
+            font-size: calc(8px * var(--phi) * var(--phi));
+            margin-bottom: 8px;
+        }
+
+        .layer.your-company {
+            border-color: var(--amber);
+        }
+
+        .layer.your-company .layer-title {
+            color: var(--amber);
+        }
+
+        .layer.roadcommand {
+            border-color: var(--hot-pink);
+            border-width: 2px;
+        }
+
+        .layer.roadcommand .layer-title {
+            color: var(--hot-pink);
+        }
+
+        .layer.providers {
+            border-color: var(--electric-blue);
+        }
+
+        .layer.providers .layer-title {
+            color: var(--electric-blue);
+        }
+
+        .provider-logos {
+            display: flex;
+            gap: calc(8px * var(--phi));
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .provider-logo {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px calc(8px * var(--phi));
+            border-radius: 8px;
+            font-size: 11px;
+        }
+
+        .arrow {
+            text-align: center;
+            font-size: calc(8px * var(--phi) * var(--phi));
+            color: var(--hot-pink);
+            margin: calc(8px * var(--phi)) 0;
+        }
+
+        /* Features section */
+        .features {
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)) 0; /* 89px */
+        }
+
+        h2 {
+            font-size: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 55px */
+            font-weight: 800;
+            margin-bottom: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 55px */
+            text-align: center;
+            background: linear-gradient(135deg, var(--hot-pink), var(--violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            margin-bottom: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 13px;
+            padding: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--hot-pink);
+            box-shadow: 0 10px 30px rgba(255, 29, 108, 0.2);
+        }
+
+        .feature-icon {
+            font-size: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            margin-bottom: calc(8px * var(--phi)); /* 13px */
+        }
+
+        h3 {
+            font-size: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--hot-pink);
+        }
+
+        /* Pricing section */
+        .pricing {
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)) 0; /* 89px */
+            text-align: center;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--hot-pink);
+            border-radius: 21px;
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .price {
+            font-size: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)); /* 89px */
+            font-weight: 900;
+            color: var(--hot-pink);
+            margin: calc(8px * var(--phi)) 0; /* 13px */
+        }
+
+        .price-note {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: calc(8px * var(--phi) * var(--phi)); /* 21px */
+        }
+
+        .features-list {
+            text-align: left;
+            margin: calc(8px * var(--phi) * var(--phi)) 0; /* 21px */
+        }
+
+        .features-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            color: rgba(255, 255, 255, 0.5);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            }
+
+            h2 {
+                font-size: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="grid-bg"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">BlackRoad OS</div>
+            <nav>
+                <a href="https://github.com/BlackRoad-OS">GitHub</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+            </nav>
+        </header>
+
+        <!-- Hero -->
+        <section class="hero">
+            <h1>RoadCommand</h1>
+            <p class="tagline">The AI Operations Platform for the Entire Company</p>
+            <p class="problem">
+                Run your entire company on AI. RoadCommand sits above Google, OpenAI, and Anthropic as the unified API layer,
+                managing AI model memory, continuity, and orchestration. Deploy 30,000+ agents with confidence.
+                One platform. All your AI. Complete control.
+            </p>
+            <div class="cta-buttons">
+                <a href="#pricing" class="btn btn-primary">Request Enterprise Demo</a>
+                <a href="https://github.com/BlackRoad-OS/roadcommand-ai-ops" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </section>
+
+        <!-- Architecture -->
+        <section id="architecture" class="architecture">
+            <h2>The Complete Stack</h2>
+            <div class="arch-diagram">
+                <div class="layer your-company">
+                    <div class="layer-title">Your Company / Applications</div>
+                    <p style="font-size: 11px; color: rgba(255,255,255,0.6);">
+                        Your apps, services, and business logic
+                    </p>
+                </div>
+                <div class="arrow">↓</div>
+                <div class="layer roadcommand">
+                    <div class="layer-title">RoadCommand AI Operations Layer</div>
+                    <p style="font-size: 11px; color: rgba(255,255,255,0.6);">
+                        Unified API • Model Memory • Continuity Management • Agent Orchestration • 30,000+ Agent Coordination
+                    </p>
+                </div>
+                <div class="arrow">↓</div>
+                <div class="layer providers">
+                    <div class="layer-title">AI Model Providers</div>
+                    <div class="provider-logos">
+                        <div class="provider-logo">Google Gemini</div>
+                        <div class="provider-logo">OpenAI GPT</div>
+                        <div class="provider-logo">Anthropic Claude</div>
+                        <div class="provider-logo">+ Any Model</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section id="features" class="features">
+            <h2>Enterprise AI Operations</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Unified API Layer</h3>
+                    <p>One API for all AI providers. Switch between Google, OpenAI, Anthropic seamlessly. No vendor lock-in.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Model Memory Management</h3>
+                    <p>Persistent memory across all AI models. Context that never forgets. Continuity guaranteed.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>30,000+ Agent Orchestration</h3>
+                    <p>Deploy and manage thousands of AI agents simultaneously. Coordinate work across your entire organization.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Intelligent Routing</h3>
+                    <p>Automatically route requests to the best model for each task. Cost optimization built in.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Real-Time Analytics</h3>
+                    <p>Monitor all AI operations in real-time. Usage, costs, performance, errors - all in one dashboard.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Enterprise Security</h3>
+                    <p>End-to-end encryption. SOC 2 compliant. Your data never used for training. Complete privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="features">
+            <h2>Built For Scale</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🏢</div>
+                    <h3>Entire Company on AI</h3>
+                    <p>Customer service, sales, operations, engineering - all powered by AI. RoadCommand coordinates everything.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>Multi-Agent Systems</h3>
+                    <p>Agents that collaborate, delegate, and coordinate. Build systems where 1,000 agents work as one.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔮</div>
+                    <h3>Continuous Learning</h3>
+                    <p>Your AI gets smarter over time. Learn from every interaction. Improve continuously.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section id="pricing" class="pricing">
+            <h2>Enterprise Pricing</h2>
+            <div class="pricing-card">
+                <h3>RoadCommand Enterprise</h3>
+                <div class="price">Custom</div>
+                <p class="price-note">Contact us for enterprise pricing</p>
+                <ul class="features-list">
+                    <li>Unlimited AI requests across all providers</li>
+                    <li>Unlimited agent orchestration (30,000+ supported)</li>
+                    <li>Persistent model memory and continuity</li>
+                    <li>Real-time analytics and monitoring dashboard</li>
+                    <li>Multi-region deployment (US, EU, Asia)</li>
+                    <li>99.99% uptime SLA</li>
+                    <li>24/7 dedicated support</li>
+                    <li>White-label deployment options</li>
+                    <li>Custom integration services</li>
+                    <li>Dedicated infrastructure (optional)</li>
+                </ul>
+                <a href="mailto:blackroad.systems@gmail.com?subject=RoadCommand Enterprise Demo" class="btn btn-primary" style="margin-top: 21px;">Request Demo</a>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="hero">
+            <h2>Ready to run your company on AI?</h2>
+            <p class="tagline">Join enterprises using RoadCommand to orchestrate AI at scale.</p>
+            <div class="cta-buttons">
+                <a href="mailto:blackroad.systems@gmail.com?subject=RoadCommand Enterprise Demo" class="btn btn-primary">Schedule Demo</a>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2026 BlackRoad OS, Inc. All rights reserved. Proprietary Software.</p>
+            <p>Built with Claude Code</p>
+        </footer>
+    </div>
+</body>
+</html>

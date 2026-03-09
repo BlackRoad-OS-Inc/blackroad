@@ -1,0 +1,16 @@
+#!/bin/bash
+# CECE-GREET v1.0 - Personalized Greetings
+greet() {
+    HOUR=$(date +%H)
+    NAME="${1:-friend}"
+    if [ $HOUR -lt 12 ]; then
+        echo "🌅 Good morning, $NAME!"
+    elif [ $HOUR -lt 17 ]; then
+        echo "☀️ Good afternoon, $NAME!"
+    else
+        echo "🌙 Good evening, $NAME!"
+    fi
+}
+case "$1" in
+    *) greet "$1" ;;
+esac

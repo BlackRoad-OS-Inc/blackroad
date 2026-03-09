@@ -1,0 +1,39 @@
+#!/bin/bash
+# CECE-CLOUD-STORAGE v1.0 - Our Own Dropbox/Box
+CLOUD_DIR=~/cece/cloud-storage
+mkdir -p "$CLOUD_DIR/files" "$CLOUD_DIR/shared"
+
+upload() {
+    FILE="$1"
+    if [ -f "$FILE" ]; then
+        cp "$FILE" "$CLOUD_DIR/files/"
+        echo "Uploaded: $(basename $FILE)"
+    fi
+}
+
+sync_folder() {
+    FOLDER="$1"
+    rsync -av "$FOLDER/" "$CLOUD_DIR/files/" 2>/dev/null
+    echo "Synced: $FOLDER"
+}
+
+share() {
+    FILE="$1"
+    LINK_ID=$(echo "$FILE$(date +%s)" | md5sum | cut -c1-8)
+    ln -sf "$CLOUD_DIR/files/$FILE" "$CLOUD_DIR/shared/$LINK_ID"
+    echo "Share link: cece-cloud://shared/$LINK_ID"
+}
+
+usage() {
+    USED=$(du -sh "$CLOUD_DIR/files" 2>/dev/null | cut -f1)
+    FILES=$(find "$CLOUD_DIR/files" -type f 2>/dev/null | wc -l)
+    echo "STORAGE: $USED used, $FILES files"
+}
+
+case "$1" in
+    upload) upload "$2" ;;
+    sync) sync_folder "$2" ;;
+    share) share "$2" ;;
+    usage) usage ;;
+    *) echo "CECE-CLOUD-STORAGE: upload <file> | sync <folder> | share <file> | usage" ;;
+esac

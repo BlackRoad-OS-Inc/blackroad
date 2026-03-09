@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 Magic Squares & Quantum Matrices - BlackRoad Quantum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000000; --white: #FFFFFF;
+            --amber: #F5A623; --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF; --violet: #9C27B0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black); color: var(--white);
+            overflow: hidden;
+        }
+
+        .container { display: flex; height: 100vh; }
+        .canvas-container { flex: 1; position: relative; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .sidebar {
+            width: 380px; background: rgba(0, 0, 0, 0.95);
+            border-left: 2px solid var(--hot-pink);
+            padding: 34px; overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 34px;
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+
+        .section { margin-bottom: 34px; }
+        .section-title {
+            font-size: 16px; color: var(--hot-pink);
+            margin-bottom: 13px; text-transform: uppercase;
+        }
+
+        button {
+            width: 100%; padding: 13px; margin: 8px 0;
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; color: var(--white);
+            font-size: 13px; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--hot-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 29, 108, 0.5);
+        }
+
+        button.active {
+            background: var(--hot-pink);
+            box-shadow: 0 0 20px rgba(255, 29, 108, 0.8);
+        }
+
+        .formula {
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 3px solid #00FF88;
+            padding: 13px; margin: 13px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px; color: #00FF88;
+        }
+
+        .info {
+            font-size: 12px; color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6; margin-top: 8px;
+        }
+
+        .stat-box {
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; padding: 13px;
+            margin: 8px 0;
+        }
+
+        .stat-label { font-size: 11px; color: var(--amber); }
+        .stat-value {
+            font-size: 21px; font-weight: 700;
+            color: var(--white); margin-top: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .matrix-display {
+            background: rgba(41, 121, 255, 0.1);
+            border: 1px solid var(--electric-blue);
+            border-radius: 8px; padding: 13px;
+            margin: 13px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .timeline {
+            font-size: 11px;
+            color: var(--amber);
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="magicCanvas"></canvas>
+        </div>
+
+        <div class="sidebar">
+            <h1>🔮 Magic & Quantum</h1>
+
+            <div class="section">
+                <div class="section-title">Ancient Magic Squares</div>
+                <button onclick="showLoShu()" id="btnLoShu">Lo Shu (3×3)</button>
+                <button onclick="showDurer()" id="btnDurer">Dürer's Melencolia (4×4)</button>
+                <button onclick="showOrder5()" id="btnOrder5">Order 5 Magic Square</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Quantum Matrices</div>
+                <button onclick="showPauli()" id="btnPauli">Pauli Matrices</button>
+                <button onclick="showHadamard()" id="btnHadamard">Hadamard Gate</button>
+                <button onclick="showSU2()" id="btnSU2">SU(2) Group</button>
+                <button onclick="showCNOT()" id="btnCNOT">CNOT Gate</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">The Connection</div>
+                <button onclick="showConnection()" id="btnConnection">Magic → Quantum</button>
+                <button onclick="animateTransform()" id="btnAnimate">Animate Transform</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Current View</div>
+                <div class="stat-box">
+                    <div class="stat-label">System</div>
+                    <div class="stat-value" id="currentSystem">Lo Shu Square</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Magic Constant</div>
+                    <div class="stat-value" id="magicConstant">15</div>
+                </div>
+                <div class="stat-box" id="eraBox">
+                    <div class="stat-label">Era</div>
+                    <div class="stat-value" id="era">2800 BC</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Properties</div>
+                <div id="propertiesDisplay" class="info">
+                    <strong style="color: var(--hot-pink);">Lo Shu Square:</strong>
+                    <br>• Oldest known magic square (China, 2800 BC)
+                    <br>• Sum of rows/cols/diagonals = 15
+                    <br>• Center: 5 (average)
+                    <br>• Opposite pairs sum to 10
+                    <br><br>
+                    <strong style="color: var(--electric-blue);">Legend:</strong>
+                    Appeared on a turtle's back during a flood on the Lo River
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">The Math</div>
+                <div class="formula" id="formulaDisplay">
+                    Magic Square:<br>
+                    Σ(row) = Σ(col) = Σ(diag) = M<br>
+                    <br>
+                    M = n(n² + 1)/2<br>
+                    where n = order
+                </div>
+            </div>
+
+            <div class="info" style="margin-top: 34px; padding-top: 34px; border-top: 1px solid rgba(255,255,255,0.2);">
+                <strong>Deep Connection:</strong> Magic squares represent symmetry and conservation laws - just like quantum operators!
+                <br><br>
+                Both systems have:
+                <br>• Special sums/products
+                <br>• Closed algebras
+                <br>• Symmetry groups
+                <br>• Conservation properties
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('magicCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, centerX, centerY;
+
+        let mode = 'loshu';
+        let animationFrame = 0;
+        let isAnimating = false;
+
+        // Magic squares data
+        const loShu = [
+            [4, 9, 2],
+            [3, 5, 7],
+            [8, 1, 6]
+        ];
+
+        const durer = [
+            [16, 3, 2, 13],
+            [5, 10, 11, 8],
+            [9, 6, 7, 12],
+            [4, 15, 14, 1]
+        ];
+
+        const order5 = [
+            [17, 24, 1, 8, 15],
+            [23, 5, 7, 14, 16],
+            [4, 6, 13, 20, 22],
+            [10, 12, 19, 21, 3],
+            [11, 18, 25, 2, 9]
+        ];
+
+        function resizeCanvas() {
+            width = canvas.width = canvas.offsetWidth;
+            height = canvas.height = canvas.offsetHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Background gradient
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height)/2);
+            gradient.addColorStop(0, 'rgba(255, 29, 108, 0.15)');
+            gradient.addColorStop(0.5, 'rgba(156, 39, 176, 0.1)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            if (mode === 'loshu') drawMagicSquare(loShu, 3);
+            else if (mode === 'durer') drawMagicSquare(durer, 4);
+            else if (mode === 'order5') drawMagicSquare(order5, 5);
+            else if (mode === 'pauli') drawPauliMatrices();
+            else if (mode === 'hadamard') drawHadamard();
+            else if (mode === 'su2') drawSU2();
+            else if (mode === 'cnot') drawCNOT();
+            else if (mode === 'connection') drawConnection();
+            else if (mode === 'animate') drawAnimatedTransform();
+        }
+
+        function drawMagicSquare(square, n) {
+            const size = Math.min(400, Math.min(width, height) * 0.6);
+            const cellSize = size / n;
+            const startX = centerX - size / 2;
+            const startY = centerY - size / 2;
+
+            // Draw grid
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const value = square[i][j];
+
+                    // Cell background
+                    const cellGradient = ctx.createRadialGradient(
+                        x + cellSize/2, y + cellSize/2, 0,
+                        x + cellSize/2, y + cellSize/2, cellSize/2
+                    );
+                    cellGradient.addColorStop(0, `rgba(255, 29, 108, ${value/(n*n) * 0.3})`);
+                    cellGradient.addColorStop(1, 'rgba(156, 39, 176, 0.1)');
+                    ctx.fillStyle = cellGradient;
+                    ctx.fillRect(x, y, cellSize, cellSize);
+
+                    // Cell border
+                    ctx.strokeStyle = '#FF1D6C';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, cellSize, cellSize);
+
+                    // Number
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = `bold ${cellSize * 0.4}px SF Pro Display`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(value, x + cellSize/2, y + cellSize/2);
+                }
+            }
+
+            // Highlight center if odd order
+            if (n % 2 === 1) {
+                const centerI = Math.floor(n / 2);
+                const centerJ = Math.floor(n / 2);
+                const x = startX + centerJ * cellSize;
+                const y = startY + centerI * cellSize;
+
+                ctx.strokeStyle = '#F5A623';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(x, y, cellSize, cellSize);
+            }
+
+            // Draw sum arrows
+            drawSumArrows(startX, startY, cellSize, n);
+
+            // Title
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.textAlign = 'center';
+            const title = mode === 'loshu' ? 'Lo Shu (洛書)' :
+                         mode === 'durer' ? 'Dürer\'s Melencolia I' :
+                         'Order 5 Magic Square';
+            ctx.fillText(title, centerX, startY - 40);
+        }
+
+        function drawSumArrows(startX, startY, cellSize, n) {
+            const endX = startX + n * cellSize;
+            const endY = startY + n * cellSize;
+
+            ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+
+            // Row arrows
+            for (let i = 0; i < n; i++) {
+                const y = startY + i * cellSize + cellSize/2;
+                ctx.beginPath();
+                ctx.moveTo(endX + 10, y);
+                ctx.lineTo(endX + 40, y);
+                ctx.stroke();
+                drawArrowHead(endX + 40, y, 0);
+
+                ctx.fillStyle = '#00FF88';
+                ctx.font = '14px SF Pro Display';
+                ctx.textAlign = 'left';
+                ctx.fillText('✓', endX + 45, y + 5);
+            }
+
+            // Column arrows
+            for (let j = 0; j < n; j++) {
+                const x = startX + j * cellSize + cellSize/2;
+                ctx.beginPath();
+                ctx.moveTo(x, endY + 10);
+                ctx.lineTo(x, endY + 40);
+                ctx.stroke();
+                drawArrowHead(x, endY + 40, Math.PI/2);
+
+                ctx.fillStyle = '#00FF88';
+                ctx.font = '14px SF Pro Display';
+                ctx.textAlign = 'center';
+                ctx.fillText('✓', x, endY + 60);
+            }
+
+            ctx.setLineDash([]);
+        }
+
+        function drawArrowHead(x, y, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.6)';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-8, -5);
+            ctx.lineTo(-8, 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawPauliMatrices() {
+            ctx.fillStyle = '#2979FF';
+            ctx.font = 'bold 32px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Pauli Matrices', centerX, 50);
+
+            const matrices = [
+                { name: 'σₓ', data: [[0, 1], [1, 0]], x: centerX - 300, color: '#FF1D6C' },
+                { name: 'σᵧ', data: [[0, -1], [1, 0]], x: centerX, color: '#9C27B0', complex: true },
+                { name: 'σᵧ', data: [[1, 0], [0, -1]], x: centerX + 300, color: '#2979FF' }
+            ];
+
+            matrices.forEach(mat => {
+                drawQuantumMatrix(mat.data, mat.x, centerY, mat.name, mat.color, mat.complex);
+            });
+
+            // Properties
+            ctx.fillStyle = '#F5A623';
+            ctx.font = '18px SF Pro Display';
+            ctx.fillText('Hermitian: σ† = σ', centerX, centerY + 200);
+            ctx.fillText('Unitary: σ² = I', centerX, centerY + 230);
+            ctx.fillText('Traceless: Tr(σ) = 0', centerX, centerY + 260);
+
+            // Anti-commutation
+            ctx.fillStyle = '#00FF88';
+            ctx.font = 'bold 16px Courier New';
+            ctx.fillText('{σᵢ, σⱼ} = 2δᵢⱼI', centerX, centerY + 300);
+        }
+
+        function drawQuantumMatrix(matrix, x, y, name, color, complex = false) {
+            const cellSize = 80;
+            const size = matrix.length * cellSize;
+            const startX = x - size/2;
+            const startY = y - size/2;
+
+            // Matrix name
+            ctx.fillStyle = color;
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText(name, x, startY - 30);
+
+            // Draw matrix
+            for (let i = 0; i < matrix.length; i++) {
+                for (let j = 0; j < matrix[i].length; j++) {
+                    const cellX = startX + j * cellSize;
+                    const cellY = startY + i * cellSize;
+                    const value = matrix[i][j];
+
+                    // Cell glow
+                    if (value !== 0) {
+                        const glow = ctx.createRadialGradient(
+                            cellX + cellSize/2, cellY + cellSize/2, 0,
+                            cellX + cellSize/2, cellY + cellSize/2, cellSize/2
+                        );
+                        glow.addColorStop(0, `${color}44`);
+                        glow.addColorStop(1, 'rgba(0,0,0,0)');
+                        ctx.fillStyle = glow;
+                        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+                    }
+
+                    // Border
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(cellX, cellY, cellSize, cellSize);
+
+                    // Value
+                    ctx.fillStyle = value === 0 ? 'rgba(255,255,255,0.3)' : '#FFFFFF';
+                    ctx.font = 'bold 28px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    let displayValue = value;
+                    if (complex && value === -1) displayValue = '-i';
+                    else if (complex && value === 1) displayValue = 'i';
+                    ctx.fillText(displayValue, cellX + cellSize/2, cellY + cellSize/2);
+                }
+            }
+
+            // Matrix brackets
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            // Left bracket
+            ctx.beginPath();
+            ctx.moveTo(startX - 5, startY - 10);
+            ctx.lineTo(startX - 15, startY - 10);
+            ctx.lineTo(startX - 15, startY + size + 10);
+            ctx.lineTo(startX - 5, startY + size + 10);
+            ctx.stroke();
+            // Right bracket
+            ctx.beginPath();
+            ctx.moveTo(startX + size + 5, startY - 10);
+            ctx.lineTo(startX + size + 15, startY - 10);
+            ctx.lineTo(startX + size + 15, startY + size + 10);
+            ctx.lineTo(startX + size + 5, startY + size + 10);
+            ctx.stroke();
+        }
+
+        function drawHadamard() {
+            ctx.fillStyle = '#2979FF';
+            ctx.font = 'bold 32px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Hadamard Gate', centerX, 80);
+
+            const H = [[1, 1], [1, -1]];
+            drawQuantumMatrix(H, centerX, centerY - 50, 'H = 1/√2', '#9C27B0');
+
+            // Properties
+            ctx.fillStyle = '#F5A623';
+            ctx.font = '18px SF Pro Display';
+            ctx.fillText('Creates superposition:', centerX, centerY + 150);
+            ctx.fillText('|0⟩ → (|0⟩ + |1⟩)/√2 = |+⟩', centerX, centerY + 180);
+            ctx.fillText('|1⟩ → (|0⟩ - |1⟩)/√2 = |-⟩', centerX, centerY + 210);
+
+            // Bloch sphere reference
+            ctx.fillStyle = '#00FF88';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillText('Rotation by π around X+Z axis', centerX, centerY + 260);
+        }
+
+        function drawSU2() {
+            ctx.fillStyle = '#2979FF';
+            ctx.font = 'bold 32px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('SU(2) Group - Quantum Rotations', centerX, 60);
+
+            ctx.fillStyle = '#F5A623';
+            ctx.font = '20px Courier New';
+            ctx.fillText('U(θ,φ,ψ) = e^(-iθσₓ/2) e^(-iφσᵧ/2) e^(-iψσᵧ/2)', centerX, 110);
+
+            // Draw Bloch sphere representation
+            const radius = 150;
+            const sphereY = centerY + 20;
+
+            // Sphere
+            ctx.strokeStyle = 'rgba(41, 121, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, sphereY, radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Equator
+            ctx.strokeStyle = 'rgba(255, 29, 108, 0.3)';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.ellipse(centerX, sphereY, radius, radius * 0.3, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Axes
+            const axes = [
+                { name: 'X', angle: 0, color: '#FF1D6C' },
+                { name: 'Y', angle: Math.PI/2, color: '#9C27B0' },
+                { name: 'Z', angle: -Math.PI/2, color: '#2979FF', vertical: true }
+            ];
+
+            axes.forEach(axis => {
+                if (axis.vertical) {
+                    ctx.strokeStyle = axis.color;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, sphereY - radius - 20);
+                    ctx.lineTo(centerX, sphereY + radius + 20);
+                    ctx.stroke();
+
+                    ctx.fillStyle = axis.color;
+                    ctx.font = 'bold 20px SF Pro Display';
+                    ctx.fillText(axis.name, centerX + 25, sphereY - radius - 15);
+                } else {
+                    const x1 = centerX + (radius + 20) * Math.cos(axis.angle);
+                    const y1 = sphereY + (radius + 20) * Math.sin(axis.angle) * 0.3;
+                    const x2 = centerX - (radius + 20) * Math.cos(axis.angle);
+                    const y2 = sphereY - (radius + 20) * Math.sin(axis.angle) * 0.3;
+
+                    ctx.strokeStyle = axis.color;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+
+                    ctx.fillStyle = axis.color;
+                    ctx.font = 'bold 20px SF Pro Display';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(axis.name, x1 + 20, y1);
+                }
+            });
+
+            // Rotation vector
+            const rotAngle = (Date.now() / 1000) % (Math.PI * 2);
+            const vecX = centerX + radius * 0.7 * Math.cos(rotAngle);
+            const vecY = sphereY + radius * 0.7 * Math.sin(rotAngle) * 0.3;
+
+            ctx.strokeStyle = '#00FF88';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(centerX, sphereY);
+            ctx.lineTo(vecX, vecY);
+            ctx.stroke();
+
+            const glow = ctx.createRadialGradient(vecX, vecY, 0, vecX, vecY, 20);
+            glow.addColorStop(0, '#00FF88');
+            glow.addColorStop(1, 'rgba(0, 255, 136, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(vecX, vecY, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#00FF88';
+            ctx.beginPath();
+            ctx.arc(vecX, vecY, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Info
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '16px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('θ, φ: Bloch sphere angles', centerX, centerY + 220);
+            ctx.fillText('ψ: Global phase (not observable)', centerX, centerY + 245);
+
+            requestAnimationFrame(draw);
+        }
+
+        function drawCNOT() {
+            ctx.fillStyle = '#2979FF';
+            ctx.font = 'bold 32px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('CNOT (Controlled-NOT) Gate', centerX, 70);
+
+            const CNOT = [
+                [1, 0, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 1],
+                [0, 0, 1, 0]
+            ];
+
+            drawQuantumMatrix(CNOT, centerX, centerY - 30, 'CNOT', '#FF1D6C');
+
+            // Circuit diagram
+            const circuitY = centerY + 200;
+            const lineLength = 200;
+            const lineStart = centerX - lineLength/2;
+
+            // Control qubit line
+            ctx.strokeStyle = '#9C27B0';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(lineStart, circuitY - 40);
+            ctx.lineTo(lineStart + lineLength, circuitY - 40);
+            ctx.stroke();
+
+            // Target qubit line
+            ctx.beginPath();
+            ctx.moveTo(lineStart, circuitY + 40);
+            ctx.lineTo(lineStart + lineLength, circuitY + 40);
+            ctx.stroke();
+
+            // Control dot
+            ctx.fillStyle = '#00FF88';
+            ctx.beginPath();
+            ctx.arc(centerX, circuitY - 40, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Target circle
+            ctx.strokeStyle = '#00FF88';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(centerX, circuitY + 40, 20, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Target cross
+            ctx.beginPath();
+            ctx.moveTo(centerX - 20, circuitY + 40);
+            ctx.lineTo(centerX + 20, circuitY + 40);
+            ctx.moveTo(centerX, circuitY + 20);
+            ctx.lineTo(centerX, circuitY + 60);
+            ctx.stroke();
+
+            // Vertical connection
+            ctx.strokeStyle = 'rgba(0, 255, 136, 0.5)';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(centerX, circuitY - 40);
+            ctx.lineTo(centerX, circuitY + 40);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Labels
+            ctx.fillStyle = '#F5A623';
+            ctx.font = '16px SF Pro Display';
+            ctx.textAlign = 'right';
+            ctx.fillText('control', lineStart - 20, circuitY - 35);
+            ctx.fillText('target', lineStart - 20, circuitY + 45);
+
+            // Function
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '16px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('If control = |1⟩, flip target', centerX, circuitY + 100);
+            ctx.fillText('Creates entanglement!', centerX, circuitY + 125);
+        }
+
+        function drawConnection() {
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 28px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Ancient Magic → Modern Quantum', centerX, 60);
+
+            // Magic square on left
+            const leftX = centerX - 250;
+            const squareSize = 150;
+            ctx.fillStyle = 'rgba(255, 29, 108, 0.2)';
+            ctx.fillRect(leftX - squareSize/2, centerY - squareSize/2, squareSize, squareSize);
+            ctx.strokeStyle = '#FF1D6C';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(leftX - squareSize/2, centerY - squareSize/2, squareSize, squareSize);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 20px SF Pro Display';
+            ctx.fillText('Magic', leftX, centerY - 100);
+            ctx.fillText('Square', leftX, centerY - 75);
+
+            // Quantum matrix on right
+            const rightX = centerX + 250;
+            ctx.fillStyle = 'rgba(41, 121, 255, 0.2)';
+            ctx.fillRect(rightX - squareSize/2, centerY - squareSize/2, squareSize, squareSize);
+            ctx.strokeStyle = '#2979FF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(rightX - squareSize/2, centerY - squareSize/2, squareSize, squareSize);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 20px SF Pro Display';
+            ctx.fillText('Quantum', rightX, centerY - 100);
+            ctx.fillText('Matrix', rightX, centerY - 75);
+
+            // Arrow
+            ctx.strokeStyle = '#9C27B0';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(leftX + squareSize/2 + 20, centerY);
+            ctx.lineTo(rightX - squareSize/2 - 20, centerY);
+            ctx.stroke();
+            drawArrowHead(rightX - squareSize/2 - 20, centerY, 0);
+
+            // Shared properties
+            const props = [
+                'Special sums/products',
+                'Closed algebras',
+                'Symmetry groups',
+                'Conservation laws',
+                'Unitary operations'
+            ];
+
+            ctx.fillStyle = '#00FF88';
+            ctx.font = '16px SF Pro Display';
+            let y = centerY + 100;
+            props.forEach(prop => {
+                ctx.fillText('✓ ' + prop, centerX, y);
+                y += 30;
+            });
+
+            // Timeline
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.fillText('2800 BC → 1925 AD', centerX, y + 40);
+            ctx.font = '14px SF Pro Display';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.fillText('4,725 years of mathematical evolution', centerX, y + 65);
+        }
+
+        function drawAnimatedTransform() {
+            const t = (animationFrame % 180) / 180;
+            const phase = Math.sin(t * Math.PI);
+
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 28px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Magic Square → Quantum Matrix Transform', centerX, 60);
+
+            // Morphing visualization
+            const size = 200;
+            const alpha = phase;
+
+            // Magic square appearance (fading out)
+            ctx.fillStyle = `rgba(255, 29, 108, ${1 - alpha})`;
+            ctx.fillRect(centerX - size/2, centerY - size/2, size, size);
+
+            // Quantum matrix appearance (fading in)
+            const qGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, size/2);
+            qGlow.addColorStop(0, `rgba(41, 121, 255, ${alpha * 0.5})`);
+            qGlow.addColorStop(1, 'rgba(41, 121, 255, 0)');
+            ctx.fillStyle = qGlow;
+            ctx.fillRect(centerX - size/2, centerY - size/2, size, size);
+
+            // Border
+            const borderColor = `rgb(${255 - alpha * (255-41)}, ${29 + alpha * (121-29)}, ${108 + alpha * (255-108)})`;
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(centerX - size/2, centerY - size/2, size, size);
+
+            // Transform label
+            ctx.fillStyle = '#00FF88';
+            ctx.font = 'bold 24px SF Pro Display';
+            const label = phase < 0.5 ? 'Abstracting...' : 'Quantizing...';
+            ctx.fillText(label, centerX, centerY + size/2 + 50);
+
+            // Progress bar
+            const barWidth = 300;
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fillRect(centerX - barWidth/2, centerY + size/2 + 80, barWidth, 10);
+            ctx.fillStyle = '#9C27B0';
+            ctx.fillRect(centerX - barWidth/2, centerY + size/2 + 80, barWidth * phase, 10);
+
+            animationFrame++;
+            if (isAnimating) requestAnimationFrame(() => drawAnimatedTransform());
+        }
+
+        function showLoShu() {
+            mode = 'loshu';
+            isAnimating = false;
+            setActiveButton('btnLoShu');
+
+            document.getElementById('currentSystem').textContent = 'Lo Shu Square';
+            document.getElementById('magicConstant').textContent = '15';
+            document.getElementById('era').textContent = '2800 BC';
+            document.getElementById('eraBox').style.display = 'block';
+
+            document.getElementById('propertiesDisplay').innerHTML = `
+                <strong style="color: var(--hot-pink);">Lo Shu Square:</strong>
+                <br>• Oldest known magic square (China, 2800 BC)
+                <br>• Sum of rows/cols/diagonals = 15
+                <br>• Center: 5 (average)
+                <br>• Opposite pairs sum to 10
+                <br><br>
+                <strong style="color: var(--electric-blue);">Legend:</strong>
+                Appeared on a turtle's back during a flood on the Lo River
+            `;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                Magic Square:<br>
+                Σ(row) = Σ(col) = Σ(diag) = M<br>
+                <br>
+                M = n(n² + 1)/2 = 3(9+1)/2 = 15
+            `;
+
+            draw();
+        }
+
+        function showDurer() {
+            mode = 'durer';
+            isAnimating = false;
+            setActiveButton('btnDurer');
+
+            document.getElementById('currentSystem').textContent = 'Dürer Square';
+            document.getElementById('magicConstant').textContent = '34';
+            document.getElementById('era').textContent = '1514 AD';
+            document.getElementById('eraBox').style.display = 'block';
+
+            document.getElementById('propertiesDisplay').innerHTML = `
+                <strong style="color: var(--hot-pink);">Dürer's Melencolia I:</strong>
+                <br>• Appears in Albrecht Dürer's 1514 engraving
+                <br>• Sum = 34 (rows, cols, diagonals, corners, center 2×2!)
+                <br>• Bottom middle cells: 15 14 = year 1514!
+                <br>• Diabolic/pandiagonal square
+                <br><br>
+                <strong style="color: var(--electric-blue);">Significance:</strong>
+                First magic square in Western art
+            `;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                Order 4 Magic Square:<br>
+                M = 4(16 + 1)/2 = 34<br>
+                <br>
+                Multiple magic properties:<br>
+                • All 2×2 blocks sum to 34<br>
+                • Broken diagonals sum to 34
+            `;
+
+            draw();
+        }
+
+        function showOrder5() {
+            mode = 'order5';
+            isAnimating = false;
+            setActiveButton('btnOrder5');
+
+            document.getElementById('currentSystem').textContent = 'Order 5 Magic';
+            document.getElementById('magicConstant').textContent = '65';
+            document.getElementById('era').textContent = 'Ancient';
+            document.getElementById('eraBox').style.display = 'block';
+
+            document.getElementById('propertiesDisplay').innerHTML = `
+                <strong style="color: var(--hot-pink);">Order 5 Magic Square:</strong>
+                <br>• Sum of each row/col/diagonal = 65
+                <br>• Center: 13 (average)
+                <br>• Complex construction patterns
+                <br><br>
+                <strong style="color: var(--electric-blue);">Construction:</strong>
+                Uses the "Siamese method" or "De la Loubère method"
+            `;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                Order 5 Magic Square:<br>
+                M = 5(25 + 1)/2 = 65<br>
+                <br>
+                Total numbers: 25<br>
+                Center: 13
+            `;
+
+            draw();
+        }
+
+        function showPauli() {
+            mode = 'pauli';
+            isAnimating = false;
+            setActiveButton('btnPauli');
+
+            document.getElementById('currentSystem').textContent = 'Pauli Matrices';
+            document.getElementById('magicConstant').textContent = 'Tr = 0';
+            document.getElementById('eraBox').style.display = 'none';
+
+            document.getElementById('propertiesDisplay').innerHTML = `
+                <strong style="color: var(--electric-blue);">Pauli Matrices:</strong>
+                <br>• σₓ, σᵧ, σᵧ (named after Wolfgang Pauli)
+                <br>• Represent spin-1/2 quantum gates
+                <br>• Hermitian: σ† = σ
+                <br>• Unitary: σ² = I
+                <br>• Traceless: Tr(σ) = 0
+                <br><br>
+                <strong style="color: var(--hot-pink);">Quantum Gates:</strong>
+                X, Y, Z gates in quantum computing!
+            `;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                Anti-commutation:<br>
+                {σᵢ, σⱼ} = 2δᵢⱼI<br>
+                <br>
+                Commutation:<br>
+                [σᵢ, σⱼ] = 2iεᵢⱼₖσₖ
+            `;
+
+            draw();
+        }
+
+        function showHadamard() {
+            mode = 'hadamard';
+            isAnimating = false;
+            setActiveButton('btnHadamard');
+
+            document.getElementById('currentSystem').textContent = 'Hadamard Gate';
+            document.getElementById('magicConstant').textContent = '1/√2';
+            document.getElementById('eraBox').style.display = 'none';
+
+            document.getElementById('propertiesDisplay').innerHTML = `
+                <strong style="color: var(--electric-blue);">Hadamard Gate:</strong>
+                <br>• Most important quantum gate
+                <br>• Creates equal superposition
+                <br>• Self-inverse: H² = I
+                <br>• Unitary and Hermitian
+                <br><br>
+                <strong style="color: var(--hot-pink);">Applications:</strong>
+                Foundation of quantum algorithms (Grover, Shor, etc.)
+            `;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                H = 1/√2 [1   1]<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[1  -1]<br>
+                <br>
+                Creates superposition:<br>
+                |0⟩ → |+⟩, |1⟩ → |-⟩
+            `;
+
+            draw();
+        }
+
+        function showSU2() {
+            mode = 'su2';
+            isAnimating = false;
+            setActiveButton('btnSU2');
+
+            document.getElementById('currentSystem').textContent = 'SU(2) Group';
+            document.getElementById('magicConstant').textContent = 'det = 1';
+            document.getElementById('eraBox').style.display = 'none';
+
+            document.getElementById('propertiesDisplay').innerHTML = `
+                <strong style="color: var(--electric-blue);">SU(2) Group:</strong>
+                <br>• Special Unitary group of degree 2
+                <br>• All 2×2 unitary matrices with det = 1
+                <br>• Describes quantum rotations
+                <br>• Double cover of SO(3)
+                <br><br>
+                <strong style="color: var(--hot-pink);">Bloch Sphere:</strong>
+                Every qubit state is an SU(2) rotation!
+            `;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                U ∈ SU(2):<br>
+                UU† = I, det(U) = 1<br>
+                <br>
+                Parametrization:<br>
+                U(θ,φ,ψ) = e^(-iσ·n̂θ/2)
+            `;
+
+            draw();
+        }
+
+        function showCNOT() {
+            mode = 'cnot';
+            isAnimating = false;
+            setActiveButton('btnCNOT');
+
+            document.getElementById('currentSystem').textContent = 'CNOT Gate';
+            document.getElementById('magicConstant').textContent = '4×4';
+            document.getElementById('eraBox').style.display = 'none';
+
+            document.getElementById('propertiesDisplay').innerHTML = `
+                <strong style="color: var(--electric-blue);">CNOT (Controlled-NOT):</strong>
+                <br>• Two-qubit gate
+                <br>• Flips target if control = |1⟩
+                <br>• Creates entanglement!
+                <br>• Universal with single-qubit gates
+                <br><br>
+                <strong style="color: var(--hot-pink);">Entanglement:</strong>
+                CNOT(|00⟩ + |10⟩) = |00⟩ + |11⟩ (Bell state!)
+            `;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                CNOT |c,t⟩ = |c, c⊕t⟩<br>
+                <br>
+                Where ⊕ is XOR<br>
+                <br>
+                Creates Bell states!
+            `;
+
+            draw();
+        }
+
+        function showConnection() {
+            mode = 'connection';
+            isAnimating = false;
+            setActiveButton('btnConnection');
+
+            document.getElementById('currentSystem').textContent = 'Magic → Quantum';
+            document.getElementById('magicConstant').textContent = '∞';
+            document.getElementById('eraBox').style.display = 'none';
+
+            document.getElementById('propertiesDisplay').innerHTML = `
+                <strong style="color: var(--amber);">The Deep Connection:</strong>
+                <br><br>
+                <strong style="color: var(--hot-pink);">Magic Squares (2800 BC):</strong>
+                <br>• Symmetry and balance
+                <br>• Special sums (conservation)
+                <br>• Algebraic structure
+                <br><br>
+                <strong style="color: var(--electric-blue);">Quantum Matrices (1925+):</strong>
+                <br>• Hermitian operators
+                <br>• Unitary evolution
+                <br>• Non-commutative algebra
+                <br><br>
+                <strong style="color: var(--violet);">Both encode:</strong>
+                Conservation laws and symmetries of nature!
+            `;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                Evolution:<br>
+                <br>
+                Magic Square (symmetry)<br>
+                → Group Theory<br>
+                → Linear Algebra<br>
+                → Quantum Mechanics<br>
+                → Quantum Computing
+            `;
+
+            draw();
+        }
+
+        function animateTransform() {
+            mode = 'animate';
+            isAnimating = true;
+            animationFrame = 0;
+            setActiveButton('btnAnimate');
+
+            document.getElementById('currentSystem').textContent = 'Transforming...';
+            document.getElementById('magicConstant').textContent = '∞';
+            document.getElementById('eraBox').style.display = 'none';
+
+            document.getElementById('propertiesDisplay').innerHTML = `
+                <strong style="color: var(--amber);">Watch the transformation:</strong>
+                <br><br>
+                Ancient mathematical structures evolving into modern quantum operators!
+                <br><br>
+                The same principles of symmetry and conservation, expressed in different mathematical languages.
+            `;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                Continuous transformation<br>
+                from discrete magic squares<br>
+                to continuous quantum operators<br>
+                <br>
+                ∞ mathematical evolution ∞
+            `;
+
+            drawAnimatedTransform();
+        }
+
+        function setActiveButton(btnId) {
+            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById(btnId);
+            if (btn) btn.classList.add('active');
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Initialize
+        resizeCanvas();
+        showLoShu();
+    </script>
+</body>
+</html>

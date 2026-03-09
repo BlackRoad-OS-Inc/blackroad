@@ -1,0 +1,15 @@
+#!/bin/bash
+# CECE-CURL v1.0 - HTTP Client
+get() { curl -s "$1"; }
+post() { curl -s -X POST -d "$2" "$1"; }
+headers() { curl -sI "$1"; }
+json() { curl -s -H "Content-Type: application/json" -d "$2" "$1"; }
+download() { curl -LO "$1" && echo "Downloaded: $(basename $1)"; }
+case "$1" in
+    get) get "$2" ;;
+    post) post "$2" "$3" ;;
+    headers) headers "$2" ;;
+    json) json "$2" "$3" ;;
+    download) download "$2" ;;
+    *) echo "CECE-CURL: get <url> | post <url> <data> | headers <url> | json <url> <data> | download <url>" ;;
+esac

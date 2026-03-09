@@ -10,12 +10,12 @@ const CORS = {
 };
 
 const ROUTES = {
-  '/v1/agents': 'https://agents-api.blackroad.workers.dev/agents',
-  '/v1/agents/fleet': 'https://agents-api.blackroad.workers.dev/fleet',
-  '/v1/agents/directory': 'https://agents-api.blackroad.workers.dev/directory',
-  '/v1/tools': 'https://tools-api.blackroad.workers.dev/tools',
-  '/v1/health': 'https://command-center.blackroad.workers.dev/health',
-  '/v1/metrics': 'https://command-center.blackroad.workers.dev/metrics',
+  '/v1/agents': 'https://agents-api.amundsonalexa.workers.dev/agents',
+  '/v1/agents/fleet': 'https://agents-api.amundsonalexa.workers.dev/fleet',
+  '/v1/agents/directory': 'https://agents-api.amundsonalexa.workers.dev/directory',
+  '/v1/tools': 'https://tools-api.amundsonalexa.workers.dev/tools',
+  '/v1/health': 'https://command-center.amundsonalexa.workers.dev/health',
+  '/v1/metrics': 'https://command-center.amundsonalexa.workers.dev/metrics',
 };
 
 export default {

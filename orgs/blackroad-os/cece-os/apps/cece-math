@@ -1,0 +1,21 @@
+#!/bin/bash
+# CECE-MATH v1.0 - Math Calculator
+calc() { echo "$@" | bc -l; }
+percent() { echo "scale=2; $1 * $2 / 100" | bc; }
+avg() {
+    SUM=0; COUNT=0
+    for N in "$@"; do SUM=$(echo "$SUM + $N" | bc); ((COUNT++)); done
+    echo "scale=2; $SUM / $COUNT" | bc
+}
+factorial() {
+    N="$1"; F=1
+    for ((i=1; i<=N; i++)); do F=$((F * i)); done
+    echo "$F"
+}
+case "$1" in
+    calc) shift; calc "$@" ;;
+    percent) percent "$2" "$3" ;;
+    avg) shift; avg "$@" ;;
+    factorial) factorial "$2" ;;
+    *) echo "CECE-MATH: calc <expr> | percent <val> <pct> | avg <nums...> | factorial <n>" ;;
+esac

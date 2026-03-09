@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-SPLIT v1.0 - File Splitter
+by_lines() { split -l "$2" "$1" "${1}_part_" && echo "Split into parts"; }
+by_size() { split -b "$2" "$1" "${1}_part_" && echo "Split into parts"; }
+join() { cat "$1"_part_* > "$2" && echo "Joined to: $2"; }
+case "$1" in
+    lines) by_lines "$2" "$3" ;;
+    size) by_size "$2" "$3" ;;
+    join) join "$2" "$3" ;;
+    *) echo "CECE-SPLIT: lines <file> <n> | size <file> <size> | join <prefix> <output>" ;;
+esac

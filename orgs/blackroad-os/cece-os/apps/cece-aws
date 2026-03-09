@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-AWS v1.0 - AWS CLI Helper
+s3_list() { aws s3 ls; }
+s3_cp() { aws s3 cp "$1" "$2"; }
+ec2_list() { aws ec2 describe-instances --query 'Reservations[].Instances[].{ID:InstanceId,State:State.Name}'; }
+lambda_list() { aws lambda list-functions; }
+case "$1" in
+    s3-list) s3_list ;;
+    s3-cp) s3_cp "$2" "$3" ;;
+    ec2) ec2_list ;;
+    lambda) lambda_list ;;
+    *) echo "CECE-AWS: s3-list | s3-cp <src> <dst> | ec2 | lambda" ;;
+esac

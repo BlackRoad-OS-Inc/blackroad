@@ -1,0 +1,54 @@
+#!/bin/bash
+# CECE-SHEETS v1.0 - Our Own Google Sheets/Excel
+SHEETS_DIR=~/cece/sheets
+mkdir -p "$SHEETS_DIR"
+
+new_sheet() {
+    NAME="$1"
+    SHEET="$SHEETS_DIR/$NAME.csv"
+    touch "$SHEET"
+    echo "✅ Created spreadsheet: $NAME"
+}
+
+add_row() {
+    SHEET="$1"
+    shift
+    ROW=$(echo "$@" | tr " " ",")
+    echo "$ROW" >> "$SHEETS_DIR/$SHEET.csv"
+    echo "✅ Added row to $SHEET"
+}
+
+view() {
+    SHEET="$1"
+    echo "📊 $SHEET"
+    echo "═══════════════════════════════════════"
+    column -t -s, "$SHEETS_DIR/$SHEET.csv" 2>/dev/null
+}
+
+sum_column() {
+    SHEET="$1"
+    COL="$2"
+    SUM=$(cut -d, -f$COL "$SHEETS_DIR/$SHEET.csv" | grep -E "^[0-9]+$" | paste -sd+ | bc 2>/dev/null)
+    echo "Sum of column $COL: $SUM"
+}
+
+list_sheets() {
+    echo "📊 SPREADSHEETS"
+    for s in "$SHEETS_DIR"/*.csv 2>/dev/null; do
+        [ -f "$s" ] && echo "  📄 $(basename $s .csv)"
+    done
+}
+
+case "$1" in
+    new) new_sheet "$2" ;;
+    add) add_row "$2" "${@:3}" ;;
+    view) view "$2" ;;
+    sum) sum_column "$2" "$3" ;;
+    list) list_sheets ;;
+    *) echo "🖤 CECE-SHEETS - Our Own Excel"
+       echo "  new <name>              Create spreadsheet"
+       echo "  add <sheet> <values...> Add row"
+       echo "  view <sheet>            View spreadsheet"
+       echo "  sum <sheet> <col>       Sum column"
+       echo "  list                    List sheets" ;;
+esac

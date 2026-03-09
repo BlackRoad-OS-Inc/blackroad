@@ -1,0 +1,18 @@
+#!/bin/bash
+# CECE-PROXY v1.0 - Proxy Helper
+set_proxy() {
+    export http_proxy="$1"
+    export https_proxy="$1"
+    echo "Proxy set: $1"
+}
+unset_proxy() {
+    unset http_proxy https_proxy
+    echo "Proxy unset"
+}
+test_proxy() { curl -s --max-time 5 https://httpbin.org/ip && echo "Proxy working"; }
+case "$1" in
+    set) set_proxy "$2" ;;
+    unset) unset_proxy ;;
+    test) test_proxy ;;
+    *) echo "CECE-PROXY: set <url> | unset | test" ;;
+esac

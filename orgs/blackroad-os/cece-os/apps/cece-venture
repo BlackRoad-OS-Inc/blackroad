@@ -1,0 +1,145 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-VENTURE v1.0 - A Text Adventure
+#  "You are in a maze of twisty little passages, all alike."
+#═══════════════════════════════════════════════════════════════
+
+clear
+echo "╔═══════════════════════════════════════════════════════════╗"
+echo "║           C E C E - V E N T U R E   v1.0                  ║"
+echo "║         A Text Adventure in the BlackRoad                  ║"
+echo "╚═══════════════════════════════════════════════════════════╝"
+echo ""
+
+# Game state
+LOCATION="start"
+INVENTORY=""
+SCORE=0
+MOVES=0
+HAS_KEY=0
+HAS_LAMP=0
+HAS_SWORD=0
+DRAGON_ALIVE=1
+
+show_location() {
+    case $LOCATION in
+        start)
+            echo "You are standing at the entrance of BLACKROAD CAVERNS."
+            echo "A cold wind blows from the darkness ahead."
+            echo "To the NORTH is a dark passage. To the EAST is a small hut."
+            ;;
+        hut)
+            echo "You are in a small wooden hut. Dust covers everything."
+            [ $HAS_LAMP -eq 0 ] && echo "A brass LAMP sits on the table."
+            echo "The EXIT is to the WEST."
+            ;;
+        passage)
+            echo "You are in a dark passage. You can barely see."
+            [ $HAS_LAMP -eq 1 ] && echo "Your lamp illuminates ancient writings on the walls."
+            echo "To the SOUTH is the entrance. NORTH leads deeper."
+            ;;
+        chamber)
+            echo "You are in a vast chamber. Crystals glitter in the walls."
+            [ $HAS_KEY -eq 0 ] && echo "A golden KEY lies on the ground."
+            echo "To the SOUTH is the passage. EAST is a locked door."
+            [ $HAS_KEY -eq 1 ] && echo "The door to the EAST is now unlocked."
+            ;;
+        treasury)
+            echo "You have entered the TREASURY of BlackRoad!"
+            [ $DRAGON_ALIVE -eq 1 ] && echo "A DRAGON guards mountains of gold!" && echo "It looks angry."
+            [ $DRAGON_ALIVE -eq 0 ] && echo "The dragon lies defeated. Gold everywhere!"
+            [ $HAS_SWORD -eq 0 ] && [ $DRAGON_ALIVE -eq 1 ] && echo "A SWORD is embedded in a stone nearby."
+            echo "The EXIT is to the WEST."
+            ;;
+        victory)
+            echo ""
+            echo "★★★ CONGRATULATIONS! ★★★"
+            echo ""
+            echo "You have claimed the treasure of BlackRoad!"
+            echo "Score: $SCORE points in $MOVES moves"
+            echo ""
+            echo "The road remembers your victory."
+            exit 0
+            ;;
+    esac
+    echo ""
+}
+
+# Game loop
+while true; do
+    show_location
+    echo -n "> "
+    read -r CMD ARG
+    CMD=$(echo "$CMD" | tr "[:lower:]" "[:upper:]")
+    ARG=$(echo "$ARG" | tr "[:lower:]" "[:upper:]")
+    ((MOVES++))
+    
+    case "$CMD" in
+        N|NORTH)
+            case $LOCATION in
+                start) LOCATION="passage" ;;
+                passage) [ $HAS_LAMP -eq 1 ] && LOCATION="chamber" || echo "Too dark to proceed safely." ;;
+                *) echo "You cannot go that way." ;;
+            esac ;;
+        S|SOUTH)
+            case $LOCATION in
+                passage) LOCATION="start" ;;
+                chamber) LOCATION="passage" ;;
+                *) echo "You cannot go that way." ;;
+            esac ;;
+        E|EAST)
+            case $LOCATION in
+                start) LOCATION="hut" ;;
+                chamber) [ $HAS_KEY -eq 1 ] && LOCATION="treasury" || echo "The door is locked." ;;
+                *) echo "You cannot go that way." ;;
+            esac ;;
+        W|WEST)
+            case $LOCATION in
+                hut) LOCATION="start" ;;
+                treasury) LOCATION="chamber" ;;
+                *) echo "You cannot go that way." ;;
+            esac ;;
+        GET|TAKE)
+            case "$ARG" in
+                LAMP) [ $LOCATION = "hut" ] && [ $HAS_LAMP -eq 0 ] && HAS_LAMP=1 && SCORE=$((SCORE+10)) && echo "You take the lamp. It glows softly." || echo "You cannot take that." ;;
+                KEY) [ $LOCATION = "chamber" ] && [ $HAS_KEY -eq 0 ] && HAS_KEY=1 && SCORE=$((SCORE+10)) && echo "You take the golden key." || echo "You cannot take that." ;;
+                SWORD) [ $LOCATION = "treasury" ] && [ $HAS_SWORD -eq 0 ] && HAS_SWORD=1 && SCORE=$((SCORE+10)) && echo "You pull the sword from the stone!" || echo "You cannot take that." ;;
+                GOLD|TREASURE) [ $LOCATION = "treasury" ] && [ $DRAGON_ALIVE -eq 0 ] && SCORE=$((SCORE+100)) && LOCATION="victory" || echo "You cannot take that yet." ;;
+                *) echo "Take what?" ;;
+            esac ;;
+        KILL|FIGHT|ATTACK)
+            if [ $LOCATION = "treasury" ] && [ $DRAGON_ALIVE -eq 1 ]; then
+                if [ $HAS_SWORD -eq 1 ]; then
+                    echo "You swing the sword at the dragon!"
+                    echo "After an epic battle, the dragon falls!"
+                    DRAGON_ALIVE=0
+                    SCORE=$((SCORE+50))
+                else
+                    echo "You need a weapon!"
+                fi
+            else
+                echo "There is nothing to fight here."
+            fi ;;
+        INVENTORY|I)
+            echo "You are carrying:"
+            [ $HAS_LAMP -eq 1 ] && echo "  - A brass lamp"
+            [ $HAS_KEY -eq 1 ] && echo "  - A golden key"
+            [ $HAS_SWORD -eq 1 ] && echo "  - A mighty sword"
+            [ $HAS_LAMP -eq 0 ] && [ $HAS_KEY -eq 0 ] && [ $HAS_SWORD -eq 0 ] && echo "  Nothing"
+            ;;
+        SCORE)
+            echo "Score: $SCORE points. Moves: $MOVES" ;;
+        LOOK|L)
+            ;; # Will show location again
+        QUIT|Q)
+            echo "Thanks for playing CECE-VENTURE!"
+            echo "Final score: $SCORE points in $MOVES moves"
+            exit 0 ;;
+        HELP|H)
+            echo "Commands: NORTH, SOUTH, EAST, WEST, GET <item>,"
+            echo "          INVENTORY, LOOK, SCORE, QUIT, HELP" ;;
+        *)
+            echo "I do not understand that command. Type HELP for help." ;;
+    esac
+    echo ""
+done

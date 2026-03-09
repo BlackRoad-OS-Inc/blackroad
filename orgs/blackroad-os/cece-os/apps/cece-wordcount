@@ -1,0 +1,23 @@
+#!/bin/bash
+# CECE-WORDCOUNT v1.0 - Word Counter
+count() {
+    FILE="$1"
+    WORDS=$(wc -w < "$FILE")
+    CHARS=$(wc -c < "$FILE")
+    LINES=$(wc -l < "$FILE")
+    echo "File: $FILE"
+    echo "  Words: $WORDS"
+    echo "  Characters: $CHARS"
+    echo "  Lines: $LINES"
+}
+text() {
+    TEXT="$1"
+    WORDS=$(echo "$TEXT" | wc -w)
+    CHARS=$(echo -n "$TEXT" | wc -c)
+    echo "Words: $WORDS | Characters: $CHARS"
+}
+case "$1" in
+    file) count "$2" ;;
+    text) text "$2" ;;
+    *) echo "CECE-WORDCOUNT: file <path> | text <string>" ;;
+esac

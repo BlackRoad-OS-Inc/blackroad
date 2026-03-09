@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-HEALTH v1.0 - System Health Check
+check() {
+    echo "🏥 CECE System Health Check"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "CPU Load: $(uptime | awk -F'load average:' '{print $2}')"
+    echo "Memory: $(free -h 2>/dev/null | awk '/Mem:/{print $3"/"$2}' || echo 'N/A')"
+    echo "Disk: $(df -h / | awk 'NR==2{print $5 " used"}')"
+    echo "Uptime: $(uptime -p 2>/dev/null || uptime | awk -F'up' '{print $2}' | cut -d, -f1)"
+    echo "Apps: $(ls ~/cece/apps 2>/dev/null | wc -l)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+case "$1" in *) check ;; esac

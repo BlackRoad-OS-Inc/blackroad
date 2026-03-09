@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "roadcache"
+version = "1.0.0"
+description = "Enterprise distributed cache system with LRU/LFU/ARC eviction, consistent hashing, and cluster support"
+readme = "README.md"
+license = {text = "Proprietary"}
+authors = [
+    {name = "BlackRoad OS", email = "blackroad.systems@gmail.com"}
+]
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database :: Database Engines/Servers",
+    "Topic :: System :: Distributed Computing",
+]
+keywords = [
+    "cache", "distributed", "lru", "lfu", "arc",
+    "consistent-hashing", "redis", "cluster"
+]
+
+[project.optional-dependencies]
+redis = ["redis>=4.0.0"]
+msgpack = ["msgpack>=1.0.0"]
+all = ["redis>=4.0.0", "msgpack>=1.0.0"]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/BlackRoad-OS/roadcache"
+Documentation = "https://docs.blackroad.io/roadcache"
+Repository = "https://github.com/BlackRoad-OS/roadcache"
+Issues = "https://github.com/BlackRoad-OS/roadcache/issues"
+
+[tool.setuptools.packages.find]
+include = ["roadcache_core*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v --cov=roadcache_core --cov-report=term-missing"
+
+[tool.black]
+line-length = 88
+target-version = ["py39", "py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_ignores = true
+strict = true

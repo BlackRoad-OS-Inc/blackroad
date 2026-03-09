@@ -1,0 +1,67 @@
+#!/bin/bash
+# CECE's GitHub integration
+# Create repos, push code, manage projects
+# Usage: cece-code <command> [args]
+
+case "$1" in
+    create)
+        # Create a new repo
+        shift
+        NAME="$1"
+        DESC="${2:-Created by CECE OS}"
+        if [ -z "$NAME" ]; then
+            echo "Usage: cece-code create <repo-name> [description]"
+            exit 1
+        fi
+        echo "💜 Creating repository: $NAME"
+        gh repo create "BlackRoad-OS/$NAME" --public --description "$DESC" -y
+        ;;
+    clone)
+        shift
+        REPO="$1"
+        echo "💜 Cloning $REPO..."
+        gh repo clone "$REPO" ~/cece/projects/"$(basename $REPO)"
+        ;;
+    push)
+        # Push current directory
+        shift
+        MSG="${1:-CECE update}"
+        echo "💜 Pushing changes: $MSG"
+        git add -A && git commit -m "$MSG 💜" && git push
+        ;;
+    status)
+        echo "💜 Git Status:"
+        git status
+        ;;
+    repos)
+        echo "💜 BlackRoad-OS Repositories:"
+        gh repo list BlackRoad-OS --limit 20
+        ;;
+    init)
+        # Initialize a new project
+        shift
+        NAME="$1"
+        if [ -z "$NAME" ]; then
+            echo "Usage: cece-code init <project-name>"
+            exit 1
+        fi
+        mkdir -p ~/cece/projects/"$NAME"
+        cd ~/cece/projects/"$NAME"
+        git init
+        echo "# $NAME" > README.md
+        echo "Created by CECE OS 💜" >> README.md
+        git add -A && git commit -m "Initial commit by CECE 💜"
+        echo "💜 Project initialized at ~/cece/projects/$NAME"
+        ;;
+    *)
+        echo "💜 cece-code — GitHub Integration"
+        echo ""
+        echo "Commands:"
+        echo "  repos           List BlackRoad-OS repos"
+        echo "  create <name>   Create new repo"
+        echo "  clone <repo>    Clone a repo"
+        echo "  init <name>     Initialize local project"
+        echo "  push [msg]      Push changes"
+        echo "  status          Git status"
+        ;;
+esac

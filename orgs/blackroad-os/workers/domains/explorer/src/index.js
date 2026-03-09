@@ -1,0 +1,12 @@
+export default {
+  async fetch(req, env) {
+    const url = new URL(req.url);
+    if (url.pathname === '/health') return Response.json({ ok: true, worker: 'explorer-blackroadio' });
+    return new Response(`<!DOCTYPE html><html><head><title>🔭 Explorer — BlackRoad OS</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;min-height:100vh}header{background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);padding:60px 40px;text-align:center}header h1{font-size:3rem;font-weight:800;letter-spacing:-2px}header p{opacity:.85;margin-top:12px;font-size:1.1rem}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;padding:40px;max-width:1200px;margin:0 auto}.card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:24px;transition:.2s}.card:hover{border-color:#FF1D6C;transform:translateY(-2px)}.card h3{font-size:1.1rem;margin-bottom:8px}.card p{font-size:.85rem;opacity:.6;line-height:1.5}.tag{display:inline-block;background:#111;border:1px solid #333;border-radius:20px;padding:4px 12px;font-size:.75rem;margin-top:12px;color:#FF1D6C}footer{text-align:center;padding:40px;opacity:.4;font-size:.8rem}</style></head><body><header><h1>🔭 Explorer</h1><p>Browse repos, commits, deployments, and logs across the BlackRoad ecosystem</p></header><div class="grid"><div class=card><h3>Repo Browser</h3><p>Search and browse 1,825+ repositories across 17 orgs</p><span class=tag>live</span></div>
+   <div class=card><h3>Commit Feed</h3><p>Real-time commit stream across all organizations</p><span class=tag>live</span></div>
+   <div class=card><h3>Deploy History</h3><p>Full deployment history with rollback links</p><span class=tag>active</span></div>
+   <div class=card><h3>Worker Explorer</h3><p>Browse all 500+ deployed Cloudflare Workers</p><span class=tag>live</span></div>
+   <div class=card><h3>Issue Tracker</h3><p>Cross-org issue search and triage</p><span class=tag>active</span></div>
+   <div class=card><h3>PR Dashboard</h3><p>Open pull requests across all repositories</p><span class=tag>live</span></div></div><footer>© 2026 BlackRoad OS, Inc. · <a href=https://blackroad.io style=color:#FF1D6C>blackroad.io</a></footer></body></html>`, { headers: { 'content-type': 'text/html;charset=utf-8', 'cache-control': 'public,max-age=60' }});
+  }
+};

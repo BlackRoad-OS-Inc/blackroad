@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucidia Earth — Infinite Zoom Living World</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        }
+        #canvas-container { position: fixed; inset: 0; }
+
+        .ui {
+            position: fixed;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .ui > * { pointer-events: auto; }
+
+        /* Zoom Level Indicator */
+        .zoom-indicator {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            padding: 12px 24px;
+            border-radius: 50px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .zoom-level {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .zoom-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(255,255,255,0.6);
+        }
+        .zoom-detail {
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            font-weight: 500;
+        }
+
+        /* LOD Stats */
+        .lod-stats {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 16px 20px;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            font-family: 'Monaco', monospace;
+            font-size: 11px;
+            color: #0f0;
+        }
+        .lod-stat {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin: 4px 0;
+        }
+        .lod-label { color: rgba(255,255,255,0.6); }
+        .lod-value { color: #0f0; font-weight: 700; }
+
+        /* Zoom Instructions */
+        .zoom-help {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 16px 20px;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            max-width: 280px;
+        }
+        .zoom-help-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 8px;
+        }
+        .zoom-help-item {
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+            margin: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .zoom-help-key {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #FF1D6C;
+            font-weight: 600;
+        }
+
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease;
+        }
+        .loading.hidden { opacity: 0; pointer-events: none; }
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #1a5a2e, #c2b280, #2d7a47, #87ceeb, #1e5a7f);
+            animation: spin 2s linear infinite;
+            position: relative;
+        }
+        .loading-spinner::before {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            background: #000;
+            border-radius: 50%;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            margin-top: 24px;
+            color: rgba(255,255,255,0.8);
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .loading-subtext {
+            margin-top: 8px;
+            color: rgba(255,255,255,0.5);
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initializing Infinite Zoom...</div>
+        <div class="loading-subtext">Loading high-precision meshes</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Zoom Level Indicator -->
+    <div class="zoom-indicator">
+        <div class="zoom-label">Zoom Level</div>
+        <div class="zoom-level" id="zoomLevel">0</div>
+        <div class="zoom-detail" id="zoomDetail">Global View</div>
+    </div>
+
+    <!-- LOD Stats -->
+    <div class="lod-stats">
+        <div class="lod-stat">
+            <span class="lod-label">Triangles:</span>
+            <span class="lod-value" id="triCount">0</span>
+        </div>
+        <div class="lod-stat">
+            <span class="lod-label">Resolution:</span>
+            <span class="lod-value" id="resolution">64x64</span>
+        </div>
+        <div class="lod-stat">
+            <span class="lod-label">Entities:</span>
+            <span class="lod-value" id="entityCount">0</span>
+        </div>
+        <div class="lod-stat">
+            <span class="lod-label">Draw Calls:</span>
+            <span class="lod-value" id="drawCalls">0</span>
+        </div>
+        <div class="lod-stat">
+            <span class="lod-label">FPS:</span>
+            <span class="lod-value" id="fps">60</span>
+        </div>
+    </div>
+
+    <!-- Zoom Help -->
+    <div class="zoom-help">
+        <div class="zoom-help-title">Infinite Zoom Controls</div>
+        <div class="zoom-help-item">
+            <span class="zoom-help-key">Scroll</span>
+            <span>Zoom in/out</span>
+        </div>
+        <div class="zoom-help-item">
+            <span class="zoom-help-key">Double Click</span>
+            <span>Jump to location</span>
+        </div>
+        <div class="zoom-help-item">
+            <span class="zoom-help-key">Drag</span>
+            <span>Pan camera</span>
+        </div>
+        <div class="zoom-help-item">
+            <span class="zoom-help-key">ESC</span>
+            <span>Return to globe</span>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const EARTH_RADIUS = 100;
+
+        // Zoom levels with increasing detail (Mandelbrot-like precision)
+        const ZOOM_LEVELS = [
+            { name: 'Global View', altitude: 260, resolution: [64, 64], entityDensity: 0.1 },      // Level 0
+            { name: 'Hemisphere', altitude: 180, resolution: [128, 128], entityDensity: 0.3 },     // Level 1
+            { name: 'Continent', altitude: 120, resolution: [256, 256], entityDensity: 0.6 },      // Level 2
+            { name: 'Country', altitude: 80, resolution: [512, 512], entityDensity: 1.0 },         // Level 3
+            { name: 'Region', altitude: 50, resolution: [1024, 1024], entityDensity: 2.0 },        // Level 4
+            { name: 'City', altitude: 30, resolution: [2048, 2048], entityDensity: 5.0 },          // Level 5
+            { name: 'Neighborhood', altitude: 15, resolution: [4096, 4096], entityDensity: 10.0 }, // Level 6
+            { name: 'Street', altitude: 8, resolution: [8192, 8192], entityDensity: 20.0 },        // Level 7
+        ];
+
+        // Current zoom state
+        let currentZoomLevel = 0;
+        let targetZoomLevel = 0;
+        let currentAltitude = ZOOM_LEVELS[0].altitude;
+        let targetAltitude = ZOOM_LEVELS[0].altitude;
+
+        let scene, camera, renderer;
+        let earth, atmosphere;
+        let spherical = { theta: 0, phi: Math.PI / 3, radius: ZOOM_LEVELS[0].altitude };
+
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        let autoRotate = true;
+
+        // LOD (Level of Detail) management
+        let lodMeshes = new Map(); // Store meshes at different LOD levels
+        let entityPools = new Map(); // Entity pools per zoom level
+
+        // Performance tracking
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let fps = 60;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000008);
+            scene.fog = new THREE.FogExp2(0x000008, 0.00015);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+            updateCamera();
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            createStars();
+            createLights();
+            createEarthLOD();
+            createAtmosphere();
+
+            setupControls();
+            updateZoomUI();
+
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                animate();
+            }, 1000);
+        }
+
+        function createStars() {
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(10000 * 3);
+            for (let i = 0; i < 10000; i++) {
+                const r = 1000 + Math.random() * 2000;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                pos[i * 3 + 2] = r * Math.cos(phi);
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            scene.add(new THREE.Points(geo, new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 1.5,
+                sizeAttenuation: true
+            })));
+        }
+
+        function createLights() {
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            sunLight.position.set(400, 200, 400);
+            scene.add(sunLight);
+
+            const ambientLight = new THREE.AmbientLight(0x404060, 0.5);
+            scene.add(ambientLight);
+
+            scene.add(new THREE.HemisphereLight(0x88aaff, 0x444422, 0.3));
+        }
+
+        function createEarthLOD() {
+            // Create multiple LOD levels
+            const lodGroup = new THREE.Group();
+
+            ZOOM_LEVELS.forEach((level, index) => {
+                const [segW, segH] = level.resolution;
+                const geo = new THREE.SphereGeometry(EARTH_RADIUS, segW, segH);
+
+                // Calculate actual triangle count
+                const triCount = geo.index ? geo.index.count / 3 : (segW * segH * 2);
+                console.log(\`LOD \${index} (\${level.name}): \${triCount.toLocaleString()} triangles at \${segW}x\${segH}\`);
+
+                const mat = new THREE.MeshPhongMaterial({
+                    color: 0x2d5a3d,
+                    emissive: 0x0a1a0a,
+                    shininess: 10,
+                    wireframe: false
+                });
+
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.visible = (index === 0); // Only show first level initially
+                mesh.userData.lodLevel = index;
+                mesh.userData.triCount = triCount;
+
+                lodMeshes.set(index, mesh);
+                lodGroup.add(mesh);
+            });
+
+            earth = lodGroup;
+            scene.add(earth);
+        }
+
+        function createAtmosphere() {
+            atmosphere = new THREE.Mesh(
+                new THREE.SphereGeometry(EARTH_RADIUS + 12, 64, 64),
+                new THREE.ShaderMaterial({
+                    vertexShader: \`
+                        varying vec3 vNormal;
+                        void main() {
+                            vNormal = normalize(normalMatrix * normal);
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    \`,
+                    fragmentShader: \`
+                        varying vec3 vNormal;
+                        void main() {
+                            float intensity = pow(0.65 - dot(vNormal, vec3(0, 0, 1)), 2.5);
+                            gl_FragColor = vec4(0.3, 0.6, 1.0, intensity * 0.5);
+                        }
+                    \`,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.BackSide,
+                    transparent: true,
+                    depthWrite: false
+                })
+            );
+            scene.add(atmosphere);
+        }
+
+        function setupControls() {
+            window.addEventListener('resize', onResize);
+
+            renderer.domElement.addEventListener('mousedown', e => {
+                isDragging = true;
+                prevMouse = { x: e.clientX, y: e.clientY };
+            });
+
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+
+            renderer.domElement.addEventListener('wheel', e => {
+                e.preventDefault();
+                handleZoom(e.deltaY);
+            }, { passive: false });
+
+            renderer.domElement.addEventListener('dblclick', e => {
+                // Jump zoom to click location
+                const mouse = new THREE.Vector2(
+                    (e.clientX / window.innerWidth) * 2 - 1,
+                    -(e.clientY / window.innerHeight) * 2 + 1
+                );
+                jumpToLocation(mouse);
+            });
+
+            window.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    resetToGlobal();
+                }
+            });
+        }
+
+        function handleZoom(delta) {
+            // Smooth zoom with level transitions
+            targetAltitude = Math.max(5, Math.min(400, spherical.radius + delta * 0.3));
+
+            // Determine target zoom level based on altitude
+            for (let i = ZOOM_LEVELS.length - 1; i >= 0; i--) {
+                if (targetAltitude <= ZOOM_LEVELS[i].altitude * 1.2) {
+                    targetZoomLevel = i;
+                    break;
+                }
+            }
+
+            updateLOD();
+        }
+
+        function jumpToLocation(mouse) {
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const currentMesh = lodMeshes.get(currentZoomLevel);
+            const intersects = raycaster.intersectObject(currentMesh);
+
+            if (intersects.length > 0) {
+                const point = intersects[0].point;
+
+                // Calculate spherical coordinates of intersection
+                const r = point.length();
+                const targetTheta = Math.atan2(point.z, point.x);
+                const targetPhi = Math.acos(point.y / r);
+
+                // Smooth transition
+                spherical.theta = targetTheta;
+                spherical.phi = targetPhi;
+
+                // Zoom in closer
+                targetZoomLevel = Math.min(currentZoomLevel + 2, ZOOM_LEVELS.length - 1);
+                targetAltitude = ZOOM_LEVELS[targetZoomLevel].altitude;
+
+                updateLOD();
+            }
+        }
+
+        function resetToGlobal() {
+            targetZoomLevel = 0;
+            targetAltitude = ZOOM_LEVELS[0].altitude;
+            spherical.theta = 0;
+            spherical.phi = Math.PI / 3;
+            updateLOD();
+        }
+
+        function updateLOD() {
+            // Smooth transition between zoom levels
+            if (currentZoomLevel !== targetZoomLevel) {
+                currentZoomLevel = targetZoomLevel;
+
+                // Update visible meshes
+                lodMeshes.forEach((mesh, level) => {
+                    mesh.visible = (level === currentZoomLevel);
+                });
+
+                updateZoomUI();
+                console.log(\`Switched to LOD \${currentZoomLevel}: \${ZOOM_LEVELS[currentZoomLevel].name}\`);
+            }
+        }
+
+        function updateZoomUI() {
+            const level = ZOOM_LEVELS[currentZoomLevel];
+            document.getElementById('zoomLevel').textContent = currentZoomLevel;
+            document.getElementById('zoomDetail').textContent = level.name;
+
+            const currentMesh = lodMeshes.get(currentZoomLevel);
+            document.getElementById('triCount').textContent = (currentMesh.userData.triCount || 0).toLocaleString();
+            document.getElementById('resolution').textContent = \`\${level.resolution[0]}x\${level.resolution[1]}\`;
+        }
+
+        function updateCamera() {
+            camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+            camera.position.y = spherical.radius * Math.cos(spherical.phi);
+            camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            const dx = e.clientX - prevMouse.x;
+            const dy = e.clientY - prevMouse.y;
+            spherical.theta -= dx * 0.005;
+            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi + dy * 0.005));
+            updateCamera();
+            prevMouse = { x: e.clientX, y: e.clientY };
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Smooth altitude transition
+            spherical.radius += (targetAltitude - spherical.radius) * 0.05;
+
+            // Auto-rotate when not dragging
+            if (autoRotate && !isDragging && currentZoomLevel === 0) {
+                spherical.theta += 0.0008;
+            }
+
+            updateCamera();
+            earth.rotation.y += 0.0002;
+
+            // FPS tracking
+            frameCount++;
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                fps = Math.round(frameCount * 1000 / (now - lastTime));
+                document.getElementById('fps').textContent = fps;
+                frameCount = 0;
+                lastTime = now;
+            }
+
+            // Update stats
+            document.getElementById('drawCalls').textContent = renderer.info.render.calls;
+            document.getElementById('entityCount').textContent = '0'; // Placeholder for future entities
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>

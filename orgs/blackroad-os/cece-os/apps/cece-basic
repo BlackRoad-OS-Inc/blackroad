@@ -1,0 +1,145 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-BASIC v1.0 - A Simple BASIC Interpreter
+#  "10 PRINT \"HELLO WORLD\""
+#═══════════════════════════════════════════════════════════════
+
+declare -A VARS
+declare -a PROGRAM
+CURRENT_LINE=0
+
+echo "╔═══════════════════════════════════════════════════════════╗"
+echo "║            CECE-BASIC v1.0 - Ready.                       ║"
+echo "║  Commands: NEW, LIST, RUN, SAVE, LOAD, BYE                ║"
+echo "║  Statements: PRINT, LET, GOTO, IF, INPUT, REM, END        ║"
+echo "╚═══════════════════════════════════════════════════════════╝"
+echo ""
+echo "OK"
+
+run_line() {
+    local LINE="$1"
+    local CMD=$(echo "$LINE" | awk "{print \$1}" | tr "[:lower:]" "[:upper:]")
+    local REST=$(echo "$LINE" | cut -d" " -f2-)
+    
+    case "$CMD" in
+        PRINT)
+            # Handle string literals and variables
+            if [[ "$REST" =~ ^\" ]]; then
+                echo "$REST" | sed "s/\"//g"
+            else
+                VAR=$(echo "$REST" | tr -d " ")
+                echo "${VARS[$VAR]:-0}"
+            fi
+            ;;
+        LET)
+            VAR=$(echo "$REST" | cut -d"=" -f1 | tr -d " ")
+            VAL=$(echo "$REST" | cut -d"=" -f2 | tr -d " ")
+            # Simple math
+            if [[ "$VAL" =~ [+\-\*/] ]]; then
+                VAL=$(echo "$VAL" | sed "s/[A-Z]/${VARS[&]:-0}/g")
+                VARS[$VAR]=$(( VAL ))
+            else
+                VARS[$VAR]="$VAL"
+            fi
+            ;;
+        INPUT)
+            VAR=$(echo "$REST" | tr -d " ")
+            read -p "? " INPUT_VAL
+            VARS[$VAR]="$INPUT_VAL"
+            ;;
+        GOTO)
+            TARGET=$(echo "$REST" | tr -d " ")
+            CURRENT_LINE=$((TARGET - 1))
+            ;;
+        IF)
+            # Simple IF THEN
+            COND=$(echo "$REST" | sed "s/THEN.*//" | tr -d " ")
+            THEN=$(echo "$REST" | sed "s/.*THEN//" | tr -d " ")
+            VAR=$(echo "$COND" | cut -d"=" -f1)
+            VAL=$(echo "$COND" | cut -d"=" -f2)
+            if [ "${VARS[$VAR]}" = "$VAL" ]; then
+                run_line "$THEN"
+            fi
+            ;;
+        REM|"")
+            # Comment, do nothing
+            ;;
+        END)
+            return 1
+            ;;
+    esac
+    return 0
+}
+
+while true; do
+    echo -n "] "
+    read -r INPUT
+    
+    # Check if it starts with a line number
+    if [[ "$INPUT" =~ ^[0-9]+ ]]; then
+        LINENUM=$(echo "$INPUT" | awk "{print \$1}")
+        CODE=$(echo "$INPUT" | cut -d" " -f2-)
+        PROGRAM[$LINENUM]="$CODE"
+    else
+        CMD=$(echo "$INPUT" | awk "{print \$1}" | tr "[:lower:]" "[:upper:]")
+        
+        case "$CMD" in
+            NEW)
+                unset PROGRAM
+                declare -a PROGRAM
+                unset VARS
+                declare -A VARS
+                echo "OK"
+                ;;
+            LIST)
+                for i in "${!PROGRAM[@]}"; do
+                    echo "$i ${PROGRAM[$i]}"
+                done | sort -n
+                echo "OK"
+                ;;
+            RUN)
+                # Get sorted line numbers
+                LINES=($(for i in "${!PROGRAM[@]}"; do echo $i; done | sort -n))
+                IDX=0
+                while [ $IDX -lt ${#LINES[@]} ]; do
+                    CURRENT_LINE=${LINES[$IDX]}
+                    run_line "${PROGRAM[$CURRENT_LINE]}"
+                    [ $? -ne 0 ] && break
+                    ((IDX++))
+                done
+                echo ""
+                echo "OK"
+                ;;
+            SAVE)
+                FILE=$(echo "$INPUT" | awk "{print \$2}")
+                FILE=${FILE:-program.bas}
+                for i in "${!PROGRAM[@]}"; do
+                    echo "$i ${PROGRAM[$i]}"
+                done | sort -n > ~/cece/apps/basic_programs/"$FILE"
+                echo "SAVED $FILE"
+                ;;
+            LOAD)
+                FILE=$(echo "$INPUT" | awk "{print \$2}")
+                if [ -f ~/cece/apps/basic_programs/"$FILE" ]; then
+                    while read -r line; do
+                        LINENUM=$(echo "$line" | awk "{print \$1}")
+                        CODE=$(echo "$line" | cut -d" " -f2-)
+                        PROGRAM[$LINENUM]="$CODE"
+                    done < ~/cece/apps/basic_programs/"$FILE"
+                    echo "LOADED $FILE"
+                else
+                    echo "FILE NOT FOUND"
+                fi
+                ;;
+            BYE)
+                echo "GOODBYE!"
+                exit 0
+                ;;
+            *)
+                # Direct mode - run immediately
+                run_line "$INPUT"
+                echo "OK"
+                ;;
+        esac
+    fi
+done

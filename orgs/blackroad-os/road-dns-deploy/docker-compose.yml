@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for PowerDNS
+  postgres:
+    image: postgres:15-alpine
+    container_name: road-dns-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: powerdns
+      POSTGRES_USER: pdns
+      POSTGRES_PASSWORD: ${PDNS_DB_PASSWORD:-blackroad-dns-2026}
+    volumes:
+      - pdns-db-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - road-dns-net
+
+  # PowerDNS Authoritative Server
+  pdns:
+    image: powerdns/pdns-auth-48:latest
+    container_name: road-pdns
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "9053:8081"  # API (9053 = DNS 53 reversed)
+    volumes:
+      - ./pdns.conf:/etc/powerdns/pdns.conf:ro
+    networks:
+      - road-dns-net
+
+  # PowerDNS Admin Web UI
+  pdns-admin:
+    image: ngoduykhanh/powerdns-admin:latest
+    container_name: road-pdns-admin
+    restart: unless-stopped
+    depends_on:
+      - pdns
+      - postgres
+    ports:
+      - "9192:80"  # Admin UI
+    environment:
+      SECRET_KEY: ${PDNS_ADMIN_SECRET:-blackroad-secret-key-2026}
+      SQLALCHEMY_DATABASE_URI: postgresql://pdns:${PDNS_DB_PASSWORD:-blackroad-dns-2026}@postgres:5432/powerdns
+      PDNS_API_URL: http://pdns:8081
+      PDNS_API_KEY: ${PDNS_API_KEY:-blackroad-pdns-api-key-2026}
+      PDNS_VERSION: 4.7.0
+    networks:
+      - road-dns-net
+
+networks:
+  road-dns-net:
+    driver: bridge
+
+volumes:
+  pdns-db-data:
+    driver: local

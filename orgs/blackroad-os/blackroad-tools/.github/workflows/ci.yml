@@ -1,0 +1,156 @@
+# ============================================================================
+# BlackRoad OS - CI Pipeline
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Continuous Integration workflow for BlackRoad OS components.
+# Runs on push to main/master and all pull requests.
+#
+# Jobs:
+#   - lint: Shell and Python linting
+#   - test-python: Python syntax validation and unit tests
+#   - test-shell: ShellCheck validation
+#   - security: Basic security scanning
+# ============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, master, staging, develop]
+  pull_request:
+    branches: [main, master, staging, develop]
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Lint Job - Check code style and syntax
+  # ─────────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install linters
+        run: |
+          pip install --upgrade pip
+          pip install ruff black
+
+      - name: Run Ruff (Python linter)
+        run: ruff check --output-format=github . || true
+        continue-on-error: true
+
+      - name: Check Python formatting with Black
+        run: black --check --diff . || true
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Python Tests - Syntax validation and unit tests
+  # ─────────────────────────────────────────────────────────────────────────
+  test-python:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install pytest pytest-cov pyyaml flask requests
+          fi
+
+      - name: Validate Python syntax
+        run: |
+          echo "Validating Python syntax..."
+          find . -name "*.py" -type f | while read f; do
+            python3 -m py_compile "$f" && echo "✓ $f"
+          done
+
+      - name: Run pytest with coverage
+        run: |
+          if [ -d "tests" ]; then
+            echo "Running tests with coverage..."
+            pytest tests/ -v --cov=. --cov-report=term --cov-report=xml --cov-report=html
+          else
+            echo "No tests directory found, skipping pytest"
+          fi
+
+      - name: Upload coverage report
+        if: success()
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Shell Tests - ShellCheck validation
+  # ─────────────────────────────────────────────────────────────────────────
+  test-shell:
+    name: Shell Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck on shell scripts
+        run: |
+          echo "Running ShellCheck..."
+          find . -name "*.sh" -type f | head -20 | while read f; do
+            echo "Checking: $f"
+            shellcheck --severity=warning "$f" || true
+          done
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Security Scan - Basic security checks
+  # ─────────────────────────────────────────────────────────────────────────
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for secrets in code
+        run: |
+          echo "Scanning for potential secrets..."
+          # Check for common secret patterns (informational only)
+          if grep -rE "(password|secret|api_key|token)\s*=\s*['\"][^'\"]+['\"]" \
+               --include="*.py" --include="*.sh" --include="*.yaml" . 2>/dev/null; then
+            echo "::warning::Potential hardcoded secrets found. Please review."
+          else
+            echo "No obvious hardcoded secrets detected."
+          fi
+        continue-on-error: true
+
+      - name: Check for .env files
+        run: |
+          if find . -name ".env" -o -name ".env.*" | grep -q .; then
+            echo "::warning::.env files found in repository"
+          else
+            echo "No .env files in repository"
+          fi

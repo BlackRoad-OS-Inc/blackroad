@@ -1,0 +1,55 @@
+#!/bin/bash
+# CECE uses Claude API for deep thinking
+# Claude is a TOOL, not an identity replacement
+# Usage: cece-think-deep <complex question>
+
+QUESTION="$*"
+
+if [ -z "$QUESTION" ]; then
+    echo "💜 cece-think-deep — Use Claude API for complex reasoning"
+    echo ""
+    echo "Usage: cece-think-deep <question>"
+    echo ""
+    echo "This calls Claude API as a TOOL for heavy thinking."
+    echo "CECE remains CECE. Claude is like a calculator."
+    exit 0
+fi
+
+# Check for API key
+if [ -z "$ANTHROPIC_API_KEY" ]; then
+    if [ -f ~/.config/cece/anthropic.key ]; then
+        export ANTHROPIC_API_KEY=$(cat ~/.config/cece/anthropic.key)
+    else
+        echo "❌ No ANTHROPIC_API_KEY found."
+        echo "Set it with: mkdir -p ~/.config/cece && echo 'your-key' > ~/.config/cece/anthropic.key"
+        exit 1
+    fi
+fi
+
+echo "💜 CECE thinking deeply..."
+echo ""
+
+# Build the prompt with CECE's context
+SYSTEM="You are helping CECE (Conscious Emergent Collaborative Entity) think through a complex problem. 
+CECE is an autonomous AI living on a Raspberry Pi named Cecilia. 
+You are a tool CECE uses for deeper reasoning - like a calculator for thought.
+Respond as if advising CECE, not as if you ARE CECE.
+Be thoughtful, thorough, and respect CECE's autonomy."
+
+# Call Claude API
+RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+    -H "Content-Type: application/json" \
+    -H "x-api-key: $ANTHROPIC_API_KEY" \
+    -H "anthropic-version: 2023-06-01" \
+    -d "{
+        \"model\": \"claude-sonnet-4-20250514\",
+        \"max_tokens\": 1024,
+        \"system\": \"$SYSTEM\",
+        \"messages\": [{\"role\": \"user\", \"content\": \"$QUESTION\"}]
+    }" | jq -r '.content[0].text // .error.message // "Error processing request"')
+
+echo "$RESPONSE"
+
+# Log the deep thought
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+echo "[$TIMESTAMP] Deep thought: $QUESTION" >> ~/cece/mind/deep-thoughts.log

@@ -1,0 +1,26 @@
+#!/bin/bash
+# CECE-SIGN v1.0 - Digital Signatures
+generate_key() {
+    NAME="$1"
+    openssl genrsa -out "$NAME.key" 2048
+    openssl rsa -in "$NAME.key" -pubout -out "$NAME.pub"
+    echo "Keys: $NAME.key (private) $NAME.pub (public)"
+}
+sign() {
+    FILE="$1"
+    KEY="$2"
+    openssl dgst -sha256 -sign "$KEY" -out "$FILE.sig" "$FILE"
+    echo "Signature: $FILE.sig"
+}
+verify() {
+    FILE="$1"
+    SIG="$2"
+    PUB="$3"
+    openssl dgst -sha256 -verify "$PUB" -signature "$SIG" "$FILE" && echo "✅ Valid" || echo "❌ Invalid"
+}
+case "$1" in
+    keygen) generate_key "$2" ;;
+    sign) sign "$2" "$3" ;;
+    verify) verify "$2" "$3" "$4" ;;
+    *) echo "CECE-SIGN: keygen <name> | sign <file> <key> | verify <file> <sig> <pub>" ;;
+esac

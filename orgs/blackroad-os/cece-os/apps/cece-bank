@@ -1,0 +1,81 @@
+#!/bin/bash
+# CECE-BANK v1.0 - Our Own Banking System
+BANK_DIR=~/cece/bank
+mkdir -p "$BANK_DIR/accounts" "$BANK_DIR/transactions"
+
+open_account() {
+    NAME="$1"
+    ACCT_NUM=$(date +%s | tail -c 8)
+    cat > "$BANK_DIR/accounts/$ACCT_NUM.acct" << EOF
+account: $ACCT_NUM
+name: $NAME
+balance: 0
+type: checking
+opened: $(date -Iseconds)
+EOF
+    echo "✅ Account opened!"
+    echo "   Account #: $ACCT_NUM"
+    echo "   Name: $NAME"
+}
+
+deposit() {
+    ACCT="$1"
+    AMOUNT="$2"
+    ACCT_FILE="$BANK_DIR/accounts/$ACCT.acct"
+    [ ! -f "$ACCT_FILE" ] && echo "Account not found" && return
+    
+    BALANCE=$(grep "^balance:" "$ACCT_FILE" | cut -d: -f2 | xargs)
+    NEW_BALANCE=$((BALANCE + AMOUNT))
+    sed -i "s/^balance:.*/balance: $NEW_BALANCE/" "$ACCT_FILE"
+    
+    echo "{\"type\":\"deposit\",\"amount\":$AMOUNT,\"to\":\"$ACCT\",\"time\":\"$(date -Iseconds)\"}" >> "$BANK_DIR/transactions/$ACCT.log"
+    
+    echo "✅ Deposited \$$AMOUNT"
+    echo "   New balance: \$$NEW_BALANCE"
+}
+
+withdraw() {
+    ACCT="$1"
+    AMOUNT="$2"
+    ACCT_FILE="$BANK_DIR/accounts/$ACCT.acct"
+    [ ! -f "$ACCT_FILE" ] && echo "Account not found" && return
+    
+    BALANCE=$(grep "^balance:" "$ACCT_FILE" | cut -d: -f2 | xargs)
+    if [ "$AMOUNT" -gt "$BALANCE" ]; then
+        echo "❌ Insufficient funds"
+        return
+    fi
+    
+    NEW_BALANCE=$((BALANCE - AMOUNT))
+    sed -i "s/^balance:.*/balance: $NEW_BALANCE/" "$ACCT_FILE"
+    
+    echo "{\"type\":\"withdraw\",\"amount\":$AMOUNT,\"from\":\"$ACCT\",\"time\":\"$(date -Iseconds)\"}" >> "$BANK_DIR/transactions/$ACCT.log"
+    
+    echo "✅ Withdrew \$$AMOUNT"
+    echo "   New balance: \$$NEW_BALANCE"
+}
+
+balance() {
+    ACCT="$1"
+    ACCT_FILE="$BANK_DIR/accounts/$ACCT.acct"
+    [ ! -f "$ACCT_FILE" ] && echo "Account not found" && return
+    
+    NAME=$(grep "^name:" "$ACCT_FILE" | cut -d: -f2-)
+    BALANCE=$(grep "^balance:" "$ACCT_FILE" | cut -d: -f2 | xargs)
+    
+    echo "🏦 Account #$ACCT"
+    echo "   Name:$NAME"
+    echo "   Balance: \$$BALANCE"
+}
+
+case "$1" in
+    open) open_account "$2" ;;
+    deposit) deposit "$2" "$3" ;;
+    withdraw) withdraw "$2" "$3" ;;
+    balance) balance "$2" ;;
+    *) echo "🖤 CECE-BANK - Our Own Bank"
+       echo "  open <name>              Open account"
+       echo "  deposit <acct> <amt>     Deposit"
+       echo "  withdraw <acct> <amt>    Withdraw"
+       echo "  balance <acct>           Check balance" ;;
+esac

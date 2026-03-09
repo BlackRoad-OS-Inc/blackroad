@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>∞⚛️ Mathematical Universe - BlackRoad Quantum</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --amber: #F5A623;
+            --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF;
+            --violet: #9C27B0;
+            --green: #00FF88;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black);
+            color: var(--white);
+            overflow: hidden;
+        }
+
+        .universe-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .title {
+            position: absolute;
+            top: 34px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            animation: glow 3s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(255, 29, 108, 0.5);
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 29, 108, 0.5)); }
+            50% { filter: drop-shadow(0 0 30px rgba(255, 29, 108, 1)); }
+        }
+
+        .info-panel {
+            position: absolute;
+            bottom: 34px;
+            left: 34px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--hot-pink);
+            border-radius: 13px;
+            padding: 21px;
+            max-width: 400px;
+            pointer-events: all;
+        }
+
+        .concept-name {
+            font-size: 21px;
+            color: var(--hot-pink);
+            margin-bottom: 13px;
+            font-weight: 700;
+        }
+
+        .concept-formula {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: var(--green);
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 4px;
+        }
+
+        .concept-description {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-top: 8px;
+        }
+
+        .connections {
+            margin-top: 13px;
+            padding-top: 13px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .connection-item {
+            font-size: 12px;
+            color: var(--electric-blue);
+            margin: 5px 0;
+            cursor: pointer;
+            pointer-events: all;
+        }
+
+        .connection-item:hover {
+            color: var(--hot-pink);
+            text-decoration: underline;
+        }
+
+        .controls {
+            position: absolute;
+            top: 120px;
+            right: 34px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--electric-blue);
+            border-radius: 13px;
+            padding: 21px;
+            pointer-events: all;
+        }
+
+        .control-title {
+            font-size: 16px;
+            color: var(--electric-blue);
+            margin-bottom: 13px;
+            font-weight: 700;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            margin: 8px 0;
+            background: rgba(41, 121, 255, 0.1);
+            border: 1px solid var(--electric-blue);
+            border-radius: 8px;
+            color: var(--white);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            pointer-events: all;
+        }
+
+        button:hover {
+            background: var(--electric-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(41, 121, 255, 0.5);
+        }
+
+        button.active {
+            background: var(--electric-blue);
+            box-shadow: 0 0 20px rgba(41, 121, 255, 0.8);
+        }
+
+        .search-box {
+            position: absolute;
+            top: 34px;
+            right: 34px;
+            pointer-events: all;
+        }
+
+        input[type="text"] {
+            padding: 13px 21px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--amber);
+            border-radius: 21px;
+            color: var(--white);
+            font-size: 14px;
+            width: 250px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--hot-pink);
+            box-shadow: 0 0 20px rgba(255, 29, 108, 0.5);
+        }
+
+        .stats {
+            position: absolute;
+            bottom: 34px;
+            right: 34px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: right;
+            pointer-events: none;
+        }
+
+        .golden-ratio {
+            color: var(--amber);
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="universe-container">
+        <canvas id="universeCanvas"></canvas>
+
+        <div class="overlay">
+            <div class="title">∞ Mathematical Universe ⚛️</div>
+
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search concepts..." onkeyup="searchConcepts(event)">
+            </div>
+
+            <div class="controls">
+                <div class="control-title">Explore</div>
+                <button onclick="setMode('all')">Show All Connections</button>
+                <button onclick="setMode('quantum')">Quantum Physics</button>
+                <button onclick="setMode('number')">Number Theory</button>
+                <button onclick="setMode('fractals')">Fractals & Chaos</button>
+                <button onclick="setMode('information')">Information Theory</button>
+                <button onclick="animate('orbit')">Orbital Animation</button>
+                <button onclick="animate('pulse')">Pulsing Nodes</button>
+                <button onclick="resetView()">Reset View</button>
+            </div>
+
+            <div class="info-panel" id="infoPanel" style="display: none;">
+                <div class="concept-name" id="conceptName">Select a concept</div>
+                <div class="concept-formula" id="conceptFormula"></div>
+                <div class="concept-description" id="conceptDescription"></div>
+                <div class="connections">
+                    <strong style="color: var(--electric-blue);">Connected to:</strong>
+                    <div id="connectionsList"></div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div>Concepts: <span id="conceptCount">0</span></div>
+                <div>Connections: <span id="connectionCount">0</span></div>
+                <div>φ = <span class="golden-ratio">1.618033988749...</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('universeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, centerX, centerY;
+        let nodes = [];
+        let connections = [];
+        let selectedNode = null;
+        let hoveredNode = null;
+        let currentMode = 'all';
+        let animationMode = null;
+        let time = 0;
+
+        const PHI = 1.618033988749;
+
+        // Mathematical concepts with their connections
+        const concepts = [
+            // Number Theory
+            { id: 'ramanujan', name: 'Ramanujan', formula: '1+2+3+... = -1/12', description: 'Infinite series and modular forms. Connection to quantum field theory via Casimir effect.', category: 'number', connections: ['riemann', 'quantum-field'], x: 0, y: 0 },
+            { id: 'riemann', name: 'Riemann ζ', formula: 'ζ(s) = Σ 1/nˢ', description: 'Riemann hypothesis: all non-trivial zeros have Re(s) = 1/2. Connected to quantum chaos!', category: 'number', connections: ['quantum-chaos', 'random-matrix'], x: 0, y: 0 },
+            { id: 'fibonacci', name: 'Fibonacci', formula: 'F(n) = (φⁿ - ψⁿ)/√5', description: 'Binet formula connects Fibonacci to golden ratio. Appears in qudits!', category: 'number', connections: ['golden-ratio', 'qudits'], x: 0, y: 0 },
+            { id: 'golden-ratio', name: 'Golden Ratio φ', formula: 'φ = (1+√5)/2 ≈ 1.618', description: 'Most irrational number. Appears in Penrose tilings, quasi-crystals, quantum phase transitions.', category: 'number', connections: ['fibonacci', 'penrose', 'quasi-crystal'], x: 0, y: 0 },
+
+            // Quantum Mechanics
+            { id: 'schrodinger', name: 'Schrödinger', formula: 'iℏ∂ψ/∂t = Ĥψ', description: 'Fundamental equation of quantum mechanics. Wave function evolution.', category: 'quantum', connections: ['wave-function', 'hamiltonian'], x: 0, y: 0 },
+            { id: 'heisenberg', name: 'Heisenberg', formula: 'ΔxΔp ≥ ℏ/2', description: 'Uncertainty principle. Cannot know position and momentum simultaneously.', category: 'quantum', connections: ['quantum-chaos', 'measurement'], x: 0, y: 0 },
+            { id: 'dirac', name: 'Dirac', formula: '|ψ⟩ = α|0⟩ + β|1⟩', description: 'Bra-ket notation. Foundation of quantum computing.', category: 'quantum', connections: ['bloch', 'qubits'], x: 0, y: 0 },
+            { id: 'pauli', name: 'Pauli Matrices', formula: 'σₓ, σᵧ, σᵧ', description: 'Fundamental quantum gates. X, Y, Z rotations on Bloch sphere.', category: 'quantum', connections: ['bloch', 'su2'], x: 0, y: 0 },
+            { id: 'bloch', name: 'Bloch Sphere', formula: '|ψ⟩ = cos(θ/2)|0⟩ + e^(iφ)sin(θ/2)|1⟩', description: 'Geometric representation of qubit states. We built this! 😉', category: 'quantum', connections: ['pauli', 'qubits', 'su2'], x: 0, y: 0 },
+
+            // Fractals & Chaos
+            { id: 'mandelbrot', name: 'Mandelbrot', formula: 'z → z² + c', description: 'Iconic fractal set. Boundary has dimension 2. Connected to quantum chaos.', category: 'fractals', connections: ['julia', 'quantum-chaos'], x: 0, y: 0 },
+            { id: 'julia', name: 'Julia Sets', formula: 'J(c) = closure of repelling periodic points', description: 'Fractal dynamics. Connected if c in Mandelbrot set.', category: 'fractals', connections: ['mandelbrot', 'chaos'], x: 0, y: 0 },
+            { id: 'lorenz', name: 'Lorenz Attractor', formula: 'dx/dt = σ(y-x)', description: 'Chaos theory. Butterfly effect. Sensitivity to initial conditions.', category: 'fractals', connections: ['chaos', 'quantum-chaos'], x: 0, y: 0 },
+
+            // Information Theory
+            { id: 'shannon', name: 'Shannon Entropy', formula: 'H = -Σ p log p', description: 'Information entropy. Foundation of information theory.', category: 'information', connections: ['von-neumann', 'boltzmann'], x: 0, y: 0 },
+            { id: 'von-neumann', name: 'Von Neumann', formula: 'S = -Tr(ρ log ρ)', description: 'Quantum entropy. Measures entanglement.', category: 'information', connections: ['shannon', 'entanglement'], x: 0, y: 0 },
+            { id: 'boltzmann', name: 'Boltzmann', formula: 'S = k ln Ω', description: 'Statistical mechanics entropy. Microstates and macrostates.', category: 'information', connections: ['shannon', 'thermodynamics'], x: 0, y: 0 },
+
+            // Special Topics
+            { id: 'godel', name: 'Gödel', formula: '∃ true statement that can\'t be proved', description: 'Incompleteness theorem. Mathematics has limits!', category: 'number', connections: ['peano', 'cantor'], x: 0, y: 0 },
+            { id: 'hamiltonian', name: 'Hamiltonian Ĥ', formula: 'Ĥ = T + V', description: 'Energy operator. Central to quantum mechanics.', category: 'quantum', connections: ['schrodinger', 'lagrangian'], x: 0, y: 0 },
+            { id: 'lagrangian', name: 'Lagrangian L', formula: 'L = T - V', description: 'Classical mechanics formulation. Leads to Hamiltonian.', category: 'quantum', connections: ['hamiltonian'], x: 0, y: 0 },
+            { id: 'qubits', name: 'Qubits', formula: 'Superposition + Entanglement', description: 'Quantum bits. Foundation of quantum computing.', category: 'quantum', connections: ['bloch', 'dirac', 'qudits'], x: 0, y: 0 },
+            { id: 'qudits', name: 'Qudits', formula: 'd-level quantum systems', description: 'Generalization of qubits. We built Fibonacci qudits!', category: 'quantum', connections: ['qubits', 'fibonacci'], x: 0, y: 0 },
+            { id: 'su2', name: 'SU(2) Group', formula: 'Quantum rotations', description: 'Special unitary group. Bloch sphere rotations.', category: 'quantum', connections: ['bloch', 'pauli'], x: 0, y: 0 },
+        ];
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+            layoutNodes();
+        }
+
+        function layoutNodes() {
+            const radius = Math.min(width, height) / 3;
+            const angleStep = (2 * Math.PI) / concepts.length;
+
+            concepts.forEach((concept, i) => {
+                const angle = i * angleStep * PHI; // Golden angle!
+                const r = radius * (0.7 + 0.3 * Math.sin(i * PHI));
+                concept.x = centerX + r * Math.cos(angle);
+                concept.y = centerY + r * Math.sin(angle);
+                concept.vx = 0;
+                concept.vy = 0;
+            });
+        }
+
+        function drawUniverse() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Background gradient
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height));
+            gradient.addColorStop(0, 'rgba(255, 29, 108, 0.05)');
+            gradient.addColorStop(0.5, 'rgba(156, 39, 176, 0.05)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw connections
+            concepts.forEach(concept => {
+                concept.connections.forEach(targetId => {
+                    const target = concepts.find(c => c.id === targetId);
+                    if (!target) return;
+
+                    const shouldShow = currentMode === 'all' ||
+                                     concept.category === currentMode ||
+                                     target.category === currentMode ||
+                                     (selectedNode && (concept.id === selectedNode.id || target.id === selectedNode.id));
+
+                    if (!shouldShow) return;
+
+                    const isHighlighted = selectedNode && (concept.id === selectedNode.id || target.id === selectedNode.id);
+
+                    ctx.strokeStyle = isHighlighted ?
+                        'rgba(255, 29, 108, 0.6)' :
+                        'rgba(255, 255, 255, 0.1)';
+                    ctx.lineWidth = isHighlighted ? 2 : 1;
+
+                    ctx.beginPath();
+                    ctx.moveTo(concept.x, concept.y);
+                    ctx.lineTo(target.x, target.y);
+                    ctx.stroke();
+                });
+            });
+
+            // Draw nodes
+            concepts.forEach(concept => {
+                const shouldShow = currentMode === 'all' || concept.category === currentMode ||
+                                 (selectedNode && selectedNode.connections.includes(concept.id));
+
+                if (!shouldShow && concept !== selectedNode && concept !== hoveredNode) {
+                    return;
+                }
+
+                const isSelected = concept === selectedNode;
+                const isHovered = concept === hoveredNode;
+                const size = isSelected ? 21 : isHovered ? 16 : 13;
+
+                // Glow
+                if (isSelected || isHovered) {
+                    const glowGradient = ctx.createRadialGradient(concept.x, concept.y, 0, concept.x, concept.y, size * 3);
+                    glowGradient.addColorStop(0, 'rgba(255, 29, 108, 0.5)');
+                    glowGradient.addColorStop(1, 'rgba(255, 29, 108, 0)');
+                    ctx.fillStyle = glowGradient;
+                    ctx.beginPath();
+                    ctx.arc(concept.x, concept.y, size * 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Node
+                const colors = {
+                    'number': '#F5A623',
+                    'quantum': '#FF1D6C',
+                    'fractals': '#9C27B0',
+                    'information': '#2979FF'
+                };
+
+                ctx.fillStyle = colors[concept.category] || '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(concept.x, concept.y, size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Label
+                if (isSelected || isHovered || currentMode === 'all') {
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = isSelected ? 'bold 14px SF Pro Display' : '12px SF Pro Display';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(concept.name, concept.x, concept.y - size - 8);
+                }
+            });
+
+            // Update animation
+            if (animationMode === 'orbit') {
+                time += 0.01;
+                concepts.forEach((concept, i) => {
+                    const angle = i * (2 * Math.PI) / concepts.length * PHI + time;
+                    const radius = Math.min(width, height) / 3;
+                    concept.x = centerX + radius * Math.cos(angle);
+                    concept.y = centerY + radius * Math.sin(angle);
+                });
+            } else if (animationMode === 'pulse') {
+                time += 0.05;
+                // Nodes pulse at golden ratio intervals
+            }
+
+            requestAnimationFrame(drawUniverse);
+        }
+
+        function handleClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            let clicked = null;
+            concepts.forEach(concept => {
+                const dx = x - concept.x;
+                const dy = y - concept.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 20) {
+                    clicked = concept;
+                }
+            });
+
+            if (clicked) {
+                selectedNode = clicked;
+                showInfo(clicked);
+            } else {
+                selectedNode = null;
+                document.getElementById('infoPanel').style.display = 'none';
+            }
+        }
+
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            hoveredNode = null;
+            concepts.forEach(concept => {
+                const dx = x - concept.x;
+                const dy = y - concept.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 20) {
+                    hoveredNode = concept;
+                    canvas.style.cursor = 'pointer';
+                }
+            });
+
+            if (!hoveredNode) {
+                canvas.style.cursor = 'default';
+            }
+        }
+
+        function showInfo(concept) {
+            document.getElementById('conceptName').textContent = concept.name;
+            document.getElementById('conceptFormula').textContent = concept.formula;
+            document.getElementById('conceptDescription').textContent = concept.description;
+
+            const connectionsList = document.getElementById('connectionsList');
+            connectionsList.innerHTML = '';
+            concept.connections.forEach(connId => {
+                const conn = concepts.find(c => c.id === connId);
+                if (conn) {
+                    const item = document.createElement('div');
+                    item.className = 'connection-item';
+                    item.textContent = '→ ' + conn.name;
+                    item.onclick = () => {
+                        selectedNode = conn;
+                        showInfo(conn);
+                    };
+                    connectionsList.appendChild(item);
+                }
+            });
+
+            document.getElementById('infoPanel').style.display = 'block';
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            const buttons = document.querySelectorAll('.controls button');
+            buttons.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function animate(mode) {
+            animationMode = animationMode === mode ? null : mode;
+            time = 0;
+        }
+
+        function resetView() {
+            selectedNode = null;
+            currentMode = 'all';
+            animationMode = null;
+            document.getElementById('infoPanel').style.display = 'none';
+            layoutNodes();
+        }
+
+        function searchConcepts(e) {
+            const query = e.target.value.toLowerCase();
+            if (query.length < 2) return;
+
+            const matches = concepts.filter(c =>
+                c.name.toLowerCase().includes(query) ||
+                c.description.toLowerCase().includes(query)
+            );
+
+            if (matches.length > 0) {
+                selectedNode = matches[0];
+                showInfo(matches[0]);
+            }
+        }
+
+        // Initialize
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('click', handleClick);
+        canvas.addEventListener('mousemove', handleMouseMove);
+
+        resizeCanvas();
+
+        document.getElementById('conceptCount').textContent = concepts.length;
+        document.getElementById('connectionCount').textContent =
+            concepts.reduce((sum, c) => sum + c.connections.length, 0);
+
+        drawUniverse();
+    </script>
+</body>
+</html>

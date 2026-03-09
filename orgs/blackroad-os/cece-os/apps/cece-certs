@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-CERTS v1.0 - Certificate Manager
+CERT_DIR=~/cece/certs
+mkdir -p "$CERT_DIR"
+generate() {
+    NAME="$1"
+    openssl req -x509 -newkey rsa:2048 -keyout "$CERT_DIR/$NAME.key" -out "$CERT_DIR/$NAME.crt" -days 365 -nodes -subj "/CN=$NAME"
+    echo "Generated: $CERT_DIR/$NAME.key and $CERT_DIR/$NAME.crt"
+}
+view() { openssl x509 -in "$1" -text -noout; }
+list() { ls "$CERT_DIR"/*.crt 2>/dev/null || echo "No certificates"; }
+case "$1" in
+    generate) generate "$2" ;;
+    view) view "$2" ;;
+    list) list ;;
+    *) echo "CECE-CERTS: generate <name> | view <cert> | list" ;;
+esac

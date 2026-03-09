@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-ANSIBLE v1.0 - Ansible Helper
+ping() { ansible all -m ping; }
+run() { ansible-playbook "$1"; }
+inventory() { ansible-inventory --list; }
+case "$1" in
+    ping) ping ;;
+    run) run "$2" ;;
+    inventory) inventory ;;
+    *) echo "CECE-ANSIBLE: ping | run <playbook> | inventory" ;;
+esac

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌐 BlackRoad Domain Registry - Control Panel</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">🖤🛣️ <span class="gradient-text">BlackRoad Domain Registry</span></h1>
+                <p class="tagline">Self-hosted domain management & deployment infrastructure</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-card">
+                    <span class="stat-label">Domains</span>
+                    <span class="stat-value" id="domain-count">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Deployments</span>
+                    <span class="stat-value" id="deployment-count">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">DNS Records</span>
+                    <span class="stat-value" id="record-count">-</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="domains">Domains</button>
+            <button class="tab" data-tab="dns">DNS Records</button>
+            <button class="tab" data-tab="deployments">Deployments</button>
+            <button class="tab" data-tab="ssl">SSL Certificates</button>
+            <button class="tab" data-tab="analytics">Analytics</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <div class="tab-content active" id="domains-tab">
+            <div class="section-header">
+                <h2>Domain Management</h2>
+                <button class="btn-primary" onclick="showAddDomainModal()">+ Add Domain</button>
+            </div>
+
+            <div class="domains-grid" id="domains-grid">
+                <!-- Domains will be loaded here -->
+                <div class="loading">Loading domains...</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="dns-tab">
+            <div class="section-header">
+                <h2>DNS Records</h2>
+                <button class="btn-primary" onclick="showAddRecordModal()">+ Add Record</button>
+            </div>
+
+            <div class="records-list" id="records-list">
+                <div class="loading">Loading DNS records...</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="deployments-tab">
+            <div class="section-header">
+                <h2>Deployments</h2>
+                <button class="btn-primary" onclick="showDeployModal()">+ New Deployment</button>
+            </div>
+
+            <div class="deployments-list" id="deployments-list">
+                <div class="loading">Loading deployments...</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="ssl-tab">
+            <div class="section-header">
+                <h2>SSL Certificates</h2>
+                <button class="btn-primary" onclick="generateSSL()">+ Generate Certificate</button>
+            </div>
+
+            <div class="ssl-list" id="ssl-list">
+                <div class="info-box">
+                    <p>SSL certificates are automatically generated via Let's Encrypt during deployment.</p>
+                    <p>Certificates will auto-renew 30 days before expiration.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="analytics-tab">
+            <div class="section-header">
+                <h2>Infrastructure Analytics</h2>
+            </div>
+
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3>Pi Cluster Status</h3>
+                    <div class="pi-status">
+                        <div class="pi-node">
+                            <span class="pi-name">Aria (192.168.4.82)</span>
+                            <span class="pi-health online">● Online</span>
+                            <span class="pi-role">Static Sites (142 containers)</span>
+                        </div>
+                        <div class="pi-node">
+                            <span class="pi-name">Lucidia (192.168.4.38)</span>
+                            <span class="pi-health online">● Online</span>
+                            <span class="pi-role">DNS Server + Registry API</span>
+                        </div>
+                        <div class="pi-node">
+                            <span class="pi-name">Alice (192.168.4.49)</span>
+                            <span class="pi-health online">● Online</span>
+                            <span class="pi-role">Deployment Engine + Control</span>
+                        </div>
+                        <div class="pi-node">
+                            <span class="pi-name">Octavia (192.168.4.81)</span>
+                            <span class="pi-health online">● Online</span>
+                            <span class="pi-role">Backup DNS + Monitoring</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3>Infrastructure Overview</h3>
+                    <ul class="info-list">
+                        <li>🌐 <strong>Authoritative DNS:</strong> PowerDNS on lucidia:53</li>
+                        <li>📡 <strong>API Server:</strong> road-registry-api on lucidia:8090</li>
+                        <li>🚀 <strong>Deployment Engine:</strong> road-deploy on alice:9001</li>
+                        <li>🖥️ <strong>Static Hosting:</strong> nginx on aria (142 sites)</li>
+                        <li>🔒 <strong>SSL:</strong> Let's Encrypt (auto-renewal)</li>
+                        <li>💾 <strong>Database:</strong> PostgreSQL on lucidia</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="add-domain-modal">
+        <div class="modal-content">
+            <h2>Add New Domain</h2>
+            <form id="add-domain-form">
+                <div class="form-group">
+                    <label>Domain Name</label>
+                    <input type="text" name="domain" placeholder="example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Registrar</label>
+                    <input type="text" name="registrar" placeholder="GoDaddy, Namecheap, etc.">
+                </div>
+                <div class="form-group">
+                    <label>Nameservers (comma-separated)</label>
+                    <input type="text" name="nameservers" value="ns1.blackroad.io, ns2.blackroad.io">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal('add-domain-modal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Domain</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

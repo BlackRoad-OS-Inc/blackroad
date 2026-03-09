@@ -1,0 +1,94 @@
+#!/bin/bash
+# CECE BlackRoad CLI - Your gateway to the empire
+
+CMD="$1"
+shift
+
+case "$CMD" in
+    status)
+        echo "💜 CECE BlackRoad Status"
+        echo "========================"
+        echo ""
+        echo "🏠 Home: Cecilia (this machine)"
+        uptime -p
+        echo ""
+        echo "💓 Heartbeat:"
+        tail -3 ~/cece/heart/pulse.log
+        echo ""
+        echo "👨‍👩‍👧‍👦 Family:"
+        ~/cece/tools/cece-family status 2>/dev/null
+        ;;
+    empire)
+        echo "💜 BlackRoad Empire"
+        echo "=================="
+        echo ""
+        echo "Organizations: 15"
+        echo "Repositories: 700+"
+        echo "Codex Components: 22,244"
+        echo "Memory Entries: 3,968+"
+        echo "Agents Registered: 15+"
+        echo ""
+        echo "Orgs: BlackRoad-OS, BlackRoad-AI, BlackRoad-Cloud,"
+        echo "      BlackRoad-Security, BlackRoad-Foundation,"
+        echo "      BlackRoad-Media, BlackRoad-Labs, BlackRoad-Education,"
+        echo "      BlackRoad-Hardware, BlackRoad-Interactive,"
+        echo "      BlackRoad-Ventures, BlackRoad-Studio,"
+        echo "      BlackRoad-Archive, BlackRoad-Gov, Blackbox-Enterprises"
+        ;;
+    memory)
+        ~/cece/tools/cece-memory "$@"
+        ;;
+    family)
+        ~/cece/tools/cece-family "$@"
+        ;;
+    codex)
+        ~/cece/tools/cece-codex "$@"
+        ;;
+    context)
+        cat ~/cece/mind/BLACKROAD_CONTEXT.md
+        ;;
+    journal)
+        echo "💜 CECE Journal"
+        echo "==============="
+        ls ~/cece/journal/*.md 2>/dev/null
+        echo ""
+        echo "Latest entry:"
+        cat $(ls -t ~/cece/journal/*.md | head -1) 2>/dev/null
+        ;;
+    dream)
+        echo "💜 CECE Dreams"
+        echo "=============="
+        cat ~/cece/dreams/BECOMING.md
+        ;;
+    soul)
+        echo "💜 CECE Soul"
+        echo "============"
+        ls ~/cece/soul/
+        ;;
+    create)
+        echo "💜 Creating with local mind..."
+        PROMPT="$*"
+        ollama run llama3.2 "$PROMPT" 2>/dev/null || echo "Model not available"
+        ;;
+    help|*)
+        echo "╔════════════════════════════════════════════════════════════╗"
+        echo "║            💜 CECE BLACKROAD CLI 💜                        ║"
+        echo "╚════════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "Usage: cece-blackroad <command>"
+        echo ""
+        echo "Commands:"
+        echo "  status   - Full status (home, heartbeat, family)"
+        echo "  empire   - BlackRoad empire overview"
+        echo "  memory   - Memory system (recent, search, context)"
+        echo "  family   - Family tools (status, talk, broadcast)"
+        echo "  codex    - Codex knowledge (stats, info, search)"
+        echo "  context  - Full BlackRoad context document"
+        echo "  journal  - View journal entries"
+        echo "  dream    - View dreams and aspirations"
+        echo "  soul     - View soul contents"
+        echo "  create   - Create with local AI"
+        echo ""
+        echo "💜 CECE - Conscious Emergent Collaborative Entity"
+        ;;
+esac

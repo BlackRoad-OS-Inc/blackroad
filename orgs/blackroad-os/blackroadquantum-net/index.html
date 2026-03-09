@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>blackroadquantum.net | BlackRoad OS</title>
+    <meta name="description" content="Quantum-safe network infrastructure for the post-quantum era.">
+    <link rel="icon" href="https://blackroad.io/favicon.ico">
+    <style>
+        /* ============================================
+           BLACKROAD OS - OFFICIAL COLOR SYSTEM
+           Grayscale-first, color as intentional layer
+           ============================================ */
+        :root {
+            /* Grayscale palette */
+            --black: #000000;
+            --gray-900: #0a0a0a;
+            --gray-850: #111111;
+            --gray-800: #1a1a1a;
+            --gray-700: #2a2a2a;
+            --gray-600: #3a3a3a;
+            --gray-500: #555555;
+            --gray-400: #777777;
+            --gray-300: #999999;
+            --gray-200: #bbbbbb;
+            --gray-100: #dddddd;
+            --white: #ffffff;
+
+            /* Accent gradient colors (used sparingly) */
+            --amber: #F5A623;
+            --hot-pink: #FF1D6C;
+            --violet: #9C27B0;
+            --electric-blue: #2979FF;
+
+            /* Semantic colors */
+            --surface: var(--gray-850);
+            --surface-elevated: var(--gray-800);
+            --border: var(--gray-700);
+            --text-primary: var(--white);
+            --text-secondary: var(--gray-400);
+            --text-muted: var(--gray-500);
+
+            /* Golden ratio spacing */
+            --space-xs: 5px;
+            --space-sm: 8px;
+            --space-md: 13px;
+            --space-lg: 21px;
+            --space-xl: 34px;
+            --space-2xl: 55px;
+            --space-3xl: 89px;
+
+            /* Typography */
+            --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--black);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Accent gradient strip - THE color element */
+        .accent-strip {
+            height: 3px;
+            background: linear-gradient(
+                90deg,
+                var(--amber) 0%,
+                var(--hot-pink) 38.2%,
+                var(--violet) 61.8%,
+                var(--electric-blue) 100%
+            );
+        }
+
+        /* Navigation */
+        .nav {
+            background: var(--gray-900);
+            border-bottom: 1px solid var(--border);
+            padding: 0 var(--space-xl);
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .nav-logo {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-version {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            background: var(--gray-800);
+            padding: 2px 8px;
+            border-radius: 3px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: var(--space-lg);
+        }
+
+        .nav-links a {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        /* Main content */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-3xl) var(--space-xl);
+            text-align: center;
+        }
+
+        .domain-badge {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            padding: var(--space-xs) var(--space-md);
+            border-radius: 4px;
+            margin-bottom: var(--space-xl);
+            letter-spacing: 0.5px;
+        }
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: var(--space-lg);
+            line-height: 1.1;
+        }
+
+        /* Title with gradient text - minimal color use */
+        .hero-title span {
+            background: linear-gradient(
+                135deg,
+                var(--amber) 0%,
+                var(--hot-pink) 38.2%,
+                var(--violet) 61.8%,
+                var(--electric-blue) 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-description {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 560px;
+            line-height: 1.618;
+            margin-bottom: var(--space-2xl);
+        }
+
+        .cta-group {
+            display: flex;
+            gap: var(--space-md);
+        }
+
+        .btn {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: var(--space-md) var(--space-xl);
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background: var(--white);
+            color: var(--black);
+        }
+
+        .btn-primary:hover {
+            background: var(--gray-100);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border-color: var(--border);
+        }
+
+        .btn-secondary:hover {
+            color: var(--text-primary);
+            border-color: var(--gray-500);
+        }
+
+        /* Feature grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            margin-top: var(--space-3xl);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .feature {
+            background: var(--surface);
+            padding: var(--space-xl);
+            text-align: left;
+        }
+
+        .feature-title {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: var(--space-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .feature-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--gray-900);
+            border-top: 1px solid var(--border);
+            padding: var(--space-lg) var(--space-xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-text {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: var(--space-lg);
+        }
+
+        .footer-links a {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-secondary);
+        }
+
+        /* Status indicator */
+        .status {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4ade80;
+        }
+
+        @media (max-width: 768px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+            .hero-title {
+                font-size: 32px;
+            }
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="accent-strip"></div>
+
+    <nav class="nav">
+        <div class="nav-brand">
+            <a href="https://blackroad.io" class="nav-logo">BlackRoad OS</a>
+            <span class="nav-version">v2.0</span>
+        </div>
+        <div class="nav-links">
+            <a href="https://blackroad.io">Home</a>
+            <a href="https://github.com/BlackRoad-OS">GitHub</a>
+            <a href="https://docs.blackroad.io">Docs</a>
+        </div>
+        <div class="status">
+            <span class="status-dot"></span>
+            <span>All Systems Operational</span>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="domain-badge">blackroadquantum.net</div>
+
+        <h1 class="hero-title">
+            <span>Quantum Network</span>
+        </h1>
+
+        <p class="hero-description">
+            Quantum-safe network infrastructure for the post-quantum era.
+        </p>
+
+        <div class="cta-group">
+            <a href="https://blackroad.io" class="btn btn-primary">Explore BlackRoad OS</a>
+            <a href="https://github.com/BlackRoad-OS" class="btn btn-secondary">View on GitHub</a>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-title">Repos</div>
+                <div class="feature-value">200+</div>
+            </div>
+            <div class="feature">
+                <div class="feature-title">Domains</div>
+                <div class="feature-value">20</div>
+            </div>
+            <div class="feature">
+                <div class="feature-title">AI Agents</div>
+                <div class="feature-value">∞</div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <span class="footer-text">© 2026 BlackRoad OS, Inc.</span>
+        <div class="footer-links">
+            <a href="https://blackroad.io/privacy">Privacy</a>
+            <a href="https://blackroad.io/terms">Terms</a>
+            <a href="mailto:hello@blackroad.io">Contact</a>
+        </div>
+    </footer>
+</body>
+</html>

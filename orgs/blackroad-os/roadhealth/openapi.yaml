@@ -1,0 +1,82 @@
+openapi: 3.0.3
+info:
+  title: Health API
+  description: |
+    Health microservice API - Part of BlackRoad OS
+    
+    🖤 Built with BlackRoad OS - https://blackroad.io
+  version: 1.0.0
+  contact:
+    name: BlackRoad Support
+    url: https://support.blackroad.io
+    email: support@blackroad.io
+  license:
+    name: Proprietary
+    url: https://legal.blackroad.io/license
+
+servers:
+  - url: https://api.blackroad.io/roadhealth
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  
+  /:
+    get:
+      summary: Service info
+      operationId: getInfo
+      tags: [Info]
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceInfo'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          example: roadhealth
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+    
+    ServiceInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []

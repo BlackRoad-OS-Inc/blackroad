@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌊⚛️ Wave Function Evolution - BlackRoad Quantum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000000; --white: #FFFFFF;
+            --amber: #F5A623; --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF; --violet: #9C27B0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black); color: var(--white);
+            overflow: hidden;
+        }
+
+        .container { display: flex; height: 100vh; }
+        .canvas-container { flex: 1; position: relative; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .sidebar {
+            width: 380px; background: rgba(0, 0, 0, 0.95);
+            border-left: 2px solid var(--hot-pink);
+            padding: 34px; overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 34px;
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+
+        .section { margin-bottom: 34px; }
+        .section-title {
+            font-size: 16px; color: var(--hot-pink);
+            margin-bottom: 13px; text-transform: uppercase;
+        }
+
+        button {
+            width: 100%; padding: 13px; margin: 8px 0;
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; color: var(--white);
+            font-size: 13px; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--hot-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 29, 108, 0.5);
+        }
+
+        button.active {
+            background: var(--hot-pink);
+            box-shadow: 0 0 20px rgba(255, 29, 108, 0.8);
+        }
+
+        .formula {
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 3px solid #00FF88;
+            padding: 13px; margin: 13px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px; color: #00FF88;
+        }
+
+        .info {
+            font-size: 12px; color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6; margin-top: 8px;
+        }
+
+        .stat-box {
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; padding: 13px;
+            margin: 8px 0;
+        }
+
+        .stat-label { font-size: 11px; color: var(--amber); }
+        .stat-value {
+            font-size: 21px; font-weight: 700;
+            color: var(--white); margin-top: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .slider-group {
+            margin: 13px 0;
+        }
+
+        .slider-label {
+            font-size: 12px; color: var(--amber);
+            margin-bottom: 5px; display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            background: rgba(255, 29, 108, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 21px; height: 21px;
+            border-radius: 50%;
+            background: var(--hot-pink);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--hot-pink);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 21px; height: 21px;
+            border-radius: 50%;
+            background: var(--hot-pink);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--hot-pink);
+        }
+
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin: 13px 0;
+        }
+
+        .toggle input[type="checkbox"] {
+            width: 50px;
+            height: 25px;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle input[type="checkbox"]:checked {
+            background: var(--hot-pink);
+        }
+
+        .toggle input[type="checkbox"]::before {
+            content: '';
+            position: absolute;
+            width: 21px;
+            height: 21px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle input[type="checkbox"]:checked::before {
+            left: 27px;
+        }
+
+        .toggle-label {
+            font-size: 13px;
+            color: var(--white);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="waveCanvas"></canvas>
+        </div>
+
+        <div class="sidebar">
+            <h1>🌊 Wave Function ψ(x,t)</h1>
+
+            <div class="section">
+                <div class="section-title">Quantum Systems</div>
+                <button onclick="setSystem('free')" id="btnFree">Free Particle</button>
+                <button onclick="setSystem('infinite-well')" id="btnInfinite">Infinite Square Well</button>
+                <button onclick="setSystem('harmonic')" id="btnHarmonic">Harmonic Oscillator</button>
+                <button onclick="setSystem('barrier')" id="btnBarrier">Quantum Tunneling</button>
+                <button onclick="setSystem('double-well')" id="btnDouble">Double Well</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Wave Packet</div>
+                <button onclick="resetWave()">Reset Wave</button>
+                <button onclick="toggleEvolution()" id="btnEvolve">Pause Evolution</button>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Packet Width (σ)</span>
+                        <span id="sigmaValue">0.10</span>
+                    </div>
+                    <input type="range" id="sigma" min="0.02" max="0.3" value="0.1" step="0.01">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Initial Momentum (k)</span>
+                        <span id="momentumValue">10.0</span>
+                    </div>
+                    <input type="range" id="momentum" min="0" max="30" value="10" step="0.5">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Evolution Speed</span>
+                        <span id="speedValue">1.0x</span>
+                    </div>
+                    <input type="range" id="speed" min="0.1" max="3" value="1" step="0.1">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Visualization</div>
+
+                <div class="toggle">
+                    <input type="checkbox" id="showReal" checked>
+                    <label class="toggle-label">Real Part Re(ψ)</label>
+                </div>
+
+                <div class="toggle">
+                    <input type="checkbox" id="showImag" checked>
+                    <label class="toggle-label">Imaginary Part Im(ψ)</label>
+                </div>
+
+                <div class="toggle">
+                    <input type="checkbox" id="showProb" checked>
+                    <label class="toggle-label">Probability |ψ|²</label>
+                </div>
+
+                <div class="toggle">
+                    <input type="checkbox" id="showPhase">
+                    <label class="toggle-label">Phase arg(ψ)</label>
+                </div>
+
+                <div class="toggle">
+                    <input type="checkbox" id="showPotential" checked>
+                    <label class="toggle-label">Potential V(x)</label>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Current State</div>
+                <div class="stat-box">
+                    <div class="stat-label">System</div>
+                    <div class="stat-value" id="systemName">Free Particle</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Time Elapsed</div>
+                    <div class="stat-value" id="timeValue">0.00 ℏ/E</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Normalization ∫|ψ|²dx</div>
+                    <div class="stat-value" id="normValue">1.000</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">The Math</div>
+                <div class="formula" id="equation">
+                    iℏ ∂ψ/∂t = Ĥψ<br>
+                    <br>
+                    Ĥ = -ℏ²/2m ∇² + V(x)<br>
+                    <br>
+                    Free particle: V(x) = 0
+                </div>
+                <div class="info" id="description">
+                    <strong style="color: var(--hot-pink);">Schrödinger Equation:</strong>
+                    Governs how quantum wave functions evolve in time.
+                    <br><br>
+                    <strong style="color: var(--electric-blue);">Free Particle:</strong>
+                    Wave packet spreads over time due to uncertainty principle!
+                </div>
+            </div>
+
+            <div class="info" style="margin-top: 34px; padding-top: 34px; border-top: 1px solid rgba(255,255,255,0.2);">
+                <strong>Wave-Particle Duality:</strong> The wave function ψ(x,t) describes the quantum state. |ψ(x,t)|² gives probability density.
+                <br><br>
+                Watch how different potentials affect wave evolution! 🌊⚛️
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        // Simulation parameters
+        const N = 512; // Number of spatial points
+        const L = 2.0; // Box size
+        const dx = L / N;
+        const dt = 0.001; // Time step
+        const hbar = 1.0; // Reduced Planck constant (natural units)
+        const m = 1.0; // Mass (natural units)
+
+        let psi_real = new Array(N); // Real part of wave function
+        let psi_imag = new Array(N); // Imaginary part
+        let V = new Array(N); // Potential
+        let x = new Array(N); // Position array
+
+        let time = 0;
+        let evolving = true;
+        let system = 'free';
+        let sigma = 0.1; // Wave packet width
+        let k0 = 10.0; // Initial momentum
+        let evolutionSpeed = 1.0;
+
+        // Visualization toggles
+        let showReal = true;
+        let showImag = true;
+        let showProb = true;
+        let showPhase = false;
+        let showPotential = true;
+
+        // Initialize position array
+        for (let i = 0; i < N; i++) {
+            x[i] = (i / N - 0.5) * L;
+        }
+
+        function resizeCanvas() {
+            width = canvas.width = canvas.offsetWidth;
+            height = canvas.height = canvas.offsetHeight;
+            draw();
+        }
+
+        function initializeWavePacket() {
+            const x0 = -0.3; // Initial position
+
+            for (let i = 0; i < N; i++) {
+                const xi = x[i];
+                const gaussian = Math.exp(-(xi - x0) ** 2 / (2 * sigma ** 2));
+                psi_real[i] = gaussian * Math.cos(k0 * xi);
+                psi_imag[i] = gaussian * Math.sin(k0 * xi);
+            }
+
+            // Normalize
+            normalize();
+        }
+
+        function normalize() {
+            let norm = 0;
+            for (let i = 0; i < N; i++) {
+                norm += (psi_real[i] ** 2 + psi_imag[i] ** 2) * dx;
+            }
+            norm = Math.sqrt(norm);
+
+            for (let i = 0; i < N; i++) {
+                psi_real[i] /= norm;
+                psi_imag[i] /= norm;
+            }
+        }
+
+        function setPotential() {
+            const V0 = 50; // Potential height
+
+            for (let i = 0; i < N; i++) {
+                const xi = x[i];
+
+                switch(system) {
+                    case 'free':
+                        V[i] = 0;
+                        break;
+
+                    case 'infinite-well':
+                        // Infinite square well (high walls at boundaries)
+                        if (Math.abs(xi) > 0.4) {
+                            V[i] = 1000;
+                        } else {
+                            V[i] = 0;
+                        }
+                        break;
+
+                    case 'harmonic':
+                        // Harmonic oscillator: V = ½kx²
+                        const k_spring = 200;
+                        V[i] = 0.5 * k_spring * xi ** 2;
+                        break;
+
+                    case 'barrier':
+                        // Potential barrier (tunneling)
+                        if (xi > -0.05 && xi < 0.05) {
+                            V[i] = V0;
+                        } else {
+                            V[i] = 0;
+                        }
+                        break;
+
+                    case 'double-well':
+                        // Double well potential
+                        V[i] = 100 * (xi ** 4 - 0.5 * xi ** 2);
+                        break;
+                }
+            }
+        }
+
+        function evolve() {
+            if (!evolving) return;
+
+            const steps = Math.floor(evolutionSpeed * 5);
+
+            for (let step = 0; step < steps; step++) {
+                // Split-operator method (simplified)
+                const temp_real = [...psi_real];
+                const temp_imag = [...psi_imag];
+
+                // Kinetic energy evolution (using finite differences)
+                for (let i = 1; i < N - 1; i++) {
+                    const laplacian_real = (psi_real[i+1] - 2*psi_real[i] + psi_real[i-1]) / (dx * dx);
+                    const laplacian_imag = (psi_imag[i+1] - 2*psi_imag[i] + psi_imag[i-1]) / (dx * dx);
+
+                    const kinetic = -hbar / (2 * m);
+                    const potential = V[i];
+
+                    // iℏ ∂ψ/∂t = (-ℏ²/2m ∇² + V)ψ
+                    // ∂ψ/∂t = -i/ℏ (T + V)ψ
+
+                    const real_rate = (kinetic * laplacian_imag - potential * psi_imag[i] / hbar);
+                    const imag_rate = (-kinetic * laplacian_real + potential * psi_real[i] / hbar);
+
+                    temp_real[i] += imag_rate * dt;
+                    temp_imag[i] += real_rate * dt;
+                }
+
+                psi_real = temp_real;
+                psi_imag = temp_imag;
+
+                time += dt;
+            }
+
+            // Update normalization display
+            let norm = 0;
+            for (let i = 0; i < N; i++) {
+                norm += (psi_real[i] ** 2 + psi_imag[i] ** 2) * dx;
+            }
+            document.getElementById('normValue').textContent = norm.toFixed(3);
+            document.getElementById('timeValue').textContent = time.toFixed(2) + ' ℏ/E';
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Background
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, 'rgba(41, 121, 255, 0.05)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            const centerY = height / 2;
+            const scaleX = width / L;
+            const scaleY = height / 4; // Scale for wave function amplitude
+
+            // Helper function to convert x to canvas coordinates
+            const toCanvasX = (xi) => (xi / L + 0.5) * width;
+            const toCanvasY = (val, scale = scaleY) => centerY - val * scale;
+
+            // Draw potential
+            if (showPotential) {
+                ctx.strokeStyle = 'rgba(245, 166, 35, 0.4)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const potentialScale = scaleY / 100; // Scale down potential
+                for (let i = 0; i < N; i++) {
+                    const cx = toCanvasX(x[i]);
+                    const cy = toCanvasY(V[i] * potentialScale);
+                    if (i === 0) ctx.moveTo(cx, cy);
+                    else ctx.lineTo(cx, cy);
+                }
+                ctx.stroke();
+            }
+
+            // Zero line
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+
+            // Draw probability |ψ|²
+            if (showProb) {
+                ctx.strokeStyle = '#00FF88';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                for (let i = 0; i < N; i++) {
+                    const prob = psi_real[i] ** 2 + psi_imag[i] ** 2;
+                    const cx = toCanvasX(x[i]);
+                    const cy = toCanvasY(prob * 5); // Scale up for visibility
+                    if (i === 0) ctx.moveTo(cx, cy);
+                    else ctx.lineTo(cx, cy);
+                }
+                ctx.stroke();
+
+                // Fill under probability curve
+                ctx.lineTo(width, centerY);
+                ctx.lineTo(0, centerY);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
+                ctx.fill();
+            }
+
+            // Draw real part
+            if (showReal) {
+                ctx.strokeStyle = '#FF1D6C';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let i = 0; i < N; i++) {
+                    const cx = toCanvasX(x[i]);
+                    const cy = toCanvasY(psi_real[i]);
+                    if (i === 0) ctx.moveTo(cx, cy);
+                    else ctx.lineTo(cx, cy);
+                }
+                ctx.stroke();
+            }
+
+            // Draw imaginary part
+            if (showImag) {
+                ctx.strokeStyle = '#9C27B0';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                for (let i = 0; i < N; i++) {
+                    const cx = toCanvasX(x[i]);
+                    const cy = toCanvasY(psi_imag[i]);
+                    if (i === 0) ctx.moveTo(cx, cy);
+                    else ctx.lineTo(cx, cy);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Draw phase (color map)
+            if (showPhase) {
+                for (let i = 0; i < N - 1; i++) {
+                    const phase = Math.atan2(psi_imag[i], psi_real[i]);
+                    const hue = ((phase + Math.PI) / (2 * Math.PI)) * 360;
+                    const prob = psi_real[i] ** 2 + psi_imag[i] ** 2;
+
+                    ctx.strokeStyle = `hsla(${hue}, 100%, 50%, ${Math.min(prob * 10, 1)})`;
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(x[i]), centerY);
+                    ctx.lineTo(toCanvasX(x[i]), centerY - 50);
+                    ctx.stroke();
+                }
+            }
+
+            // Labels
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.textAlign = 'left';
+
+            let yOffset = 30;
+            if (showProb) {
+                ctx.fillStyle = '#00FF88';
+                ctx.fillText('|ψ|² (probability)', 20, yOffset);
+                yOffset += 25;
+            }
+            if (showReal) {
+                ctx.fillStyle = '#FF1D6C';
+                ctx.fillText('Re(ψ) (real)', 20, yOffset);
+                yOffset += 25;
+            }
+            if (showImag) {
+                ctx.fillStyle = '#9C27B0';
+                ctx.fillText('Im(ψ) (imaginary)', 20, yOffset);
+                yOffset += 25;
+            }
+            if (showPotential) {
+                ctx.fillStyle = '#F5A623';
+                ctx.fillText('V(x) (potential)', 20, yOffset);
+            }
+
+            // Axis labels
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '14px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Position x →', width / 2, height - 10);
+        }
+
+        function gameLoop() {
+            evolve();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function setSystem(newSystem) {
+            system = newSystem;
+            time = 0;
+            setPotential();
+            initializeWavePacket();
+
+            // Update UI
+            document.querySelectorAll('button[id^="btn"]').forEach(btn => btn.classList.remove('active'));
+
+            const systemNames = {
+                'free': ['Free Particle', 'btnFree'],
+                'infinite-well': ['Infinite Well', 'btnInfinite'],
+                'harmonic': ['Harmonic Oscillator', 'btnHarmonic'],
+                'barrier': ['Quantum Tunneling', 'btnBarrier'],
+                'double-well': ['Double Well', 'btnDouble']
+            };
+
+            const [name, btnId] = systemNames[system];
+            document.getElementById('systemName').textContent = name;
+            document.getElementById(btnId).classList.add('active');
+
+            // Update equations
+            const equations = {
+                'free': {
+                    eq: 'iℏ ∂ψ/∂t = Ĥψ<br><br>Ĥ = -ℏ²/2m ∇²<br><br>Free particle: V(x) = 0',
+                    desc: '<strong style="color: var(--hot-pink);">Free Particle:</strong> No potential! Wave packet spreads due to uncertainty principle: ΔxΔp ≥ ℏ/2<br><br><strong style="color: var(--electric-blue);">Dispersion:</strong> Different momentum components travel at different speeds.'
+                },
+                'infinite-well': {
+                    eq: 'V(x) = 0   for |x| < a<br>V(x) = ∞  for |x| ≥ a<br><br>ψ_n = sin(nπx/2a)<br>E_n = n²π²ℏ²/8ma²',
+                    desc: '<strong style="color: var(--hot-pink);">Particle in a Box:</strong> Classic quantum system! Wave reflects at walls.<br><br><strong style="color: var(--electric-blue);">Quantization:</strong> Only discrete energy levels allowed!'
+                },
+                'harmonic': {
+                    eq: 'V(x) = ½kx²<br><br>ψ_n ~ H_n(x)e^(-x²/2)<br>E_n = (n+½)ℏω',
+                    desc: '<strong style="color: var(--hot-pink);">Quantum Harmonic Oscillator:</strong> Like a quantum spring! Foundation of quantum field theory.<br><br><strong style="color: var(--electric-blue);">Zero-point energy:</strong> Even ground state has E = ½ℏω!'
+                },
+                'barrier': {
+                    eq: 'V(x) = V₀  for |x| < a<br>V(x) = 0   otherwise<br><br>T = e^(-2κa) (tunneling)',
+                    desc: '<strong style="color: var(--hot-pink);">Quantum Tunneling:</strong> Particle can pass through barrier even if E < V₀!<br><br><strong style="color: var(--electric-blue);">Applications:</strong> Nuclear fusion, scanning tunneling microscope, flash memory!'
+                },
+                'double-well': {
+                    eq: 'V(x) = ax⁴ - bx²<br><br>Symmetric potential<br>with two minima',
+                    desc: '<strong style="color: var(--hot-pink);">Double Well:</strong> Two stable positions! Wave function can tunnel between wells.<br><br><strong style="color: var(--electric-blue);">Phenomena:</strong> Molecular vibrations, ammonia maser, spontaneous symmetry breaking!'
+                }
+            };
+
+            const info = equations[system];
+            document.getElementById('equation').innerHTML = info.eq;
+            document.getElementById('description').innerHTML = info.desc;
+        }
+
+        function resetWave() {
+            time = 0;
+            initializeWavePacket();
+        }
+
+        function toggleEvolution() {
+            evolving = !evolving;
+            document.getElementById('btnEvolve').textContent = evolving ? 'Pause Evolution' : 'Resume Evolution';
+        }
+
+        // Event listeners
+        document.getElementById('sigma').addEventListener('input', (e) => {
+            sigma = parseFloat(e.target.value);
+            document.getElementById('sigmaValue').textContent = sigma.toFixed(2);
+            resetWave();
+        });
+
+        document.getElementById('momentum').addEventListener('input', (e) => {
+            k0 = parseFloat(e.target.value);
+            document.getElementById('momentumValue').textContent = k0.toFixed(1);
+            resetWave();
+        });
+
+        document.getElementById('speed').addEventListener('input', (e) => {
+            evolutionSpeed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = evolutionSpeed.toFixed(1) + 'x';
+        });
+
+        document.getElementById('showReal').addEventListener('change', (e) => {
+            showReal = e.target.checked;
+        });
+
+        document.getElementById('showImag').addEventListener('change', (e) => {
+            showImag = e.target.checked;
+        });
+
+        document.getElementById('showProb').addEventListener('change', (e) => {
+            showProb = e.target.checked;
+        });
+
+        document.getElementById('showPhase').addEventListener('change', (e) => {
+            showPhase = e.target.checked;
+        });
+
+        document.getElementById('showPotential').addEventListener('change', (e) => {
+            showPotential = e.target.checked;
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Initialize
+        resizeCanvas();
+        setSystem('free');
+        gameLoop();
+    </script>
+</body>
+</html>

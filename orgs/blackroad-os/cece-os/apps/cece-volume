@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-VOLUME v1.0 - Volume Control
+get() { amixer get Master 2>/dev/null | grep -o '[0-9]*%' | head -1 || echo "Volume control unavailable"; }
+set() { amixer set Master "$1%" 2>/dev/null || echo "Volume control unavailable"; }
+mute() { amixer set Master mute 2>/dev/null && echo "🔇 Muted"; }
+unmute() { amixer set Master unmute 2>/dev/null && echo "🔊 Unmuted"; }
+case "$1" in
+    get) get ;;
+    set) set "$2" ;;
+    mute) mute ;;
+    unmute) unmute ;;
+    *) echo "CECE-VOLUME: get | set <0-100> | mute | unmute" ;;
+esac

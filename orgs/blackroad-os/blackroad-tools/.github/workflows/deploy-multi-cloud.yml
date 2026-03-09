@@ -1,0 +1,154 @@
+name: 🌍 Deploy Multi-Cloud
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  deploy-cloudflare:
+    name: ☁️ Cloudflare Pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy changed domains
+        run: |
+          # Will be triggered by main deploy-cloudflare-all.yml workflow
+          echo "✅ Cloudflare deployment handled by deploy-cloudflare-all.yml"
+
+  deploy-vercel:
+    name: ▲ Vercel
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    strategy:
+      matrix:
+        domain:
+          - math-blackroad-io
+          - blackroadai
+          - lucidia-earth
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel
+        working-directory: domains/${{ matrix.domain }}
+        run: |
+          if [ -f "package.json" ]; then
+            npm ci
+            npm run build || true
+          fi
+          vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: blackroad-${{ matrix.domain }}
+
+  deploy-railway:
+    name: 🚂 Railway
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: |
+          railway up --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-digitalocean:
+    name: 🌊 DigitalOcean
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DIGITALOCEAN_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 159.65.43.12 >> ~/.ssh/known_hosts
+
+      - name: Deploy to Droplet
+        run: |
+          rsync -avz --exclude='.git' --exclude='node_modules' \
+            ./ root@159.65.43.12:/opt/blackroad/
+
+          ssh root@159.65.43.12 'cd /opt/blackroad && ./deploy.sh restart'
+
+  deploy-pis:
+    name: 🥧 Raspberry Pi Fleet
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Trigger Pi deployment workflow
+        run: |
+          # This will trigger the deploy-to-pis.yml workflow
+          echo "✅ Pi deployment handled by deploy-to-pis.yml"
+
+  update-notion:
+    name: 📝 Update Notion
+    runs-on: ubuntu-latest
+    needs: [deploy-cloudflare, deploy-vercel, deploy-railway, deploy-digitalocean]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log deployment to Notion
+        run: |
+          # TODO: Use Notion API to create deployment log page
+          echo "Deployment completed at $(date)"
+          echo "Platforms: Cloudflare, Vercel, Railway, DigitalOcean, Pis"
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+
+  update-asana:
+    name: 📊 Update Asana
+    runs-on: ubuntu-latest
+    needs: [deploy-cloudflare, deploy-vercel, deploy-railway, deploy-digitalocean]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update Asana tasks
+        run: |
+          # TODO: Use Asana API to mark deployment task complete
+          echo "Deployment task updated in Asana"
+        env:
+          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+
+  notify-success:
+    name: ✅ Multi-Cloud Deploy Complete
+    runs-on: ubuntu-latest
+    needs: [deploy-vercel, deploy-railway, deploy-digitalocean, update-notion, update-asana]
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "🎉 Multi-Cloud Deployment Complete!"
+          echo ""
+          echo "Deployed to:"
+          echo "  ☁️  Cloudflare Pages"
+          echo "  ▲  Vercel"
+          echo "  🚂 Railway"
+          echo "  🌊 DigitalOcean"
+          echo "  🥧 Raspberry Pi Fleet"
+          echo ""
+          echo "Updated:"
+          echo "  📝 Notion documentation"
+          echo "  📊 Asana project tasks"

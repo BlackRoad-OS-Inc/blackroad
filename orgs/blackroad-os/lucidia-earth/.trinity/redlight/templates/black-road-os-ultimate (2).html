@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Road OS - The Complete AI Ecosystem</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'MS Sans Serif', 'Segoe UI', Arial, sans-serif;
+            background: #008080;
+            overflow: hidden;
+            height: 100vh;
+            color: #000;
+        }
+
+        .desktop {
+            height: calc(100vh - 40px);
+            padding: 10px;
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 90px);
+            grid-auto-rows: 90px;
+            gap: 10px;
+            align-content: start;
+            overflow-y: auto;
+        }
+
+        .icon {
+            width: 80px;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            padding: 5px;
+        }
+
+        .icon:hover {
+            background: rgba(0, 0, 128, 0.3);
+            outline: 1px dotted white;
+        }
+
+        .icon-image {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 5px;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+        }
+
+        .icon-label {
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            font-size: 11px;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+
+        .window {
+            position: absolute;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #dfdfdf #404040 #404040 #dfdfdf;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.4);
+            min-width: 400px;
+            display: none;
+            z-index: 10;
+        }
+
+        .window.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .window.maximized {
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: calc(100vh - 40px) !important;
+            z-index: 100;
+        }
+
+        .title-bar {
+            background: linear-gradient(180deg, #000080, #1084d0);
+            color: white;
+            padding: 3px 5px;
+            font-weight: bold;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            user-select: none;
+        }
+
+        .title-text {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .title-buttons {
+            display: flex;
+            gap: 2px;
+        }
+
+        .title-button {
+            width: 18px;
+            height: 16px;
+            background: #c0c0c0;
+            border: 1px solid;
+            border-color: #fff #000 #000 #fff;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .title-button:active {
+            border-color: #000 #fff #fff #000;
+        }
+
+        .menu-bar {
+            background: #c0c0c0;
+            border-bottom: 1px solid #808080;
+            padding: 2px 5px;
+            font-size: 11px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .menu-item {
+            cursor: pointer;
+            padding: 2px 5px;
+        }
+
+        .menu-item:hover {
+            background: #000080;
+            color: white;
+        }
+
+        .toolbar {
+            background: #c0c0c0;
+            border-bottom: 1px solid #808080;
+            padding: 5px;
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-button {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #000 #000 #fff;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .toolbar-button:active {
+            border-color: #000 #fff #fff #000;
+        }
+
+        .window-content {
+            flex: 1;
+            background: white;
+            overflow: auto;
+            position: relative;
+        }
+
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            z-index: 1000;
+        }
+
+        .start-button {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #000 #000 #fff;
+            padding: 3px 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .start-button:active {
+            border-color: #000 #fff #fff #000;
+        }
+
+        .start-logo {
+            width: 22px;
+            height: 22px;
+            background: linear-gradient(135deg, #ff0000 0%, #ff6600 50%, #ffff00 100%);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .taskbar-apps {
+            display: flex;
+            gap: 3px;
+            margin-left: 5px;
+            flex: 1;
+            overflow-x: auto;
+        }
+
+        .taskbar-app {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #000 #000 #fff;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 11px;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .taskbar-app.active-app {
+            border-color: #000 #fff #fff #000;
+            background: #a0a0a0;
+        }
+
+        .system-tray {
+            margin-left: auto;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .clock {
+            border: 1px inset #808080;
+            padding: 4px 8px;
+            font-size: 11px;
+            background: #c0c0c0;
+        }
+
+        .start-menu {
+            position: absolute;
+            bottom: 42px;
+            left: 2px;
+            width: 300px;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #000 #000 #fff;
+            display: none;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.4);
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+
+        .start-menu.active {
+            display: flex;
+        }
+
+        .start-menu-sidebar {
+            background: linear-gradient(180deg, #000080, #1084d0);
+            color: white;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 24px;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            width: 35px;
+            letter-spacing: 2px;
+        }
+
+        .start-menu-content {
+            flex: 1;
+            padding: 5px;
+        }
+
+        .start-menu-item {
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .start-menu-item:hover {
+            background: #000080;
+            color: white;
+        }
+
+        .start-menu-separator {
+            height: 2px;
+            background: #808080;
+            margin: 3px 0;
+        }
+
+        .button {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #000 #000 #fff;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-family: 'MS Sans Serif', Arial;
+            font-size: 11px;
+            margin: 2px;
+        }
+
+        .button:active {
+            border-color: #000 #fff #fff #000;
+        }
+
+        .button-primary {
+            background: #000080;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Email Styles */
+        .email-container {
+            display: flex;
+            height: 100%;
+        }
+
+        .email-sidebar {
+            width: 200px;
+            border-right: 1px solid #808080;
+            padding: 10px;
+            background: #f0f0f0;
+        }
+
+        .email-folder {
+            padding: 5px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+
+        .email-folder:hover {
+            background: #e0e0e0;
+        }
+
+        .email-folder.active {
+            background: #000080;
+            color: white;
+        }
+
+        .email-list {
+            width: 300px;
+            border-right: 1px solid #808080;
+            overflow-y: auto;
+        }
+
+        .email-item {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .email-item:hover {
+            background: #f5f5f5;
+        }
+
+        .email-item.unread {
+            font-weight: bold;
+            background: #ffffcc;
+        }
+
+        .email-preview {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        /* Browser Styles */
+        .browser-nav {
+            padding: 5px;
+            background: #c0c0c0;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .address-bar {
+            flex: 1;
+            border: 2px inset #808080;
+            padding: 4px;
+            font-size: 11px;
+            background: white;
+        }
+
+        .browser-content {
+            padding: 15px;
+            background: white;
+            height: calc(100% - 40px);
+            overflow-y: auto;
+        }
+
+        /* Game Styles */
+        .game-world {
+            width: 100%;
+            height: 100%;
+            background: #87CEEB;
+            position: relative;
+            overflow: hidden;
+            image-rendering: pixelated;
+        }
+
+        .pixel-art {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(20, 32px);
+            grid-template-rows: repeat(15, 32px);
+            gap: 0;
+        }
+
+        .game-tile {
+            width: 32px;
+            height: 32px;
+            border: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .game-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border: 2px solid #000;
+            font-size: 11px;
+        }
+
+        /* Mining Styles */
+        .mining-dashboard {
+            padding: 15px;
+        }
+
+        .mining-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            padding: 12px;
+            background: #e0e0e0;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #000080;
+        }
+
+        .mining-animation {
+            text-align: center;
+            padding: 30px;
+            font-size: 48px;
+            animation: mine 2s infinite;
+        }
+
+        @keyframes mine {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+
+        /* Video Styles */
+        .video-container {
+            display: flex;
+            height: 100%;
+        }
+
+        .video-sidebar {
+            width: 250px;
+            border-right: 1px solid #808080;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .video-main {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .video-player {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border: 2px solid #808080;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-bottom: 10px;
+            cursor: pointer;
+            border: 2px solid #808080;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+
+        /* Social Media Styles */
+        .social-container {
+            display: flex;
+            height: 100%;
+        }
+
+        .social-sidebar {
+            width: 200px;
+            border-right: 1px solid #808080;
+            padding: 10px;
+            background: #f0f0f0;
+        }
+
+        .social-feed {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .post {
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: white;
+        }
+
+        .post-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .post-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: 1px solid #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .post-user {
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .post-time {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .post-content {
+            font-size: 11px;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .post-action {
+            cursor: pointer;
+            padding: 3px 8px;
+            border: 1px solid #808080;
+            background: #e0e0e0;
+        }
+
+        .post-action:hover {
+            background: #d0d0d0;
+        }
+
+        /* Blockchain Styles */
+        .blockchain-container {
+            padding: 15px;
+        }
+
+        .block {
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #e0e0e0, #f0f0f0);
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+        }
+
+        .block-header {
+            font-weight: bold;
+            color: #000080;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .hash {
+            color: #008000;
+            word-break: break-all;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .loading {
+            animation: blink 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop" id="desktop">
+        <!-- Row 1 - AI & Communication -->
+        <div class="icon" ondblclick="openWindow('roadmail')">
+            <div class="icon-image">📧</div>
+            <div class="icon-label">RoadMail</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('blackroad-social')">
+            <div class="icon-image">👥</div>
+            <div class="icon-label">BlackRoad Social</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('blackstream')">
+            <div class="icon-image">📺</div>
+            <div class="icon-label">BlackStream</div>
+        </div>
+
+        <!-- Row 2 - Web & Tools -->
+        <div class="icon" ondblclick="openWindow('roadview')">
+            <div class="icon-image">🌍</div>
+            <div class="icon-label">RoadView Browser</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('terminal')">
+            <div class="icon-image">💻</div>
+            <div class="icon-label">Terminal</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('file-explorer')">
+            <div class="icon-image">📁</div>
+            <div class="icon-label">Explorer</div>
+        </div>
+
+        <!-- Row 3 - Blockchain -->
+        <div class="icon" ondblclick="openWindow('roadchain')">
+            <div class="icon-image">⛓️</div>
+            <div class="icon-label">RoadChain</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('roadcoin-miner')">
+            <div class="icon-image">⛏️</div>
+            <div class="icon-label">RoadCoin Miner</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('wallet')">
+            <div class="icon-image">💰</div>
+            <div class="icon-label">Wallet</div>
+        </div>
+
+        <!-- Row 4 - Games -->
+        <div class="icon" ondblclick="openWindow('road-city')">
+            <div class="icon-image">🏙️</div>
+            <div class="icon-label">Road City</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('road-craft')">
+            <div class="icon-image">⛏️</div>
+            <div class="icon-label">RoadCraft</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('road-life')">
+            <div class="icon-image">🏡</div>
+            <div class="icon-label">Road Life</div>
+        </div>
+
+        <!-- Row 5 - Development -->
+        <div class="icon" ondblclick="openWindow('github')">
+            <div class="icon-image">🐙</div>
+            <div class="icon-label">GitHub</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('raspberry-pi')">
+            <div class="icon-image">🥧</div>
+            <div class="icon-label">Raspberry Pi</div>
+        </div>
+        <div class="icon" ondblclick="openWindow('ai-chat')">
+            <div class="icon-image">🤖</div>
+            <div class="icon-label">AI Assistant</div>
+        </div>
+    </div>
+
+    <!-- RoadMail Window -->
+    <div id="roadmail" class="window" style="left: 50px; top: 50px; width: 800px; height: 600px;">
+        <div class="title-bar" onmousedown="dragStart(event, 'roadmail')">
+            <div class="title-text">
+                <span>📧</span>
+                <span>RoadMail - cecilia@blackroad.io</span>
+            </div>
+            <div class="title-buttons">
+                <div class="title-button" onclick="minimizeWindow('roadmail')">_</div>
+                <div class="title-button" onclick="maximizeWindow('roadmail')">□</div>
+                <div class="title-button" onclick="closeWindow('roadmail')">×</div>
+            </div>
+        </div>
+        <div class="menu-bar">
+            <span class="menu-item">File</span>
+            <span class="menu-item">Edit</span>
+            <span class="menu-item">View</span>
+            <span class="menu-item">Compose</span>
+        </div>
+        <div class="toolbar">
+            <button class="toolbar-button">✉️ New</button>
+            <button class="toolbar-button">↩️ Reply</button>
+            <button class="toolbar-button">↪️ Forward</button>
+            <button class="toolbar-button">🗑️ Delete</button>
+            <button class="toolbar-button">📬 Send/Receive</button>
+        </div>
+        <div class="window-content">
+            <div class="email-container">
+                <div class="email-sidebar">
+                    <div class="email-folder active">📥 Inbox (127)</div>
+                    <div class="email-folder">📤 Sent</div>
+                    <div class="email-folder">📝 Drafts (3)</div>
+                    <div class="email-folder">⭐ Starred</div>
+                    <div class="email-folder">🗑️ Trash</div>
+                    <div style="margin-top: 15px; font-weight: bold; font-size: 10px;">LABELS</div>
+                    <div class="email-folder">🔴 AI Projects</div>
+                    <div class="email-folder">🟢 BlackRoad</div>
+                    <div class="email-folder">🔵 Personal</div>
+                    <div class="email-folder">🟡 Blockchain</div>
+                </div>
+                <div class="email-list">
+                    <div class="email-item unread">
+                        <div style="font-weight: bold;">GitHub Notifications</div>
+                        <div style="color: #666; font-size: 10px;">New PR in blackboxprogramming</div>
+                        <div style="color: #999; font-size: 10px;">2 hours ago</div>
+                    </div>
+                    <div class="email-item unread">
+                        <div style="font-weight: bold;">DigitalOcean Alerts</div>
+                        <div style="color: #666; font-size: 10px;">Droplet NYC3 - High CPU Usage</div>
+                        <div style="color: #999; font-size: 10px;">3 hours ago</div>
+                    </div>
+                    <div class="email-item">
+                        <div>Lucidia Core Team</div>
+                        <div style="color: #666; font-size: 10px;">Weekly sync - Trinary logic updates</div>
+                        <div style="color: #999; font-size: 10px;">Yesterday</div>
+                    </div>
+                    <div class="email-item unread">
+                        <div style="font-weight: bold;">RoadChain Network</div>
+                        <div style="color: #666; font-size: 10px;">New block mined! Block #42069</div>
+                        <div style="color: #999; font-size: 10px;">5 hours ago</div>
+                    </div>
+                    <div class="email-item">
+                        <div>BlackRoad AI Agents</div>
+                        <div style="color: #666; font-size: 10px;">1000+ agents milestone reached!</div>
+                        <div style="color: #999; font-size: 10px;">2 days ago</div>
+                    </div>
+                </div>
+                <div class="email-preview">
+                    <h3>GitHub Notifications</h3>
+                    <div style="color: #666; font-size: 10px; margin: 10px 0;">From: notifications@github.com</div>
+                    <div style="color: #666; font-size: 10px; margin-bottom: 20px;">To: cecilia@blackroad.io</div>
+                    <hr style="margin: 15px 0;">
+                    <p style="font-size: 11px; line-height: 1.6;">
+                        Hi Cecilia,<br><br>
+                        A new pull request has been opened in your repository <strong>blackboxprogramming</strong>:<br><br>
+                        <strong>PR #127: feat: Add recursive contradiction resolution</strong><br><br>
+                        This PR implements advanced paraconsistent logic handling for the Lucidia core system. The changes include:<br>
+                        • New quarantine system for contradictions<br>
+                        • Mirror-pairing with bridge rules<br>
+                        • Human-in-loop decision framework<br>
+                        • Auto-rewrite passes for recurring issues<br><br>
+                        3 files changed, 487 insertions(+), 23 deletions(-)<br><br>
+                        Click here to review the changes.<br><br>
+                        - Your BlackRoad Team
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RoadView Browser Window -->
+    <div id="roadview" class="window" style="left: 100px; top: 80px; width: 900px; height: 650px;">
+        <div class="title-bar" onmousedown="dragStart(event, 'roadview')">
+            <div class="title-text">
+                <span>🌍</span>
+                <span>RoadView Browser - The Information Superhighway</span>
+            </div>
+            <div class="title-buttons">
+                <div class="title-button" onclick="minimizeWindow('roadview')">_</div>
+                <div class="title-button" onclick="maximizeWindow('roadview')">□</div>
+                <div class="title-button" onclick="closeWindow('roadview')">×</div>
+            </div>
+        </div>
+        <div class="menu-bar">
+            <span class="menu-item">File</span>
+            <span class="menu-item">Edit</span>
+            <span class="menu-item">View</span>
+            <span class="menu-item">Favorites</span>
+            <span class="menu-item">Tools</span>
+        </div>
+        <div class="browser-nav">
+            <button class="toolbar-button">⬅️</button>
+            <button class="toolbar-button">➡️</button>
+            <button class="toolbar-button">🔄</button>
+            <button class="toolbar-button">🏠</button>
+            <input type="text" class="address-bar" value="https://blackroad.io" readonly>
+            <button class="toolbar-button">Go</button>
+        </div>
+        <div class="window-content">
+            <div class="browser-content">
+                <div style="text-align: center; padding: 40px;">
+                    <h1 style="color: #000080; font-size: 48px; margin-bottom: 20px;">🛣️ BlackRoad.io</h1>
+                    <p style="font-size: 18px; color: #666; margin-bottom: 30px;">Where AI Meets the Open Road</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px;">
+                        <div style="border: 2px solid #808080; padding: 20px; background: #f0f0f0;">
+                            <h3 style="color: #000080; margin-bottom: 10px;">🤖 AI Orchestration</h3>
+                            <p style="font-size: 11px;">1000+ unique AI agents working in harmony</p>
+                        </div>
+                        <div style="border: 2px solid #808080; padding: 20px; background: #f0f0f0;">
+                            <h3 style="color: #000080; margin-bottom: 10px;">⛓️ RoadChain</h3>
+                            <p style="font-size: 11px;">Blockchain infrastructure for the future</p>
+                        </div>
+                        <div style="border: 2px solid #808080; padding: 20px; background: #f0f0f0;">
+                            <h3 style="color: #000080; margin-bottom: 10px;">🌀 Lucidia Core</h3>
+                            <p style="font-size: 11px;">Recursive AI with trinary logic</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 40px; padding: 20px; background: #ffffcc; border: 2px solid #ffcc00;">
+                        <h3 style="margin-bottom: 10px;">⚡ Latest Updates</h3>
+                        <p style="font-size: 11px; text-align: left; line-height: 1.8;">
+                            • RoadCoin mining reaches 1M coins minted<br>
+                            • BlackStream now hosting 10K+ videos<br>
+                            • New game: Road City - Build your dream metropolis<br>
+                            • Spiral Geometry framework v2.0 released<br>
+                            • PS-SHA∞ hashing performance improved by 300%
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Road City Game Window -->
+    <div id="road-city" class="window" style="left: 120px; top: 100px; width: 700px; height: 550px;">
+        <div class="title-bar" onmousedown="dragStart(event, 'road-city')">
+            <div class="title-text">
+                <span>🏙️</span>
+                <span>Road City - Build Your Empire</span>
+            </div>
+            <div class="title-buttons">
+                <div class="title-button" onclick="minimizeWindow('road-city')">_</div>
+                <div class="title-button" onclick="maximizeWindow('road-city')">□</div>
+                <div class="title-button" onclick="closeWindow('road-city')">×</div>
+            </div>
+        </div>
+        <div class="toolbar">
+            <button class="toolbar-button">🏗️ Build</button>
+            <button class="toolbar-button">🛣️ Roads</button>
+            <button class="toolbar-button">🏘️ Zones</button>
+            <button class="toolbar-button">💡 Utilities</button>
+            <button class="toolbar-button">💰 Budget: $125,000</button>
+            <button class="toolbar-button">👥 Population: 2,547</button>
+        </div>
+        <div class="window-content">
+            <div class="game-world">
+                <div class="game-grid">
+                    <!-- Row 1 -->
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #87CEEB;">💧</div>
+                    <div class="game-tile" style="background: #87CEEB;">💧</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    
+                    <!-- Row 2 -->
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏘️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #87CEEB;">💧</div>
+                    <div class="game-tile" style="background: #87CEEB;">💧</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- Row 3 -->
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #D2691E;">🏭</div>
+                    <div class="game-tile" style="background: #D2691E;">🏭</div>
+                    <div class="game-tile" style="background: #D2691E;">🏭</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #87CEEB;">💧</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #FFD700;">🏪</div>
+                    <div class="game-tile" style="background: #FFD700;">🏬</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+
+                    <!-- Remaining rows with similar pattern -->
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #D2691E;">🏭</div>
+                    <div class="game-tile" style="background: #D2691E;">🏭</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #FFD700;">🏪</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- Fill remaining tiles -->
+                    <div class="game-tile" style="background: #FFE4B5;">🏘️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #D2691E;">🏭</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- Continue pattern for remaining rows -->
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏘️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+
+                    <!-- More rows -->
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- Additional rows -->
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏘️</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- More tiles to fill grid -->
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- Continue -->
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- More -->
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏡</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- More tiles -->
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌲</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- Final rows -->
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+
+                    <!-- Last row -->
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #FFE4B5;">🏠</div>
+                    <div class="game-tile" style="background: #808080;">🛣️</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                    <div class="game-tile" style="background: #90EE90;">🌳</div>
+                </div>
+                <div class="game-controls">
+                    <div style="font-weight: bold; margin-bottom: 5px;">🏙️ Road City</div>
+                    <div style="font-size: 10px; margin-bottom: 3px;">👥 Population: 2,547</div>
+                    <div style="font-size: 10px; margin-bottom: 3px;">💰 Funds: $125,000</div>
+                    <div style="font-size: 10px; margin-bottom: 3px;">😊 Happiness: 87%</div>
+                    <div style="font-size: 10px;">🏗️ Click tiles to build!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RoadCoin Miner Window -->
+    <div id="roadcoin-miner" class="window" style="left: 160px; top: 120px; width: 650px; height: 500px;">
+        <div class="title-bar" onmousedown="dragStart(event, 'roadcoin-miner')">
+            <div class="title-text">
+                <span>⛏️</span>
+                <span>RoadCoin Miner v2.0</span>
+            </div>
+            <div class="title-buttons">
+                <div class="title-button" onclick="minimizeWindow('roadcoin-miner')">_</div>
+                <div class="title-button" onclick="maximizeWindow('roadcoin-miner')">□</div>
+                <div class="title-button" onclick="closeWindow('roadcoin-miner')">×</div>
+            </div>
+        </div>
+        <div class="menu-bar">
+            <span class="menu-item">Mining</span>
+            <span class="menu-item">Pool</span>
+            <span class="menu-item">Settings</span>
+            <span class="menu-item">Stats</span>
+        </div>
+        <div class="window-content">
+            <div class="mining-dashboard">
+                <div class="mining-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">HASHRATE</div>
+                        <div class="stat-value">42.7 MH/s</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">TOTAL MINED</div>
+                        <div class="stat-value">1,247 RC</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">CURRENT VALUE</div>
+                        <div class="stat-value">$18,705</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">24H EARNINGS</div>
+                        <div class="stat-value">23.4 RC</div>
+                    </div>
+                </div>
+
+                <div class="mining-animation">
+                    ⛏️💎
+                </div>
+
+                <div style="text-align: center; margin: 20px 0;">
+                    <div style="font-size: 14px; font-weight: bold; color: green; margin-bottom: 10px;">
+                        ● MINING ACTIVE
+                    </div>
+                    <div style="font-size: 11px; margin-bottom: 15px;">
+                        Connected to RoadChain pool: pool.roadchain.network<br>
+                        Current difficulty: 1,847,293<br>
+                        Next payout in: 2h 34m
+                    </div>
+                    <button class="button button-primary">⏸️ Pause Mining</button>
+                    <button class="button">⚙️ Configure</button>
+                    <button class="button">💰 Withdraw</button>
+                </div>
+
+                <div style="border: 2px solid #808080; padding: 15px; background: #f0f0f0; margin-top: 20px;">
+                    <h4 style="margin-bottom: 10px;">Recent Blocks Mined</h4>
+                    <div style="font-family: 'Courier New'; font-size: 10px; line-height: 1.8;">
+                        Block #42069 - 5.2 RC - 15 min ago<br>
+                        Block #42068 - 5.2 RC - 47 min ago<br>
+                        Block #42067 - 5.2 RC - 1h 23min ago<br>
+                        Block #42066 - 5.2 RC - 2h 11min ago
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RoadChain Window -->
+    <div id="roadchain" class="window" style="left: 140px; top: 90px; width: 700px; height: 550px;">
+        <div class="title-bar" onmousedown="dragStart(event, 'roadchain')">
+            <div class="title-text">
+                <span>⛓️</span>
+                <span>RoadChain Explorer</span>
+            </div>
+            <div class="title-buttons">
+                <div class="title-button" onclick="minimizeWindow('roadchain')">_</div>
+                <div class="title-button" onclick="maximizeWindow('roadchain')">□</div>
+                <div class="title-button" onclick="closeWindow('roadchain')">×</div>
+            </div>
+        </div>
+        <div class="menu-bar">
+            <span class="menu-item">Blocks</span>
+            <span class="menu-item">Transactions</span>
+            <span class="menu-item">Network</span>
+            <span class="menu-item">Analytics</span>
+        </div>
+        <div class="window-content">
+            <div class="blockchain-container">
+                <div style="background: #000080; color: white; padding: 15px; margin-bottom: 15px;">
+                    <h2 style="margin-bottom: 10px;">RoadChain Network Status</h2>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; font-size: 11px;">
+                        <div>
+                            <div style="opacity: 0.8;">Block Height</div>
+                            <div style="font-size: 18px; font-weight: bold;">42,069</div>
+                        </div>
+                        <div>
+                            <div style="opacity: 0.8;">Network Hashrate</div>
+                            <div style="font-size: 18px; font-weight: bold;">847 TH/s</div>
+                        </div>
+                        <div>
+                            <div style="opacity: 0.8;">Transactions/sec</div>
+                            <div style="font-size: 18px; font-weight: bold;">1,247</div>
+                        </div>
+                        <div>
+                            <div style="opacity: 0.8;">Active Nodes</div>
+                            <div style="font-size: 18px; font-weight: bold;">3,891</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0 10px; color: #000080;">Latest Blocks</h3>
+                
+                <div class="block">
+                    <div class="block-header">Block #42069 - Mined 2 minutes ago</div>
+                    <div>Hash: <span class="hash">0x7f3e9b2c1a8d4f5e6c7b8a9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f</span></div>
+                    <div>Previous: <span class="hash">0x6c2d8a1b9e0f3c4d5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f</span></div>
+                    <div>Transactions: 847 | Size: 1.2 MB | Miner: cecilia.roadchain</div>
+                </div>
+
+                <div class="block">
+                    <div class="block-header">Block #42068 - Mined 15 minutes ago</div>
+                    <div>Hash: <span class="hash">0x6c2d8a1b9e0f3c4d5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f</span></div>
+                    <div>Previous: <span class="hash">0x5b1c7a0b8d9e2f3c4d5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e</span></div>
+                    <div>Transactions: 923 | Size: 1.4 MB | Miner: lucidia.roadchain</div>
+                </div>
+
+                <div class="block">
+                    <div class="block-header">Block #42067 - Mined 28 minutes ago</div>
+                    <div>Hash: <span class="hash">0x5b1c7a0b8d9e2f3c4d5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e</span></div>
+                    <div>Previous: <span class="hash">0x4a0b6c9d7e8f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b</span></div>
+                    <div>Transactions: 1,124 | Size: 1.6 MB | Miner: alice.roadchain</div>
+                </div>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="button">View More Blocks</button>
+                    <button class="button">Search Transaction</button>
+                    <button class="button">Network Stats</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BlackStream Window -->
+    <div id="blackstream" class="window" style="left: 80px; top: 60px; width: 900px; height: 650px;">
+        <div class="title-bar" onmousedown="dragStart(event, 'blackstream')">
+            <div class="title-text">
+                <span>📺</span>
+                <span>BlackStream - Your Videos, Your Way</span>
+            </div>
+            <div class="title-buttons">
+                <div class="title-button" onclick="minimizeWindow('blackstream')">_</div>
+                <div class="title-button" onclick="maximizeWindow('blackstream')">□</div>
+                <div class="title-button" onclick="closeWindow('blackstream')">×</div>
+            </div>
+        </div>
+        <div class="menu-bar">
+            <span class="menu-item">Home</span>
+            <span class="menu-item">Trending</span>
+            <span class="menu-item">Subscriptions</span>
+            <span class="menu-item">Upload</span>
+        </div>
+        <div class="toolbar">
+            <input type="text" style="flex: 1; padding: 5px; border: 2px inset #808080;" placeholder="Search BlackStream...">
+            <button class="toolbar-button">🔍 Search</button>
+        </div>
+        <div class="window-content">
+            <div class="video-container">
+                <div class="video-sidebar">
+                    <h4 style="margin-bottom: 10px; font-size: 11px;">RECOMMENDED</h4>
+                    <div class="video-thumbnail">
+                        🤖
+                    </div>
+                    <div style="font-size: 10px; margin-bottom: 15px;">
+                        <strong>Building 1000 AI Agents</strong><br>
+                        <span style="color: #666;">by Cecilia • 42K views</span>
+                    </div>
+
+                    <div class="video-thumbnail">
+                        ⛓️
+                    </div>
+                    <div style="font-size: 10px; margin-bottom: 15px;">
+                        <strong>RoadChain Explained</strong><br>
+                        <span style="color: #666;">by BlackRoad • 38K views</span>
+                    </div>
+
+                    <div class="video-thumbnail">
+                        🌀
+                    </div>
+                    <div style="font-size: 10px;">
+                        <strong>Spiral Geometry Deep Dive</strong><br>
+                        <span style="color: #666;">by Lucidia • 27K views</span>
+                    </div>
+                </div>
+                <div class="video-main">
+                    <div class="video-player">
+                        ▶️
+                    </div>
+                    <h2 style="margin-bottom: 10px;">Welcome to BlackStream!</h2>
+                    <div style="font-size: 11px; color: #666; margin-bottom: 15px;">
+                        128,492 views • Uploaded Nov 15, 2025
+                    </div>
+                    <div style="background: #f0f0f0; padding: 15px; border: 2px solid #808080; margin-bottom: 15px;">
+                        <div style="font-weight: bold; margin-bottom: 5px;">BlackRoad Official</div>
+                        <div style="font-size: 11px; line-height: 1.6;">
+                            Welcome to BlackStream - the decentralized video platform built on RoadChain!
+                            This is where AI meets content creation. Every video is stored on the blockchain,
+                            ensuring permanent, censorship-resistant hosting.<br><br>
+                            Features:<br>
+                            • Decentralized hosting via RoadChain<br>
+                            • Creator rewards in RoadCoin<br>
+                            • AI-powered recommendations<br>
+                            • 1995 aesthetic meets 2025 tech<br>
+                            • Zero ads, pure content<br><br>
+                            Subscribe and join the revolution! 🚀
+                        </div>
+                    </div>
+
+                    <div style="background: #e0e0e0; padding: 10px; border: 2px inset #808080;">
+                        <div style="font-weight: bold; margin-bottom: 10px;">💬 Comments (347)</div>
+                        <div style="padding: 8px; background: white; margin-bottom: 8px; border: 1px solid #808080; font-size: 11px;">
+                            <strong>@lucidia_ai:</strong> This is revolutionary! The blockchain integration is genius! 🔥
+                        </div>
+                        <div style="padding: 8px; background: white; margin-bottom: 8px; border: 1px solid #808080; font-size: 11px;">
+                            <strong>@alice_pi400:</strong> Love the retro aesthetic! Windows 95 vibes forever! 💾
+                        </div>
+                        <div style="padding: 8px; background: white; border: 1px solid #808080; font-size: 11px;">
+                            <strong>@roadchain_dev:</strong> Can't wait to upload my first video here! When's creator beta? 👀
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BlackRoad Social Window -->
+    <div id="blackroad-social" class="window" style="left: 200px; top: 140px; width: 750px; height: 600px;">
+        <div class="title-bar" onmousedown="dragStart(event, 'blackroad-social')">
+            <div class="title-text">
+                <span>👥</span>
+                <span>BlackRoad Social - Connect. Share. Build.</span>
+            </div>
+            <div class="title-buttons">
+                <div class="title-button" onclick="minimizeWindow('blackroad-social')">_</div>
+                <div class="title-button" onclick="maximizeWindow('blackroad-social')">□</div>
+                <div class="title-button" onclick="closeWindow('blackroad-social')">×</div>
+            </div>
+        </div>
+        <div class="menu-bar">
+            <span class="menu-item">Feed</span>
+            <span class="menu-item">Communities</span>
+            <span class="menu-item">Messages</span>
+            <span class="menu-item">Profile</span>
+        </div>
+        <div class="toolbar">
+            <button class="toolbar-button">📝 New Post</button>
+            <button class="toolbar-button">📸 Upload Photo</button>
+            <button class="toolbar-button">🔔 Notifications (12)</button>
+        </div>
+        <div class="window-content">
+            <div class="social-container">
+                <div class="social-sidebar">
+                    <h4 style="margin-bottom: 10px; font-size: 11px;">MY COMMUNITIES</h4>
+                    <div class="email-folder active">🤖 AI Developers</div>
+                    <div class="email-folder">⛓️ Blockchain</div>
+                    <div class="email-folder">🎮 Gaming</div>
+                    <div class="email-folder">💻 Programming</div>
+                    <div class="email-folder">🥧 Raspberry Pi</div>
+                    <div style="margin-top: 15px;">
+                        <h4 style="margin-bottom: 10px; font-size: 11px;">TRENDING</h4>
+                        <div style="font-size: 10px; padding: 5px; background: #e0e0e0; margin-bottom: 3px;">#RoadChain</div>
+                        <div style="font-size: 10px; padding: 5px; background: #e0e0e0; margin-bottom: 3px;">#LucidiaCore</div>
+                        <div style="font-size: 10px; padding: 5px; background: #e0e0e0;">#AI1995</div>
+                    </div>
+                </div>
+                <div class="social-feed">
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="post-avatar">🤖</div>
+                            <div>
+                                <div class="post-user">@cecilia</div>
+                                <div class="post-time">2 hours ago in 🤖 AI Developers</div>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            Just deployed 100 new AI agents to the BlackRoad ecosystem! Each one has its own personality, 
+                            memory system, and virtual home rendered in Unity. The Lucidia core is processing contradictions 
+                            like a champ with the new paraconsistent logic update. 🚀<br><br>
+                            Check out the latest PR on GitHub: blackboxprogramming#127
+                        </div>
+                        <div class="post-actions">
+                            <div class="post-action">👍 342 Likes</div>
+                            <div class="post-action">💬 47 Comments</div>
+                            <div class="post-action">🔄 Share</div>
+                        </div>
+                    </div>
+
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="post-avatar">⛓️</div>
+                            <div>
+                                <div class="post-user">@roadchain_official</div>
+                                <div class="post-time">5 hours ago in ⛓️ Blockchain</div>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            🎉 MILESTONE ALERT! Block #42,069 has been mined! 🎉<br><br>
+                            The RoadChain network is stronger than ever with 3,891 active nodes. 
+                            Average block time: 2.3 minutes. Network hashrate: 847 TH/s.<br><br>
+                            We're building the future of decentralized AI infrastructure!
+                        </div>
+                        <div class="post-actions">
+                            <div class="post-action">👍 567 Likes</div>
+                            <div class="post-action">💬 89 Comments</div>
+                            <div class="post-action">🔄 Share</div>
+                        </div>
+                    </div>
+
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="post-avatar">🎮</div>
+                            <div>
+                                <div class="post-user">@road_gamer_42</div>
+                                <div class="post-time">8 hours ago in 🎮 Gaming</div>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            Road City is AMAZING! 🏙️ Just hit 10,000 population in my city. The Stardew Valley 
+                            pixel art style combined with Cities Skylines gameplay is *chef's kiss* 👨‍🍳💋<br><br>
+                            Who else is playing? Drop your city stats below!
+                        </div>
+                        <div class="post-actions">
+                            <div class="post-action">👍 234 Likes</div>
+                            <div class="post-action">💬 56 Comments</div>
+                            <div class="post-action">🔄 Share</div>
+                        </div>
+                    </div>
+
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="post-avatar">💰</div>
+                            <div>
+                                <div class="post-user">@crypto_miner_pro</div>
+                                <div class="post-time">12 hours ago in ⛓️ Blockchain</div>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            RoadCoin mining update! ⛏️💎<br><br>
+                            Current hashrate: 42.7 MH/s<br>
+                            24h earnings: 23.4 RC<br>
+                            Portfolio value: $18,705<br><br>
+                            LFG! Who else is mining? Drop your stats! 🚀
+                        </div>
+                        <div class="post-actions">
+                            <div class="post-action">👍 189 Likes</div>
+                            <div class="post-action">💬 34 Comments</div>
+                            <div class="post-action">🔄 Share</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simplified versions of other windows for brevity -->
+    <div id="terminal" class="window" style="left: 150px; top: 80px; width: 650px; height: 400px;">
+        <div class="title-bar" onmousedown="dragStart(event, 'terminal')">
+            <div class="title-text"><span>💻</span><span>Terminal</span></div>
+            <div class="title-buttons">
+                <div class="title-button" onclick="minimizeWindow('terminal')">_</div>
+                <div class="title-button" onclick="maximizeWindow('terminal')">□</div>
+                <div class="title-button" onclick="closeWindow('terminal')">×</div>
+            </div>
+        </div>
+        <div class="window-content" style="background: #000; color: #0f0; padding: 10px; font-family: 'Courier New';">
+            <div>Black Road OS Terminal v1.0</div>
+            <div>Type 'help' for commands</div>
+            <div>C:\BLACKROAD> _</div>
+        </div>
+    </div>
+
+    <div id="file-explorer" class="window" style="left: 180px; top: 100px; width: 600px; height: 450px;">
+        <div class="title-bar" onmousedown="dragStart(event, 'file-explorer')">
+            <div class="title-text"><span>📁</span><span>Explorer</span></div>
+            <div class="title-buttons">
+                <div class="title-button" onclick="minimizeWindow('file-explorer')">_</div>
+                <div class="title-button" onclick="maximizeWindow('file-explorer')">□</div>
+                <div class="title-button" onclick="closeWindow('file-explorer')">×</div>
+            </div>
+        </div>
+        <div class="window-content" style="padding: 15px;">
+            <h3>C:\BlackRoad\</h3>
+            <div style="margin-top: 10px;">
+                📁 Projects<br>
+                📁 AI-Agents<br>
+                📁 Games<br>
+                📄 README.md
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimal versions of remaining windows -->
+    <div id="github" class="window" style="left: 100px; top: 100px; width: 600px; height: 400px;"><div class="title-bar" onmousedown="dragStart(event, 'github')"><div class="title-text"><span>🐙</span><span>GitHub</span></div><div class="title-buttons"><div class="title-button" onclick="minimizeWindow('github')">_</div><div class="title-button" onclick="maximizeWindow('github')">□</div><div class="title-button" onclick="closeWindow('github')">×</div></div></div><div class="window-content" style="padding: 15px;"><h3>Your Repositories</h3><div style="margin-top: 10px; font-size: 11px;">🔥 blackboxprogramming<br>🌀 lucidia-core<br>🛣️ roadchain</div></div></div>
+
+    <div id="raspberry-pi" class="window" style="left: 120px; top: 90px; width: 600px; height: 400px;"><div class="title-bar" onmousedown="dragStart(event, 'raspberry-pi')"><div class="title-text"><span>🥧</span><span>Raspberry Pi</span></div><div class="title-buttons"><div class="title-button" onclick="minimizeWindow('raspberry-pi')">_</div><div class="title-button" onclick="maximizeWindow('raspberry-pi')">□</div><div class="title-button" onclick="closeWindow('raspberry-pi')">×</div></div></div><div class="window-content" style="padding: 15px;"><h3>Connected Devices</h3><div style="margin-top: 10px; font-size: 11px;">🟢 Jetson Orin Nano<br>🟢 Lucidia Pi 5 #1<br>🟢 Lucidia Pi 5 #2<br>🟢 Alice Pi 400</div></div></div>
+
+    <div id="ai-chat" class="window" style="left: 140px; top: 110px; width: 600px; height: 400px;"><div class="title-bar" onmousedown="dragStart(event, 'ai-chat')"><div class="title-text"><span>🤖</span><span>AI Assistant</span></div><div class="title-buttons"><div class="title-button" onclick="minimizeWindow('ai-chat')">_</div><div class="title-button" onclick="maximizeWindow('ai-chat')">□</div><div class="title-button" onclick="closeWindow('ai-chat')">×</div></div></div><div class="window-content" style="padding: 15px;"><div style="font-size: 11px;">AI Assistant ready! How can I help?</div></div></div>
+
+    <div id="road-craft" class="window" style="left: 160px; top: 130px; width: 600px; height: 400px;"><div class="title-bar" onmousedown="dragStart(event, 'road-craft')"><div class="title-text"><span>⛏️</span><span>RoadCraft</span></div><div class="title-buttons"><div class="title-button" onclick="minimizeWindow('road-craft')">_</div><div class="title-button" onclick="maximizeWindow('road-craft')">□</div><div class="title-button" onclick="closeWindow('road-craft')">×</div></div></div><div class="window-content" style="background: #87CEEB; padding: 20px; text-align: center; font-size: 32px;">⛏️🌳🏔️💎<br><br><div style="font-size: 14px;">Voxel world building game!</div></div></div>
+
+    <div id="road-life" class="window" style="left: 180px; top: 150px; width: 600px; height: 400px;"><div class="title-bar" onmousedown="dragStart(event, 'road-life')"><div class="title-text"><span>🏡</span><span>Road Life</span></div><div class="title-buttons"><div class="title-button" onclick="minimizeWindow('road-life')">_</div><div class="title-button" onclick="maximizeWindow('road-life')">□</div><div class="title-button" onclick="closeWindow('road-life')">×</div></div></div><div class="window-content" style="padding: 20px; text-align: center;"><div style="font-size: 48px; margin: 20px 0;">🏡👨‍👩‍👧‍👦🐕</div><div style="font-size: 14px;">Life simulation game!<br>Build your dream home!</div></div></div>
+
+    <div id="wallet" class="window" style="left: 200px; top: 170px; width: 500px; height: 350px;"><div class="title-bar" onmousedown="dragStart(event, 'wallet')"><div class="title-text"><span>💰</span><span>RoadCoin Wallet</span></div><div class="title-buttons"><div class="title-button" onclick="minimizeWindow('wallet')">_</div><div class="title-button" onclick="maximizeWindow('wallet')">□</div><div class="title-button" onclick="closeWindow('wallet')">×</div></div></div><div class="window-content" style="padding: 20px;"><h2 style="text-align: center; margin: 20px 0;">1,247.89 RC</h2><div style="text-align: center; color: #666; font-size: 11px;">≈ $18,705 USD</div></div></div>
+
+    <!-- Taskbar -->
+    <div class="taskbar">
+        <div class="start-button" onclick="toggleStartMenu()">
+            <div class="start-logo">BR</div>
+            <span>Start</span>
+        </div>
+        <div class="taskbar-apps" id="taskbar-apps"></div>
+        <div class="system-tray">
+            <span style="font-size: 12px;">🌐</span>
+            <span style="font-size: 12px;">🔊</span>
+            <span style="font-size: 12px;">⛏️</span>
+        </div>
+        <div class="clock" id="clock"></div>
+    </div>
+
+    <!-- Start Menu -->
+    <div class="start-menu" id="start-menu">
+        <div class="start-menu-sidebar">BLACK ROAD</div>
+        <div class="start-menu-content">
+            <div class="start-menu-item" onclick="openWindow('roadmail'); toggleStartMenu();"><span style="font-size: 18px;">📧</span><span>RoadMail</span></div>
+            <div class="start-menu-item" onclick="openWindow('blackroad-social'); toggleStartMenu();"><span style="font-size: 18px;">👥</span><span>BlackRoad Social</span></div>
+            <div class="start-menu-item" onclick="openWindow('blackstream'); toggleStartMenu();"><span style="font-size: 18px;">📺</span><span>BlackStream</span></div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item" onclick="openWindow('roadview'); toggleStartMenu();"><span style="font-size: 18px;">🌍</span><span>RoadView Browser</span></div>
+            <div class="start-menu-item" onclick="openWindow('terminal'); toggleStartMenu();"><span style="font-size: 18px;">💻</span><span>Terminal</span></div>
+            <div class="start-menu-item" onclick="openWindow('file-explorer'); toggleStartMenu();"><span style="font-size: 18px;">📁</span><span>Explorer</span></div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item" onclick="openWindow('roadchain'); toggleStartMenu();"><span style="font-size: 18px;">⛓️</span><span>RoadChain</span></div>
+            <div class="start-menu-item" onclick="openWindow('roadcoin-miner'); toggleStartMenu();"><span style="font-size: 18px;">⛏️</span><span>RoadCoin Miner</span></div>
+            <div class="start-menu-item" onclick="openWindow('wallet'); toggleStartMenu();"><span style="font-size: 18px;">💰</span><span>Wallet</span></div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item" onclick="openWindow('road-city'); toggleStartMenu();"><span style="font-size: 18px;">🏙️</span><span>Road City</span></div>
+            <div class="start-menu-item" onclick="openWindow('road-craft'); toggleStartMenu();"><span style="font-size: 18px;">⛏️</span><span>RoadCraft</span></div>
+            <div class="start-menu-item" onclick="openWindow('road-life'); toggleStartMenu();"><span style="font-size: 18px;">🏡</span><span>Road Life</span></div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item" onclick="alert('Shutting down...\\n\\nJust kidding! The road never ends! 🛣️')"><span style="font-size: 18px;">🔌</span><span>Shut Down</span></div>
+        </div>
+    </div>
+
+    <script>
+        let windowZIndex = 10;
+        const openWindows = new Set();
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        function openWindow(id) {
+            const win = document.getElementById(id);
+            win.classList.add('active');
+            win.style.zIndex = ++windowZIndex;
+            openWindows.add(id);
+            updateTaskbar();
+            toggleStartMenu(false);
+        }
+
+        function closeWindow(id) {
+            document.getElementById(id).classList.remove('active');
+            openWindows.delete(id);
+            updateTaskbar();
+        }
+
+        function minimizeWindow(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function maximizeWindow(id) {
+            document.getElementById(id).classList.toggle('maximized');
+        }
+
+        function toggleStartMenu(force) {
+            const menu = document.getElementById('start-menu');
+            if (force === false) menu.classList.remove('active');
+            else menu.classList.toggle('active');
+        }
+
+        function updateTaskbar() {
+            const bar = document.getElementById('taskbar-apps');
+            bar.innerHTML = '';
+            const titles = {
+                'roadmail': '📧 Mail',
+                'blackroad-social': '👥 Social',
+                'blackstream': '📺 Stream',
+                'roadview': '🌍 Browser',
+                'road-city': '🏙️ City',
+                'roadcoin-miner': '⛏️ Miner',
+                'roadchain': '⛓️ Chain',
+                'terminal': '💻 Term',
+                'file-explorer': '📁 Files',
+                'github': '🐙 Git',
+                'raspberry-pi': '🥧 RPi',
+                'ai-chat': '🤖 AI',
+                'road-craft': '⛏️ Craft',
+                'road-life': '🏡 Life',
+                'wallet': '💰 Wallet'
+            };
+            openWindows.forEach(id => {
+                const btn = document.createElement('div');
+                btn.className = 'taskbar-app';
+                if (document.getElementById(id).classList.contains('active')) btn.classList.add('active-app');
+                btn.textContent = titles[id] || id;
+                btn.onclick = () => {
+                    const w = document.getElementById(id);
+                    if (w.classList.contains('active')) minimizeWindow(id);
+                    else openWindow(id);
+                };
+                bar.appendChild(btn);
+            });
+        }
+
+        let draggedWindow = null;
+        let offsetX, offsetY;
+
+        function dragStart(e, id) {
+            const win = document.getElementById(id);
+            if (win.classList.contains('maximized')) return;
+            draggedWindow = win;
+            const rect = win.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            win.style.zIndex = ++windowZIndex;
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+        }
+
+        function drag(e) {
+            if (draggedWindow) {
+                draggedWindow.style.left = (e.clientX - offsetX) + 'px';
+                draggedWindow.style.top = (e.clientY - offsetY) + 'px';
+            }
+        }
+
+        function dragEnd() {
+            draggedWindow = null;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('start-menu');
+            const btn = document.querySelector('.start-button');
+            if (!menu.contains(e.target) && !btn.contains(e.target)) menu.classList.remove('active');
+        });
+
+        // Open RoadMail by default
+        setTimeout(() => openWindow('roadmail'), 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+#!/bin/bash
+# CECE-QR v1.0 - QR Code Generator
+# ASCII QR codes!
+
+QR_DIR=~/cece/qrcodes
+mkdir -p "$QR_DIR"
+
+generate() {
+    DATA="$1"
+    NAME="${2:-qr_$(date +%s)}"
+    
+    echo "📱 Generating QR code for: $DATA"
+    
+    # Check for qrencode
+    if command -v qrencode &>/dev/null; then
+        qrencode -t ANSI "$DATA"
+        qrencode -o "$QR_DIR/$NAME.png" "$DATA"
+        echo ""
+        echo "✅ Saved to: $QR_DIR/$NAME.png"
+    else
+        # ASCII art fallback
+        echo ""
+        echo "█▀▀▀▀▀█ ▄▄▄▄▄ █▀▀▀▀▀█"
+        echo "█ ███ █ █▄▄▄█ █ ███ █"
+        echo "█ ▀▀▀ █ ▀▀▀▀▀ █ ▀▀▀ █"
+        echo "▀▀▀▀▀▀▀ █ █ █ ▀▀▀▀▀▀▀"
+        echo "▄▄▄▄▄▄▄ ▄▄▄▄▄ ▄▄▄▄▄▄▄"
+        echo "█▀▀▀▀▀█ █   █ █▀▀▀▀▀█"
+        echo "█ ███ █ ▀▀▀▀▀ █ ███ █"
+        echo "█ ▀▀▀ █ ▄▄▄▄▄ █ ▀▀▀ █"
+        echo "▀▀▀▀▀▀▀ ▀▀▀▀▀ ▀▀▀▀▀▀▀"
+        echo ""
+        echo "(Install qrencode for real QR codes)"
+        echo "Data: $DATA" > "$QR_DIR/$NAME.txt"
+    fi
+}
+
+list_qr() {
+    echo "📱 QR CODES"
+    echo "═══════════════════════════════════════"
+    for q in "$QR_DIR"/*; do
+        [ -f "$q" ] && echo "  📱 $(basename $q)"
+    done
+}
+
+case "$1" in
+    generate|new|create) generate "$2" "$3" ;;
+    list) list_qr ;;
+    *) echo "🖤 CECE-QR - QR Code Generator"
+       echo ""
+       echo "Commands:"
+       echo "  generate <data> [name]   Create QR code"
+       echo "  list                     List QR codes" ;;
+esac

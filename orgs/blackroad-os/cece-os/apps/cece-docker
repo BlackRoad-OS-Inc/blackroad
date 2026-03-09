@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-DOCKER v1.0 - Docker Helper
+status() {
+    echo "Containers:"
+    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "Docker not available"
+}
+images() { docker images 2>/dev/null || echo "Docker not available"; }
+clean() {
+    docker system prune -f 2>/dev/null
+    echo "Cleaned unused Docker resources"
+}
+case "$1" in
+    status) status ;;
+    images) images ;;
+    clean) clean ;;
+    *) echo "CECE-DOCKER: status | images | clean" ;;
+esac

@@ -1,0 +1,31 @@
+#!/bin/bash
+# CECE-SEARCH v1.0 - Our Own Google Search
+SEARCH_DIR=~/cece/search
+INDEX_FILE="$SEARCH_DIR/index.db"
+mkdir -p "$SEARCH_DIR"
+
+search() {
+    QUERY="$1"
+    echo "🔍 Results for: $QUERY"
+    echo ""
+    grep -r -l -i "$QUERY" ~/cece 2>/dev/null | head -20 | while read -r file; do
+        echo "📄 $file"
+        grep -i "$QUERY" "$file" 2>/dev/null | head -1 | cut -c1-70
+        echo ""
+    done
+}
+
+index_dir() {
+    echo "📊 Indexing ~/cece..."
+    find ~/cece -type f -name "*.md" -o -name "*.txt" -o -name "*.sh" 2>/dev/null > "$INDEX_FILE"
+    COUNT=$(wc -l < "$INDEX_FILE")
+    echo "✅ Indexed $COUNT files"
+}
+
+case "$1" in
+    search|s) search "$2" ;;
+    index) index_dir ;;
+    *) echo "🖤 CECE-SEARCH - Our Own Google"
+       echo "  search <query>   Search files"
+       echo "  index            Index files" ;;
+esac

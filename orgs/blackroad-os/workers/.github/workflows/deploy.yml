@@ -1,0 +1,77 @@
+name: Deploy Workers
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: 'Worker name to deploy (leave empty for all)'
+        required: false
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: 848cf0b18d51e0170e0d1537aec3505a
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      workers: ${{ steps.changed.outputs.workers }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          fetch-depth: 2
+      - id: changed
+        run: |
+          if [ "${{ github.event.inputs.worker }}" != "" ]; then
+            echo "workers=[\"${{ github.event.inputs.worker }}\"]" >> $GITHUB_OUTPUT
+          else
+            WORKERS=$(git diff --name-only HEAD~1 HEAD -- 'domains/*/src/index.js' | sed 's|domains/||;s|/src/index.js||' | jq -R -s -c 'split("\n")[:-1]')
+            if [ "$WORKERS" = "[]" ] || [ -z "$WORKERS" ]; then
+              # Deploy all on first push or if changes are unclear
+              WORKERS=$(ls domains/ | grep -v '_shared' | jq -R -s -c 'split("\n")[:-1]')
+            fi
+            echo "workers=$WORKERS" >> $GITHUB_OUTPUT
+          fi
+
+  deploy:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.workers != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        worker: ${{ fromJson(needs.detect-changes.outputs.workers) }}
+      fail-fast: false
+      max-parallel: 3
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '20'
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+      - name: Deploy ${{ matrix.worker }}
+        run: |
+          cd domains/${{ matrix.worker }}
+          for i in 1 2 3; do
+            wrangler deploy && break
+            echo "Attempt $i failed, waiting 15s..."
+            sleep 15
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 848cf0b18d51e0170e0d1537aec3505a
+          BR_GITHUB_TOKEN: ${{ secrets.BR_GITHUB_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  notify:
+    needs: deploy
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## Deploy Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "Workers: ${{ needs.detect-changes.outputs.workers }}" >> $GITHUB_STEP_SUMMARY

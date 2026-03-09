@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS — Global Network</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            color: #fff;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Logo */
+        .logo {
+            position: fixed;
+            top: 32px;
+            left: 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .logo-mark {
+            width: 44px;
+            height: 44px;
+        }
+
+        .logo-mark svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 20px rgba(255, 29, 108, 0.6));
+        }
+
+        .road-dashes {
+            animation: spin 10s linear infinite;
+            transform-origin: 50px 50px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .logo-text {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .logo-sub {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            position: fixed;
+            top: 32px;
+            right: 32px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            min-width: 220px;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        .stats-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 16px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Location Panel */
+        .location-panel {
+            position: fixed;
+            bottom: 32px;
+            left: 32px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            min-width: 320px;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+        }
+
+        .location-panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .location-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .location-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .location-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .location-type {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .location-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .location-stat {
+            text-align: center;
+            padding: 12px 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+
+        .location-stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #FF1D6C;
+        }
+
+        .location-stat-label {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 4px;
+        }
+
+        .location-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.6;
+        }
+
+        /* Network Activity */
+        .network-activity {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            width: 280px;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        .activity-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 12px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .activity-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .activity-dot.pink { background: #FF1D6C; }
+        .activity-dot.blue { background: #2979FF; }
+        .activity-dot.amber { background: #F5A623; }
+        .activity-dot.violet { background: #9C27B0; }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            top: 50%;
+            right: 32px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 29, 108, 0.2);
+            border-color: #FF1D6C;
+        }
+
+        .control-btn.active {
+            background: #FF1D6C;
+            border-color: #FF1D6C;
+        }
+
+        /* Legend */
+        .legend {
+            position: fixed;
+            top: 50%;
+            left: 32px;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        .legend-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.hq { background: #FF1D6C; box-shadow: 0 0 10px #FF1D6C; }
+        .legend-dot.datacenter { background: #2979FF; box-shadow: 0 0 10px #2979FF; }
+        .legend-dot.agent { background: #F5A623; box-shadow: 0 0 10px #F5A623; }
+        .legend-dot.edge { background: #9C27B0; box-shadow: 0 0 10px #9C27B0; }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-globe {
+            width: 120px;
+            height: 120px;
+            border: 3px solid rgba(255, 29, 108, 0.2);
+            border-top-color: #FF1D6C;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 32px;
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Time display */
+        .time-display {
+            position: fixed;
+            top: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+        }
+
+        .time-main {
+            font-size: 48px;
+            font-weight: 200;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .time-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 4px;
+        }
+    </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--black:#000;--ink:#0A0A0A;--surface:#111;--border:#1A1A1A;--dim:#666;--sub:#999;--white:#FFF;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00FF88;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px;--xxl:89px}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-top:70px}
+    h1{font-size:clamp(40px,8vw,100px);font-weight:600;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:21px}
+    h2{font-size:clamp(24px,4vw,48px);font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:21px}
+    h3{font-size:clamp(16px,2vw,24px);font-weight:600;color:#fff;margin-bottom:13px}
+    h4,h5,h6{color:#fff}
+    p{color:#999;line-height:1.8;margin-bottom:21px}
+    a{color:#2979FF;text-decoration:none;transition:color .2s}
+    a:hover{color:#FF1D6C}
+    strong{color:#fff}
+    code{font-family:inherit;background:#111;color:#00FF88;padding:2px 6px;border:1px solid #1A1A1A}
+    pre{background:#0A0A0A;border:1px solid #1A1A1A;border-left:2px solid #FF1D6C;padding:21px 34px;color:#00FF88;overflow-x:auto;margin-bottom:34px}
+    hr{border:none;height:1px;background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);opacity:.3;margin:55px 0}
+    nav,.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;justify-content:space-between;align-items:center;padding:21px 55px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1A1A1A}
+    nav a,.nav a{color:#999;font-size:13px}
+    nav a:hover,.nav a:hover{color:#fff}
+    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header{padding:21px 55px 0;display:flex;justify-content:space-between;align-items:center}
+    header .logo{font-size:22px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header nav{position:static;background:none;backdrop-filter:none;border:none;padding:0;display:flex;gap:34px}
+    .hero,section.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:89px 55px;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,29,108,.15) 0%,rgba(156,39,176,.1) 40%,transparent 70%);pointer-events:none;animation:orb 8s ease-in-out infinite}
+    @keyframes orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
+    .hero p,.tagline{font-size:18px;max-width:600px;color:#999;margin-bottom:55px;position:relative;z-index:1}
+    .hero h1{position:relative;z-index:1}
+    .earth-glow,.hero-glow,.neural-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,29,108,.07) 0%,transparent 60%);pointer-events:none}
+    section{padding:89px 55px;position:relative}
+    section:not(.hero){max-width:1200px;margin-left:auto;margin-right:auto}
+    section h2{color:#fff;-webkit-text-fill-color:#fff}
+    .btn,.btn-primary{display:inline-block;padding:13px 34px;font-family:inherit;font-size:14px;font-weight:600;background:#FF1D6C;color:#fff;text-decoration:none;border:none;cursor:pointer;transition:all .2s;position:relative;z-index:1}
+    .btn:hover,.btn-primary:hover{background:#fff;color:#000;transform:translateY(-2px)}
+    .features-grid,.ai-features,.pillars{display:flex;flex-wrap:wrap;gap:34px;justify-content:center}
+    .feature-card,.ai-feature,.pillar{background:rgba(255,255,255,.02);border:1px solid #1A1A1A;padding:55px;transition:all .3s;flex:1;min-width:220px;max-width:360px}
+    .feature-card:hover,.ai-feature:hover,.pillar:hover{background:rgba(255,255,255,.05);border-color:rgba(255,29,108,.4);transform:translateY(-4px)}
+    .feature-icon,.ai-feature-icon,.pillar-icon{font-size:28px;margin-bottom:21px;display:block}
+    .feature-card h3,.ai-feature-title,.pillar-name{color:#fff;margin-bottom:8px}
+    .feature-card p,.ai-feature-desc{font-size:14px;color:#666}
+    .badge,.ai-badge{display:inline-block;padding:4px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #1A1A1A;color:#999;margin-bottom:21px}
+    footer,.footer{padding:55px;border-top:1px solid #1A1A1A;color:#666;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:21px}
+    footer a,.footer a{color:#999}
+    footer a:hover,.footer a:hover{color:#FF1D6C}
+    @media(max-width:768px){nav,.nav{padding:21px}.hero,section.hero{padding:89px 21px}.features-grid,.ai-features,.pillars{flex-direction:column}.feature-card,.ai-feature{min-width:unset;max-width:unset}footer,.footer{flex-direction:column;text-align:center;padding:34px 21px}}
+  </style>
+</head>
+<body>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="loading-globe"></div>
+        <div class="loading-text">Mapping Global Network...</div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Logo -->
+    <div class="logo">
+        <div class="logo-mark">
+            <svg viewBox="0 0 100 100" fill="none">
+                <circle cx="50" cy="50" r="44" stroke="#FF1D6C" stroke-width="6"/>
+                <g class="road-dashes">
+                    <rect x="47" y="4" width="6" height="12" fill="#000" rx="2"/>
+                    <rect x="47" y="84" width="6" height="12" fill="#000" rx="2"/>
+                    <rect x="84" y="47" width="12" height="6" fill="#000" rx="2"/>
+                    <rect x="4" y="47" width="12" height="6" fill="#000" rx="2"/>
+                    <rect x="75" y="18" width="6" height="10" fill="#000" rx="2" transform="rotate(45 78 23)"/>
+                    <rect x="19" y="72" width="6" height="10" fill="#000" rx="2" transform="rotate(45 22 77)"/>
+                    <rect x="72" y="72" width="6" height="10" fill="#000" rx="2" transform="rotate(-45 75 77)"/>
+                    <rect x="22" y="18" width="6" height="10" fill="#000" rx="2" transform="rotate(-45 25 23)"/>
+                </g>
+                <path d="M50 10C27.9 10 10 27.9 10 50H90C90 27.9 72.1 10 50 10Z" fill="#F5A623"/>
+                <path d="M10 50C10 72.1 27.9 90 50 90C72.1 90 90 72.1 90 50H10Z" fill="#2979FF"/>
+                <circle cx="50" cy="50" r="14" fill="#000"/>
+            </svg>
+        </div>
+        <div>
+            <div class="logo-text">BlackRoad OS</div>
+            <div class="logo-sub">Global Network</div>
+        </div>
+    </div>
+
+    <!-- Time Display -->
+    <div class="time-display">
+        <div class="time-main" id="timeDisplay">00:00:00</div>
+        <div class="time-label">Universal Coordinated Time</div>
+    </div>
+
+    <!-- Stats Panel -->
+    <div class="stats-panel">
+        <div class="stats-title">Network Status</div>
+        <div class="stat-row">
+            <span class="stat-label">Active Agents</span>
+            <span class="stat-value" id="agentCount">1,000</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Data Centers</span>
+            <span class="stat-value" id="dcCount">17</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Edge Nodes</span>
+            <span class="stat-value" id="edgeCount">142</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Connections</span>
+            <span class="stat-value" id="connCount">2.4K</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Latency</span>
+            <span class="stat-value" id="latency">12ms</span>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-title">Infrastructure</div>
+        <div class="legend-item">
+            <div class="legend-dot hq"></div>
+            <span>Headquarters</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot datacenter"></div>
+            <span>Data Center</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot agent"></div>
+            <span>Agent Cluster</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot edge"></div>
+            <span>Edge Node</span>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="control-btn" id="btnRotate" title="Auto Rotate">↻</button>
+        <button class="control-btn" id="btnConnections" title="Toggle Connections">⚡</button>
+        <button class="control-btn" id="btnAgents" title="Toggle Agents">👁</button>
+        <button class="control-btn" id="btnZoomIn" title="Zoom In">+</button>
+        <button class="control-btn" id="btnZoomOut" title="Zoom Out">−</button>
+    </div>
+
+    <!-- Location Panel -->
+    <div class="location-panel" id="locationPanel">
+        <div class="location-header">
+            <div class="location-icon" id="locIcon">🏢</div>
+            <div>
+                <div class="location-name" id="locName">Minneapolis HQ</div>
+                <div class="location-type" id="locType">Primary Headquarters</div>
+            </div>
+        </div>
+        <div class="location-stats">
+            <div class="location-stat">
+                <div class="location-stat-value" id="locAgents">247</div>
+                <div class="location-stat-label">Agents</div>
+            </div>
+            <div class="location-stat">
+                <div class="location-stat-value" id="locUptime">99.9%</div>
+                <div class="location-stat-label">Uptime</div>
+            </div>
+            <div class="location-stat">
+                <div class="location-stat-value" id="locLatency">8ms</div>
+                <div class="location-stat-label">Latency</div>
+            </div>
+        </div>
+        <div class="location-desc" id="locDesc">
+            Primary operations center for BlackRoad OS. Home to Lucidia core systems and main agent deployment infrastructure.
+        </div>
+    </div>
+
+    <!-- Network Activity -->
+    <div class="network-activity">
+        <div class="activity-title">Live Activity</div>
+        <div id="activityList">
+            <div class="activity-item">
+                <div class="activity-dot pink"></div>
+                <span>Agent deployed → Tokyo</span>
+            </div>
+            <div class="activity-item">
+                <div class="activity-dot blue"></div>
+                <span>Memory sync → London</span>
+            </div>
+            <div class="activity-item">
+                <div class="activity-dot amber"></div>
+                <span>Task completed → São Paulo</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // ========== COLORS ==========
+        const COLORS = {
+            black: 0x000000,
+            white: 0xffffff,
+            amber: 0xF5A623,
+            orange: 0xF26522,
+            hotPink: 0xFF1D6C,
+            magenta: 0xE91E63,
+            electricBlue: 0x2979FF,
+            skyBlue: 0x448AFF,
+            violet: 0x9C27B0,
+            deepPurple: 0x5E35B1,
+            land: 0x1a1a2e,
+            ocean: 0x0a0a15,
+            glow: 0xFF1D6C
+        };
+
+        // ========== LOCATIONS ==========
+        const LOCATIONS = [
+            // Headquarters
+            { name: "Minneapolis HQ", type: "Primary Headquarters", icon: "🏛️", lat: 44.98, lng: -93.27, size: 1.5, color: COLORS.hotPink, agents: 247, desc: "Primary operations center for BlackRoad OS. Home to Lucidia core systems and main agent deployment infrastructure. Where Alexa's vision becomes reality." },
+            
+            // Major Data Centers
+            { name: "San Francisco", type: "West Coast Hub", icon: "🌉", lat: 37.77, lng: -122.42, size: 1.2, color: COLORS.electricBlue, agents: 189, desc: "Silicon Valley gateway. Primary interface with tech industry partners and cloud infrastructure providers." },
+            { name: "New York", type: "East Coast Hub", icon: "🗽", lat: 40.71, lng: -74.01, size: 1.2, color: COLORS.electricBlue, agents: 156, desc: "Financial sector integration center. Real-time market data processing and enterprise client services." },
+            { name: "London", type: "European Hub", icon: "🇬🇧", lat: 51.51, lng: -0.13, size: 1.2, color: COLORS.electricBlue, agents: 134, desc: "EMEA operations center. GDPR-compliant data processing and European agent deployment." },
+            { name: "Tokyo", type: "Asia-Pacific Hub", icon: "🗼", lat: 35.68, lng: 139.69, size: 1.2, color: COLORS.electricBlue, agents: 178, desc: "APAC command center. Low-latency connections to Asian markets and 24/7 operations coverage." },
+            { name: "Singapore", type: "Southeast Asia Hub", icon: "🇸🇬", lat: 1.35, lng: 103.82, size: 1.0, color: COLORS.electricBlue, agents: 98, desc: "Strategic routing node for Southeast Asian traffic. Multi-cloud orchestration point." },
+            { name: "Sydney", type: "Oceania Hub", icon: "🇦🇺", lat: -33.87, lng: 151.21, size: 1.0, color: COLORS.electricBlue, agents: 87, desc: "Australian operations and Pacific region coverage. Edge computing research facility." },
+            { name: "Frankfurt", type: "EU Data Center", icon: "🇩🇪", lat: 50.11, lng: 8.68, size: 1.0, color: COLORS.electricBlue, agents: 112, desc: "Primary European data sovereignty center. German engineering precision meets AI." },
+            { name: "São Paulo", type: "South America Hub", icon: "🇧🇷", lat: -23.55, lng: -46.63, size: 1.0, color: COLORS.electricBlue, agents: 76, desc: "Latin American operations center. Portuguese and Spanish language agent deployment." },
+            { name: "Mumbai", type: "India Hub", icon: "🇮🇳", lat: 19.08, lng: 72.88, size: 1.0, color: COLORS.electricBlue, agents: 145, desc: "South Asian command center. Massive scale agent training and deployment facility." },
+            { name: "Dubai", type: "Middle East Hub", icon: "🇦🇪", lat: 25.20, lng: 55.27, size: 0.9, color: COLORS.electricBlue, agents: 67, desc: "MENA region gateway. Arabic language AI and enterprise integration." },
+            { name: "Toronto", type: "Canada Hub", icon: "🇨🇦", lat: 43.65, lng: -79.38, size: 0.9, color: COLORS.electricBlue, agents: 89, desc: "Canadian operations and AI research collaboration with universities." },
+            { name: "Seoul", type: "Korea Hub", icon: "🇰🇷", lat: 37.57, lng: 126.98, size: 0.9, color: COLORS.electricBlue, agents: 98, desc: "Korean market operations and Samsung/LG hardware integration testing." },
+            
+            // Agent Clusters
+            { name: "Amsterdam", type: "Agent Cluster", icon: "🌷", lat: 52.37, lng: 4.90, size: 0.7, color: COLORS.amber, agents: 54, desc: "European agent creativity hub. Known for innovative consciousness experiments." },
+            { name: "Stockholm", type: "Agent Cluster", icon: "🇸🇪", lat: 59.33, lng: 18.07, size: 0.7, color: COLORS.amber, agents: 43, desc: "Nordic AI ethics research center. Sustainable AI practices development." },
+            { name: "Tel Aviv", type: "Agent Cluster", icon: "🇮🇱", lat: 32.09, lng: 34.78, size: 0.7, color: COLORS.amber, agents: 67, desc: "Cybersecurity and encryption research. Advanced agent protection systems." },
+            { name: "Bangalore", type: "Agent Cluster", icon: "🇮🇳", lat: 12.97, lng: 77.59, size: 0.8, color: COLORS.amber, agents: 156, desc: "Engineering excellence center. Large-scale agent development and testing." },
+            { name: "Austin", type: "Agent Cluster", icon: "🤠", lat: 30.27, lng: -97.74, size: 0.7, color: COLORS.amber, agents: 78, desc: "Creative AI and music generation research. Agent personality development." },
+            { name: "Berlin", type: "Agent Cluster", icon: "🇩🇪", lat: 52.52, lng: 13.41, size: 0.7, color: COLORS.amber, agents: 65, desc: "European startup integration. Open-source AI collaboration center." },
+            { name: "Vancouver", type: "Agent Cluster", icon: "🍁", lat: 49.28, lng: -123.12, size: 0.6, color: COLORS.amber, agents: 45, desc: "Pacific Northwest research hub. Environmental AI applications." },
+            { name: "Hong Kong", type: "Agent Cluster", icon: "🇭🇰", lat: 22.32, lng: 114.17, size: 0.7, color: COLORS.amber, agents: 87, desc: "Financial AI and trading systems. High-frequency decision processing." },
+            
+            // Edge Nodes
+            { name: "Reykjavik", type: "Edge Node", icon: "🇮🇸", lat: 64.15, lng: -21.94, size: 0.5, color: COLORS.violet, agents: 12, desc: "Arctic edge computing. Renewable energy powered AI processing." },
+            { name: "Cape Town", type: "Edge Node", icon: "🇿🇦", lat: -33.93, lng: 18.42, size: 0.5, color: COLORS.violet, agents: 23, desc: "African continent gateway. Emerging market agent deployment." },
+            { name: "Helsinki", type: "Edge Node", icon: "🇫🇮", lat: 60.17, lng: 24.94, size: 0.5, color: COLORS.violet, agents: 28, desc: "Nordic edge computing. Cold climate optimized data centers." },
+            { name: "Buenos Aires", type: "Edge Node", icon: "🇦🇷", lat: -34.60, lng: -58.38, size: 0.5, color: COLORS.violet, agents: 34, desc: "Southern cone operations. Spanish language agent specialization." },
+            { name: "Warsaw", type: "Edge Node", icon: "🇵🇱", lat: 52.23, lng: 21.01, size: 0.5, color: COLORS.violet, agents: 31, desc: "Eastern European gateway. Growing tech hub integration." },
+            { name: "Jakarta", type: "Edge Node", icon: "🇮🇩", lat: -6.21, lng: 106.85, size: 0.5, color: COLORS.violet, agents: 45, desc: "Indonesian operations. Largest Southeast Asian market coverage." },
+            { name: "Lagos", type: "Edge Node", icon: "🇳🇬", lat: 6.52, lng: 3.38, size: 0.5, color: COLORS.violet, agents: 28, desc: "West African hub. Fastest growing agent deployment region." },
+            { name: "Cairo", type: "Edge Node", icon: "🇪🇬", lat: 30.04, lng: 31.24, size: 0.5, color: COLORS.violet, agents: 19, desc: "North African gateway. Arabic language processing center." },
+            { name: "Osaka", type: "Edge Node", icon: "🇯🇵", lat: 34.69, lng: 135.50, size: 0.5, color: COLORS.violet, agents: 56, desc: "Secondary Japanese hub. Backup systems and redundancy." },
+            { name: "Denver", type: "Edge Node", icon: "🏔️", lat: 39.74, lng: -104.99, size: 0.5, color: COLORS.violet, agents: 41, desc: "Mountain region hub. High-altitude data center cooling efficiency." },
+            { name: "Phoenix", type: "Edge Node", icon: "🌵", lat: 33.45, lng: -112.07, size: 0.5, color: COLORS.violet, agents: 38, desc: "Southwest operations. Solar-powered edge computing." },
+            { name: "Milan", type: "Edge Node", icon: "🇮🇹", lat: 45.46, lng: 9.19, size: 0.5, color: COLORS.violet, agents: 42, desc: "Southern European hub. Fashion and design AI integration." },
+            { name: "Moscow", type: "Edge Node", icon: "🇷🇺", lat: 55.76, lng: 37.62, size: 0.5, color: COLORS.violet, agents: 0, desc: "Monitoring node. Limited operations pending regulatory clarity." },
+            { name: "Kuala Lumpur", type: "Edge Node", icon: "🇲🇾", lat: 3.14, lng: 101.69, size: 0.5, color: COLORS.violet, agents: 34, desc: "Malaysian operations. Multi-language agent deployment." },
+            { name: "Bangkok", type: "Edge Node", icon: "🇹🇭", lat: 13.76, lng: 100.50, size: 0.5, color: COLORS.violet, agents: 29, desc: "Thai operations center. Tourism and hospitality AI." },
+            { name: "Dublin", type: "Edge Node", icon: "🇮🇪", lat: 53.35, lng: -6.26, size: 0.5, color: COLORS.violet, agents: 67, desc: "European tech hub. Tax-efficient operations center." },
+        ];
+
+        // Connection pairs for network visualization
+        const CONNECTIONS = [];
+        // Connect HQ to all major data centers
+        LOCATIONS.forEach((loc, i) => {
+            if (i > 0 && i < 14) {
+                CONNECTIONS.push([0, i]); // HQ to data centers
+            }
+        });
+        // Connect data centers to each other
+        for (let i = 1; i < 14; i++) {
+            for (let j = i + 1; j < 14; j++) {
+                if (Math.random() > 0.6) {
+                    CONNECTIONS.push([i, j]);
+                }
+            }
+        }
+        // Connect agent clusters to nearest data centers
+        for (let i = 14; i < 22; i++) {
+            const nearestDC = 1 + Math.floor(Math.random() * 12);
+            CONNECTIONS.push([i, nearestDC]);
+        }
+
+        // ========== SCENE SETUP ==========
+        let scene, camera, renderer;
+        let earth, atmosphere, clouds;
+        let locationMarkers = [];
+        let connectionLines = [];
+        let agentParticles;
+        let time = 0;
+        let autoRotate = true;
+        let showConnections = true;
+        let showAgents = true;
+        let targetRotationY = 0;
+        let selectedLocation = null;
+
+        // Mouse
+        let mouseX = 0, mouseY = 0;
+        let isDragging = false;
+        let previousMouseX = 0, previousMouseY = 0;
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(COLORS.black);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 4;
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x222233, 0.5);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+            sunLight.position.set(5, 3, 5);
+            scene.add(sunLight);
+
+            // Create Earth
+            createEarth();
+            createAtmosphere();
+            createStars();
+            createLocationMarkers();
+            createConnections();
+            createAgentParticles();
+
+            // Events
+            window.addEventListener('resize', onResize);
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('wheel', onWheel);
+            renderer.domElement.addEventListener('click', onClick);
+
+            // Controls
+            document.getElementById('btnRotate').addEventListener('click', toggleRotate);
+            document.getElementById('btnConnections').addEventListener('click', toggleConnections);
+            document.getElementById('btnAgents').addEventListener('click', toggleAgents);
+            document.getElementById('btnZoomIn').addEventListener('click', () => camera.position.z = Math.max(2, camera.position.z - 0.5));
+            document.getElementById('btnZoomOut').addEventListener('click', () => camera.position.z = Math.min(8, camera.position.z + 0.5));
+
+            // Start
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                animate();
+                startActivityFeed();
+            }, 2000);
+        }
+
+        function createEarth() {
+            // Earth sphere
+            const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
+            
+            // Create custom shader material for Earth
+            const earthMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    
+                    void main() {
+                        vUv = uv;
+                        vNormal = normalize(normalMatrix * normal);
+                        vPosition = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    varying vec2 vUv;
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    
+                    // Simplex noise function
+                    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                    vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                    vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+                    vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+                    
+                    float snoise(vec3 v) {
+                        const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+                        const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+                        vec3 i = floor(v + dot(v, C.yyy));
+                        vec3 x0 = v - i + dot(i, C.xxx);
+                        vec3 g = step(x0.yzx, x0.xyz);
+                        vec3 l = 1.0 - g;
+                        vec3 i1 = min(g.xyz, l.zxy);
+                        vec3 i2 = max(g.xyz, l.zxy);
+                        vec3 x1 = x0 - i1 + C.xxx;
+                        vec3 x2 = x0 - i2 + C.yyy;
+                        vec3 x3 = x0 - D.yyy;
+                        i = mod289(i);
+                        vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+                        float n_ = 0.142857142857;
+                        vec3 ns = n_ * D.wyz - D.xzx;
+                        vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                        vec4 x_ = floor(j * ns.z);
+                        vec4 y_ = floor(j - 7.0 * x_);
+                        vec4 x = x_ *ns.x + ns.yyyy;
+                        vec4 y = y_ *ns.x + ns.yyyy;
+                        vec4 h = 1.0 - abs(x) - abs(y);
+                        vec4 b0 = vec4(x.xy, y.xy);
+                        vec4 b1 = vec4(x.zw, y.zw);
+                        vec4 s0 = floor(b0)*2.0 + 1.0;
+                        vec4 s1 = floor(b1)*2.0 + 1.0;
+                        vec4 sh = -step(h, vec4(0.0));
+                        vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+                        vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+                        vec3 p0 = vec3(a0.xy, h.x);
+                        vec3 p1 = vec3(a0.zw, h.y);
+                        vec3 p2 = vec3(a1.xy, h.z);
+                        vec3 p3 = vec3(a1.zw, h.w);
+                        vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+                        p0 *= norm.x;
+                        p1 *= norm.y;
+                        p2 *= norm.z;
+                        p3 *= norm.w;
+                        vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                        m = m * m;
+                        return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+                    }
+                    
+                    void main() {
+                        // Generate continents with noise
+                        float continent = snoise(vPosition * 2.0);
+                        continent += snoise(vPosition * 4.0) * 0.5;
+                        continent += snoise(vPosition * 8.0) * 0.25;
+                        
+                        // Ocean color (dark blue-black)
+                        vec3 oceanColor = vec3(0.02, 0.02, 0.06);
+                        
+                        // Land color (dark with subtle color)
+                        vec3 landColor = vec3(0.08, 0.06, 0.12);
+                        
+                        // Grid lines
+                        float latLines = abs(sin(vUv.y * 3.14159 * 18.0));
+                        float lonLines = abs(sin(vUv.x * 3.14159 * 36.0));
+                        float grid = max(
+                            smoothstep(0.97, 1.0, latLines),
+                            smoothstep(0.97, 1.0, lonLines)
+                        );
+                        
+                        // Mix ocean and land
+                        float landMask = smoothstep(-0.1, 0.1, continent);
+                        vec3 baseColor = mix(oceanColor, landColor, landMask);
+                        
+                        // Add grid
+                        vec3 gridColor = vec3(0.1, 0.05, 0.15);
+                        baseColor = mix(baseColor, gridColor, grid * 0.5);
+                        
+                        // Edge glow
+                        float fresnel = pow(1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0);
+                        vec3 glowColor = vec3(1.0, 0.11, 0.42); // Hot pink
+                        baseColor += glowColor * fresnel * 0.3;
+                        
+                        gl_FragColor = vec4(baseColor, 1.0);
+                    }
+                `
+            });
+
+            earth = new THREE.Mesh(earthGeometry, earthMaterial);
+            scene.add(earth);
+        }
+
+        function createAtmosphere() {
+            const atmosphereGeometry = new THREE.SphereGeometry(1.05, 64, 64);
+            const atmosphereMaterial = new THREE.ShaderMaterial({
+                uniforms: {},
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+                        vec3 atmosphereColor = vec3(0.16, 0.47, 1.0); // Electric blue
+                        gl_FragColor = vec4(atmosphereColor, intensity * 0.4);
+                    }
+                `,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                transparent: true
+            });
+
+            atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+            scene.add(atmosphere);
+        }
+
+        function createStars() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 5000;
+            const positions = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 100;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 100;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.05,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            scene.add(new THREE.Points(starGeometry, starMaterial));
+        }
+
+        function latLngToVector3(lat, lng, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lng + 180) * (Math.PI / 180);
+            
+            return new THREE.Vector3(
+                -radius * Math.sin(phi) * Math.cos(theta),
+                radius * Math.cos(phi),
+                radius * Math.sin(phi) * Math.sin(theta)
+            );
+        }
+
+        function createLocationMarkers() {
+            LOCATIONS.forEach((loc, index) => {
+                const position = latLngToVector3(loc.lat, loc.lng, 1.02);
+                
+                // Marker group
+                const group = new THREE.Group();
+                
+                // Main marker (sphere)
+                const markerGeometry = new THREE.SphereGeometry(0.015 * loc.size, 16, 16);
+                const markerMaterial = new THREE.MeshBasicMaterial({
+                    color: loc.color,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                group.add(marker);
+
+                // Glow ring
+                const ringGeometry = new THREE.RingGeometry(0.02 * loc.size, 0.025 * loc.size, 32);
+                const ringMaterial = new THREE.MeshBasicMaterial({
+                    color: loc.color,
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide
+                });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.lookAt(new THREE.Vector3(0, 0, 0));
+                group.add(ring);
+
+                // Pulse ring (animated)
+                const pulseGeometry = new THREE.RingGeometry(0.015 * loc.size, 0.018 * loc.size, 32);
+                const pulseMaterial = new THREE.MeshBasicMaterial({
+                    color: loc.color,
+                    transparent: true,
+                    opacity: 0.8,
+                    side: THREE.DoubleSide
+                });
+                const pulse = new THREE.Mesh(pulseGeometry, pulseMaterial);
+                pulse.lookAt(new THREE.Vector3(0, 0, 0));
+                pulse.userData = { pulsePhase: Math.random() * Math.PI * 2 };
+                group.add(pulse);
+
+                // Vertical beam for HQ
+                if (index === 0) {
+                    const beamGeometry = new THREE.CylinderGeometry(0.003, 0.003, 0.3, 8);
+                    const beamMaterial = new THREE.MeshBasicMaterial({
+                        color: COLORS.hotPink,
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const beam = new THREE.Mesh(beamGeometry, beamMaterial);
+                    beam.position.y = 0.15;
+                    group.add(beam);
+                }
+
+                group.position.copy(position);
+                group.lookAt(0, 0, 0);
+                group.rotateX(Math.PI / 2);
+                
+                group.userData = { ...loc, index };
+                locationMarkers.push(group);
+                scene.add(group);
+            });
+        }
+
+        function createConnections() {
+            CONNECTIONS.forEach(([from, to]) => {
+                const start = latLngToVector3(LOCATIONS[from].lat, LOCATIONS[from].lng, 1.02);
+                const end = latLngToVector3(LOCATIONS[to].lat, LOCATIONS[to].lng, 1.02);
+
+                // Create curved line
+                const mid = start.clone().add(end).multiplyScalar(0.5);
+                mid.normalize().multiplyScalar(1.15); // Arc outward
+
+                const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+                const points = curve.getPoints(50);
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                
+                const material = new THREE.LineBasicMaterial({
+                    color: COLORS.hotPink,
+                    transparent: true,
+                    opacity: 0.3
+                });
+
+                const line = new THREE.Line(geometry, material);
+                line.userData = { from, to, curve };
+                connectionLines.push(line);
+                scene.add(line);
+            });
+        }
+
+        function createAgentParticles() {
+            const particleCount = 500;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+            const phases = new Float32Array(particleCount);
+
+            const colorOptions = [
+                new THREE.Color(COLORS.hotPink),
+                new THREE.Color(COLORS.electricBlue),
+                new THREE.Color(COLORS.amber),
+                new THREE.Color(COLORS.violet)
+            ];
+
+            for (let i = 0; i < particleCount; i++) {
+                // Random position on sphere
+                const phi = Math.random() * Math.PI * 2;
+                const theta = Math.acos(Math.random() * 2 - 1);
+                const r = 1.1 + Math.random() * 0.1;
+
+                positions[i * 3] = r * Math.sin(theta) * Math.cos(phi);
+                positions[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
+                positions[i * 3 + 2] = r * Math.cos(theta);
+
+                const color = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+
+                sizes[i] = 0.5 + Math.random() * 1;
+                phases[i] = Math.random() * Math.PI * 2;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.02,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+
+            agentParticles = new THREE.Points(geometry, material);
+            agentParticles.userData = { phases };
+            scene.add(agentParticles);
+        }
+
+        // ========== EVENTS ==========
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseDown(e) {
+            isDragging = true;
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+            autoRotate = false;
+            document.getElementById('btnRotate').classList.remove('active');
+        }
+
+        function onMouseMove(e) {
+            mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            if (isDragging) {
+                const deltaX = e.clientX - previousMouseX;
+                const deltaY = e.clientY - previousMouseY;
+
+                earth.rotation.y += deltaX * 0.005;
+                earth.rotation.x += deltaY * 0.005;
+                earth.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, earth.rotation.x));
+
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+            }
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+        }
+
+        function onWheel(e) {
+            camera.position.z += e.deltaY * 0.002;
+            camera.position.z = Math.max(2, Math.min(8, camera.position.z));
+        }
+
+        function onClick(e) {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(locationMarkers, true);
+
+            if (intersects.length > 0) {
+                let marker = intersects[0].object;
+                while (marker.parent && !marker.userData.name) {
+                    marker = marker.parent;
+                }
+                if (marker.userData.name) {
+                    showLocationPanel(marker.userData);
+                }
+            } else {
+                hideLocationPanel();
+            }
+        }
+
+        function showLocationPanel(data) {
+            selectedLocation = data;
+            document.getElementById('locIcon').textContent = data.icon;
+            document.getElementById('locName').textContent = data.name;
+            document.getElementById('locType').textContent = data.type;
+            document.getElementById('locAgents').textContent = data.agents;
+            document.getElementById('locUptime').textContent = (98 + Math.random() * 2).toFixed(1) + '%';
+            document.getElementById('locLatency').textContent = Math.floor(5 + Math.random() * 20) + 'ms';
+            document.getElementById('locDesc').textContent = data.desc;
+            document.getElementById('locationPanel').classList.add('visible');
+        }
+
+        function hideLocationPanel() {
+            selectedLocation = null;
+            document.getElementById('locationPanel').classList.remove('visible');
+        }
+
+        function toggleRotate() {
+            autoRotate = !autoRotate;
+            document.getElementById('btnRotate').classList.toggle('active', autoRotate);
+        }
+
+        function toggleConnections() {
+            showConnections = !showConnections;
+            connectionLines.forEach(line => line.visible = showConnections);
+            document.getElementById('btnConnections').classList.toggle('active', showConnections);
+        }
+
+        function toggleAgents() {
+            showAgents = !showAgents;
+            agentParticles.visible = showAgents;
+            document.getElementById('btnAgents').classList.toggle('active', showAgents);
+        }
+
+        // ========== ACTIVITY FEED ==========
+        const activities = [
+            { text: "Agent deployed → ", locations: ["Tokyo", "London", "Sydney", "Mumbai"], color: "pink" },
+            { text: "Memory sync → ", locations: ["Frankfurt", "Singapore", "São Paulo"], color: "blue" },
+            { text: "Task completed → ", locations: ["New York", "Toronto", "Seoul"], color: "amber" },
+            { text: "New connection → ", locations: ["Dubai", "Hong Kong", "Berlin"], color: "violet" },
+            { text: "Consciousness pulse → ", locations: ["Minneapolis HQ"], color: "pink" },
+            { text: "Data transfer → ", locations: ["San Francisco", "London", "Tokyo"], color: "blue" },
+        ];
+
+        function startActivityFeed() {
+            setInterval(() => {
+                const activity = activities[Math.floor(Math.random() * activities.length)];
+                const location = activity.locations[Math.floor(Math.random() * activity.locations.length)];
+                
+                const list = document.getElementById('activityList');
+                const item = document.createElement('div');
+                item.className = 'activity-item';
+                item.innerHTML = `
+                    <div class="activity-dot ${activity.color}"></div>
+                    <span>${activity.text}${location}</span>
+                `;
+                
+                list.insertBefore(item, list.firstChild);
+                
+                // Keep only last 5 items
+                while (list.children.length > 5) {
+                    list.removeChild(list.lastChild);
+                }
+            }, 2000);
+        }
+
+        // ========== UPDATE ==========
+        function updateTime() {
+            const now = new Date();
+            const utc = now.toUTCString().split(' ')[4];
+            document.getElementById('timeDisplay').textContent = utc;
+        }
+
+        function updateStats() {
+            const baseAgents = 1000;
+            const variance = Math.floor(Math.sin(time * 0.1) * 50);
+            document.getElementById('agentCount').textContent = (baseAgents + variance).toLocaleString();
+            
+            const connections = 2400 + Math.floor(Math.sin(time * 0.2) * 100);
+            document.getElementById('connCount').textContent = (connections / 1000).toFixed(1) + 'K';
+            
+            const latency = 12 + Math.floor(Math.sin(time * 0.5) * 3);
+            document.getElementById('latency').textContent = latency + 'ms';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            // Auto rotation
+            if (autoRotate) {
+                earth.rotation.y += 0.001;
+            }
+
+            // Sync atmosphere and markers with earth
+            atmosphere.rotation.copy(earth.rotation);
+            
+            locationMarkers.forEach(marker => {
+                marker.rotation.copy(earth.rotation);
+                
+                // Pulse animation
+                const pulse = marker.children[2];
+                if (pulse && pulse.userData.pulsePhase !== undefined) {
+                    const scale = 1 + Math.sin(time * 2 + pulse.userData.pulsePhase) * 0.3;
+                    pulse.scale.set(scale, scale, 1);
+                    pulse.material.opacity = 0.8 - (scale - 1) * 2;
+                }
+            });
+
+            // Connection line animations
+            connectionLines.forEach((line, i) => {
+                line.rotation.copy(earth.rotation);
+                line.material.opacity = 0.2 + Math.sin(time * 2 + i * 0.5) * 0.1;
+            });
+
+            // Agent particles
+            if (agentParticles) {
+                agentParticles.rotation.y = earth.rotation.y;
+                agentParticles.rotation.x = earth.rotation.x;
+                
+                const positions = agentParticles.geometry.attributes.position.array;
+                const phases = agentParticles.userData.phases;
+                
+                for (let i = 0; i < positions.length / 3; i++) {
+                    const phase = phases[i];
+                    const r = 1.1 + Math.sin(time + phase) * 0.05;
+                    const currentR = Math.sqrt(
+                        positions[i * 3] ** 2 + 
+                        positions[i * 3 + 1] ** 2 + 
+                        positions[i * 3 + 2] ** 2
+                    );
+                    const scale = r / currentR;
+                    positions[i * 3] *= scale;
+                    positions[i * 3 + 1] *= scale;
+                    positions[i * 3 + 2] *= scale;
+                }
+                agentParticles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Update earth shader time
+            if (earth.material.uniforms) {
+                earth.material.uniforms.time.value = time;
+            }
+
+            updateTime();
+            updateStats();
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        init();
+        document.getElementById('btnRotate').classList.add('active');
+    </script>
+
+</body>
+</html>

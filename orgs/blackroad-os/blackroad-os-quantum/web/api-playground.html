@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Quantum API - Playground</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            padding: 34px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 55px;
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #2979FF 61.8%, #9C27B0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 34px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 34px;
+            margin-bottom: 34px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 21px;
+        }
+
+        h2 {
+            font-size: 21px;
+            color: #FF1D6C;
+            margin-bottom: 21px;
+        }
+
+        .endpoint {
+            background: rgba(245, 166, 35, 0.1);
+            border: 1px solid #F5A623;
+            border-radius: 8px;
+            padding: 13px;
+            margin-bottom: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .endpoint:hover {
+            background: rgba(245, 166, 35, 0.2);
+            transform: translateX(8px);
+        }
+
+        .endpoint-method {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 13px;
+        }
+
+        .endpoint-path {
+            color: #2979FF;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            background: #111;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 13px;
+            color: #fff;
+            font-family: 'SF Mono', monospace;
+            font-size: 14px;
+            margin-bottom: 13px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #FF1D6C 0%, #F5A623 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 13px 34px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 21px rgba(255, 29, 108, 0.5);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .response {
+            background: #111;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 13px;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.618;
+        }
+
+        .success {
+            color: #4CAF50;
+        }
+
+        .error {
+            color: #F44336;
+        }
+
+        .example {
+            background: rgba(41, 121, 255, 0.1);
+            border: 1px solid #2979FF;
+            border-radius: 8px;
+            padding: 13px;
+            margin-top: 13px;
+            font-size: 12px;
+        }
+
+        .example-title {
+            color: #2979FF;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #FF1D6C;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 21px;
+            margin-bottom: 34px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 21px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 34px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #FF1D6C 0%, #F5A623 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚛️ Quantum API Playground</h1>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalRequests">0</div>
+                <div class="stat-label">Requests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgTime">0ms</div>
+                <div class="stat-label">Avg Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">$200</div>
+                <div class="stat-label">Hardware Cost</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">20</div>
+                <div class="stat-label">Max Qubits</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Left: Endpoints -->
+            <div class="panel">
+                <h2>📡 API Endpoints</h2>
+
+                <div class="endpoint" onclick="loadExample('bell')">
+                    <span class="endpoint-method">POST</span>
+                    <span class="endpoint-path">/api/v1/algorithm</span>
+                    <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">Create Bell state (maximal entanglement)</div>
+                </div>
+
+                <div class="endpoint" onclick="loadExample('grover')">
+                    <span class="endpoint-method">POST</span>
+                    <span class="endpoint-path">/api/v1/algorithm</span>
+                    <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">Grover's search algorithm</div>
+                </div>
+
+                <div class="endpoint" onclick="loadExample('circuit')">
+                    <span class="endpoint-method">POST</span>
+                    <span class="endpoint-path">/api/v1/circuit</span>
+                    <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">Custom quantum circuit</div>
+                </div>
+
+                <div class="endpoint" onclick="loadExample('benchmark')">
+                    <span class="endpoint-method">GET</span>
+                    <span class="endpoint-path">/api/v1/benchmark</span>
+                    <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">Quantum supremacy benchmark</div>
+                </div>
+
+                <div class="endpoint" onclick="loadExample('status')">
+                    <span class="endpoint-method">GET</span>
+                    <span class="endpoint-path">/api/v1/status</span>
+                    <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">API and hardware status</div>
+                </div>
+
+                <div class="example">
+                    <div class="example-title">💡 Quick Start</div>
+                    <pre>curl -X POST http://localhost:8000/api/v1/algorithm \
+  -H "Content-Type: application/json" \
+  -d '{"algorithm": "bell", "shots": 1000}'</pre>
+                </div>
+            </div>
+
+            <!-- Right: Request/Response -->
+            <div class="panel">
+                <h2>🔧 Request Body</h2>
+                <textarea id="requestBody" placeholder="Select an endpoint from the left...">{
+  "algorithm": "bell",
+  "shots": 1000
+}</textarea>
+                <button onclick="executeRequest()" id="executeBtn">Execute Quantum Circuit</button>
+
+                <h2 style="margin-top: 34px;">📊 Response</h2>
+                <div class="response" id="response">Click "Execute" to run a quantum circuit...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const examples = {
+            bell: {
+                method: 'POST',
+                url: '/api/v1/algorithm',
+                body: {
+                    algorithm: 'bell',
+                    shots: 1000
+                }
+            },
+            grover: {
+                method: 'POST',
+                url: '/api/v1/algorithm',
+                body: {
+                    algorithm: 'grover',
+                    parameters: {
+                        n_qubits: 3,
+                        target: 5
+                    },
+                    shots: 1000
+                }
+            },
+            circuit: {
+                method: 'POST',
+                url: '/api/v1/circuit',
+                body: {
+                    n_qubits: 2,
+                    gates: [
+                        { gate: 'H', target: 0 },
+                        { gate: 'CX', target: 1, control: 0 }
+                    ],
+                    shots: 1000
+                }
+            },
+            benchmark: {
+                method: 'GET',
+                url: '/api/v1/benchmark',
+                body: null
+            },
+            status: {
+                method: 'GET',
+                url: '/api/v1/status',
+                body: null
+            }
+        };
+
+        let totalRequests = 0;
+        let totalTime = 0;
+        let currentExample = 'bell';
+
+        function loadExample(name) {
+            currentExample = name;
+            const example = examples[name];
+            if (example.body) {
+                document.getElementById('requestBody').value = JSON.stringify(example.body, null, 2);
+            } else {
+                document.getElementById('requestBody').value = 'No request body (GET request)';
+            }
+        }
+
+        async function executeRequest() {
+            const btn = document.getElementById('executeBtn');
+            const responseDiv = document.getElementById('response');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Executing...';
+
+            try {
+                const example = examples[currentExample];
+                const startTime = Date.now();
+
+                // For demo, we'll simulate the API response
+                // In production, replace with actual API call:
+                // const response = await fetch('http://localhost:8000' + example.url, {
+                //     method: example.method,
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: example.body ? JSON.stringify(example.body) : null
+                // });
+                // const data = await response.json();
+
+                // Simulated response
+                await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+
+                const executionTime = Date.now() - startTime;
+                totalRequests++;
+                totalTime += executionTime;
+
+                document.getElementById('totalRequests').textContent = totalRequests;
+                document.getElementById('avgTime').textContent = Math.round(totalTime / totalRequests) + 'ms';
+
+                const data = generateMockResponse(currentExample, executionTime);
+
+                responseDiv.innerHTML = `<span class="success">✓ Success</span><br><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                responseDiv.innerHTML = `<span class="error">✗ Error</span><br><br>${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Execute Quantum Circuit';
+            }
+        }
+
+        function generateMockResponse(type, executionTime) {
+            if (type === 'bell') {
+                return {
+                    success: true,
+                    algorithm: 'bell',
+                    execution_time_ms: executionTime,
+                    measurements: Array(1000).fill(0).map(() => Math.random() < 0.5 ? 0 : 3),
+                    probabilities: {
+                        '00': 0.498,
+                        '11': 0.502
+                    },
+                    metadata: {
+                        parameters: {},
+                        shots: 1000,
+                        hardware: false
+                    }
+                };
+            } else if (type === 'grover') {
+                return {
+                    success: true,
+                    algorithm: 'grover',
+                    execution_time_ms: executionTime,
+                    measurements: Array(1000).fill(5),
+                    probabilities: {
+                        '101': 0.95,
+                        '000': 0.02,
+                        '001': 0.01,
+                        '010': 0.01,
+                        '011': 0.01
+                    },
+                    metadata: {
+                        parameters: { n_qubits: 3, target: 5 },
+                        shots: 1000,
+                        hardware: false
+                    }
+                };
+            } else if (type === 'benchmark') {
+                return {
+                    success: true,
+                    benchmark: 'random_circuit_sampling',
+                    n_qubits: 8,
+                    depth: 8,
+                    classical_time_s: 0.53,
+                    quantum_time_s: 0.062,
+                    speedup: 8.5,
+                    quantum_advantage: true,
+                    message: 'Quantum is 8.5× faster than classical'
+                };
+            } else if (type === 'status') {
+                return {
+                    status: 'operational',
+                    api_version: '1.0.0',
+                    framework_version: '1.0.0',
+                    hardware: {
+                        available: true,
+                        devices: ['alice', 'lucidia', 'octavia'],
+                        total_qubits: 20,
+                        max_qubits_per_device: 20
+                    },
+                    capabilities: {
+                        qubits: true,
+                        qudits: true,
+                        max_qudit_dimension: Infinity,
+                        error_correction: true,
+                        machine_learning: true,
+                        supremacy: true
+                    }
+                };
+            } else {
+                return {
+                    success: true,
+                    execution_time_ms: executionTime,
+                    measurements: Array(1000).fill(0).map(() => Math.floor(Math.random() * 4)),
+                    probabilities: {
+                        '00': 0.498,
+                        '11': 0.502
+                    },
+                    metadata: {
+                        n_qubits: 2,
+                        n_gates: 2,
+                        shots: 1000
+                    }
+                };
+            }
+        }
+
+        // Load default example
+        loadExample('bell');
+    </script>
+</body>
+</html>

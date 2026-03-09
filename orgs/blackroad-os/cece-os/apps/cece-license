@@ -1,0 +1,19 @@
+#!/bin/bash
+# CECE-LICENSE v1.0 - License Generator
+mit() {
+    YEAR=$(date +%Y)
+    NAME="${1:-CECE OS}"
+    echo "MIT License
+
+Copyright (c) $YEAR $NAME
+
+Permission is hereby granted, free of charge, to any person obtaining a copy..."
+}
+apache() { echo "Apache License 2.0..."; }
+gpl() { echo "GNU General Public License v3.0..."; }
+case "$1" in
+    mit) mit "$2" ;;
+    apache) apache ;;
+    gpl) gpl ;;
+    *) echo "CECE-LICENSE: mit [name] | apache | gpl" ;;
+esac

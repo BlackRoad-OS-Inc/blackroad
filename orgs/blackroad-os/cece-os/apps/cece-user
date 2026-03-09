@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-USER v1.0 - User Manager
+list() { cut -d: -f1 /etc/passwd | sort; }
+info() { id "$1" 2>/dev/null; finger "$1" 2>/dev/null; }
+groups() { groups "$1" 2>/dev/null; }
+whoami() { whoami; id; }
+case "$1" in
+    list) list ;;
+    info) info "$2" ;;
+    groups) groups "$2" ;;
+    whoami) whoami ;;
+    *) echo "CECE-USER: list | info <user> | groups <user> | whoami" ;;
+esac

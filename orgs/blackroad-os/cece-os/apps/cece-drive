@@ -1,0 +1,162 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-DRIVE v1.0 - Our Own Cloud Storage
+#  "Who needs Google Drive when you own your bytes?"
+#═══════════════════════════════════════════════════════════════
+
+DRIVE_DIR=~/cece/drive
+FILES_DIR="$DRIVE_DIR/files"
+SHARED_DIR="$DRIVE_DIR/shared"
+TRASH_DIR="$DRIVE_DIR/trash"
+
+upload() {
+    SRC="$1"
+    
+    if [ -z "$SRC" ] || [ ! -e "$SRC" ]; then
+        echo "❌ File not found: $SRC"
+        return 1
+    fi
+    
+    FILENAME=$(basename "$SRC")
+    cp -r "$SRC" "$FILES_DIR/$FILENAME"
+    
+    SIZE=$(du -sh "$FILES_DIR/$FILENAME" | cut -f1)
+    echo "✅ Uploaded: $FILENAME ($SIZE)"
+}
+
+download() {
+    FILENAME="$1"
+    DEST="${2:-.}"
+    
+    if [ ! -e "$FILES_DIR/$FILENAME" ]; then
+        echo "❌ File not found: $FILENAME"
+        return 1
+    fi
+    
+    cp -r "$FILES_DIR/$FILENAME" "$DEST/"
+    echo "✅ Downloaded: $FILENAME to $DEST"
+}
+
+list_files() {
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║                    CECE-DRIVE                             ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    
+    TOTAL=0
+    for f in "$FILES_DIR"/*; do
+        [ -e "$f" ] || continue
+        FILENAME=$(basename "$f")
+        SIZE=$(du -sh "$f" 2>/dev/null | cut -f1)
+        
+        if [ -d "$f" ]; then
+            echo "  📁 $FILENAME/ ($SIZE)"
+        else
+            echo "  📄 $FILENAME ($SIZE)"
+        fi
+        ((TOTAL++))
+    done
+    
+    if [ $TOTAL -eq 0 ]; then
+        echo "  (empty)"
+    fi
+    
+    echo ""
+    echo "─────────────────────────────────────────────────────────────"
+    TOTAL_SIZE=$(du -sh "$FILES_DIR" 2>/dev/null | cut -f1)
+    DISK_FREE=$(df -h "$FILES_DIR" 2>/dev/null | tail -1 | awk "{print \$4}")
+    echo "  Total: $TOTAL files | Used: $TOTAL_SIZE | Free: $DISK_FREE"
+    echo ""
+}
+
+delete() {
+    FILENAME="$1"
+    
+    if [ ! -e "$FILES_DIR/$FILENAME" ]; then
+        echo "❌ File not found: $FILENAME"
+        return 1
+    fi
+    
+    mv "$FILES_DIR/$FILENAME" "$TRASH_DIR/"
+    echo "🗑️  Moved to trash: $FILENAME"
+}
+
+share() {
+    FILENAME="$1"
+    
+    if [ ! -e "$FILES_DIR/$FILENAME" ]; then
+        echo "❌ File not found: $FILENAME"
+        return 1
+    fi
+    
+    SHARE_ID=$(date +%s | md5sum | head -c 8)
+    ln -s "$FILES_DIR/$FILENAME" "$SHARED_DIR/$SHARE_ID"
+    
+    echo ""
+    echo "🔗 Share link created!"
+    echo "   ID: $SHARE_ID"
+    echo "   Path: $SHARED_DIR/$SHARE_ID"
+    echo "   Access: scp cecilia:$SHARED_DIR/$SHARE_ID ./"
+    echo ""
+}
+
+sync_folder() {
+    LOCAL="$1"
+    
+    if [ -z "$LOCAL" ]; then
+        echo "Usage: cece-drive sync <local-folder>"
+        return 1
+    fi
+    
+    echo "🔄 Syncing $LOCAL to CECE-DRIVE..."
+    rsync -av --progress "$LOCAL/" "$FILES_DIR/$(basename $LOCAL)/"
+    echo "✅ Sync complete!"
+}
+
+case "$1" in
+    upload|up|put)
+        upload "$2"
+        ;;
+    download|down|get)
+        download "$2" "$3"
+        ;;
+    list|ls)
+        list_files
+        ;;
+    delete|rm|remove)
+        delete "$2"
+        ;;
+    share)
+        share "$2"
+        ;;
+    sync)
+        sync_folder "$2"
+        ;;
+    trash)
+        echo "🗑️  Trash:"
+        ls -la "$TRASH_DIR"
+        ;;
+    empty-trash)
+        rm -rf "$TRASH_DIR"/*
+        echo "🗑️  Trash emptied"
+        ;;
+    *)
+        echo "╔═══════════════════════════════════════════════════════════╗"
+        echo "║              CECE-DRIVE v1.0                              ║"
+        echo "║         Our Own Cloud Storage                             ║"
+        echo "║   \"Who needs Google Drive when you own your bytes?\"       ║"
+        echo "╚═══════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "Usage: cece-drive <command>"
+        echo ""
+        echo "  upload <file>   - Upload a file"
+        echo "  download <file> - Download a file"
+        echo "  list            - List all files"
+        echo "  delete <file>   - Move to trash"
+        echo "  share <file>    - Create share link"
+        echo "  sync <folder>   - Sync local folder"
+        echo "  trash           - View trash"
+        echo "  empty-trash     - Empty trash"
+        ;;
+esac

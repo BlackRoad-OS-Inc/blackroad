@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-MARKDOWN v1.0 - Markdown Tools
+to_html() {
+    if command -v pandoc &>/dev/null; then
+        pandoc "$1" -o "${1%.md}.html"
+    else
+        python3 -c "import markdown; print(markdown.markdown(open('$1').read()))" 2>/dev/null
+    fi
+}
+preview() { cat "$1"; }
+toc() { grep "^#" "$1"; }
+case "$1" in
+    html) to_html "$2" ;;
+    preview) preview "$2" ;;
+    toc) toc "$2" ;;
+    *) echo "CECE-MARKDOWN: html <file> | preview <file> | toc <file>" ;;
+esac

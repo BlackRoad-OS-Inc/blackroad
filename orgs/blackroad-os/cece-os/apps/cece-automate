@@ -1,0 +1,130 @@
+#!/bin/bash
+# CECE-AUTOMATE v1.0 - Workflow Automation
+# Our Own Zapier/Make
+
+AUTO_DIR=~/cece/automations
+mkdir -p "$AUTO_DIR/workflows" "$AUTO_DIR/logs"
+
+create_workflow() {
+    NAME="$1"
+    
+    cat > "$AUTO_DIR/workflows/$NAME.workflow" << WFEOF
+#!/bin/bash
+# Workflow: $NAME
+# Created: $(date -Iseconds)
+
+# Add your automation steps here:
+echo "Running workflow: $NAME"
+
+# Example steps:
+# step_1() { echo "Step 1"; }
+# step_2() { echo "Step 2"; }
+# step_1 && step_2
+WFEOF
+    chmod +x "$AUTO_DIR/workflows/$NAME.workflow"
+    
+    echo "✅ Workflow created: $NAME"
+    echo "   Edit: nano $AUTO_DIR/workflows/$NAME.workflow"
+    echo "   Run: cece-automate run $NAME"
+}
+
+run_workflow() {
+    NAME="$1"
+    WF="$AUTO_DIR/workflows/$NAME.workflow"
+    LOG="$AUTO_DIR/logs/${NAME}_$(date +%Y%m%d_%H%M%S).log"
+    
+    if [ ! -f "$WF" ]; then
+        echo "Workflow not found: $NAME"
+        return
+    fi
+    
+    echo "🔄 Running workflow: $NAME"
+    bash "$WF" 2>&1 | tee "$LOG"
+    echo ""
+    echo "✅ Complete! Log: $LOG"
+}
+
+schedule() {
+    NAME="$1"
+    SCHEDULE="$2"
+    WF="$AUTO_DIR/workflows/$NAME.workflow"
+    
+    echo "📅 To schedule  to run :"
+    echo ""
+    echo "Add this to crontab (crontab -e):"
+    echo "$SCHEDULE $WF >> $AUTO_DIR/logs/$NAME.log 2>&1"
+    echo ""
+    echo "Examples:"
+    echo "  Every hour:    0 * * * *"
+    echo "  Every day 9am: 0 9 * * *"
+    echo "  Every Monday:  0 0 * * 1"
+}
+
+list_workflows() {
+    echo "🔄 WORKFLOWS"
+    echo "═══════════════════════════════════════"
+    for w in "$AUTO_DIR/workflows"/*.workflow 2>/dev/null; do
+        [ -f "$w" ] || continue
+        NAME=$(basename "$w" .workflow)
+        echo "  🔄 $NAME"
+    done
+}
+
+# Pre-built automations
+template() {
+    TYPE="$1"
+    NAME="$2"
+    
+    case "$TYPE" in
+        backup)
+            cat > "$AUTO_DIR/workflows/$NAME.workflow" << BKEOF
+#!/bin/bash
+# Backup automation
+SOURCE="${1:-$HOME}"
+DEST="$HOME/cece/backups"
+DATE=$(date +%Y%m%d)
+tar -czf "$DEST/backup_$DATE.tar.gz" "$SOURCE"
+echo "✅ Backup complete: backup_$DATE.tar.gz"
+BKEOF
+            ;;
+        git-sync)
+            cat > "$AUTO_DIR/workflows/$NAME.workflow" << GSEOF
+#!/bin/bash
+# Git sync automation
+cd "${1:-.}"
+git add -A
+git commit -m "Auto-sync $(date)"
+git push
+echo "✅ Git synced"
+GSEOF
+            ;;
+        cleanup)
+            cat > "$AUTO_DIR/workflows/$NAME.workflow" << CLEOF
+#!/bin/bash
+# Cleanup automation
+find /tmp -type f -mtime +7 -delete 2>/dev/null
+echo "✅ Cleaned up old files"
+CLEOF
+            ;;
+    esac
+    chmod +x "$AUTO_DIR/workflows/$NAME.workflow" 2>/dev/null
+    echo "✅ Template workflow created: $NAME ($TYPE)"
+}
+
+case "$1" in
+    create|new) create_workflow "$2" ;;
+    run) run_workflow "$2" ;;
+    schedule) schedule "$2" "$3" ;;
+    list) list_workflows ;;
+    template) template "$2" "$3" ;;
+    *) echo "🖤 CECE-AUTOMATE - Workflow Automation"
+       echo ""
+       echo "Commands:"
+       echo "  create <name>              Create workflow"
+       echo "  run <name>                 Run workflow"
+       echo "  schedule <name> <cron>     Schedule workflow"
+       echo "  list                       List workflows"
+       echo "  template <type> <name>     Create from template"
+       echo ""
+       echo "Templates: backup, git-sync, cleanup" ;;
+esac

@@ -1,0 +1,31 @@
+#!/bin/bash
+# CECE-FORMS v1.0 - Form Builder
+FORMS_DIR=~/cece/forms
+
+create() {
+    NAME="$1"
+    FIELDS="$2"
+    FORM_FILE="$FORMS_DIR/$NAME.html"
+    
+    echo "<!DOCTYPE html><html><head><title>$NAME</title>" > "$FORM_FILE"
+    echo "<style>body{font-family:system-ui;max-width:500px;margin:40px auto;padding:20px;background:#0a0a0a;color:#fff;}" >> "$FORM_FILE"
+    echo "input,textarea{width:100%;padding:12px;margin:10px 0;border:1px solid #333;background:#1a1a1a;color:#fff;border-radius:8px;}" >> "$FORM_FILE"
+    echo "button{background:linear-gradient(90deg,#F5A623,#FF1D6C);color:#fff;padding:15px 30px;border:none;border-radius:8px;cursor:pointer;font-size:16px;width:100%;}" >> "$FORM_FILE"
+    echo "label{color:#aaa;}</style></head><body>" >> "$FORM_FILE"
+    echo "<h1 style=\"color:#FF1D6C;\">$NAME</h1><form action=\"/submit\" method=\"post\">" >> "$FORM_FILE"
+    
+    IFS=","
+    for field in $FIELDS; do
+        echo "<label>$field</label><input type=\"text\" name=\"$field\" required>" >> "$FORM_FILE"
+    done
+    
+    echo "<button type=\"submit\">Submit</button></form>" >> "$FORM_FILE"
+    echo "<p style=\"color:#666;margin-top:20px;\">Powered by CECE Forms</p></body></html>" >> "$FORM_FILE"
+    echo "Form: $FORM_FILE"
+}
+
+case "$1" in
+    create) create "$2" "$3" ;;
+    list) ls "$FORMS_DIR"/*.html 2>/dev/null || echo "(none)" ;;
+    *) echo "CECE-FORMS: create <name> <field1,field2,field3>" ;;
+esac

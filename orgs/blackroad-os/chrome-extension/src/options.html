@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlackRoad Settings</title>
+  <style>
+    :root {
+      --hot-pink: #FF1D6C;
+      --amber: #F5A623;
+      --electric-blue: #2979FF;
+      --violet: #9C27B0;
+      --black: #0a0a0a;
+      --dark: #1a1a1a;
+      --gray: #2a2a2a;
+      --light-gray: #888;
+      --white: #ffffff;
+      --gradient: linear-gradient(135deg, var(--amber), var(--hot-pink), var(--violet), var(--electric-blue));
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--black);
+      color: var(--white);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      font-size: 32px;
+      font-weight: 700;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--light-gray);
+      font-size: 14px;
+    }
+
+    .card {
+      background: var(--dark);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      font-size: 16px;
+      margin-bottom: 16px;
+      color: var(--white);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--light-gray);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      background: var(--gray);
+      border: 1px solid var(--gray);
+      border-radius: 6px;
+      color: var(--white);
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: var(--hot-pink);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--hot-pink);
+    }
+
+    .checkbox-group label {
+      margin-bottom: 0;
+      color: var(--white);
+      font-size: 14px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--gradient);
+      color: var(--white);
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--gray);
+      color: var(--white);
+      margin-top: 12px;
+      width: 100%;
+    }
+
+    .btn-secondary:hover {
+      background: var(--light-gray);
+    }
+
+    .status {
+      text-align: center;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    .status.success {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4CAF50;
+    }
+
+    .status.error {
+      background: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: var(--light-gray);
+      margin-top: 6px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--gray);
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">BlackRoad</div>
+      <div class="subtitle">Extension Settings</div>
+    </div>
+
+    <div class="card">
+      <h2>API Configuration</h2>
+      <div class="form-group">
+        <label for="apiKey">API Key</label>
+        <input type="password" id="apiKey" placeholder="br_xxxxxxxxxxxxxxxx">
+        <p class="help-text">Get your API key from <a href="https://console.blackroad.io/settings/api" target="_blank" style="color: var(--hot-pink);">console.blackroad.io</a></p>
+      </div>
+      <div class="form-group">
+        <label for="apiUrl">API URL</label>
+        <input type="text" id="apiUrl" placeholder="https://api.blackroad.io/v1">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Notifications</h2>
+      <div class="form-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="notifications" checked>
+          <label for="notifications">Enable notifications</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="urgentOnly">
+          <label for="urgentOnly">Only notify for urgent tasks</label>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="saveBtn">Save Settings</button>
+    <button class="btn btn-secondary" id="testBtn">Test Connection</button>
+
+    <div class="status" id="status" style="display: none;"></div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

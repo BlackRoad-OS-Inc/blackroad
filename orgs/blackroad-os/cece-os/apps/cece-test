@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-TEST v1.0 - Test Runner
+python_test() { pytest "$1" 2>/dev/null || python3 -m unittest "$1"; }
+node_test() { npm test 2>/dev/null || echo "No tests configured"; }
+bash_test() { bash "$1" && echo "✅ Test passed" || echo "❌ Test failed"; }
+case "$1" in
+    python) python_test "$2" ;;
+    node) node_test ;;
+    bash) bash_test "$2" ;;
+    *) echo "CECE-TEST: python <file> | node | bash <file>" ;;
+esac

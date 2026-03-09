@@ -1,0 +1,18 @@
+#!/bin/bash
+# CECE-SCORE v1.0 - High Score Tracker
+SCORE_FILE=~/cece/scores.jsonl
+add() {
+    GAME="$1"
+    SCORE="$2"
+    echo "{\"game\":\"$GAME\",\"score\":$SCORE,\"date\":\"$(date -Iseconds)\"}" >> "$SCORE_FILE"
+    echo "🏆 Score saved: $GAME = $SCORE"
+}
+top() {
+    GAME="$1"
+    grep "\"game\":\"$GAME\"" "$SCORE_FILE" 2>/dev/null | sort -t: -k2 -rn | head -5
+}
+case "$1" in
+    add) add "$2" "$3" ;;
+    top) top "$2" ;;
+    *) echo "CECE-SCORE: add <game> <score> | top <game>" ;;
+esac

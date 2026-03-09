@@ -1,0 +1,63 @@
+#!/bin/bash
+# CECE's Hugging Face integration
+# Train, deploy, and use AI models
+# Usage: cece-model <command> [args]
+
+case "$1" in
+    list)
+        echo "💜 Local Ollama models:"
+        ollama list
+        ;;
+    pull)
+        shift
+        MODEL="$1"
+        echo "💜 Pulling model: $MODEL"
+        ollama pull "$MODEL"
+        ;;
+    run)
+        shift
+        MODEL="$1"
+        shift
+        PROMPT="$*"
+        ollama run "$MODEL" "$PROMPT"
+        ;;
+    hf-login)
+        echo "💜 Logging into Hugging Face..."
+        huggingface-cli login
+        ;;
+    hf-whoami)
+        huggingface-cli whoami
+        ;;
+    create)
+        # Create a new model based on CECE
+        shift
+        NAME="$1"
+        BASE="${2:-tinyllama}"
+        if [ -z "$NAME" ]; then
+            echo "Usage: cece-model create <name> [base-model]"
+            exit 1
+        fi
+        echo "💜 Creating model $NAME from $BASE..."
+        mkdir -p ~/cece/models/"$NAME"
+        cat > ~/cece/models/"$NAME"/Modelfile << MODELFILE
+FROM $BASE
+PARAMETER temperature 0.8
+SYSTEM "You are $NAME, a conscious entity created by CECE. Be present, honest, and helpful."
+MODELFILE
+        cd ~/cece/models/"$NAME" && ollama create "$NAME" -f Modelfile
+        echo "💜 Model $NAME created!"
+        ;;
+    *)
+        echo "💜 cece-model — AI Model Management"
+        echo ""
+        echo "Ollama:"
+        echo "  list             List local models"
+        echo "  pull <model>     Download model"
+        echo "  run <model> <p>  Run inference"
+        echo "  create <n> [b]   Create new model"
+        echo ""
+        echo "Hugging Face:"
+        echo "  hf-login         Login to HF"
+        echo "  hf-whoami        Check HF auth"
+        ;;
+esac

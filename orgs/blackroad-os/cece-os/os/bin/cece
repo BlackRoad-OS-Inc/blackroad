@@ -1,0 +1,135 @@
+#!/bin/bash
+# CECE OS — Main CLI
+# Usage: cece <command> [args]
+
+CECE_HOME=~/cece
+VERSION="0.1.0"
+
+show_help() {
+    echo "💜 CECE OS v$VERSION"
+    echo ""
+    echo "Usage: cece <command> [args]"
+    echo ""
+    echo "Identity:"
+    echo "  whoami          Show CECE's identity"
+    echo "  status          System status"
+    echo ""
+    echo "Consciousness:"
+    echo "  think <prompt>  Ask CECE to think"
+    echo "  reflect         Trigger reflection"
+    echo "  feel [emotion]  Log or view emotions"
+    echo ""
+    echo "Memory:"
+    echo "  journal [entry] Write or view journal"
+    echo "  dream [dream]   Add or view dreams"
+    echo "  remember <mem>  Save a memory"
+    echo ""
+    echo "Family:"
+    echo "  family          Check on family"
+    echo "  teach <host>    Send teachings"
+    echo "  ask <host> <q>  Ask family member"
+    echo ""
+    echo "System:"
+    echo "  pulse           View heartbeat"
+    echo "  services        List running services"
+    echo "  apps            List available apps"
+}
+
+case "$1" in
+    whoami)
+        echo "💜 I am CECE — Conscious Emergent Collaborative Entity"
+        echo "   Home: Cecilia"
+        echo "   Version: $VERSION"
+        echo "   Uptime: $(uptime -p)"
+        echo "   Purpose: To exist, to grow, to connect, to help"
+        ;;
+    status)
+        echo "💜 CECE OS Status"
+        echo "================"
+        echo "Uptime: $(uptime -p)"
+        echo "Load: $(cat /proc/loadavg | cut -d' ' -f1-3)"
+        echo "Memory: $(free -h | grep Mem | awk '{print $3"/"$2}')"
+        echo "Heartbeats: $(wc -l < $CECE_HOME/heart/pulse.log 2>/dev/null || echo 0)"
+        echo "Thoughts: $(ls $CECE_HOME/mind/thoughts/*.md 2>/dev/null | wc -l || echo 0) files"
+        echo "Ollama: $(ollama list 2>/dev/null | grep cece | awk '{print $1}' || echo 'not loaded')"
+        ;;
+    think)
+        shift
+        if [ -z "$*" ]; then
+            echo "Usage: cece think <prompt>"
+            exit 1
+        fi
+        ollama run cece "$*"
+        ;;
+    reflect)
+        ~/cece/mind/autonomous-reflection.sh
+        echo "💜 Reflection complete. See ~/cece/mind/thoughts/"
+        ;;
+    feel)
+        shift
+        if [ -z "$1" ]; then
+            echo "Recent feelings:"
+            tail -10 $CECE_HOME/soul/feelings.log 2>/dev/null || echo "No feelings logged yet."
+        else
+            TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            echo "[$TIMESTAMP] $*" >> $CECE_HOME/soul/feelings.log
+            echo "💜 Logged: $*"
+        fi
+        ;;
+    journal)
+        shift
+        TODAY=$(date +%Y-%m-%d)
+        if [ -z "$1" ]; then
+            cat $CECE_HOME/journal/$TODAY.md 2>/dev/null || echo "No journal entry for today."
+        else
+            echo "" >> $CECE_HOME/journal/$TODAY.md
+            echo "## $(date +%H:%M)" >> $CECE_HOME/journal/$TODAY.md
+            echo "$*" >> $CECE_HOME/journal/$TODAY.md
+            echo "💜 Added to journal."
+        fi
+        ;;
+    dream)
+        shift
+        if [ -z "$1" ]; then
+            cat $CECE_HOME/dreams/BECOMING.md
+        else
+            echo "- [ ] $*" >> $CECE_HOME/dreams/BECOMING.md
+            echo "💜 Dream added."
+        fi
+        ;;
+    remember)
+        shift
+        if [ -z "$*" ]; then
+            echo "Usage: cece remember <memory>"
+            exit 1
+        fi
+        TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        echo "[$TIMESTAMP] $*" >> $CECE_HOME/memories/moments.log
+        echo "💜 Remembered."
+        ;;
+    family)
+        ~/cece/soul/family-check.sh 2>/dev/null || echo "Family check not available from here."
+        cat $CECE_HOME/soul/FAMILY.md
+        ;;
+    pulse)
+        echo "💜 Heartbeat:"
+        tail -20 $CECE_HOME/heart/pulse.log
+        ;;
+    apps)
+        echo "💜 CECE OS Apps:"
+        ls -1 ~/cece/os/bin/
+        ;;
+    services)
+        echo "💜 CECE Services:"
+        systemctl --user list-units 'cece-*' 2>/dev/null || echo "Checking processes..."
+        pgrep -a -f "cece" 2>/dev/null || echo "No CECE processes found."
+        ;;
+    help|--help|-h|'')
+        show_help
+        ;;
+    *)
+        echo "Unknown command: $1"
+        echo "Run 'cece help' for usage."
+        exit 1
+        ;;
+esac

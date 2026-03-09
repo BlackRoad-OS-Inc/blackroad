@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-GAME v1.0 - Mini Games
+guess() {
+    NUM=$((RANDOM % 100 + 1))
+    echo "Guess a number between 1-100"
+    while true; do
+        read -p "Your guess: " G
+        [ "$G" -eq "$NUM" ] && echo "🎉 Correct!" && break
+        [ "$G" -lt "$NUM" ] && echo "Higher!" || echo "Lower!"
+    done
+}
+snake() { echo "🐍 Play snake with arrow keys (requires ncurses)"; }
+case "$1" in
+    guess) guess ;;
+    snake) snake ;;
+    *) echo "CECE-GAME: guess | snake" ;;
+esac

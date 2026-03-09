@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS — Earth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI */
+        .ui {
+            position: fixed;
+            z-index: 100;
+        }
+
+        /* Logo */
+        .logo {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 20px;
+            border-radius: 50px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #000;
+            border-radius: 50%;
+        }
+
+        .logo-text {
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px 24px;
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 200px;
+        }
+
+        .info-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+        }
+
+        .info-value {
+            color: #fff;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        /* Location */
+        .location-panel {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 16px 24px;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .location-panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .location-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .location-coords {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'SF Mono', monospace;
+        }
+
+        .location-info {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 8px;
+            max-width: 280px;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ctrl-btn {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(255, 29, 108, 0.3);
+            border-color: #FF1D6C;
+            transform: scale(1.1);
+        }
+
+        .ctrl-btn.active {
+            background: #FF1D6C;
+            border-color: #FF1D6C;
+        }
+
+        /* Network Status */
+        .network-panel {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 24px;
+            border-radius: 50px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .network-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .network-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .network-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .network-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-earth {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a4d2e 0%, #2d5a27 30%, #1e3a5f 60%, #0d2137 100%);
+            box-shadow: 
+                inset -20px -20px 40px rgba(0,0,0,0.5),
+                0 0 60px rgba(100, 200, 255, 0.3);
+            animation: rotate 4s linear infinite;
+            position: relative;
+        }
+
+        .loading-earth::before {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1), transparent 50%);
+        }
+
+        @keyframes rotate {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 32px;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .loading-sub {
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .loading-bar {
+            width: 200px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1px;
+            margin-top: 24px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #FF1D6C, #F5A623);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #fff;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 200;
+            white-space: nowrap;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="loading-earth"></div>
+        <div class="loading-text">Loading Earth</div>
+        <div class="loading-sub">Downloading satellite imagery...</div>
+        <div class="loading-bar">
+            <div class="loading-progress" id="loadingProgress"></div>
+        </div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Logo -->
+    <div class="logo">
+        <div class="logo-icon"></div>
+        <span class="logo-text">BlackRoad Earth</span>
+    </div>
+
+    <!-- Network Status -->
+    <div class="network-panel">
+        <div class="network-stat">
+            <div class="network-dot"></div>
+            <span class="network-label">Agents</span>
+            <span class="network-value" id="agentCount">1,000</span>
+        </div>
+        <div class="network-stat">
+            <div class="network-dot" style="background: #2979FF;"></div>
+            <span class="network-label">Nodes</span>
+            <span class="network-value" id="nodeCount">37</span>
+        </div>
+        <div class="network-stat">
+            <div class="network-dot" style="background: #F5A623;"></div>
+            <span class="network-label">Uptime</span>
+            <span class="network-value">99.9%</span>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <div class="info-title">Earth Statistics</div>
+        <div class="info-row">
+            <span class="info-label">Rotation</span>
+            <span class="info-value" id="rotation">0.00°</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Time (UTC)</span>
+            <span class="info-value" id="utcTime">00:00:00</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Sun Position</span>
+            <span class="info-value" id="sunPos">Day</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Cloud Cover</span>
+            <span class="info-value" id="cloudCover">62%</span>
+        </div>
+    </div>
+
+    <!-- Location Panel -->
+    <div class="location-panel" id="locationPanel">
+        <div class="location-name" id="locName">Minneapolis, USA</div>
+        <div class="location-coords" id="locCoords">44.98°N, 93.27°W</div>
+        <div class="location-info" id="locInfo">BlackRoad OS Headquarters</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="ctrl-btn active" id="btnRotate" title="Auto Rotate">🔄</button>
+        <button class="ctrl-btn" id="btnClouds" title="Toggle Clouds">☁️</button>
+        <button class="ctrl-btn" id="btnNight" title="Toggle Night Lights">🌃</button>
+        <button class="ctrl-btn" id="btnNodes" title="Toggle Network">📡</button>
+        <button class="ctrl-btn" id="btnAtmo" title="Toggle Atmosphere">🌍</button>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // ============ CONFIG ============
+        const EARTH_RADIUS = 100;
+        const CLOUD_RADIUS = 102;
+        const ATMO_RADIUS = 115;
+        
+        // NASA Blue Marble textures (using reliable CDN sources)
+        const TEXTURES = {
+            earth: 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+            bump: 'https://unpkg.com/three-globe/example/img/earth-topology.png',
+            specular: 'https://unpkg.com/three-globe/example/img/earth-water.png',
+            clouds: 'https://unpkg.com/three-globe/example/img/earth-clouds.png',
+            night: 'https://unpkg.com/three-globe/example/img/earth-night.jpg'
+        };
+
+        // BlackRoad network locations
+        const LOCATIONS = [
+            { name: "Minneapolis HQ", lat: 44.98, lng: -93.27, type: "hq", info: "Primary Operations Center" },
+            { name: "San Francisco", lat: 37.77, lng: -122.42, type: "dc", info: "West Coast Hub" },
+            { name: "New York", lat: 40.71, lng: -74.01, type: "dc", info: "East Coast Hub" },
+            { name: "London", lat: 51.51, lng: -0.13, type: "dc", info: "European Hub" },
+            { name: "Tokyo", lat: 35.68, lng: 139.69, type: "dc", info: "Asia-Pacific Hub" },
+            { name: "Singapore", lat: 1.35, lng: 103.82, type: "dc", info: "Southeast Asia Hub" },
+            { name: "Sydney", lat: -33.87, lng: 151.21, type: "dc", info: "Oceania Hub" },
+            { name: "Frankfurt", lat: 50.11, lng: 8.68, type: "dc", info: "EU Data Center" },
+            { name: "São Paulo", lat: -23.55, lng: -46.63, type: "dc", info: "South America Hub" },
+            { name: "Mumbai", lat: 19.08, lng: 72.88, type: "dc", info: "India Hub" },
+            { name: "Dubai", lat: 25.20, lng: 55.27, type: "node", info: "Middle East Gateway" },
+            { name: "Toronto", lat: 43.65, lng: -79.38, type: "node", info: "Canada Hub" },
+            { name: "Seoul", lat: 37.57, lng: 126.98, type: "node", info: "Korea Hub" },
+            { name: "Amsterdam", lat: 52.37, lng: 4.90, type: "node", info: "European Node" },
+            { name: "Stockholm", lat: 59.33, lng: 18.07, type: "node", info: "Nordic Node" },
+            { name: "Tel Aviv", lat: 32.09, lng: 34.78, type: "node", info: "Security Research" },
+            { name: "Bangalore", lat: 12.97, lng: 77.59, type: "node", info: "Engineering Center" },
+            { name: "Austin", lat: 30.27, lng: -97.74, type: "node", info: "Creative AI Lab" },
+            { name: "Berlin", lat: 52.52, lng: 13.41, type: "node", info: "Open Source Hub" },
+            { name: "Hong Kong", lat: 22.32, lng: 114.17, type: "node", info: "Financial AI" },
+            { name: "Vancouver", lat: 49.28, lng: -123.12, type: "edge", info: "Pacific Northwest" },
+            { name: "Dublin", lat: 53.35, lng: -6.26, type: "edge", info: "European Tech Hub" },
+            { name: "Cape Town", lat: -33.93, lng: 18.42, type: "edge", info: "Africa Gateway" },
+            { name: "Buenos Aires", lat: -34.60, lng: -58.38, type: "edge", info: "South America Node" },
+            { name: "Jakarta", lat: -6.21, lng: 106.85, type: "edge", info: "Indonesia Hub" },
+            { name: "Lagos", lat: 6.52, lng: 3.38, type: "edge", info: "West Africa Hub" },
+            { name: "Cairo", lat: 30.04, lng: 31.24, type: "edge", info: "North Africa Gateway" },
+            { name: "Moscow", lat: 55.76, lng: 37.62, type: "edge", info: "Eastern Europe" },
+            { name: "Bangkok", lat: 13.76, lng: 100.50, type: "edge", info: "Thailand Hub" },
+            { name: "Osaka", lat: 34.69, lng: 135.50, type: "edge", info: "Japan Backup" },
+            { name: "Denver", lat: 39.74, lng: -104.99, type: "edge", info: "Mountain Region" },
+            { name: "Phoenix", lat: 33.45, lng: -112.07, type: "edge", info: "Southwest Hub" },
+            { name: "Milan", lat: 45.46, lng: 9.19, type: "edge", info: "Southern Europe" },
+            { name: "Warsaw", lat: 52.23, lng: 21.01, type: "edge", info: "Eastern EU" },
+            { name: "Helsinki", lat: 60.17, lng: 24.94, type: "edge", info: "Nordic Edge" },
+            { name: "Reykjavik", lat: 64.15, lng: -21.94, type: "edge", info: "Arctic Node" },
+            { name: "Kuala Lumpur", lat: 3.14, lng: 101.69, type: "edge", info: "Malaysia Hub" }
+        ];
+
+        // ============ SCENE ============
+        let scene, camera, renderer;
+        let earth, clouds, atmosphere, nightLights;
+        let markers = [], connections = [];
+        let starField;
+        
+        let time = 0;
+        let autoRotate = true;
+        let showClouds = true;
+        let showNight = true;
+        let showNodes = true;
+        let showAtmosphere = true;
+        
+        let isDragging = false;
+        let previousMouse = { x: 0, y: 0 };
+        let spherical = { theta: 0, phi: Math.PI / 3, radius: 300 };
+        
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let hoveredMarker = null;
+
+        // ============ INIT ============
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+            updateCamera();
+
+            // Renderer - Maximum quality
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                powerPreference: "high-performance",
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Load textures and create world
+            loadTextures();
+
+            // Events
+            window.addEventListener('resize', onResize);
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('wheel', onWheel);
+            renderer.domElement.addEventListener('click', onClick);
+            
+            // Touch events
+            renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+            renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+            renderer.domElement.addEventListener('touchend', onTouchEnd);
+
+            // Controls
+            document.getElementById('btnRotate').addEventListener('click', () => toggleOption('rotate'));
+            document.getElementById('btnClouds').addEventListener('click', () => toggleOption('clouds'));
+            document.getElementById('btnNight').addEventListener('click', () => toggleOption('night'));
+            document.getElementById('btnNodes').addEventListener('click', () => toggleOption('nodes'));
+            document.getElementById('btnAtmo').addEventListener('click', () => toggleOption('atmosphere'));
+        }
+
+        // ============ TEXTURES ============
+        function loadTextures() {
+            const loader = new THREE.TextureLoader();
+            const loadingManager = new THREE.LoadingManager();
+            
+            let loaded = 0;
+            const total = 5;
+            
+            loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+                const progress = (itemsLoaded / itemsTotal) * 100;
+                document.getElementById('loadingProgress').style.width = progress + '%';
+            };
+
+            loadingManager.onLoad = () => {
+                setTimeout(() => {
+                    document.getElementById('loading').classList.add('hidden');
+                    animate();
+                }, 500);
+            };
+
+            const texLoader = new THREE.TextureLoader(loadingManager);
+
+            // Load all textures
+            const earthTex = texLoader.load(TEXTURES.earth);
+            const bumpTex = texLoader.load(TEXTURES.bump);
+            const specTex = texLoader.load(TEXTURES.specular);
+            const cloudTex = texLoader.load(TEXTURES.clouds);
+            const nightTex = texLoader.load(TEXTURES.night);
+
+            // Set texture quality
+            [earthTex, bumpTex, specTex, cloudTex, nightTex].forEach(tex => {
+                tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            });
+
+            // Create Earth with textures
+            createEarth(earthTex, bumpTex, specTex, nightTex);
+            createClouds(cloudTex);
+            createAtmosphere();
+            createStars();
+            createLights();
+            createMarkers();
+            createConnections();
+        }
+
+        // ============ EARTH ============
+        function createEarth(earthTex, bumpTex, specTex, nightTex) {
+            // Main Earth
+            const geometry = new THREE.SphereGeometry(EARTH_RADIUS, 128, 128);
+            
+            // Day material
+            const material = new THREE.MeshPhongMaterial({
+                map: earthTex,
+                bumpMap: bumpTex,
+                bumpScale: 0.8,
+                specularMap: specTex,
+                specular: new THREE.Color(0x333333),
+                shininess: 15
+            });
+
+            earth = new THREE.Mesh(geometry, material);
+            scene.add(earth);
+
+            // Night lights layer
+            const nightMaterial = new THREE.MeshBasicMaterial({
+                map: nightTex,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            nightLights = new THREE.Mesh(geometry.clone(), nightMaterial);
+            nightLights.scale.setScalar(1.001);
+            scene.add(nightLights);
+        }
+
+        // ============ CLOUDS ============
+        function createClouds(cloudTex) {
+            const geometry = new THREE.SphereGeometry(CLOUD_RADIUS, 64, 64);
+            const material = new THREE.MeshPhongMaterial({
+                map: cloudTex,
+                transparent: true,
+                opacity: 0.4,
+                depthWrite: false
+            });
+
+            clouds = new THREE.Mesh(geometry, material);
+            scene.add(clouds);
+        }
+
+        // ============ ATMOSPHERE ============
+        function createAtmosphere() {
+            // Outer glow
+            const geometry = new THREE.SphereGeometry(ATMO_RADIUS, 64, 64);
+            const material = new THREE.ShaderMaterial({
+                vertexShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        vPosition = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    void main() {
+                        float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+                        vec3 atmoColor = vec3(0.3, 0.6, 1.0);
+                        gl_FragColor = vec4(atmoColor, intensity * 0.6);
+                    }
+                `,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                transparent: true,
+                depthWrite: false
+            });
+
+            atmosphere = new THREE.Mesh(geometry, material);
+            scene.add(atmosphere);
+
+            // Inner fresnel
+            const innerGeo = new THREE.SphereGeometry(EARTH_RADIUS + 0.5, 64, 64);
+            const innerMat = new THREE.ShaderMaterial({
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 4.0);
+                        vec3 glowColor = vec3(0.4, 0.7, 1.0);
+                        gl_FragColor = vec4(glowColor, intensity * 0.3);
+                    }
+                `,
+                blending: THREE.AdditiveBlending,
+                side: THREE.FrontSide,
+                transparent: true,
+                depthWrite: false
+            });
+
+            const innerAtmo = new THREE.Mesh(innerGeo, innerMat);
+            scene.add(innerAtmo);
+        }
+
+        // ============ STARS ============
+        function createStars() {
+            const starCount = 10000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(starCount * 3);
+            const sizes = new Float32Array(starCount);
+            const colors = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount; i++) {
+                const radius = 1500 + Math.random() * 3000;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                
+                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = radius * Math.cos(phi);
+                
+                sizes[i] = 0.5 + Math.random() * 2;
+                
+                // Slight color variation
+                const colorVal = 0.8 + Math.random() * 0.2;
+                colors[i * 3] = colorVal;
+                colors[i * 3 + 1] = colorVal;
+                colors[i * 3 + 2] = colorVal + Math.random() * 0.1;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 1.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                sizeAttenuation: true
+            });
+
+            starField = new THREE.Points(geometry, material);
+            scene.add(starField);
+        }
+
+        // ============ LIGHTS ============
+        function createLights() {
+            // Sun light
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            sunLight.position.set(500, 200, 500);
+            scene.add(sunLight);
+            window.sunLight = sunLight;
+
+            // Ambient
+            const ambient = new THREE.AmbientLight(0x222244, 0.3);
+            scene.add(ambient);
+
+            // Sun mesh
+            const sunGeo = new THREE.SphereGeometry(30, 32, 32);
+            const sunMat = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFF88,
+                transparent: true,
+                opacity: 0.9
+            });
+            const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+            sunMesh.position.copy(sunLight.position);
+            scene.add(sunMesh);
+            window.sunMesh = sunMesh;
+
+            // Sun glow
+            const glowGeo = new THREE.SphereGeometry(50, 32, 32);
+            const glowMat = new THREE.ShaderMaterial({
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+                        gl_FragColor = vec4(1.0, 0.95, 0.6, intensity);
+                    }
+                `,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                transparent: true
+            });
+            const sunGlow = new THREE.Mesh(glowGeo, glowMat);
+            sunGlow.position.copy(sunLight.position);
+            scene.add(sunGlow);
+        }
+
+        // ============ MARKERS ============
+        function createMarkers() {
+            const colors = {
+                hq: 0xFF1D6C,
+                dc: 0x2979FF,
+                node: 0xF5A623,
+                edge: 0x9C27B0
+            };
+
+            LOCATIONS.forEach((loc, index) => {
+                const group = new THREE.Group();
+                
+                // Convert lat/lng to 3D position
+                const phi = (90 - loc.lat) * Math.PI / 180;
+                const theta = (loc.lng + 180) * Math.PI / 180;
+                
+                const x = EARTH_RADIUS * Math.sin(phi) * Math.cos(theta);
+                const y = EARTH_RADIUS * Math.cos(phi);
+                const z = EARTH_RADIUS * Math.sin(phi) * Math.sin(theta);
+                
+                const position = new THREE.Vector3(x, y, z);
+                const normal = position.clone().normalize();
+
+                // Marker size based on type
+                const sizes = { hq: 3, dc: 2, node: 1.5, edge: 1 };
+                const size = sizes[loc.type];
+
+                // Main marker (glowing sphere)
+                const markerGeo = new THREE.SphereGeometry(size, 16, 16);
+                const markerMat = new THREE.MeshBasicMaterial({
+                    color: colors[loc.type],
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const marker = new THREE.Mesh(markerGeo, markerMat);
+                group.add(marker);
+
+                // Outer glow
+                const glowGeo = new THREE.SphereGeometry(size * 1.8, 16, 16);
+                const glowMat = new THREE.MeshBasicMaterial({
+                    color: colors[loc.type],
+                    transparent: true,
+                    opacity: 0.2
+                });
+                const glow = new THREE.Mesh(glowGeo, glowMat);
+                group.add(glow);
+
+                // Pulse ring
+                const ringGeo = new THREE.RingGeometry(size * 1.2, size * 1.5, 32);
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: colors[loc.type],
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide
+                });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.lookAt(normal.clone().multiplyScalar(2).add(position));
+                ring.userData = { pulsePhase: Math.random() * Math.PI * 2 };
+                group.add(ring);
+
+                // Vertical beam for HQ
+                if (loc.type === 'hq') {
+                    const beamGeo = new THREE.CylinderGeometry(0.5, 0.5, 30, 8);
+                    const beamMat = new THREE.MeshBasicMaterial({
+                        color: 0xFF1D6C,
+                        transparent: true,
+                        opacity: 0.4
+                    });
+                    const beam = new THREE.Mesh(beamGeo, beamMat);
+                    beam.position.y = 15;
+                    
+                    // Align beam to surface normal
+                    const up = new THREE.Vector3(0, 1, 0);
+                    const quaternion = new THREE.Quaternion().setFromUnitVectors(up, normal);
+                    beam.quaternion.copy(quaternion);
+                    beam.position.copy(normal.clone().multiplyScalar(15));
+                    
+                    group.add(beam);
+                }
+
+                group.position.copy(position.clone().multiplyScalar(1.02));
+                group.userData = { ...loc, index, position, normal };
+                
+                markers.push(group);
+                scene.add(group);
+            });
+        }
+
+        // ============ CONNECTIONS ============
+        function createConnections() {
+            // Connect HQ to all data centers
+            const hq = LOCATIONS[0];
+            
+            LOCATIONS.forEach((loc, i) => {
+                if (i === 0) return; // Skip HQ
+                if (loc.type !== 'dc') return; // Only connect to data centers
+                
+                const connection = createArcLine(
+                    LOCATIONS[0].lat, LOCATIONS[0].lng,
+                    loc.lat, loc.lng,
+                    0xFF1D6C
+                );
+                connections.push(connection);
+                scene.add(connection);
+            });
+
+            // Connect data centers to nearby nodes
+            LOCATIONS.forEach((loc, i) => {
+                if (loc.type !== 'dc') return;
+                
+                LOCATIONS.forEach((loc2, j) => {
+                    if (i >= j) return;
+                    if (loc2.type === 'hq') return;
+                    
+                    // Only connect if reasonably close
+                    const dist = getDistance(loc.lat, loc.lng, loc2.lat, loc2.lng);
+                    if (dist < 5000) {
+                        const connection = createArcLine(
+                            loc.lat, loc.lng,
+                            loc2.lat, loc2.lng,
+                            0x2979FF
+                        );
+                        connection.material.opacity = 0.3;
+                        connections.push(connection);
+                        scene.add(connection);
+                    }
+                });
+            });
+        }
+
+        function createArcLine(lat1, lng1, lat2, lng2, color) {
+            const start = latLngToVector3(lat1, lng1, EARTH_RADIUS + 1);
+            const end = latLngToVector3(lat2, lng2, EARTH_RADIUS + 1);
+            
+            // Calculate arc height based on distance
+            const dist = start.distanceTo(end);
+            const midHeight = EARTH_RADIUS + 1 + dist * 0.15;
+            
+            // Mid point
+            const mid = start.clone().add(end).multiplyScalar(0.5);
+            mid.normalize().multiplyScalar(midHeight);
+            
+            // Create curve
+            const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+            const points = curve.getPoints(50);
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.5
+            });
+            
+            const line = new THREE.Line(geometry, material);
+            line.userData = { curve, progress: Math.random() };
+            return line;
+        }
+
+        function latLngToVector3(lat, lng, radius) {
+            const phi = (90 - lat) * Math.PI / 180;
+            const theta = (lng + 180) * Math.PI / 180;
+            
+            return new THREE.Vector3(
+                radius * Math.sin(phi) * Math.cos(theta),
+                radius * Math.cos(phi),
+                radius * Math.sin(phi) * Math.sin(theta)
+            );
+        }
+
+        function getDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // ============ CAMERA ============
+        function updateCamera() {
+            camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+            camera.position.y = spherical.radius * Math.cos(spherical.phi);
+            camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+            camera.lookAt(0, 0, 0);
+        }
+
+        // ============ EVENTS ============
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseDown(e) {
+            isDragging = true;
+            previousMouse.x = e.clientX;
+            previousMouse.y = e.clientY;
+        }
+
+        function onMouseMove(e) {
+            // Update mouse for raycasting
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            // Check for hover
+            checkHover(e);
+
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - previousMouse.x;
+            const deltaY = e.clientY - previousMouse.y;
+            
+            spherical.theta -= deltaX * 0.005;
+            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi + deltaY * 0.005));
+            
+            updateCamera();
+            
+            previousMouse.x = e.clientX;
+            previousMouse.y = e.clientY;
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+        }
+
+        function onWheel(e) {
+            spherical.radius = Math.max(150, Math.min(600, spherical.radius + e.deltaY * 0.3));
+            updateCamera();
+        }
+
+        function onClick(e) {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            
+            const markerMeshes = markers.map(m => m.children[0]);
+            const intersects = raycaster.intersectObjects(markerMeshes);
+            
+            if (intersects.length > 0) {
+                const marker = intersects[0].object.parent;
+                const data = marker.userData;
+                showLocation(data);
+            }
+        }
+
+        function onTouchStart(e) {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                previousMouse.x = e.touches[0].clientX;
+                previousMouse.y = e.touches[0].clientY;
+            }
+            e.preventDefault();
+        }
+
+        function onTouchMove(e) {
+            if (!isDragging || e.touches.length !== 1) return;
+            
+            const deltaX = e.touches[0].clientX - previousMouse.x;
+            const deltaY = e.touches[0].clientY - previousMouse.y;
+            
+            spherical.theta -= deltaX * 0.005;
+            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi + deltaY * 0.005));
+            
+            updateCamera();
+            
+            previousMouse.x = e.touches[0].clientX;
+            previousMouse.y = e.touches[0].clientY;
+            e.preventDefault();
+        }
+
+        function onTouchEnd() {
+            isDragging = false;
+        }
+
+        function checkHover(e) {
+            raycaster.setFromCamera(mouse, camera);
+            
+            const markerMeshes = markers.map(m => m.children[0]);
+            const intersects = raycaster.intersectObjects(markerMeshes);
+            
+            const tooltip = document.getElementById('tooltip');
+            
+            if (intersects.length > 0) {
+                const marker = intersects[0].object.parent;
+                const data = marker.userData;
+                
+                tooltip.textContent = data.name;
+                tooltip.style.left = e.clientX + 15 + 'px';
+                tooltip.style.top = e.clientY + 15 + 'px';
+                tooltip.classList.add('visible');
+                
+                document.body.style.cursor = 'pointer';
+            } else {
+                tooltip.classList.remove('visible');
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        function showLocation(data) {
+            const panel = document.getElementById('locationPanel');
+            document.getElementById('locName').textContent = data.name;
+            document.getElementById('locCoords').textContent = 
+                `${Math.abs(data.lat).toFixed(2)}°${data.lat >= 0 ? 'N' : 'S'}, ${Math.abs(data.lng).toFixed(2)}°${data.lng >= 0 ? 'E' : 'W'}`;
+            document.getElementById('locInfo').textContent = data.info;
+            panel.classList.add('visible');
+            
+            setTimeout(() => panel.classList.remove('visible'), 4000);
+        }
+
+        // ============ CONTROLS ============
+        function toggleOption(option) {
+            switch(option) {
+                case 'rotate':
+                    autoRotate = !autoRotate;
+                    document.getElementById('btnRotate').classList.toggle('active', autoRotate);
+                    break;
+                case 'clouds':
+                    showClouds = !showClouds;
+                    clouds.visible = showClouds;
+                    document.getElementById('btnClouds').classList.toggle('active', showClouds);
+                    break;
+                case 'night':
+                    showNight = !showNight;
+                    nightLights.visible = showNight;
+                    document.getElementById('btnNight').classList.toggle('active', showNight);
+                    break;
+                case 'nodes':
+                    showNodes = !showNodes;
+                    markers.forEach(m => m.visible = showNodes);
+                    connections.forEach(c => c.visible = showNodes);
+                    document.getElementById('btnNodes').classList.toggle('active', showNodes);
+                    break;
+                case 'atmosphere':
+                    showAtmosphere = !showAtmosphere;
+                    atmosphere.visible = showAtmosphere;
+                    document.getElementById('btnAtmo').classList.toggle('active', showAtmosphere);
+                    break;
+            }
+        }
+
+        // ============ ANIMATION ============
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            // Auto rotate
+            if (autoRotate && !isDragging) {
+                spherical.theta += 0.001;
+                updateCamera();
+            }
+
+            // Rotate Earth slowly
+            earth.rotation.y += 0.0003;
+            nightLights.rotation.y = earth.rotation.y;
+            
+            // Rotate clouds slightly faster
+            if (clouds) {
+                clouds.rotation.y += 0.0004;
+            }
+
+            // Animate markers
+            markers.forEach(marker => {
+                // Pulse ring
+                const ring = marker.children[2];
+                if (ring && ring.userData.pulsePhase !== undefined) {
+                    ring.userData.pulsePhase += 0.03;
+                    const scale = 1 + Math.sin(ring.userData.pulsePhase) * 0.3;
+                    ring.scale.set(scale, scale, 1);
+                    ring.material.opacity = 0.5 - (scale - 1) * 1.5;
+                }
+
+                // Rotate marker with Earth
+                marker.rotation.y = earth.rotation.y;
+            });
+
+            // Animate connections
+            connections.forEach(conn => {
+                conn.rotation.y = earth.rotation.y;
+            });
+
+            // Update night lights opacity based on sun position
+            if (nightLights) {
+                const sunAngle = Math.atan2(window.sunLight.position.z, window.sunLight.position.x);
+                nightLights.material.opacity = showNight ? 0.8 : 0;
+            }
+
+            // Update UI
+            updateUI();
+
+            renderer.render(scene, camera);
+        }
+
+        function updateUI() {
+            // Rotation
+            const rotDeg = ((earth.rotation.y * 180 / Math.PI) % 360).toFixed(2);
+            document.getElementById('rotation').textContent = rotDeg + '°';
+
+            // UTC Time
+            const now = new Date();
+            document.getElementById('utcTime').textContent = now.toUTCString().split(' ')[4];
+
+            // Sun position
+            const hour = now.getUTCHours();
+            document.getElementById('sunPos').textContent = 
+                hour >= 6 && hour < 18 ? 'Day Side' : 'Night Side';
+
+            // Cloud cover (animated)
+            const cloudCover = 55 + Math.sin(time * 0.1) * 15;
+            document.getElementById('cloudCover').textContent = Math.floor(cloudCover) + '%';
+
+            // Agent count (fluctuating)
+            const agents = 1000 + Math.floor(Math.sin(time * 0.05) * 50);
+            document.getElementById('agentCount').textContent = agents.toLocaleString();
+        }
+
+        // Initialize
+        init();
+    </script>
+
+</body>
+</html>

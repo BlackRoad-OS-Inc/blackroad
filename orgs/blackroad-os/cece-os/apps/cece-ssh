@@ -1,0 +1,28 @@
+#!/bin/bash
+# CECE-SSH v1.0 - SSH Helper
+SSH_DIR=~/cece/ssh
+mkdir -p "$SSH_DIR"
+save() {
+    NAME="$1"
+    HOST="$2"
+    USER="${3:-$(whoami)}"
+    echo "$NAME|$USER@$HOST" >> "$SSH_DIR/hosts.txt"
+    echo "Saved: $NAME → $USER@$HOST"
+}
+list() {
+    echo "Saved SSH Hosts:"
+    cat "$SSH_DIR/hosts.txt" 2>/dev/null | while IFS='|' read NAME CONN; do
+        echo "  $NAME → $CONN"
+    done
+}
+connect() {
+    NAME="$1"
+    CONN=$(grep "^$NAME|" "$SSH_DIR/hosts.txt" | cut -d'|' -f2)
+    [ -n "$CONN" ] && ssh "$CONN" || echo "Not found: $NAME"
+}
+case "$1" in
+    save) save "$2" "$3" "$4" ;;
+    list) list ;;
+    connect) connect "$2" ;;
+    *) echo "CECE-SSH: save <name> <host> [user] | list | connect <name>" ;;
+esac

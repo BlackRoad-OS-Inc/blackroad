@@ -1,0 +1,32 @@
+#!/bin/bash
+# CECE-COWSAY v1.0 - Speaking Cow
+say() {
+    MSG="$1"
+    LEN=${#MSG}
+    BORDER=$(printf '%*s' $((LEN+2)) | tr ' ' '-')
+    echo " $BORDER"
+    echo "< $MSG >"
+    echo " $BORDER"
+    echo "        \\   ^__^"
+    echo "         \\  (oo)\\_______"
+    echo "            (__)\\       )\\/\\"
+    echo "                ||----w |"
+    echo "                ||     ||"
+}
+cece() {
+    MSG="$1"
+    LEN=${#MSG}
+    BORDER=$(printf '%*s' $((LEN+2)) | tr ' ' '=')
+    echo " $BORDER"
+    echo "| $MSG |"
+    echo " $BORDER"
+    echo "        \\   🖤"
+    echo "         \\  [CECE]"
+    echo "            /|  |\\"
+    echo "           / |  | \\"
+}
+case "$1" in
+    cow) say "$2" ;;
+    cece) cece "$2" ;;
+    *) say "${1:-Hello from CECE!}" ;;
+esac

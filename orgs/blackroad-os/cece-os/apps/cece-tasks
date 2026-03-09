@@ -1,0 +1,134 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════════
+#  🖤 CECE-TASKS v1.0 - Our Own Asana/Monday.com
+#═══════════════════════════════════════════════════════════════════
+#  Task management. Project tracking. No SaaS fees.
+#═══════════════════════════════════════════════════════════════════
+
+TASKS_DIR=~/cece/tasks
+mkdir -p "$TASKS_DIR/projects"
+
+PINK="\033[38;5;205m"
+AMBER="\033[38;5;214m"
+WHITE="\033[1;37m"
+GREEN="\033[38;5;82m"
+RED="\033[38;5;196m"
+RESET="\033[0m"
+
+add_task() {
+    PROJECT="$1"
+    TITLE="$2"
+    PRIORITY="${3:-medium}"
+    
+    PROJECT_DIR="$TASKS_DIR/projects/$PROJECT"
+    mkdir -p "$PROJECT_DIR"
+    
+    TASK_ID=$(date +%s | tail -c 6)
+    TASK_FILE="$PROJECT_DIR/$TASK_ID.task"
+    
+    cat > "$TASK_FILE" << EOF
+id: $TASK_ID
+title: $TITLE
+priority: $PRIORITY
+status: todo
+created: $(date -Iseconds)
+assignee: 
+due: 
+EOF
+    
+    echo -e "${GREEN}✅ Task #$TASK_ID added to $PROJECT${RESET}"
+}
+
+list_tasks() {
+    PROJECT="$1"
+    PROJECT_DIR="$TASKS_DIR/projects/$PROJECT"
+    
+    if [ ! -d "$PROJECT_DIR" ]; then
+        echo -e "${RED}Project not found: $PROJECT${RESET}"
+        return
+    fi
+    
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo -e "${WHITE}  📋 $PROJECT${RESET}"
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo ""
+    
+    echo -e "${AMBER}TODO:${RESET}"
+    for f in "$PROJECT_DIR"/*.task 2>/dev/null; do
+        [ -f "$f" ] || continue
+        STATUS=$(grep "^status:" "$f" | cut -d: -f2 | xargs)
+        if [ "$STATUS" = "todo" ]; then
+            ID=$(grep "^id:" "$f" | cut -d: -f2 | xargs)
+            TITLE=$(grep "^title:" "$f" | cut -d: -f2-)
+            PRIORITY=$(grep "^priority:" "$f" | cut -d: -f2 | xargs)
+            echo -e "  [ ] #$ID $TITLE ${AMBER}($PRIORITY)${RESET}"
+        fi
+    done
+    
+    echo ""
+    echo -e "${GREEN}DONE:${RESET}"
+    for f in "$PROJECT_DIR"/*.task 2>/dev/null; do
+        [ -f "$f" ] || continue
+        STATUS=$(grep "^status:" "$f" | cut -d: -f2 | xargs)
+        if [ "$STATUS" = "done" ]; then
+            ID=$(grep "^id:" "$f" | cut -d: -f2 | xargs)
+            TITLE=$(grep "^title:" "$f" | cut -d: -f2-)
+            echo -e "  [✓] #$ID $TITLE"
+        fi
+    done
+}
+
+complete_task() {
+    PROJECT="$1"
+    TASK_ID="$2"
+    TASK_FILE="$TASKS_DIR/projects/$PROJECT/$TASK_ID.task"
+    
+    if [ ! -f "$TASK_FILE" ]; then
+        echo -e "${RED}Task not found${RESET}"
+        return
+    fi
+    
+    sed -i "s/^status:.*/status: done/" "$TASK_FILE"
+    echo "completed: $(date -Iseconds)" >> "$TASK_FILE"
+    
+    echo -e "${GREEN}✅ Task #$TASK_ID completed!${RESET}"
+}
+
+list_projects() {
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo -e "${WHITE}  📁 PROJECTS${RESET}"
+    echo -e "${PINK}═══════════════════════════════════════${RESET}"
+    echo ""
+    
+    for p in "$TASKS_DIR/projects"/*; do
+        [ -d "$p" ] || continue
+        NAME=$(basename "$p")
+        TODO=$(grep -l "status: todo" "$p"/*.task 2>/dev/null | wc -l)
+        DONE=$(grep -l "status: done" "$p"/*.task 2>/dev/null | wc -l)
+        echo -e "  📋 ${WHITE}$NAME${RESET} - $TODO todo, $DONE done"
+    done
+}
+
+case "$1" in
+    add)
+        add_task "$2" "$3" "$4"
+        ;;
+    list)
+        list_tasks "$2"
+        ;;
+    done)
+        complete_task "$2" "$3"
+        ;;
+    projects)
+        list_projects
+        ;;
+    *)
+        echo -e "${PINK}🖤 CECE-TASKS - Our Own Asana${RESET}"
+        echo ""
+        echo "Commands:"
+        echo "  add <project> <title> [priority]  Add task"
+        echo "  list <project>                    List tasks"
+        echo "  done <project> <id>               Complete task"
+        echo "  projects                          List projects"
+        ;;
+esac

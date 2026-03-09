@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-TAR v1.0 - Archive Manager
+create() { tar -czvf "$1.tar.gz" "$2" && echo "Created: $1.tar.gz"; }
+extract() { tar -xzvf "$1" && echo "Extracted: $1"; }
+list() { tar -tzvf "$1"; }
+case "$1" in
+    create) create "$2" "$3" ;;
+    extract) extract "$2" ;;
+    list) list "$2" ;;
+    *) echo "CECE-TAR: create <name> <dir> | extract <file> | list <file>" ;;
+esac

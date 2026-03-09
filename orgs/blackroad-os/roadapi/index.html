@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="roadapi - BlackRoad product. Start free trial today.">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://blackroad.io/roadapi">
+    <meta property="og:site_name" content="BlackRoad">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@BlackRoadOS">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadAPI - Unified API Gateway for BlackRoad OS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000000;
+            color: #FFFFFF;
+            line-height: 1.618;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 89px 34px;
+            background: linear-gradient(135deg,
+                rgba(41, 121, 255, 0.1) 0%,
+                rgba(156, 39, 176, 0.1) 38.2%,
+                rgba(255, 29, 108, 0.1) 61.8%,
+                rgba(245, 166, 35, 0.1) 100%
+            );
+            position: relative;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 89px;
+            margin-bottom: 21px;
+        }
+
+        h1 {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 21px;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            opacity: 0.8;
+            margin-bottom: 34px;
+            max-width: 900px;
+        }
+
+        .api-url {
+            background: rgba(41, 121, 255, 0.1);
+            border: 1px solid rgba(41, 121, 255, 0.3);
+            border-radius: 8px;
+            padding: 21px 34px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 24px;
+            color: #2979FF;
+            margin-bottom: 55px;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 34px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 144px 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 34px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #2979FF;
+            transform: translateY(-5px);
+            box-shadow: 0 13px 34px rgba(41, 121, 255, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 55px;
+            margin-bottom: 21px;
+        }
+
+        .feature-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 13px;
+            color: #9C27B0;
+        }
+
+        .feature-desc {
+            font-size: 16px;
+            opacity: 0.8;
+            line-height: 1.618;
+        }
+
+        /* Endpoints Section */
+        .endpoints {
+            padding: 144px 34px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 21px;
+            max-width: 1400px;
+            margin: 0 auto;
+            margin-top: 55px;
+        }
+
+        .endpoint-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 21px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .endpoint-method {
+            display: inline-block;
+            padding: 5px 13px;
+            border-radius: 5px;
+            font-weight: 700;
+            font-size: 12px;
+            margin-right: 13px;
+        }
+
+        .method-get { background: #00FF00; color: #000; }
+        .method-post { background: #2979FF; color: #FFF; }
+        .method-put { background: #F5A623; color: #000; }
+        .method-delete { background: #FF1D6C; color: #FFF; }
+
+        .endpoint-path {
+            color: #2979FF;
+            font-weight: 600;
+        }
+
+        .endpoint-desc {
+            margin-top: 13px;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+
+        /* Code Example Section */
+        .code-example {
+            padding: 144px 34px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .code-tabs {
+            display: flex;
+            gap: 21px;
+            margin-bottom: 21px;
+            justify-content: center;
+        }
+
+        .code-tab {
+            padding: 13px 34px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .code-tab.active {
+            background: rgba(41, 121, 255, 0.2);
+            border-color: #2979FF;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 34px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            line-height: 1.8;
+        }
+
+        .code-comment { color: #666; }
+        .code-string { color: #00FF00; }
+        .code-keyword { color: #FF1D6C; }
+        .code-function { color: #F5A623; }
+        .code-number { color: #9C27B0; }
+
+        /* Pricing Section */
+        .pricing {
+            padding: 144px 34px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+            margin-top: 55px;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 34px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            border-color: #2979FF;
+            transform: translateY(-5px);
+        }
+
+        .pricing-card.featured {
+            border-color: #2979FF;
+            background: rgba(41, 121, 255, 0.05);
+        }
+
+        .pricing-tier {
+            font-size: 24px;
+            font-weight: 700;
+            color: #9C27B0;
+            margin-bottom: 13px;
+        }
+
+        .pricing-price {
+            font-size: 55px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .pricing-period {
+            font-size: 16px;
+            opacity: 0.7;
+            margin-bottom: 34px;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 34px;
+            text-align: left;
+        }
+
+        .pricing-features li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .pricing-features li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00FF00;
+            font-weight: 700;
+        }
+
+        .btn {
+            padding: 21px 55px;
+            background: linear-gradient(135deg, #2979FF 38.2%, #9C27B0 61.8%);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 13px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 13px 34px rgba(41, 121, 255, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #2979FF;
+            color: #2979FF;
+        }
+
+        .btn-outline:hover {
+            background: rgba(41, 121, 255, 0.1);
+        }
+
+        /* Footer */
+        footer {
+            padding: 89px 34px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-size: 34px;
+            margin-bottom: 21px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 34px;
+            justify-content: center;
+            margin-bottom: 21px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #FFFFFF;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            color: #2979FF;
+        }
+
+        .footer-text {
+            opacity: 0.6;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 34px; }
+            .subtitle { font-size: 18px; }
+            .section-title { font-size: 34px; }
+            .api-url { font-size: 16px; }
+            .endpoints-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="logo">🌐</div>
+        <h1>RoadAPI</h1>
+        <p class="subtitle">One API Gateway for 50+ BlackRoad Products. One Key. Infinite Possibilities.</p>
+        <div class="api-url">https://api.blackroad.io/v1/*</div>
+
+        <div class="hero-stats">
+            <div class="stat">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Products</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Endpoints</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">&lt;30ms</div>
+                <div class="stat-label">Latency</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">99.99%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">∞</div>
+                <div class="stat-label">Requests</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2 class="section-title">One Gateway. All Products.</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔑</div>
+                <h3 class="feature-title">Single API Key</h3>
+                <p class="feature-desc">One API key unlocks access to all 50+ BlackRoad products. Unified authentication, billing, rate limits.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Edge Performance</h3>
+                <p class="feature-desc">Cloudflare Workers at 300+ locations worldwide. Sub-30ms latency. Automatic failover. 99.99% uptime SLA.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3 class="feature-title">Smart Rate Limiting</h3>
+                <p class="feature-desc">Intelligent rate limiting per endpoint. DDoS protection. Abuse prevention. Fair usage policies.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Real-Time Analytics</h3>
+                <p class="feature-desc">Live dashboard showing API usage, errors, latency. Request logs. Performance insights. Cost tracking.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Enterprise Security</h3>
+                <p class="feature-desc">OAuth 2.0, API keys, JWT tokens. IP whitelisting. Encryption in transit. SOC 2, GDPR compliant.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3 class="feature-title">Auto-Generated Docs</h3>
+                <p class="feature-desc">OpenAPI 3.0 specs. Interactive playground. Code examples in 10+ languages. Postman collections.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Endpoints Section -->
+    <section class="endpoints">
+        <h2 class="section-title">500+ Unified Endpoints</h2>
+        <div class="endpoints-grid">
+            <div class="endpoint-card">
+                <span class="endpoint-method method-get">GET</span>
+                <span class="endpoint-path">/v1/agents</span>
+                <div class="endpoint-desc">List all AI agents with filtering and pagination</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-post">POST</span>
+                <span class="endpoint-path">/v1/agents</span>
+                <div class="endpoint-desc">Deploy a new AI agent to the cluster</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-get">GET</span>
+                <span class="endpoint-path">/v1/products</span>
+                <div class="endpoint-desc">Browse 50+ BlackRoad products and services</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-post">POST</span>
+                <span class="endpoint-path">/v1/auth/login</span>
+                <div class="endpoint-desc">Authenticate users via RoadAuth</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-get">GET</span>
+                <span class="endpoint-path">/v1/metrics</span>
+                <div class="endpoint-desc">Real-time infrastructure metrics and health</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-post">POST</span>
+                <span class="endpoint-path">/v1/webhooks</span>
+                <div class="endpoint-desc">Create webhooks for event notifications</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-get">GET</span>
+                <span class="endpoint-path">/v1/storage/*</span>
+                <div class="endpoint-desc">Access cloud storage buckets (S3-compatible)</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-post">POST</span>
+                <span class="endpoint-path">/v1/ai/inference</span>
+                <div class="endpoint-desc">Run AI inference on 30k agent cluster</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-get">GET</span>
+                <span class="endpoint-path">/v1/billing/usage</span>
+                <div class="endpoint-desc">Track API usage and costs in real-time</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-put">PUT</span>
+                <span class="endpoint-path">/v1/users/:id</span>
+                <div class="endpoint-desc">Update user profile and preferences</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-delete">DELETE</span>
+                <span class="endpoint-path">/v1/agents/:id</span>
+                <div class="endpoint-desc">Delete an AI agent from the cluster</div>
+            </div>
+
+            <div class="endpoint-card">
+                <span class="endpoint-method method-get">GET</span>
+                <span class="endpoint-path">/v1/analytics</span>
+                <div class="endpoint-desc">Access unified analytics across all products</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Example Section -->
+    <section class="code-example">
+        <h2 class="section-title">Quick Start</h2>
+        <div class="code-block">
+<code><span class="code-comment"># Install the SDK</span>
+<span class="code-keyword">npm install</span> @blackroad/roadapi
+
+<span class="code-comment"># Or use cURL</span>
+<span class="code-function">curl</span> -X <span class="code-keyword">GET</span> <span class="code-string">"https://api.blackroad.io/v1/agents"</span> \
+  -H <span class="code-string">"Authorization: Bearer YOUR_API_KEY"</span> \
+  -H <span class="code-string">"Content-Type: application/json"</span>
+
+<span class="code-comment"># JavaScript Example</span>
+<span class="code-keyword">import</span> { RoadAPI } <span class="code-keyword">from</span> <span class="code-string">'@blackroad/roadapi'</span>;
+
+<span class="code-keyword">const</span> api = <span class="code-keyword">new</span> <span class="code-function">RoadAPI</span>({
+  apiKey: <span class="code-string">'sk_live_your_key_here'</span>
+});
+
+<span class="code-comment">// List all AI agents</span>
+<span class="code-keyword">const</span> agents = <span class="code-keyword">await</span> api.agents.<span class="code-function">list</span>();
+console.<span class="code-function">log</span>(<span class="code-string">`Found ${agents.length} agents`</span>);
+
+<span class="code-comment">// Deploy a new agent</span>
+<span class="code-keyword">const</span> newAgent = <span class="code-keyword">await</span> api.agents.<span class="code-function">create</span>({
+  name: <span class="code-string">'my-agent'</span>,
+  model: <span class="code-string">'claude-sonnet-4'</span>,
+  cluster: <span class="code-string">'pi-cluster-1'</span>
+});
+
+<span class="code-comment">// Run AI inference</span>
+<span class="code-keyword">const</span> result = <span class="code-keyword">await</span> api.ai.<span class="code-function">inference</span>({
+  prompt: <span class="code-string">'Hello, AI!'</span>,
+  max_tokens: <span class="code-number">100</span>
+});
+
+console.<span class="code-function">log</span>(result.text);
+</code>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing">
+        <h2 class="section-title">Simple, Transparent Pricing</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-tier">Free</div>
+                <div class="pricing-price">$0</div>
+                <div class="pricing-period">Forever</div>
+                <ul class="pricing-features">
+                    <li>10,000 requests/month</li>
+                    <li>Access to all products</li>
+                    <li>Community support</li>
+                    <li>Basic analytics</li>
+                    <li>99.9% uptime SLA</li>
+                </ul>
+                <a href="#" class="btn btn-outline">Get API Key</a>
+            </div>
+
+            <div class="pricing-card featured">
+                <div class="pricing-tier">Pro</div>
+                <div class="pricing-price">$25</div>
+                <div class="pricing-period">per month</div>
+                <ul class="pricing-features">
+                    <li>1M requests/month included</li>
+                    <li>$0.00003/request after</li>
+                    <li>Unlimited products</li>
+                    <li>Advanced rate limits</li>
+                    <li>Real-time analytics</li>
+                    <li>Priority support</li>
+                    <li>99.99% uptime SLA</li>
+                    <li>Custom webhooks</li>
+                </ul>
+                <a href="#" class="btn">Start Free Trial</a>
+            </div>
+
+            <div class="pricing-card">
+                <div class="pricing-tier">Enterprise</div>
+                <div class="pricing-price">Custom</div>
+                <div class="pricing-period">Contact sales</div>
+                <ul class="pricing-features">
+                    <li>Unlimited requests</li>
+                    <li>Volume discounts</li>
+                    <li>Dedicated infrastructure</li>
+                    <li>99.999% uptime SLA</li>
+                    <li>24/7 phone support</li>
+                    <li>Custom integrations</li>
+                    <li>SLA guarantees</li>
+                    <li>Migration assistance</li>
+                </ul>
+                <a href="mailto:blackroad.systems@gmail.com" class="btn btn-outline">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-logo">🌐 RoadAPI</div>
+        <div class="footer-links">
+            <a href="#">Documentation</a>
+            <a href="#">API Reference</a>
+            <a href="#">SDKs</a>
+            <a href="#">Status</a>
+            <a href="#">Pricing</a>
+            <a href="#">Support</a>
+            <a href="#">Changelog</a>
+        </div>
+        <p class="footer-text">Built by BlackRoad OS, Inc. | Unified API for the sovereign AI cloud</p>
+        <p class="footer-text" style="margin-top: 13px;">🖤🛣️ One gateway. All roads lead home.</p>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Animate cards on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -100px 0px' });
+
+        document.querySelectorAll('.feature-card, .pricing-card, .endpoint-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

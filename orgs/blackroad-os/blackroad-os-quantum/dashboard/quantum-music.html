@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Music - Sonify Quantum States | BlackRoad Quantum</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --amber: #F5A623;
+            --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF;
+            --violet: #9C27B0;
+            --bg: #000000;
+            --text: #FFFFFF;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+            padding: 34px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 55px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .title {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--amber), var(--hot-pink), var(--electric-blue), var(--violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 21px;
+            letter-spacing: -2px;
+        }
+
+        .subtitle {
+            font-size: 21px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 13px;
+        }
+
+        .tagline {
+            font-size: 16px;
+            color: var(--amber);
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 21px;
+            justify-content: center;
+            margin-bottom: 34px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 13px 34px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--electric-blue);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            background: rgba(41, 121, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 21px rgba(41, 121, 255, 0.3);
+        }
+
+        .mode-btn.active {
+            background: var(--electric-blue);
+            border-color: var(--electric-blue);
+            box-shadow: 0 5px 21px rgba(41, 121, 255, 0.5);
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 34px;
+        }
+
+        canvas {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 34px rgba(0, 0, 0, 0.5);
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 34px;
+            margin-bottom: 34px;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--hot-pink);
+            margin-bottom: 21px;
+        }
+
+        .info-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 13px;
+        }
+
+        .highlight {
+            color: var(--amber);
+            font-weight: 600;
+        }
+
+        .equation {
+            font-family: 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 21px;
+            border-radius: 8px;
+            border-left: 5px solid var(--violet);
+            margin: 21px 0;
+            font-size: 16px;
+            overflow-x: auto;
+        }
+
+        .audio-controls {
+            display: flex;
+            gap: 34px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 34px 0;
+        }
+
+        .control-group {
+            text-align: center;
+        }
+
+        .control-label {
+            font-size: 14px;
+            color: var(--amber);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-size: 24px;
+            color: var(--text);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .slider {
+            width: 200px;
+            height: 5px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 21px;
+            height: 21px;
+            border-radius: 50%;
+            background: var(--electric-blue);
+            cursor: pointer;
+            box-shadow: 0 0 13px rgba(41, 121, 255, 0.5);
+        }
+
+        .play-btn {
+            padding: 21px 55px;
+            background: linear-gradient(135deg, var(--hot-pink), var(--violet));
+            border: none;
+            border-radius: 13px;
+            color: var(--text);
+            font-size: 21px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 8px;
+            box-shadow: 0 8px 21px rgba(255, 29, 108, 0.4);
+        }
+
+        .play-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 13px 34px rgba(255, 29, 108, 0.6);
+        }
+
+        .play-btn:active {
+            transform: translateY(0);
+        }
+
+        .play-btn.playing {
+            background: linear-gradient(135deg, var(--amber), var(--electric-blue));
+            animation: pulse-btn 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-btn {
+            0%, 100% { box-shadow: 0 8px 21px rgba(245, 166, 35, 0.4); }
+            50% { box-shadow: 0 13px 34px rgba(245, 166, 35, 0.8); }
+        }
+
+        .note-buttons {
+            display: flex;
+            gap: 13px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 21px 0;
+        }
+
+        .note-btn {
+            padding: 13px 21px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--electric-blue);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .note-btn:hover {
+            background: rgba(41, 121, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .note-btn.active {
+            background: var(--hot-pink);
+            border-color: var(--hot-pink);
+            box-shadow: 0 0 21px rgba(255, 29, 108, 0.6);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 21px;
+            margin: 34px 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 21px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--electric-blue);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 21px rgba(41, 121, 255, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 34px;
+            margin-bottom: 13px;
+        }
+
+        .feature-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--electric-blue);
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 21px;
+            left: 21px;
+            padding: 13px 21px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--electric-blue);
+            border-radius: 8px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-btn:hover {
+            background: rgba(41, 121, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        .waveform-display {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 21px;
+            margin: 21px 0;
+            text-align: center;
+        }
+
+        .frequency-display {
+            font-size: 34px;
+            font-weight: 700;
+            color: var(--hot-pink);
+            font-family: 'Courier New', monospace;
+            margin: 13px 0;
+        }
+
+        .state-display {
+            font-size: 18px;
+            color: var(--amber);
+            font-family: 'Courier New', monospace;
+            margin: 8px 0;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse-wave {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .visualizer {
+            width: 100%;
+            height: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 34px;
+            }
+
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+
+    <div class="header">
+        <div class="title">🔊⚛️ Quantum Music ⚛️🔊</div>
+        <div class="subtitle">Experience Quantum Mechanics Through Sound</div>
+        <div class="tagline">Hear Superposition • Listen to Entanglement • Feel Interference</div>
+    </div>
+
+    <div class="controls">
+        <button class="mode-btn active" onclick="setMode('superposition')">Superposition Chords</button>
+        <button class="mode-btn" onclick="setMode('entanglement')">Entanglement Harmony</button>
+        <button class="mode-btn" onclick="setMode('interference')">Interference Beats</button>
+        <button class="mode-btn" onclick="setMode('measurement')">Measurement Collapse</button>
+    </div>
+
+    <div id="superposition-mode" class="mode-content">
+        <div class="info-panel">
+            <div class="info-title">🎵 Superposition as Chords</div>
+            <div class="info-text">
+                <span class="highlight">Quantum superposition is like a chord!</span> Just as a chord plays multiple notes simultaneously, a quantum state can be in multiple states at once. The amplitudes are like the volume of each note.
+            </div>
+            <div class="equation">
+|ψ⟩ = α|0⟩ + β|1⟩
+
+In music:
+• α = amplitude of note 1 (volume/weight)
+• β = amplitude of note 2 (volume/weight)
+• |α|² + |β|² = 1 (total probability = 1)
+
+When α = β = 1/√2 → Equal superposition → Perfect chord!
+            </div>
+        </div>
+
+        <div class="audio-controls">
+            <div class="control-group">
+                <div class="control-label">State |0⟩ Amplitude (α)</div>
+                <div class="control-value" id="alpha-val">0.707</div>
+                <input type="range" class="slider" id="alpha-slider" min="0" max="100" value="70.7" oninput="updateAlpha(this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label">State |1⟩ Amplitude (β)</div>
+                <div class="control-value" id="beta-val">0.707</div>
+                <input type="range" class="slider" id="beta-slider" min="0" max="100" value="70.7" oninput="updateBeta(this.value)">
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 34px 0;">
+            <button class="play-btn" id="play-superposition" onclick="playSuperposition()">▶ Play Quantum Chord</button>
+            <button class="play-btn" onclick="stopAll()">⏹ Stop</button>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="superposition-canvas" width="1200" height="400"></canvas>
+        </div>
+
+        <div class="waveform-display">
+            <div class="state-display" id="super-state">|ψ⟩ = 0.707|0⟩ + 0.707|1⟩</div>
+            <div class="frequency-display" id="super-freq">440 Hz + 554 Hz</div>
+            <div style="color: rgba(255, 255, 255, 0.6); margin-top: 8px;">
+                (A4 + C#5 = Major Third Chord)
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎹</div>
+                <div class="feature-title">Amplitude = Volume</div>
+                <div class="feature-desc">The amplitude squared (|α|²) determines how "loud" each note is. Adjust the sliders to hear different superposition weights!</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎼</div>
+                <div class="feature-title">Equal Superposition</div>
+                <div class="feature-desc">When α = β = 1/√2 ≈ 0.707, both notes play at equal volume. This is the maximally uncertain quantum state - a perfect chord!</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌊</div>
+                <div class="feature-title">Phase Relationships</div>
+                <div class="feature-desc">The waveforms show how the two frequencies combine. They create a beautiful interference pattern in time!</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎵</div>
+                <div class="feature-title">Quantum Harmony</div>
+                <div class="feature-desc">We use musical intervals based on quantum ratios: Major third (5:4 = 1.25×), Perfect fifth (3:2 = 1.5×), Octave (2:1).</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="entanglement-mode" class="mode-content" style="display: none;">
+        <div class="info-panel">
+            <div class="info-title">🔗 Entanglement as Harmony</div>
+            <div class="info-text">
+                <span class="highlight">Entangled qubits are like harmony!</span> Two notes in harmony create a richer sound than either alone. Measuring one instantly affects the other - change one note and the harmony changes!
+            </div>
+            <div class="equation">
+Bell State: |Φ⁺⟩ = (|00⟩ + |11⟩) / √2
+
+In music:
+• |00⟩ → Both play low notes (perfect unison)
+• |11⟩ → Both play high notes (octave harmony)
+• Equal superposition → Perfect consonant harmony!
+
+Measure Alice → Instantly determines Bob's note!
+            </div>
+        </div>
+
+        <div class="note-buttons">
+            <button class="note-btn" onclick="playBellState('phi-plus')">|Φ⁺⟩ - Consonant</button>
+            <button class="note-btn" onclick="playBellState('phi-minus')">|Φ⁻⟩ - Dissonant</button>
+            <button class="note-btn" onclick="playBellState('psi-plus')">|Ψ⁺⟩ - Major</button>
+            <button class="note-btn" onclick="playBellState('psi-minus')">|Ψ⁻⟩ - Minor</button>
+        </div>
+
+        <div style="text-align: center; margin: 34px 0;">
+            <button class="play-btn" onclick="stopAll()">⏹ Stop</button>
+            <button class="play-btn" onclick="measureEntangled()">🎲 Measure & Collapse</button>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="entanglement-canvas" width="1200" height="400"></canvas>
+        </div>
+
+        <div class="waveform-display">
+            <div class="state-display" id="ent-state">Select a Bell state to play...</div>
+            <div class="frequency-display" id="ent-freq">Click a button above!</div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎶</div>
+                <div class="feature-title">|Φ⁺⟩ - Perfect Consonance</div>
+                <div class="feature-desc">Both qubits same → Perfect unison or octave. Smooth, pure harmony. Like |00⟩ (C + C) or |11⟩ (C + C').</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">😱</div>
+                <div class="feature-title">|Φ⁻⟩ - Dissonance</div>
+                <div class="feature-desc">Opposite phase → Tritone (devil's interval). Unsettling tension. Like |00⟩ - |11⟩ creating beats.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">😊</div>
+                <div class="feature-title">|Ψ⁺⟩ - Major Key</div>
+                <div class="feature-desc">Cross-correlation → Major third harmony. Happy, bright sound. |01⟩ + |10⟩ like C + E.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">😢</div>
+                <div class="feature-title">|Ψ⁻⟩ - Minor Key</div>
+                <div class="feature-desc">Opposite phase → Minor third. Sad, contemplative. |01⟩ - |10⟩ like C + Eb.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="interference-mode" class="mode-content" style="display: none;">
+        <div class="info-panel">
+            <div class="info-title">🌊 Interference as Beats</div>
+            <div class="info-text">
+                <span class="highlight">Quantum interference creates beats!</span> When two paths have similar phases, they interfere constructively (louder). When opposite, destructively (quieter). Just like acoustic beats!
+            </div>
+            <div class="equation">
+Beat Frequency = |f₁ - f₂|
+
+Constructive: Δφ = 0, 2π, 4π... → Waves add → Loud!
+Destructive: Δφ = π, 3π, 5π... → Waves cancel → Quiet!
+
+In quantum: Same principle determines probability!
+• Constructive → High probability
+• Destructive → Low probability
+            </div>
+        </div>
+
+        <div class="audio-controls">
+            <div class="control-group">
+                <div class="control-label">Path 1 Frequency</div>
+                <div class="control-value" id="freq1-val">440 Hz</div>
+                <input type="range" class="slider" id="freq1-slider" min="400" max="500" value="440" oninput="updateFreq1(this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label">Path 2 Frequency</div>
+                <div class="control-value" id="freq2-val">445 Hz</div>
+                <input type="range" class="slider" id="freq2-slider" min="400" max="500" value="445" oninput="updateFreq2(this.value)">
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 34px 0;">
+            <button class="play-btn" id="play-interference" onclick="playInterference()">▶ Play Interference</button>
+            <button class="play-btn" onclick="stopAll()">⏹ Stop</button>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="interference-canvas" width="1200" height="400"></canvas>
+        </div>
+
+        <div class="waveform-display">
+            <div class="frequency-display" id="beat-freq">Beat Frequency: 5 Hz</div>
+            <div style="color: rgba(255, 255, 255, 0.6); margin-top: 8px;">
+                You'll hear the volume pulse at this rate!
+            </div>
+            <div class="state-display" id="interference-type">Constructive + Destructive Interference</div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <div class="feature-title">Constructive Interference</div>
+                <div class="feature-desc">When peaks align → Maximum amplitude! In quantum mechanics, this means HIGH probability of finding the particle.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📉</div>
+                <div class="feature-title">Destructive Interference</div>
+                <div class="feature-desc">When peak meets trough → Cancellation! In quantum mechanics, this means LOW probability (or zero!).</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎚️</div>
+                <div class="feature-title">Beat Frequency</div>
+                <div class="feature-desc">The volume pulsates at |f₁ - f₂| Hz. Make frequencies closer for slower beats, further for faster beats!</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌊</div>
+                <div class="feature-title">Wave Superposition</div>
+                <div class="feature-desc">The final waveform is the sum of both paths. Watch how they add and cancel in the visualization!</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="measurement-mode" class="mode-content" style="display: none;">
+        <div class="info-panel">
+            <div class="info-title">🎲 Measurement Collapse as Note Selection</div>
+            <div class="info-text">
+                <span class="highlight">Quantum measurement is like choosing one note from a chord!</span> Before measurement, all notes play (superposition). After measurement, only ONE note remains - the wavefunction has collapsed!
+            </div>
+            <div class="equation">
+Before measurement: |ψ⟩ = Σ αᵢ|i⟩ → All notes play!
+After measurement:  |ψ⟩ = |k⟩    → Only one note!
+
+Probability of getting note k: P(k) = |αₖ|²
+
+Example: |ψ⟩ = (1/2)|C⟩ + (√3/2)|E⟩
+→ 25% chance of C (lower note)
+→ 75% chance of E (higher note)
+            </div>
+        </div>
+
+        <div class="audio-controls">
+            <div class="control-group">
+                <div class="control-label">Number of Notes</div>
+                <div class="control-value" id="num-notes-val">4</div>
+                <input type="range" class="slider" id="num-notes-slider" min="2" max="8" value="4" oninput="updateNumNotes(this.value)">
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 34px 0;">
+            <button class="play-btn" id="play-measurement" onclick="playBeforeMeasurement()">▶ Play Superposition (All Notes)</button>
+            <button class="play-btn" onclick="performMeasurement()">🎲 Measure (Collapse!)</button>
+            <button class="play-btn" onclick="stopAll()">⏹ Stop</button>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="measurement-canvas" width="1200" height="400"></canvas>
+        </div>
+
+        <div class="waveform-display">
+            <div class="state-display" id="measure-state">Click to create superposition...</div>
+            <div class="frequency-display" id="measure-result">-</div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎼</div>
+                <div class="feature-title">Before: Rich Chord</div>
+                <div class="feature-desc">All notes play simultaneously with different volumes (amplitudes). This is quantum superposition - existing in all states at once!</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">After: Single Note</div>
+                <div class="feature-desc">Measurement forces the system to "choose" ONE note. The louder the note was (higher |α|²), the more likely it is!</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎲</div>
+                <div class="feature-title">Probabilistic Selection</div>
+                <div class="feature-desc">Which note you get is RANDOM, but weighted by amplitudes. Run it many times to see the probability distribution!</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💥</div>
+                <div class="feature-title">Irreversible Collapse</div>
+                <div class="feature-desc">Once measured, you can't get the chord back! The quantum information is lost. This is why quantum computing is so fragile.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio context (initialized on first interaction)
+        let audioContext = null;
+        let currentOscillators = [];
+        let currentGains = [];
+        let currentMode = 'superposition';
+
+        // State variables
+        let alpha = 0.707;
+        let beta = 0.707;
+        let freq1 = 440;
+        let freq2 = 445;
+        let numNotes = 4;
+        let measuredNote = null;
+
+        // Canvas contexts
+        const superCanvas = document.getElementById('superposition-canvas');
+        const superCtx = superCanvas.getContext('2d');
+        const entCanvas = document.getElementById('entanglement-canvas');
+        const entCtx = entCanvas.getContext('2d');
+        const intCanvas = document.getElementById('interference-canvas');
+        const intCtx = intCanvas.getContext('2d');
+        const measureCanvas = document.getElementById('measurement-canvas');
+        const measureCtx = measureCanvas.getContext('2d');
+
+        let animationId = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            stopAll();
+
+            // Update button states
+            const buttons = document.querySelectorAll('.mode-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Show/hide mode content
+            document.getElementById('superposition-mode').style.display = mode === 'superposition' ? 'block' : 'none';
+            document.getElementById('entanglement-mode').style.display = mode === 'entanglement' ? 'block' : 'none';
+            document.getElementById('interference-mode').style.display = mode === 'interference' ? 'block' : 'none';
+            document.getElementById('measurement-mode').style.display = mode === 'measurement' ? 'block' : 'none';
+
+            // Start appropriate visualization
+            if (mode === 'superposition') drawSuperposition();
+            else if (mode === 'entanglement') drawEntanglement();
+            else if (mode === 'interference') drawInterference();
+            else if (mode === 'measurement') drawMeasurement();
+        }
+
+        function updateAlpha(value) {
+            alpha = value / 100;
+            // Normalize to keep |α|² + |β|² = 1
+            const sum = alpha * alpha + beta * beta;
+            if (sum > 0) {
+                alpha = alpha / Math.sqrt(sum);
+                beta = beta / Math.sqrt(sum);
+            }
+            document.getElementById('alpha-val').textContent = alpha.toFixed(3);
+            document.getElementById('beta-val').textContent = beta.toFixed(3);
+
+            const freq1 = 440; // A4
+            const freq2 = 554; // C#5
+            document.getElementById('super-state').textContent =
+                `|ψ⟩ = ${alpha.toFixed(3)}|0⟩ + ${beta.toFixed(3)}|1⟩`;
+
+            drawSuperposition();
+        }
+
+        function updateBeta(value) {
+            beta = value / 100;
+            // Normalize
+            const sum = alpha * alpha + beta * beta;
+            if (sum > 0) {
+                alpha = alpha / Math.sqrt(sum);
+                beta = beta / Math.sqrt(sum);
+            }
+            document.getElementById('alpha-val').textContent = alpha.toFixed(3);
+            document.getElementById('beta-val').textContent = beta.toFixed(3);
+
+            document.getElementById('super-state').textContent =
+                `|ψ⟩ = ${alpha.toFixed(3)}|0⟩ + ${beta.toFixed(3)}|1⟩`;
+
+            drawSuperposition();
+        }
+
+        function updateFreq1(value) {
+            freq1 = parseInt(value);
+            document.getElementById('freq1-val').textContent = freq1 + ' Hz';
+            const beatFreq = Math.abs(freq1 - freq2);
+            document.getElementById('beat-freq').textContent = `Beat Frequency: ${beatFreq} Hz`;
+            drawInterference();
+        }
+
+        function updateFreq2(value) {
+            freq2 = parseInt(value);
+            document.getElementById('freq2-val').textContent = freq2 + ' Hz';
+            const beatFreq = Math.abs(freq1 - freq2);
+            document.getElementById('beat-freq').textContent = `Beat Frequency: ${beatFreq} Hz`;
+            drawInterference();
+        }
+
+        function updateNumNotes(value) {
+            numNotes = parseInt(value);
+            document.getElementById('num-notes-val').textContent = numNotes;
+            drawMeasurement();
+        }
+
+        function playSuperposition() {
+            initAudio();
+            stopAll();
+
+            const btn = document.getElementById('play-superposition');
+            btn.classList.add('playing');
+
+            const freq1 = 440; // A4
+            const freq2 = 554; // C#5 (major third)
+
+            // Create oscillators
+            const osc1 = audioContext.createOscillator();
+            const gain1 = audioContext.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = freq1;
+            gain1.gain.value = alpha * alpha * 0.3; // |α|² for volume
+            osc1.connect(gain1);
+            gain1.connect(audioContext.destination);
+
+            const osc2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = freq2;
+            gain2.gain.value = beta * beta * 0.3; // |β|² for volume
+            osc2.connect(gain2);
+            gain2.connect(audioContext.destination);
+
+            osc1.start();
+            osc2.start();
+
+            currentOscillators = [osc1, osc2];
+            currentGains = [gain1, gain2];
+
+            // Animate waveform
+            animateSuperposition();
+        }
+
+        function playBellState(state) {
+            initAudio();
+            stopAll();
+
+            const buttons = document.querySelectorAll('.note-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            let freq1, freq2, name, description;
+
+            switch(state) {
+                case 'phi-plus':
+                    freq1 = 440; // C
+                    freq2 = 880; // C (octave)
+                    name = '|Φ⁺⟩ = (|00⟩ + |11⟩)/√2';
+                    description = 'Perfect consonance';
+                    break;
+                case 'phi-minus':
+                    freq1 = 440; // C
+                    freq2 = 622; // Eb (tritone)
+                    name = '|Φ⁻⟩ = (|00⟩ - |11⟩)/√2';
+                    description = 'Dissonance (tritone)';
+                    break;
+                case 'psi-plus':
+                    freq1 = 440; // C
+                    freq2 = 554; // E (major third)
+                    name = '|Ψ⁺⟩ = (|01⟩ + |10⟩)/√2';
+                    description = 'Major harmony';
+                    break;
+                case 'psi-minus':
+                    freq1 = 440; // C
+                    freq2 = 523; // Eb (minor third)
+                    name = '|Ψ⁻⟩ = (|01⟩ - |10⟩)/√2';
+                    description = 'Minor harmony';
+                    break;
+            }
+
+            document.getElementById('ent-state').textContent = name;
+            document.getElementById('ent-freq').textContent =
+                `${freq1} Hz + ${freq2} Hz (${description})`;
+
+            const osc1 = audioContext.createOscillator();
+            const gain1 = audioContext.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = freq1;
+            gain1.gain.value = 0.2;
+            osc1.connect(gain1);
+            gain1.connect(audioContext.destination);
+
+            const osc2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = freq2;
+            gain2.gain.value = 0.2;
+            osc2.connect(gain2);
+            gain2.connect(audioContext.destination);
+
+            osc1.start();
+            osc2.start();
+
+            currentOscillators = [osc1, osc2];
+            currentGains = [gain1, gain2];
+
+            animateEntanglement(freq1, freq2);
+        }
+
+        function measureEntangled() {
+            if (currentOscillators.length === 0) return;
+
+            // Collapse to one note!
+            const collapsedFreq = Math.random() > 0.5 ?
+                currentOscillators[0].frequency.value :
+                currentOscillators[1].frequency.value;
+
+            stopAll();
+            initAudio();
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = collapsedFreq;
+            gain.gain.value = 0.3;
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
+
+            currentOscillators = [osc];
+            currentGains = [gain];
+
+            document.getElementById('ent-state').textContent =
+                `COLLAPSED → ${collapsedFreq} Hz only!`;
+        }
+
+        function playInterference() {
+            initAudio();
+            stopAll();
+
+            const btn = document.getElementById('play-interference');
+            btn.classList.add('playing');
+
+            const osc1 = audioContext.createOscillator();
+            const gain1 = audioContext.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = freq1;
+            gain1.gain.value = 0.2;
+            osc1.connect(gain1);
+            gain1.connect(audioContext.destination);
+
+            const osc2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = freq2;
+            gain2.gain.value = 0.2;
+            osc2.connect(gain2);
+            gain2.connect(audioContext.destination);
+
+            osc1.start();
+            osc2.start();
+
+            currentOscillators = [osc1, osc2];
+            currentGains = [gain1, gain2];
+
+            animateInterference();
+        }
+
+        function playBeforeMeasurement() {
+            initAudio();
+            stopAll();
+
+            const btn = document.getElementById('play-measurement');
+            btn.classList.add('playing');
+
+            // Create chord with multiple notes
+            const baseFreq = 440;
+            const scale = [1, 5/4, 3/2, 2]; // Major chord ratios
+
+            let stateStr = '|ψ⟩ = ';
+            for (let i = 0; i < numNotes; i++) {
+                const freq = baseFreq * (i < scale.length ? scale[i] : Math.pow(2, i/12));
+                const amplitude = 1 / Math.sqrt(numNotes); // Equal superposition
+
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.value = amplitude * amplitude * 0.3;
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start();
+
+                currentOscillators.push(osc);
+                currentGains.push(gain);
+
+                stateStr += `${amplitude.toFixed(3)}|${i}⟩`;
+                if (i < numNotes - 1) stateStr += ' + ';
+            }
+
+            document.getElementById('measure-state').textContent = stateStr;
+            document.getElementById('measure-result').textContent =
+                `Playing all ${numNotes} notes (superposition)`;
+
+            animateMeasurement(false);
+        }
+
+        function performMeasurement() {
+            if (currentOscillators.length === 0) {
+                alert('Play superposition first!');
+                return;
+            }
+
+            // Pick one note randomly
+            measuredNote = Math.floor(Math.random() * currentOscillators.length);
+            const measuredFreq = currentOscillators[measuredNote].frequency.value;
+
+            stopAll();
+            initAudio();
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = measuredFreq;
+            gain.gain.value = 0.3;
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
+
+            currentOscillators = [osc];
+            currentGains = [gain];
+
+            document.getElementById('measure-state').textContent =
+                `MEASURED → |${measuredNote}⟩ only!`;
+            document.getElementById('measure-result').textContent =
+                `${measuredFreq.toFixed(1)} Hz (collapsed to note ${measuredNote})`;
+
+            animateMeasurement(true);
+        }
+
+        function stopAll() {
+            currentOscillators.forEach(osc => {
+                try { osc.stop(); } catch(e) {}
+            });
+            currentOscillators = [];
+            currentGains = [];
+
+            // Remove playing class from all buttons
+            document.querySelectorAll('.play-btn').forEach(btn => {
+                btn.classList.remove('playing');
+            });
+
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+
+        function drawSuperposition() {
+            const ctx = superCtx;
+            const width = superCanvas.width;
+            const height = superCanvas.height;
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            const freq1 = 440;
+            const freq2 = 554;
+            const centerY = height / 2;
+
+            // Draw waveforms
+            ctx.lineWidth = 2;
+
+            // Frequency 1 (|0⟩)
+            ctx.strokeStyle = '#2979FF';
+            ctx.globalAlpha = alpha * alpha;
+            ctx.beginPath();
+            for (let x = 0; x < width; x++) {
+                const t = x / width * 0.05;
+                const y = centerY + Math.sin(2 * Math.PI * freq1 * t) * 50 * alpha;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Frequency 2 (|1⟩)
+            ctx.strokeStyle = '#FF1D6C';
+            ctx.globalAlpha = beta * beta;
+            ctx.beginPath();
+            for (let x = 0; x < width; x++) {
+                const t = x / width * 0.05;
+                const y = centerY + Math.sin(2 * Math.PI * freq2 * t) * 50 * beta;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Combined waveform
+            ctx.strokeStyle = '#F5A623';
+            ctx.globalAlpha = 1;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let x = 0; x < width; x++) {
+                const t = x / width * 0.05;
+                const y1 = Math.sin(2 * Math.PI * freq1 * t) * 50 * alpha;
+                const y2 = Math.sin(2 * Math.PI * freq2 * t) * 50 * beta;
+                const y = centerY + y1 + y2;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '14px SF Pro Display';
+            ctx.fillText('Blue: |0⟩ state (440 Hz)', 20, 30);
+            ctx.fillText('Pink: |1⟩ state (554 Hz)', 20, 50);
+            ctx.fillText('Orange: Superposition', 20, 70);
+        }
+
+        function drawEntanglement() {
+            const ctx = entCtx;
+            const width = entCanvas.width;
+            const height = entCanvas.height;
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.font = '18px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Select a Bell state above to see entangled harmony!', width/2, height/2);
+            ctx.textAlign = 'left';
+        }
+
+        function drawInterference() {
+            const ctx = intCtx;
+            const width = intCanvas.width;
+            const height = intCanvas.height;
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            const centerY = height / 2;
+
+            // Draw individual waves
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.5;
+
+            // Wave 1
+            ctx.strokeStyle = '#2979FF';
+            ctx.beginPath();
+            for (let x = 0; x < width; x++) {
+                const t = x / width * 0.1;
+                const y = centerY + Math.sin(2 * Math.PI * freq1 * t) * 70;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Wave 2
+            ctx.strokeStyle = '#FF1D6C';
+            ctx.beginPath();
+            for (let x = 0; x < width; x++) {
+                const t = x / width * 0.1;
+                const y = centerY + Math.sin(2 * Math.PI * freq2 * t) * 70;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Combined (interference)
+            ctx.strokeStyle = '#F5A623';
+            ctx.globalAlpha = 1;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let x = 0; x < width; x++) {
+                const t = x / width * 0.1;
+                const y1 = Math.sin(2 * Math.PI * freq1 * t) * 70;
+                const y2 = Math.sin(2 * Math.PI * freq2 * t) * 70;
+                const y = centerY + (y1 + y2);
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Show beat envelope
+            ctx.strokeStyle = 'rgba(245, 166, 35, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            const beatFreq = Math.abs(freq1 - freq2);
+            ctx.beginPath();
+            for (let x = 0; x < width; x++) {
+                const t = x / width * 0.1;
+                const envelope = Math.abs(Math.cos(Math.PI * beatFreq * t)) * 140;
+                ctx.lineTo(x, centerY - envelope);
+            }
+            ctx.stroke();
+            ctx.beginPath();
+            for (let x = 0; x < width; x++) {
+                const t = x / width * 0.1;
+                const envelope = Math.abs(Math.cos(Math.PI * beatFreq * t)) * 140;
+                ctx.lineTo(x, centerY + envelope);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '14px SF Pro Display';
+            ctx.fillText('Dashed lines = Beat envelope', 20, 30);
+        }
+
+        function drawMeasurement() {
+            const ctx = measureCtx;
+            const width = measureCanvas.width;
+            const height = measureCanvas.height;
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            const barWidth = width / (numNotes + 1);
+            const baseFreq = 440;
+
+            for (let i = 0; i < numNotes; i++) {
+                const x = barWidth * (i + 0.5);
+                const probability = 1 / numNotes;
+                const barHeight = probability * height * 0.7;
+
+                // Bar
+                ctx.fillStyle = measuredNote === i ? '#F5A623' : '#2979FF';
+                ctx.fillRect(x - 30, height - barHeight - 50, 60, barHeight);
+
+                // Border
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x - 30, height - barHeight - 50, 60, barHeight);
+
+                // Label
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '16px SF Pro Display';
+                ctx.textAlign = 'center';
+                ctx.fillText(`|${i}⟩`, x, height - 20);
+                ctx.font = '12px SF Pro Display';
+                ctx.fillText(`${(probability * 100).toFixed(1)}%`, x, height - 5);
+            }
+
+            ctx.textAlign = 'left';
+        }
+
+        function animateSuperposition() {
+            drawSuperposition();
+            animationId = requestAnimationFrame(animateSuperposition);
+        }
+
+        function animateEntanglement(f1, f2) {
+            const ctx = entCtx;
+            const width = entCanvas.width;
+            const height = entCanvas.height;
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            const time = Date.now() / 1000;
+            const centerY = height / 2;
+
+            // Alice's qubit (left)
+            ctx.strokeStyle = '#2979FF';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let x = 0; x < width/2 - 50; x++) {
+                const t = x / (width/2) * 0.05 + time * 0.5;
+                const y = centerY + Math.sin(2 * Math.PI * f1 * t) * 70;
+                if (x === 0) ctx.moveTo(x + 50, y);
+                else ctx.lineTo(x + 50, y);
+            }
+            ctx.stroke();
+
+            // Bob's qubit (right)
+            ctx.strokeStyle = '#FF1D6C';
+            ctx.beginPath();
+            for (let x = 0; x < width/2 - 50; x++) {
+                const t = x / (width/2) * 0.05 + time * 0.5;
+                const y = centerY + Math.sin(2 * Math.PI * f2 * t) * 70;
+                if (x === 0) ctx.moveTo(x + width/2 + 50, y);
+                else ctx.lineTo(x + width/2 + 50, y);
+            }
+            ctx.stroke();
+
+            // Entanglement link
+            ctx.strokeStyle = '#9C27B0';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(width/2, centerY - 100);
+            ctx.lineTo(width/2, centerY + 100);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Labels
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Alice', width/4, 30);
+            ctx.fillText('Bob', 3*width/4, 30);
+            ctx.fillText('ENTANGLED!', width/2, centerY);
+            ctx.textAlign = 'left';
+
+            animationId = requestAnimationFrame(() => animateEntanglement(f1, f2));
+        }
+
+        function animateInterference() {
+            drawInterference();
+            animationId = requestAnimationFrame(animateInterference);
+        }
+
+        function animateMeasurement(collapsed) {
+            drawMeasurement();
+            if (!collapsed) {
+                animationId = requestAnimationFrame(() => animateMeasurement(false));
+            }
+        }
+
+        // Initialize
+        drawSuperposition();
+    </script>
+</body>
+</html>

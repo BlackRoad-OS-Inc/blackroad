@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-EPOCH v1.0 - Unix Timestamp Tools
+now() { date +%s; }
+to_date() { date -d "@$1" 2>/dev/null || date -r "$1" 2>/dev/null; }
+from_date() { date -d "$1" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$1" +%s 2>/dev/null; }
+case "$1" in
+    now) now ;;
+    to) to_date "$2" ;;
+    from) from_date "$2" ;;
+    *) echo "Now: $(now)"; echo "CECE-EPOCH: now | to <timestamp> | from <date>" ;;
+esac

@@ -1,0 +1,73 @@
+name: Mass Deploy All Services
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "DEPLOY ALL" to confirm'
+        required: true
+        type: string
+      category:
+        description: 'Category to deploy (leave empty for all 238 services)'
+        required: false
+        type: choice
+        options:
+          - ''
+          - core
+          - agents
+          - api
+          - infrastructure
+          - security
+          - blockchain
+          - devops
+          - monitoring
+          - data
+          - ecosystem
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate Deployment Request
+
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "DEPLOY ALL" ]; then
+            echo "❌ Confirmation failed. You must type 'DEPLOY ALL' to proceed."
+            exit 1
+          fi
+          echo "✅ Confirmation verified"
+
+  deploy-all:
+    needs: validate
+    runs-on: ubuntu-latest
+    name: Mass Deployment
+
+    steps:
+      - name: Deploy all services
+        run: |
+          CATEGORY="${{ github.event.inputs.category }}"
+          if [ -z "$CATEGORY" ]; then
+            echo "🚀 Deploying ALL 238 services..."
+            curl -X POST ${{ secrets.ORCHESTRATOR_URL }}/deploy/all \
+              -H "Content-Type: application/json"
+          else
+            echo "🚀 Deploying $CATEGORY category..."
+            curl -X POST "${{ secrets.ORCHESTRATOR_URL }}/deploy/all?category=$CATEGORY" \
+              -H "Content-Type: application/json"
+          fi
+
+      - name: Monitor deployment
+        run: |
+          echo "⏳ Waiting for deployments to start..."
+          sleep 60
+          echo "📊 Checking deployment status..."
+          curl ${{ secrets.ORCHESTRATOR_URL }}/status | jq '.'
+
+      - name: Summary
+        run: |
+          echo "✅ Mass deployment initiated!"
+          echo "Monitor progress: ${{ secrets.ORCHESTRATOR_URL }}/dashboard"
+          echo ""
+          echo "This will take several minutes to complete."
+          echo "Services will be deployed sequentially to avoid rate limits."

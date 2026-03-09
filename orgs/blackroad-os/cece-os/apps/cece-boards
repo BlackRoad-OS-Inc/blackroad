@@ -1,0 +1,131 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════════
+#  🖤 CECE-BOARDS v1.0 - Our Own Trello
+#═══════════════════════════════════════════════════════════════════
+#  Kanban boards. Visual workflow. Your hardware.
+#═══════════════════════════════════════════════════════════════════
+
+BOARDS_DIR=~/cece/boards
+mkdir -p "$BOARDS_DIR"
+
+PINK="\033[38;5;205m"
+AMBER="\033[38;5;214m"
+WHITE="\033[1;37m"
+GREEN="\033[38;5;82m"
+BLUE="\033[38;5;39m"
+RESET="\033[0m"
+
+create_board() {
+    NAME="$1"
+    BOARD_DIR="$BOARDS_DIR/$NAME"
+    mkdir -p "$BOARD_DIR"/{backlog,doing,review,done}
+    
+    echo -e "${GREEN}✅ Board created: $NAME${RESET}"
+    echo "Columns: backlog | doing | review | done"
+}
+
+add_card() {
+    BOARD="$1"
+    COLUMN="${2:-backlog}"
+    TITLE="$3"
+    
+    CARD_ID=$(date +%s | tail -c 6)
+    CARD_FILE="$BOARDS_DIR/$BOARD/$COLUMN/$CARD_ID.card"
+    
+    echo "$TITLE" > "$CARD_FILE"
+    echo -e "${GREEN}✅ Card #$CARD_ID added to $COLUMN${RESET}"
+}
+
+move_card() {
+    BOARD="$1"
+    CARD_ID="$2"
+    TO_COLUMN="$3"
+    
+    # Find card
+    for col in backlog doing review done; do
+        CARD_FILE="$BOARDS_DIR/$BOARD/$col/$CARD_ID.card"
+        if [ -f "$CARD_FILE" ]; then
+            mv "$CARD_FILE" "$BOARDS_DIR/$BOARD/$TO_COLUMN/"
+            echo -e "${GREEN}✅ Card #$CARD_ID moved to $TO_COLUMN${RESET}"
+            return
+        fi
+    done
+    
+    echo "Card not found"
+}
+
+view_board() {
+    BOARD="$1"
+    BOARD_DIR="$BOARDS_DIR/$BOARD"
+    
+    if [ ! -d "$BOARD_DIR" ]; then
+        echo "Board not found"
+        return
+    fi
+    
+    echo -e "${PINK}═══════════════════════════════════════════════════════════════════${RESET}"
+    echo -e "${WHITE}  📌 $BOARD${RESET}"
+    echo -e "${PINK}═══════════════════════════════════════════════════════════════════${RESET}"
+    echo ""
+    
+    printf "${AMBER}%-15s${RESET} | ${BLUE}%-15s${RESET} | ${WHITE}%-15s${RESET} | ${GREEN}%-15s${RESET}\n" "BACKLOG" "DOING" "REVIEW" "DONE"
+    echo "─────────────────────────────────────────────────────────────────"
+    
+    # Get max cards in any column
+    MAX=0
+    for col in backlog doing review done; do
+        COUNT=$(ls "$BOARD_DIR/$col"/*.card 2>/dev/null | wc -l)
+        [ "$COUNT" -gt "$MAX" ] && MAX=$COUNT
+    done
+    
+    # Print rows
+    for i in $(seq 1 $MAX); do
+        BACKLOG=$(ls "$BOARD_DIR/backlog"/*.card 2>/dev/null | sed -n "${i}p")
+        DOING=$(ls "$BOARD_DIR/doing"/*.card 2>/dev/null | sed -n "${i}p")
+        REVIEW=$(ls "$BOARD_DIR/review"/*.card 2>/dev/null | sed -n "${i}p")
+        DONE=$(ls "$BOARD_DIR/done"/*.card 2>/dev/null | sed -n "${i}p")
+        
+        B_TEXT=""
+        D_TEXT=""
+        R_TEXT=""
+        DN_TEXT=""
+        
+        [ -n "$BACKLOG" ] && B_TEXT="$(basename $BACKLOG .card): $(head -1 $BACKLOG | cut -c1-12)"
+        [ -n "$DOING" ] && D_TEXT="$(basename $DOING .card): $(head -1 $DOING | cut -c1-12)"
+        [ -n "$REVIEW" ] && R_TEXT="$(basename $REVIEW .card): $(head -1 $REVIEW | cut -c1-12)"
+        [ -n "$DONE" ] && DN_TEXT="$(basename $DONE .card): $(head -1 $DONE | cut -c1-12)"
+        
+        printf "%-15s | %-15s | %-15s | %-15s\n" "$B_TEXT" "$D_TEXT" "$R_TEXT" "$DN_TEXT"
+    done
+}
+
+case "$1" in
+    new)
+        create_board "$2"
+        ;;
+    add)
+        add_card "$2" "$3" "$4"
+        ;;
+    move)
+        move_card "$2" "$3" "$4"
+        ;;
+    view)
+        view_board "$2"
+        ;;
+    list)
+        echo -e "${PINK}🖤 BOARDS${RESET}"
+        for b in "$BOARDS_DIR"/*; do
+            [ -d "$b" ] && echo "  📌 $(basename $b)"
+        done
+        ;;
+    *)
+        echo -e "${PINK}🖤 CECE-BOARDS - Our Own Trello${RESET}"
+        echo ""
+        echo "Commands:"
+        echo "  new <name>                    Create board"
+        echo "  add <board> <column> <title>  Add card"
+        echo "  move <board> <id> <column>    Move card"
+        echo "  view <board>                  View board"
+        echo "  list                          List boards"
+        ;;
+esac

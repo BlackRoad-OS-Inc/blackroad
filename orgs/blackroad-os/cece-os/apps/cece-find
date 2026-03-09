@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-FIND v1.0 - File Finder
+by_name() { find "${2:-.}" -name "*$1*" 2>/dev/null; }
+by_ext() { find "${2:-.}" -name "*.$1" 2>/dev/null; }
+by_size() { find "${2:-.}" -size +"$1" 2>/dev/null; }
+recent() { find "${1:-.}" -mtime -1 2>/dev/null; }
+case "$1" in
+    name) by_name "$2" "$3" ;;
+    ext) by_ext "$2" "$3" ;;
+    size) by_size "$2" "$3" ;;
+    recent) recent "$2" ;;
+    *) echo "CECE-FIND: name <pattern> [dir] | ext <ext> [dir] | size <+NM> [dir] | recent [dir]" ;;
+esac

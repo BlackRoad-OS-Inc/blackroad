@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadFlow - Document Organization AI | BlackRoad</title>
+    <style>
+        :root {
+            --hot-pink: #FF1D6C;
+            --amber: #F5A623;
+            --violet: #9C27B0;
+            --electric-blue: #2979FF;
+            --black: #000000;
+            --white: #FFFFFF;
+            --phi: 1.618;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--black);
+            color: var(--white);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated grid background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 29, 108, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 29, 108, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Glowing orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: float 20s infinite;
+            z-index: 1;
+        }
+
+        .orb1 {
+            width: 400px;
+            height: 400px;
+            background: var(--hot-pink);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .orb2 {
+            width: 300px;
+            height: 300px;
+            background: var(--violet);
+            top: 50%;
+            right: 10%;
+            animation-delay: 7s;
+        }
+
+        .orb3 {
+            width: 350px;
+            height: 350px;
+            background: var(--amber);
+            bottom: 10%;
+            left: 30%;
+            animation-delay: 14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, -100px) scale(1.1); }
+            66% { transform: translate(-100px, 100px) scale(0.9); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+        }
+
+        /* Header */
+        header {
+            padding: calc(8px * var(--phi) * var(--phi)) 0; /* 21px */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--amber), var(--hot-pink), var(--violet), var(--electric-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            margin-left: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--hot-pink);
+        }
+
+        /* Hero section */
+        .hero {
+            text-align: center;
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)) 0; /* 89px */
+        }
+
+        h1 {
+            font-size: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)); /* 89px */
+            font-weight: 900;
+            margin-bottom: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            background: linear-gradient(135deg, var(--amber), var(--hot-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+        }
+
+        .problem {
+            font-size: calc(8px * var(--phi)); /* 13px */
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: calc(8px * var(--phi)); /* 13px */
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: calc(8px * var(--phi)) calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 13px 34px */
+            font-size: calc(8px * var(--phi)); /* 13px */
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--hot-pink), var(--violet));
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 29, 108, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid var(--hot-pink);
+        }
+
+        .btn-secondary:hover {
+            background: var(--hot-pink);
+        }
+
+        /* Features section */
+        .features {
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)) 0; /* 89px */
+        }
+
+        h2 {
+            font-size: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 55px */
+            font-weight: 800;
+            margin-bottom: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 55px */
+            text-align: center;
+            background: linear-gradient(135deg, var(--violet), var(--electric-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            margin-bottom: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+            border-radius: 13px;
+            padding: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--hot-pink);
+            box-shadow: 0 10px 30px rgba(255, 29, 108, 0.2);
+        }
+
+        .feature-icon {
+            font-size: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            margin-bottom: calc(8px * var(--phi)); /* 13px */
+        }
+
+        h3 {
+            font-size: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--hot-pink);
+        }
+
+        /* Pricing section */
+        .pricing {
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)) 0; /* 89px */
+            text-align: center;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--hot-pink);
+            border-radius: 21px;
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .price {
+            font-size: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)); /* 89px */
+            font-weight: 900;
+            color: var(--hot-pink);
+            margin: calc(8px * var(--phi)) 0; /* 13px */
+        }
+
+        .price-note {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: calc(8px * var(--phi) * var(--phi)); /* 21px */
+        }
+
+        .features-list {
+            text-align: left;
+            margin: calc(8px * var(--phi) * var(--phi)) 0; /* 21px */
+        }
+
+        .features-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Comparison section */
+        .comparison {
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi) * var(--phi)) 0; /* 89px */
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            margin-top: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+        }
+
+        .comparison-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 13px;
+            padding: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            text-align: center;
+        }
+
+        .vs {
+            color: var(--amber);
+            font-weight: 800;
+            margin: calc(8px * var(--phi)) 0; /* 13px */
+        }
+
+        .old-price {
+            text-decoration: line-through;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .new-price {
+            font-size: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            font-weight: 800;
+            color: var(--hot-pink);
+        }
+
+        .savings {
+            color: #4CAF50;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            color: rgba(255, 255, 255, 0.5);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: calc(8px * var(--phi) * var(--phi) * var(--phi)); /* 34px */
+            }
+
+            h2 {
+                font-size: calc(8px * var(--phi) * var(--phi)); /* 21px */
+            }
+
+            .features-grid, .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="grid-bg"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">BlackRoad</div>
+            <nav>
+                <a href="https://github.com/BlackRoad-OS">GitHub</a>
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+            </nav>
+        </header>
+
+        <!-- Hero -->
+        <section class="hero">
+            <h1>RoadFlow</h1>
+            <p class="tagline">Document organization AI that actually understands context</p>
+            <p class="problem">
+                Stop wasting hours organizing files manually. RoadFlow uses AI to understand your documents,
+                automatically tag them, and surface the right file at the right time. No more "where did I save that?" moments.
+            </p>
+            <div class="cta-buttons">
+                <a href="#pricing" class="btn btn-primary">Start Free Trial</a>
+                <a href="https://github.com/BlackRoad-OS/roadflow-docs" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section id="features" class="features">
+            <h2>Features That Actually Help</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Smart Auto-Tagging</h3>
+                    <p>AI reads your documents and automatically tags them with relevant keywords. No manual labeling required.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Semantic Search</h3>
+                    <p>Search by meaning, not just keywords. "Meeting notes from last week about budget" actually works.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📁</div>
+                    <h3>Smart Folders</h3>
+                    <p>Folders that auto-populate based on rules you set. "All invoices from Q4" stays up to date automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">☁️</div>
+                    <h3>Universal Integration</h3>
+                    <p>Works with Google Drive, Dropbox, OneDrive, local files. One search bar for everything.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Instant Suggestions</h3>
+                    <p>RoadFlow learns what files you need for each task and surfaces them before you even search.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Privacy-First</h3>
+                    <p>Your documents stay where they are. We only index metadata. End-to-end encryption. No AI training on your data.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section id="pricing" class="pricing">
+            <h2>Simple, Honest Pricing</h2>
+            <div class="pricing-card">
+                <h3>RoadFlow Pro</h3>
+                <div class="price">$15<span style="font-size: 21px;">/month</span></div>
+                <p class="price-note">14-day free trial, no credit card required</p>
+                <ul class="features-list">
+                    <li>Unlimited documents across all your cloud storage</li>
+                    <li>AI-powered smart tagging and organization</li>
+                    <li>Semantic search across all files</li>
+                    <li>Unlimited smart folders with auto-population</li>
+                    <li>Google Drive, Dropbox, OneDrive, local files</li>
+                    <li>Desktop and mobile apps</li>
+                    <li>End-to-end encryption</li>
+                    <li>Priority support</li>
+                </ul>
+                <a href="#" class="btn btn-primary" style="margin-top: 21px;">Start Free Trial</a>
+            </div>
+        </section>
+
+        <!-- Comparison -->
+        <section class="comparison">
+            <h2>RoadFlow vs. Manual Hell</h2>
+            <div class="comparison-grid">
+                <div class="comparison-card">
+                    <h3>Manual Organization</h3>
+                    <p class="old-price">Time: 2-3 hours/week</p>
+                    <p class="old-price">Mental Load: Constant</p>
+                    <p class="old-price">Finding Files: 5-10 min each</p>
+                    <div class="vs">VS</div>
+                    <h3 style="color: var(--hot-pink);">RoadFlow</h3>
+                    <p class="new-price">Time: Zero</p>
+                    <p class="new-price">Mental Load: Zero</p>
+                    <p class="new-price">Finding Files: Instant</p>
+                    <div class="savings">Save 120+ hours/year</div>
+                </div>
+                <div class="comparison-card">
+                    <h3>Multiple Cloud Services</h3>
+                    <p class="old-price">Search each separately</p>
+                    <p class="old-price">Remember which file is where</p>
+                    <p class="old-price">Context switching nightmare</p>
+                    <div class="vs">VS</div>
+                    <h3 style="color: var(--hot-pink);">RoadFlow</h3>
+                    <p class="new-price">One search bar</p>
+                    <p class="new-price">Finds files anywhere</p>
+                    <p class="new-price">Unified experience</p>
+                    <div class="savings">10x faster workflow</div>
+                </div>
+                <div class="comparison-card">
+                    <h3>Folder Chaos</h3>
+                    <p class="old-price">Files in wrong places</p>
+                    <p class="old-price">Inconsistent naming</p>
+                    <p class="old-price">No way to find anything</p>
+                    <div class="vs">VS</div>
+                    <h3 style="color: var(--hot-pink);">RoadFlow</h3>
+                    <p class="new-price">AI organizes automatically</p>
+                    <p class="new-price">Smart tagging</p>
+                    <p class="new-price">Always find what you need</p>
+                    <div class="savings">Peace of mind: Priceless</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="hero">
+            <h2>Ready to stop organizing and start creating?</h2>
+            <p class="tagline">14-day free trial. No credit card required.</p>
+            <div class="cta-buttons">
+                <a href="#" class="btn btn-primary">Start Free Trial</a>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2026 BlackRoad OS, Inc. All rights reserved.</p>
+            <p>Built with Claude Code</p>
+        </footer>
+    </div>
+</body>
+</html>

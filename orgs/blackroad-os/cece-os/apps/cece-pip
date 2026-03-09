@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-PIP v1.0 - PIP Helper
+install() { pip install "$1"; }
+uninstall() { pip uninstall -y "$1"; }
+search() { pip index versions "$1" 2>/dev/null || pip search "$1" 2>/dev/null; }
+upgrade() { pip install --upgrade "$1"; }
+case "$1" in
+    install) install "$2" ;;
+    uninstall) uninstall "$2" ;;
+    search) search "$2" ;;
+    upgrade) upgrade "$2" ;;
+    *) echo "CECE-PIP: install <pkg> | uninstall <pkg> | search <pkg> | upgrade <pkg>" ;;
+esac

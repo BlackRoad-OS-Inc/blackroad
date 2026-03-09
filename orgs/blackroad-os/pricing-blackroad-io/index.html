@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Pricing - Pay Only for What You Use</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff00;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 5rem 2rem 3rem;
+            background: linear-gradient(180deg, var(--bg) 0%, var(--bg-secondary) 100%);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .billing-toggle {
+            display: inline-flex;
+            gap: 1rem;
+            background: var(--bg-tertiary);
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .billing-toggle button {
+            padding: 0.75rem 2rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .billing-toggle button.active {
+            background: var(--accent-purple);
+            color: #fff;
+        }
+
+        .save-badge {
+            display: inline-block;
+            background: var(--success);
+            color: #000;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Pricing Cards */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .pricing-card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(119, 0, 255, 0.3);
+        }
+
+        .pricing-card.featured {
+            border-color: var(--accent-purple);
+            background: linear-gradient(135deg, rgba(119, 0, 255, 0.05), rgba(0, 102, 255, 0.05));
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            right: 2rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink));
+            color: #fff;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-description {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .price {
+            margin-bottom: 2rem;
+        }
+
+        .price-amount {
+            font-size: 3.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        .price-currency {
+            font-size: 2rem;
+        }
+
+        .price-period {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        .price-note {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .cta-button {
+            width: 100%;
+            padding: 1.25rem;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(119, 0, 255, 0.5);
+        }
+
+        .cta-button.secondary {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+        }
+
+        .cta-button.secondary:hover {
+            border-color: var(--accent-purple);
+            box-shadow: none;
+        }
+
+        .features {
+            list-style: none;
+        }
+
+        .features li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .features li:last-child {
+            border-bottom: none;
+        }
+
+        .check {
+            color: var(--success);
+            font-size: 1.25rem;
+        }
+
+        /* Usage Calculator */
+        .calculator {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 3rem;
+            margin-bottom: 4rem;
+        }
+
+        .calculator h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .calculator p {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .calculator-input {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .calculator-input label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .calculator-input input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text);
+            font-size: 1.1rem;
+            font-family: 'Monaco', monospace;
+        }
+
+        .calculator-result {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(119, 0, 255, 0.1), rgba(0, 102, 255, 0.1));
+            border-radius: 12px;
+            border: 2px solid var(--accent-purple);
+        }
+
+        .calculator-result h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .calculator-total {
+            font-size: 4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* FAQ */
+        .faq {
+            max-width: 800px;
+            margin: 0 auto 4rem;
+        }
+
+        .faq h2 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .faq-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .faq-item:hover {
+            border-color: var(--accent-purple);
+        }
+
+        .faq-question {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-answer {
+            color: var(--text-muted);
+            margin-top: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Stripe Elements */
+        #payment-form {
+            max-width: 500px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+        }
+
+        #card-element {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        #card-errors {
+            color: var(--accent-pink);
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>Simple, Transparent Pricing</h1>
+        <p>Pay only for what you use. No hidden fees, cancel anytime.</p>
+        <div class="billing-toggle">
+            <button class="active" onclick="toggleBilling('monthly')">Monthly</button>
+            <button onclick="toggleBilling('yearly')">Yearly <span class="save-badge">Save 20%</span></button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Pricing Cards -->
+        <div class="pricing-grid">
+            <!-- Free -->
+            <div class="pricing-card">
+                <div class="plan-name">Starter</div>
+                <div class="plan-description">Perfect for trying out BlackRoad</div>
+                <div class="price">
+                    <div class="price-amount">
+                        <span class="price-currency">$</span>
+                        <span>0</span>
+                        <span class="price-period">/ month</span>
+                    </div>
+                    <div class="price-note">Forever free</div>
+                </div>
+                <button class="cta-button secondary" onclick="selectPlan('free')">Get Started Free</button>
+                <ul class="features">
+                    <li><span class="check">✓</span> 1,000 API requests/month</li>
+                    <li><span class="check">✓</span> 2 AI agents</li>
+                    <li><span class="check">✓</span> Basic quantum simulations</li>
+                    <li><span class="check">✓</span> Community support</li>
+                    <li><span class="check">✓</span> 99.9% uptime SLA</li>
+                </ul>
+            </div>
+
+            <!-- Pro -->
+            <div class="pricing-card featured">
+                <div class="popular-badge">Most Popular</div>
+                <div class="plan-name">Professional</div>
+                <div class="plan-description">For serious developers and teams</div>
+                <div class="price">
+                    <div class="price-amount">
+                        <span class="price-currency">$</span>
+                        <span id="pro-price">49</span>
+                        <span class="price-period">/ month</span>
+                    </div>
+                    <div class="price-note">Billed <span id="pro-billing">monthly</span></div>
+                </div>
+                <button class="cta-button" onclick="selectPlan('pro')">Start 14-Day Trial</button>
+                <ul class="features">
+                    <li><span class="check">✓</span> 100,000 API requests/month</li>
+                    <li><span class="check">✓</span> Unlimited AI agents</li>
+                    <li><span class="check">✓</span> Advanced quantum computing</li>
+                    <li><span class="check">✓</span> Priority support</li>
+                    <li><span class="check">✓</span> Custom integrations</li>
+                    <li><span class="check">✓</span> Team collaboration</li>
+                    <li><span class="check">✓</span> 99.99% uptime SLA</li>
+                </ul>
+            </div>
+
+            <!-- Enterprise -->
+            <div class="pricing-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-description">For large-scale deployments</div>
+                <div class="price">
+                    <div class="price-amount">
+                        <span class="price-currency">$</span>
+                        <span id="enterprise-price">499</span>
+                        <span class="price-period">/ month</span>
+                    </div>
+                    <div class="price-note">Custom solutions available</div>
+                </div>
+                <button class="cta-button" onclick="selectPlan('enterprise')">Contact Sales</button>
+                <ul class="features">
+                    <li><span class="check">✓</span> Unlimited API requests</li>
+                    <li><span class="check">✓</span> Unlimited everything</li>
+                    <li><span class="check">✓</span> Dedicated quantum hardware</li>
+                    <li><span class="check">✓</span> 24/7 phone support</li>
+                    <li><span class="check">✓</span> On-premise deployment</li>
+                    <li><span class="check">✓</span> Custom SLA</li>
+                    <li><span class="check">✓</span> Dedicated account manager</li>
+                    <li><span class="check">✓</span> Training & onboarding</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Usage Calculator -->
+        <div class="calculator">
+            <h2>💰 Estimate Your Costs</h2>
+            <p>See exactly what you'll pay based on your usage</p>
+            <div class="calculator-grid">
+                <div class="calculator-input">
+                    <label>API Requests per Month</label>
+                    <input type="number" id="api-requests" value="50000" oninput="calculateCost()">
+                </div>
+                <div class="calculator-input">
+                    <label>AI Agents</label>
+                    <input type="number" id="ai-agents" value="5" oninput="calculateCost()">
+                </div>
+                <div class="calculator-input">
+                    <label>Quantum Simulations</label>
+                    <input type="number" id="quantum-sims" value="100" oninput="calculateCost()">
+                </div>
+                <div class="calculator-input">
+                    <label>Storage (GB)</label>
+                    <input type="number" id="storage" value="10" oninput="calculateCost()">
+                </div>
+            </div>
+            <div class="calculator-result">
+                <h3>Estimated Monthly Cost</h3>
+                <div class="calculator-total" id="total-cost">$49</div>
+                <p style="color: var(--text-muted); margin-top: 1rem;">
+                    Recommended: <strong id="recommended-plan" style="color: var(--accent-purple);">Professional</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="faq">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    How does billing work?
+                    <span>↓</span>
+                </div>
+                <div class="faq-answer">
+                    We charge monthly based on your selected plan. You can upgrade, downgrade, or cancel anytime.
+                    All plans include a 14-day free trial (except Free tier). We accept all major credit cards through Stripe.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Can I change plans later?
+                    <span>↓</span>
+                </div>
+                <div class="faq-answer">
+                    Absolutely! You can upgrade or downgrade your plan at any time. Changes take effect immediately,
+                    and we'll prorate any charges or credits to your account.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What payment methods do you accept?
+                    <span>↓</span>
+                </div>
+                <div class="faq-answer">
+                    We accept all major credit cards (Visa, Mastercard, American Express) and ACH bank transfers
+                    for Enterprise plans. All payments are processed securely through Stripe.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Is there a setup fee?
+                    <span>↓</span>
+                </div>
+                <div class="faq-answer">
+                    No setup fees, ever. You only pay for your subscription and actual usage. We believe in
+                    transparent, simple pricing with no hidden costs.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    What happens if I exceed my limits?
+                    <span>↓</span>
+                </div>
+                <div class="faq-answer">
+                    We'll notify you when you're approaching your limits. You can either upgrade your plan or
+                    pay for additional usage at our standard rates: $0.50 per 1,000 extra API requests.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal (hidden by default) -->
+    <div id="payment-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+        <div style="max-width: 500px; width: 100%; margin: 2rem;">
+            <form id="payment-form">
+                <h3 style="margin-bottom: 1rem;">Complete Your Purchase</h3>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Plan: <strong id="selected-plan-name"></strong></p>
+                <div id="card-element"></div>
+                <div id="card-errors" role="alert"></div>
+                <button type="submit" class="cta-button" style="margin-top: 1rem;">Subscribe Now</button>
+                <button type="button" class="cta-button secondary" onclick="closePayment()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let billingPeriod = 'monthly';
+        let stripe;
+        let cardElement;
+
+        // Initialize Stripe (using test key - replace with your actual key)
+        if (window.Stripe) {
+            stripe = Stripe('pk_test_51QYourTestKeyHere'); // Replace with actual publishable key
+            const elements = stripe.elements();
+            cardElement = elements.create('card', {
+                style: {
+                    base: {
+                        color: '#ffffff',
+                        fontSize: '16px',
+                        '::placeholder': { color: '#888888' }
+                    }
+                }
+            });
+        }
+
+        // Toggle billing period
+        function toggleBilling(period) {
+            billingPeriod = period;
+            document.querySelectorAll('.billing-toggle button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update prices
+            if (period === 'yearly') {
+                document.getElementById('pro-price').textContent = '39';
+                document.getElementById('pro-billing').textContent = 'yearly ($468/year)';
+                document.getElementById('enterprise-price').textContent = '399';
+            } else {
+                document.getElementById('pro-price').textContent = '49';
+                document.getElementById('pro-billing').textContent = 'monthly';
+                document.getElementById('enterprise-price').textContent = '499';
+            }
+        }
+
+        // Calculate estimated cost
+        function calculateCost() {
+            const apiRequests = parseInt(document.getElementById('api-requests').value) || 0;
+            const agents = parseInt(document.getElementById('ai-agents').value) || 0;
+            const quantumSims = parseInt(document.getElementById('quantum-sims').value) || 0;
+            const storage = parseInt(document.getElementById('storage').value) || 0;
+
+            let cost = 0;
+            let plan = 'Starter (Free)';
+
+            // Simple pricing logic
+            if (apiRequests > 100000 || agents > 10 || quantumSims > 1000) {
+                cost = 499;
+                plan = 'Enterprise';
+            } else if (apiRequests > 1000 || agents > 2 || quantumSims > 10) {
+                cost = 49;
+                plan = 'Professional';
+            }
+
+            // Add usage costs
+            const extraCosts = {
+                api: Math.max(0, (apiRequests - 100000) / 1000 * 0.50),
+                storage: Math.max(0, (storage - 100) * 0.10)
+            };
+
+            cost += Object.values(extraCosts).reduce((a, b) => a + b, 0);
+
+            document.getElementById('total-cost').textContent = `$${Math.round(cost)}`;
+            document.getElementById('recommended-plan').textContent = plan;
+        }
+
+        // Select plan
+        function selectPlan(plan) {
+            if (plan === 'free') {
+                window.location.href = 'https://signup.blackroad.io?plan=free';
+                return;
+            }
+
+            if (plan === 'enterprise') {
+                window.location.href = 'mailto:sales@blackroad.io?subject=Enterprise Plan Inquiry';
+                return;
+            }
+
+            // Show payment modal for Pro plan
+            document.getElementById('selected-plan-name').textContent = 'Professional';
+            document.getElementById('payment-modal').style.display = 'flex';
+
+            // Mount card element if Stripe is loaded
+            if (cardElement && !cardElement._parent) {
+                cardElement.mount('#card-element');
+            }
+        }
+
+        function closePayment() {
+            document.getElementById('payment-modal').style.display = 'none';
+        }
+
+        // Handle payment form submission
+        if (typeof document !== 'undefined') {
+            const form = document.getElementById('payment-form');
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Processing...';
+
+                    // In production, create payment intent on your server first
+                    // Then confirm with Stripe
+                    if (stripe && cardElement) {
+                        const {error, paymentMethod} = await stripe.createPaymentMethod({
+                            type: 'card',
+                            card: cardElement,
+                        });
+
+                        if (error) {
+                            document.getElementById('card-errors').textContent = error.message;
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Subscribe Now';
+                        } else {
+                            // Send paymentMethod.id to your server
+                            console.log('PaymentMethod created:', paymentMethod.id);
+                            alert('Payment successful! Redirecting to dashboard...');
+                            window.location.href = 'https://dashboard.blackroad.io';
+                        }
+                    } else {
+                        // Demo mode - simulate success
+                        alert('This is a demo. In production, this would process payment via Stripe.\n\nPayment Method ID would be sent to server for subscription creation.');
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Subscribe Now';
+                    }
+                });
+            }
+        }
+
+        // Initialize calculator
+        calculateCost();
+    </script>
+</body>
+</html>

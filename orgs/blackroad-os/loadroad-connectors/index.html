@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoadRoad - Universal Enterprise Connector</title>
+    <meta name="description" content="Connect legacy systems to modern APIs. SAP, Workday, Salesforce, Oracle - all integrated in minutes, not months.">
+    <style>
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --amber: #F5A623;
+            --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF;
+            --violet: #9C27B0;
+            --space-xs: 8px;
+            --space-sm: 13px;
+            --space-md: 21px;
+            --space-lg: 34px;
+            --space-xl: 55px;
+            --space-2xl: 89px;
+            --space-3xl: 144px;
+            --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--black);
+            color: var(--white);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Mono', monospace;
+            line-height: 1.618;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 55px 55px;
+            animation: grid-move 20s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes grid-move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(55px, 55px); }
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            padding: var(--space-md) var(--space-xl);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        nav .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--amber), var(--hot-pink), var(--violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn {
+            padding: var(--space-sm) var(--space-lg);
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s var(--ease);
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--hot-pink);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 29, 108, 0.4);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--space-xl);
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero {
+            padding: calc(var(--space-3xl) * 2) 0 var(--space-3xl);
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 72px;
+            font-weight: 900;
+            margin-bottom: var(--space-md);
+            line-height: 1.1;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--amber) 0%, var(--hot-pink) 38.2%, var(--violet) 61.8%, var(--electric-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 28px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: var(--space-xl);
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .integration-viz {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: var(--space-xl);
+            margin: var(--space-3xl) 0;
+        }
+
+        .systems {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: var(--space-xl);
+            align-items: center;
+        }
+
+        .system-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .system-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: var(--space-md);
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .connector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .connector-box {
+            background: linear-gradient(135deg, var(--hot-pink), var(--violet));
+            padding: var(--space-lg);
+            border-radius: 16px;
+            font-size: 24px;
+            font-weight: 800;
+            box-shadow: 0 20px 60px rgba(255, 29, 108, 0.3);
+        }
+
+        .arrow {
+            color: var(--hot-pink);
+            font-size: 48px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-lg);
+            margin: var(--space-3xl) 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: var(--space-lg);
+            transition: all 0.3s var(--ease);
+        }
+
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-4px);
+            border-color: var(--hot-pink);
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: var(--space-md);
+        }
+
+        .feature-card h3 {
+            font-size: 24px;
+            margin-bottom: var(--space-sm);
+            color: var(--hot-pink);
+        }
+
+        .feature-card p {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-lg);
+            margin: var(--space-3xl) 0;
+        }
+
+        .stat-card {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: var(--space-xl);
+            border-radius: 16px;
+        }
+
+        .stat-number {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--hot-pink), var(--violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: var(--space-xs);
+        }
+
+        .pricing {
+            text-align: center;
+            margin: var(--space-3xl) 0;
+        }
+
+        .pricing h2 {
+            font-size: 48px;
+            margin-bottom: var(--space-xl);
+        }
+
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--space-lg);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: var(--space-xl);
+        }
+
+        .pricing-card.featured {
+            border: 2px solid var(--hot-pink);
+            background: rgba(255, 29, 108, 0.05);
+        }
+
+        .pricing-card h3 {
+            font-size: 32px;
+            margin-bottom: var(--space-md);
+        }
+
+        .price {
+            font-size: 56px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--hot-pink), var(--violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: var(--space-lg) 0;
+        }
+
+        .price span {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .pricing-card ul {
+            list-style: none;
+            text-align: left;
+            margin: var(--space-lg) 0;
+        }
+
+        .pricing-card li {
+            padding: var(--space-xs) 0;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .pricing-card li::before {
+            content: '✓';
+            color: var(--hot-pink);
+            margin-right: var(--space-sm);
+            font-weight: bold;
+        }
+
+        footer {
+            text-align: center;
+            padding: var(--space-xl) 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 42px; }
+            .systems { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <nav>
+        <div class="container">
+            <div class="logo">🔌 LoadRoad</div>
+            <a href="#pricing" class="btn btn-primary">Start Free Trial</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Connect Legacy Systems to<br><span class="gradient-text">Modern APIs</span></h1>
+            <p>Stop building custom integrations. LoadRoad connects SAP, Workday, Salesforce, and 100+ enterprise systems to your modern stack in minutes.</p>
+            <div style="display: flex; gap: var(--space-md); justify-content: center; margin-top: var(--space-xl);">
+                <a href="#demo" class="btn btn-primary" style="font-size: 20px; padding: var(--space-md) var(--space-2xl);">See Live Demo →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="container">
+        <div class="integration-viz">
+            <h2 style="text-align: center; font-size: 36px; margin-bottom: var(--space-xl);">Universal Connector</h2>
+            <div class="systems">
+                <div class="system-group">
+                    <div class="system-box">SAP ERP</div>
+                    <div class="system-box">Workday HCM</div>
+                    <div class="system-box">Salesforce CRM</div>
+                    <div class="system-box">Oracle Financials</div>
+                    <div class="system-box">PeopleSoft</div>
+                    <div class="system-box">ServiceNow</div>
+                </div>
+
+                <div class="connector">
+                    <div class="arrow">→</div>
+                    <div class="connector-box">LoadRoad</div>
+                    <div class="arrow">→</div>
+                </div>
+
+                <div class="system-group">
+                    <div class="system-box">Your Modern API</div>
+                    <div class="system-box">React Dashboard</div>
+                    <div class="system-box">Mobile App</div>
+                    <div class="system-box">AI/ML Pipeline</div>
+                    <div class="system-box">Analytics Platform</div>
+                    <div class="system-box">Custom Tools</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">100+</div>
+                <div class="stat-label">Enterprise Systems</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">10 mins</div>
+                <div class="stat-label">Setup Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">Uptime SLA</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">$0</div>
+                <div class="stat-label">Dev Costs</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <h2 style="text-align: center; font-size: 48px; margin-bottom: var(--space-xl);">Stop Building Custom Integrations</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔌</div>
+                <h3>Pre-Built Connectors</h3>
+                <p>100+ enterprise systems ready to connect. SAP, Workday, Salesforce, Oracle, and more.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Real-Time Sync</h3>
+                <p>Bi-directional sync with sub-second latency. Changes propagate instantly.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>Enterprise Security</h3>
+                <p>SOC 2 compliant, encrypted at rest and in transit, audit logs, SSO support.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3>Data Transformation</h3>
+                <p>Visual mapper for field transformations. No code required for 90% of use cases.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Monitoring Dashboard</h3>
+                <p>Real-time status, error tracking, performance metrics, and alerting.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>10-Minute Setup</h3>
+                <p>Credentials → Map fields → Deploy. Integrations that took months now take minutes.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div style="background: rgba(255, 255, 255, 0.02); border-radius: 24px; padding: var(--space-xl); margin: var(--space-3xl) 0;">
+            <h2 style="text-align: center; font-size: 36px; margin-bottom: var(--space-lg);">The Problem LoadRoad Solves</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl); max-width: 1000px; margin: 0 auto;">
+                <div>
+                    <h3 style="color: var(--hot-pink); margin-bottom: var(--space-md);">Without LoadRoad:</h3>
+                    <ul style="list-style: none; color: rgba(255,255,255,0.7);">
+                        <li style="padding: var(--space-xs) 0;">❌ 3-6 months to build integration</li>
+                        <li style="padding: var(--space-xs) 0;">❌ $50K-$200K in dev costs</li>
+                        <li style="padding: var(--space-xs) 0;">❌ Custom code to maintain</li>
+                        <li style="padding: var(--space-xs) 0;">❌ Breaking changes from vendors</li>
+                        <li style="padding: var(--space-xs) 0;">❌ No error handling built-in</li>
+                        <li style="padding: var(--space-xs) 0;">❌ Manual data mapping</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="color: var(--hot-pink); margin-bottom: var(--space-md);">With LoadRoad:</h3>
+                    <ul style="list-style: none; color: rgba(255,255,255,0.7);">
+                        <li style="padding: var(--space-xs) 0;">✓ 10 minutes to deploy</li>
+                        <li style="padding: var(--space-xs) 0;">✓ $99-$999/month flat rate</li>
+                        <li style="padding: var(--space-xs) 0;">✓ Zero maintenance required</li>
+                        <li style="padding: var(--space-xs) 0;">✓ Updates handled automatically</li>
+                        <li style="padding: var(--space-xs) 0;">✓ Built-in retry & error handling</li>
+                        <li style="padding: var(--space-xs) 0;">✓ Visual field mapping</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="container">
+        <div class="pricing">
+            <h2>Simple, Predictable Pricing</h2>
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <h3>Starter</h3>
+                    <div class="price">$99<span>/month</span></div>
+                    <ul>
+                        <li>3 active connectors</li>
+                        <li>10K API calls/month</li>
+                        <li>Real-time sync</li>
+                        <li>Email support</li>
+                        <li>99.5% uptime SLA</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary" style="width: 100%; margin-top: var(--space-lg);">Start Free Trial →</a>
+                </div>
+
+                <div class="pricing-card featured">
+                    <h3>Business</h3>
+                    <div class="price">$399<span>/month</span></div>
+                    <ul>
+                        <li>10 active connectors</li>
+                        <li>100K API calls/month</li>
+                        <li>Real-time sync</li>
+                        <li>Priority support</li>
+                        <li>99.9% uptime SLA</li>
+                        <li>Custom transformations</li>
+                        <li>Audit logs</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary" style="width: 100%; margin-top: var(--space-lg);">Start Free Trial →</a>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <div class="price">$999<span>/month</span></div>
+                    <ul>
+                        <li>Unlimited connectors</li>
+                        <li>1M+ API calls/month</li>
+                        <li>Real-time sync</li>
+                        <li>Dedicated support</li>
+                        <li>99.99% uptime SLA</li>
+                        <li>Custom connectors</li>
+                        <li>On-premise deployment</li>
+                        <li>SSO integration</li>
+                    </ul>
+                    <a href="mailto:blackroad.systems@gmail.com" class="btn btn-primary" style="width: 100%; margin-top: var(--space-lg);">Contact Sales →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div style="background: rgba(255, 255, 255, 0.02); border-radius: 24px; padding: var(--space-3xl); text-align: center; margin: var(--space-3xl) 0;">
+            <h2 style="font-size: 56px; margin-bottom: var(--space-md);">Stop Building, Start Connecting</h2>
+            <p style="font-size: 24px; color: rgba(255, 255, 255, 0.7); margin-bottom: var(--space-xl);">Join companies saving months of dev time with LoadRoad</p>
+            <a href="#pricing" class="btn btn-primary" style="font-size: 20px; padding: var(--space-lg) var(--space-2xl);">Start Free Trial →</a>
+            <p style="font-size: 14px; color: rgba(255, 255, 255, 0.5); margin-top: var(--space-md);">14-day free trial • No credit card required • Cancel anytime</p>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 BlackRoad OS, Inc. All rights reserved.</p>
+            <p style="margin-top: var(--space-sm);">Enterprise integration made simple.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>∞ Riemann Hypothesis Explorer - BlackRoad Quantum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000000; --white: #FFFFFF;
+            --amber: #F5A623; --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF; --violet: #9C27B0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black); color: var(--white);
+            overflow: hidden;
+        }
+
+        .container { display: flex; height: 100vh; }
+        .canvas-container { flex: 1; position: relative; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .sidebar {
+            width: 350px; background: rgba(0, 0, 0, 0.95);
+            border-left: 2px solid var(--hot-pink);
+            padding: 34px; overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 34px;
+            background: linear-gradient(135deg, #F5A623 0%, #FF1D6C 38.2%, #9C27B0 61.8%, #2979FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+
+        .section { margin-bottom: 34px; }
+        .section-title {
+            font-size: 16px; color: var(--hot-pink);
+            margin-bottom: 13px; text-transform: uppercase;
+        }
+
+        .stat-box {
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; padding: 13px;
+            margin: 8px 0;
+        }
+
+        .stat-label { font-size: 11px; color: var(--amber); }
+        .stat-value {
+            font-size: 21px; font-weight: 700;
+            color: var(--white); margin-top: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        button {
+            width: 100%; padding: 13px; margin: 8px 0;
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid var(--hot-pink);
+            border-radius: 8px; color: var(--white);
+            font-size: 13px; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--hot-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 29, 108, 0.5);
+        }
+
+        .formula {
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 3px solid #00FF88;
+            padding: 13px; margin: 13px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px; color: #00FF88;
+        }
+
+        .info {
+            font-size: 12px; color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6; margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="riemannCanvas"></canvas>
+        </div>
+
+        <div class="sidebar">
+            <h1>∞ Riemann ζ Explorer</h1>
+
+            <div class="section">
+                <div class="section-title">The Holy Grail</div>
+                <div class="formula">
+                    ζ(s) = Σ 1/nˢ (Re(s) > 1)<br>
+                    = ∏ 1/(1-p⁻ˢ) (Euler product)
+                </div>
+                <div class="info">
+                    <strong style="color: var(--hot-pink);">Riemann Hypothesis:</strong>
+                    All non-trivial zeros have Re(s) = 1/2
+                    <br><br>
+                    <strong style="color: var(--electric-blue);">Prize:</strong> $1,000,000 (Millennium Prize)
+                    <br><br>
+                    <strong style="color: var(--amber);">Status:</strong> UNSOLVED since 1859!
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Critical Line</div>
+                <div class="stat-box">
+                    <div class="stat-label">Zeros Found</div>
+                    <div class="stat-value" id="zeroCount">10,000,000,000,000+</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">All on Re(s) = 1/2?</div>
+                    <div class="stat-value" style="color: #00FF88;">YES (so far!)</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Proof?</div>
+                    <div class="stat-value" style="color: var(--hot-pink);">NONE</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Quantum Connection</div>
+                <div class="formula">
+                    Hilbert-Pólya Conjecture:<br>
+                    Zeros = eigenvalues of<br>
+                    Hermitian operator Ĥ
+                </div>
+                <div class="info">
+                    The zeros might be energy levels of a quantum system!
+                    <br><br>
+                    Random matrix theory (GUE) matches zero spacing perfectly.
+                    <br><br>
+                    This links number theory to quantum chaos!
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Visualizations</div>
+                <button onclick="showZeros()">Show Zeros</button>
+                <button onclick="showCriticalLine()">Critical Line</button>
+                <button onclick="showEulerProduct()">Euler Product</button>
+                <button onclick="animateZeros()">Animate Zeros</button>
+                <button onclick="showQuantumConnection()">Quantum Link</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Related Criteria</div>
+                <div class="formula">
+                    Li's Criterion: λₙ ≥ 0 ∀n<br>
+                    Nyman-Beurling: Dense ⟺ RH<br>
+                    De Bruijn-Newman: Λ ≤ 1/2
+                </div>
+            </div>
+
+            <div class="info" style="margin-top: 34px; padding-top: 34px; border-top: 1px solid rgba(255,255,255,0.2);">
+                <strong>Fun Fact:</strong> If RH is true, prime distribution follows elegant patterns.
+                If false, mathematics breaks! 💥
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('riemannCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, centerX, centerY;
+
+        const knownZeros = [
+            14.134725, 21.022040, 25.010858, 30.424876, 32.935062,
+            37.586178, 40.918719, 43.327073, 48.005151, 49.773832,
+            52.970321, 56.446247, 59.347044, 60.831779, 65.112544
+        ]; // First 15 non-trivial zeros (imaginary parts)
+
+        function resizeCanvas() {
+            width = canvas.width = canvas.offsetWidth;
+            height = canvas.height = canvas.offsetHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Gradient background
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height)/2);
+            gradient.addColorStop(0, 'rgba(255, 29, 108, 0.1)');
+            gradient.addColorStop(0.5, 'rgba(156, 39, 176, 0.05)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Critical line (Re(s) = 1/2)
+            const criticalX = width / 3;
+            ctx.strokeStyle = 'rgba(255, 29, 108, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(criticalX, 0);
+            ctx.lineTo(criticalX, height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#FF1D6C';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillText('Critical Line', criticalX + 10, 30);
+            ctx.font = '14px SF Pro Display';
+            ctx.fillText('Re(s) = 1/2', criticalX + 10, 50);
+
+            // Plot zeros
+            knownZeros.forEach((zero, i) => {
+                const y = 100 + i * (height - 200) / knownZeros.length;
+
+                // Glow
+                const glow = ctx.createRadialGradient(criticalX, y, 0, criticalX, y, 30);
+                glow.addColorStop(0, 'rgba(0, 255, 136, 0.8)');
+                glow.addColorStop(1, 'rgba(0, 255, 136, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(criticalX, y, 30, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Zero point
+                ctx.fillStyle = '#00FF88';
+                ctx.beginPath();
+                ctx.arc(criticalX, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Label
+                ctx.fillStyle = '#00FF88';
+                ctx.font = '11px Courier New';
+                ctx.fillText(`${zero.toFixed(3)}i`, criticalX + 15, y + 4);
+            });
+
+            // Axes labels
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 14px SF Pro Display';
+            ctx.fillText('Real Part →', 20, height - 20);
+            ctx.save();
+            ctx.translate(20, 50);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('← Imaginary Part', 0, 0);
+            ctx.restore();
+
+            // Info box
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.fillRect(width - 300, 20, 280, 120);
+            ctx.strokeStyle = '#2979FF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(width - 300, 20, 280, 120);
+
+            ctx.fillStyle = '#2979FF';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillText('ζ(1/2 + it) = 0', width - 280, 45);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '13px SF Pro Display';
+            ctx.fillText(`First ${knownZeros.length} zeros shown`, width - 280, 70);
+            ctx.fillText('All on critical line!', width - 280, 90);
+
+            ctx.fillStyle = '#00FF88';
+            ctx.font = 'bold 14px SF Pro Display';
+            ctx.fillText('RH: UNPROVEN', width - 280, 115);
+        }
+
+        let animationMode = 'none';
+        let animationFrame = 0;
+
+        function showZeros() {
+            animationMode = 'none';
+            draw();
+        }
+
+        function showCriticalLine() {
+            animationMode = 'none';
+            draw();
+        }
+
+        function showEulerProduct() {
+            animationMode = 'euler';
+            animateEulerProduct();
+        }
+
+        function animateZeros() {
+            animationMode = 'zeros';
+            animateZeroFlow();
+        }
+
+        function showQuantumConnection() {
+            animationMode = 'quantum';
+            animateQuantumChaos();
+        }
+
+        function animateEulerProduct() {
+            if (animationMode !== 'euler') return;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Background
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height)/2);
+            gradient.addColorStop(0, 'rgba(156, 39, 176, 0.15)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Title
+            ctx.fillStyle = '#9C27B0';
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillText('ζ(s) = ∏ 1/(1-p⁻ˢ)', 30, 40);
+            ctx.font = '16px SF Pro Display';
+            ctx.fillStyle = '#F5A623';
+            ctx.fillText('Euler Product Formula', 30, 65);
+
+            // Animate product over primes
+            const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47];
+            const t = (animationFrame % 300) / 300;
+            const activePrimes = Math.floor(t * primes.length);
+
+            let yPos = 120;
+            for (let i = 0; i < activePrimes; i++) {
+                const p = primes[i];
+                const alpha = Math.min(1, (t * primes.length - i) * 2);
+
+                ctx.fillStyle = `rgba(0, 255, 136, ${alpha})`;
+                ctx.font = '18px Courier New';
+                ctx.fillText(`1/(1-${p}⁻ˢ)`, 50, yPos);
+
+                // Spiral visualization
+                const angle = i * Math.PI / 4;
+                const radius = 80 + i * 15;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(156, 39, 176, ${alpha})`;
+                ctx.fill();
+
+                ctx.strokeStyle = `rgba(255, 29, 108, ${alpha * 0.5})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                yPos += 35;
+                if (yPos > height - 100) {
+                    yPos = 120;
+                }
+            }
+
+            // Info
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.fillRect(width - 320, height - 100, 300, 80);
+            ctx.strokeStyle = '#9C27B0';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(width - 320, height - 100, 300, 80);
+
+            ctx.fillStyle = '#00FF88';
+            ctx.font = '14px SF Pro Display';
+            ctx.fillText(`Product over ${activePrimes} primes`, width - 300, height - 70);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText('Connects primes to complex analysis!', width - 300, height - 45);
+
+            animationFrame++;
+            requestAnimationFrame(animateEulerProduct);
+        }
+
+        function animateZeroFlow() {
+            if (animationMode !== 'zeros') return;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Background
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height)/2);
+            gradient.addColorStop(0, 'rgba(255, 29, 108, 0.15)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Flowing zeros
+            const t = (animationFrame % 400) / 400;
+            const criticalX = width / 3;
+
+            knownZeros.forEach((zero, i) => {
+                const baseY = 100 + i * (height - 200) / knownZeros.length;
+                const offset = Math.sin(t * Math.PI * 2 + i * 0.5) * 30;
+                const y = baseY + offset;
+
+                // Trail
+                for (let j = 0; j < 5; j++) {
+                    const trailY = y - j * 15;
+                    const alpha = (5 - j) / 5 * 0.3;
+
+                    ctx.fillStyle = `rgba(0, 255, 136, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(criticalX, trailY, 6 - j, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Main zero
+                const glow = ctx.createRadialGradient(criticalX, y, 0, criticalX, y, 40);
+                glow.addColorStop(0, 'rgba(0, 255, 136, 0.9)');
+                glow.addColorStop(1, 'rgba(0, 255, 136, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(criticalX, y, 40, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#00FF88';
+                ctx.beginPath();
+                ctx.arc(criticalX, y, 10, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Critical line
+            ctx.strokeStyle = 'rgba(255, 29, 108, 0.7)';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(criticalX, 0);
+            ctx.lineTo(criticalX, height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            animationFrame++;
+            requestAnimationFrame(animateZeroFlow);
+        }
+
+        function animateQuantumChaos() {
+            if (animationMode !== 'quantum') return;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Background
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height)/2);
+            gradient.addColorStop(0, 'rgba(41, 121, 255, 0.15)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            const t = (animationFrame % 360) / 360;
+
+            // Random matrix eigenvalues (GUE statistics)
+            const numEigenvalues = 30;
+            for (let i = 0; i < numEigenvalues; i++) {
+                const angle = i * Math.PI * 2 / numEigenvalues + t * Math.PI * 2;
+                const radius = 150 + Math.sin(t * Math.PI * 4 + i) * 50;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+
+                // Energy level
+                const glow = ctx.createRadialGradient(x, y, 0, x, y, 25);
+                glow.addColorStop(0, 'rgba(41, 121, 255, 0.8)');
+                glow.addColorStop(1, 'rgba(41, 121, 255, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#2979FF';
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Central Hermitian operator symbol
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 80, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#FF1D6C';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 80, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#00FF88';
+            ctx.font = 'bold 36px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Ĥ', centerX, centerY + 12);
+
+            // Title
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#2979FF';
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillText('Quantum Chaos Connection', 30, 40);
+
+            ctx.font = '16px SF Pro Display';
+            ctx.fillStyle = '#F5A623';
+            ctx.fillText('Riemann zeros = Hermitian eigenvalues?', 30, 65);
+
+            // Info box
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.fillRect(width - 350, height - 140, 330, 120);
+            ctx.strokeStyle = '#2979FF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(width - 350, height - 140, 330, 120);
+
+            ctx.fillStyle = '#2979FF';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillText('Hilbert-Pólya Conjecture', width - 330, height - 110);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '13px SF Pro Display';
+            ctx.fillText('RH zeros might be eigenvalues', width - 330, height - 85);
+            ctx.fillText('of a quantum Hamiltonian!', width - 330, height - 65);
+
+            ctx.fillStyle = '#00FF88';
+            ctx.font = 'bold 14px SF Pro Display';
+            ctx.fillText('GUE statistics match perfectly', width - 330, height - 35);
+
+            animationFrame++;
+            requestAnimationFrame(animateQuantumChaos);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    </script>
+</body>
+</html>

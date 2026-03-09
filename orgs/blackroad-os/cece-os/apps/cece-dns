@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-DNS v1.0 - DNS Tools
+lookup() { nslookup "$1" 2>/dev/null || dig "$1" +short 2>/dev/null || host "$1" 2>/dev/null; }
+reverse() { nslookup "$1" 2>/dev/null | grep "name ="; }
+flush() { sudo systemd-resolve --flush-caches 2>/dev/null || sudo dscacheutil -flushcache 2>/dev/null || echo "Flushed"; }
+case "$1" in
+    lookup) lookup "$2" ;;
+    reverse) reverse "$2" ;;
+    flush) flush ;;
+    *) echo "CECE-DNS: lookup <domain> | reverse <ip> | flush" ;;
+esac

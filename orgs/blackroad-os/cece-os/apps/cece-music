@@ -1,0 +1,16 @@
+#!/bin/bash
+# CECE-MUSIC v1.0 - Music Player
+MUSIC_DIR=~/cece/music
+mkdir -p "$MUSIC_DIR"
+play() { mpg123 "$1" 2>/dev/null || aplay "$1" 2>/dev/null || echo "Install mpg123 for music"; }
+list() { find "$MUSIC_DIR" -name "*.mp3" -o -name "*.wav" 2>/dev/null; }
+radio() {
+    STATIONS=("http://stream.live.vc.bbcmedia.co.uk/bbc_radio_one" "http://ice1.somafm.com/groovesalad-256-mp3")
+    mpg123 "${STATIONS[$RANDOM % ${#STATIONS[@]}]}" 2>/dev/null || echo "Install mpg123 for radio"
+}
+case "$1" in
+    play) play "$2" ;;
+    list) list ;;
+    radio) radio ;;
+    *) echo "CECE-MUSIC: play <file> | list | radio" ;;
+esac

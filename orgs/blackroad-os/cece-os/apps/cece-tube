@@ -1,0 +1,72 @@
+#!/bin/bash
+# CECE-TUBE v1.0 - Our Own YouTube
+TUBE_DIR=~/cece/tube
+mkdir -p "$TUBE_DIR/channels" "$TUBE_DIR/videos" "$TUBE_DIR/playlists"
+
+upload() {
+    TITLE="$1"
+    DESC="$2"
+    VIDEO_ID=$(date +%s)
+    cat > "$TUBE_DIR/videos/$VIDEO_ID.video" << EOF
+id: $VIDEO_ID
+title: $TITLE
+description: $DESC
+uploaded: $(date -Iseconds)
+views: 0
+likes: 0
+channel: ${USER:-cece}
+EOF
+    echo "✅ Video uploaded: $TITLE"
+    echo "   Watch: cece-tube watch $VIDEO_ID"
+}
+
+watch() {
+    VIDEO_ID="$1"
+    VIDEO="$TUBE_DIR/videos/$VIDEO_ID.video"
+    [ ! -f "$VIDEO" ] && echo "Video not found" && return
+    
+    TITLE=$(grep "^title:" "$VIDEO" | cut -d: -f2-)
+    DESC=$(grep "^description:" "$VIDEO" | cut -d: -f2-)
+    VIEWS=$(grep "^views:" "$VIDEO" | cut -d: -f2 | xargs)
+    
+    # Increment views
+    NEW_VIEWS=$((VIEWS + 1))
+    sed -i "s/^views:.*/views: $NEW_VIEWS/" "$VIDEO"
+    
+    echo "▶️  NOW PLAYING"
+    echo "═══════════════════════════════════════"
+    echo ""
+    echo "   ┌─────────────────────────────┐"
+    echo "   │                             │"
+    echo "   │      ▶  VIDEO CONTENT       │"
+    echo "   │                             │"
+    echo "   │    (imagine it is here)     │"
+    echo "   │                             │"
+    echo "   └─────────────────────────────┘"
+    echo ""
+    echo "  $TITLE"
+    echo "  $NEW_VIEWS views"
+    echo ""
+    echo "  $DESC"
+}
+
+trending() {
+    echo "🔥 TRENDING"
+    for v in "$TUBE_DIR/videos"/*.video 2>/dev/null; do
+        [ -f "$v" ] || continue
+        TITLE=$(grep "^title:" "$v" | cut -d: -f2-)
+        VIEWS=$(grep "^views:" "$v" | cut -d: -f2 | xargs)
+        ID=$(grep "^id:" "$v" | cut -d: -f2 | xargs)
+        echo "  ▶️ $TITLE ($VIEWS views) [ID:$ID]"
+    done | sort -t"(" -k2 -rn | head -10
+}
+
+case "$1" in
+    upload) upload "$2" "$3" ;;
+    watch) watch "$2" ;;
+    trending) trending ;;
+    *) echo "🖤 CECE-TUBE - Our Own YouTube"
+       echo "  upload <title> <desc>   Upload video"
+       echo "  watch <id>              Watch video"
+       echo "  trending                Trending videos" ;;
+esac

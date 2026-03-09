@@ -1,0 +1,78 @@
+name: Deploy via Orchestrator
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'blackroad-*.py'
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: 'Service to deploy'
+        required: true
+        type: string
+      category:
+        description: 'Category to deploy (or "all")'
+        required: false
+        type: string
+        default: 'core'
+
+jobs:
+  deploy-single:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.service_name != ''
+    runs-on: ubuntu-latest
+    name: Deploy Single Service
+
+    steps:
+      - name: Deploy service
+        run: |
+          curl -X POST ${{ secrets.ORCHESTRATOR_URL }}/deploy/${{ github.event.inputs.service_name }} \
+            -H "Content-Type: application/json"
+
+  deploy-category:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.service_name == ''
+    runs-on: ubuntu-latest
+    name: Deploy Category
+
+    steps:
+      - name: Deploy category
+        run: |
+          curl -X POST "${{ secrets.ORCHESTRATOR_URL }}/deploy/all?category=${{ github.event.inputs.category }}" \
+            -H "Content-Type: application/json"
+
+  auto-deploy:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    name: Auto-deploy Changed Services
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get changed files
+        id: changed
+        run: |
+          echo "files=$(git diff --name-only HEAD^ HEAD | grep 'blackroad-.*\.py' | sed 's/\.py$//' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+      - name: Deploy changed services
+        if: steps.changed.outputs.files != ''
+        run: |
+          for service in ${{ steps.changed.outputs.files }}; do
+            echo "Deploying $service..."
+            curl -X POST ${{ secrets.ORCHESTRATOR_URL }}/deploy/$service \
+              -H "Content-Type: application/json" || echo "Failed to deploy $service"
+          done
+
+  notify:
+    needs: [deploy-single, deploy-category, auto-deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment status
+        run: |
+          echo "Deployment workflow completed"
+          echo "Check orchestrator dashboard: ${{ secrets.ORCHESTRATOR_URL }}/dashboard"

@@ -1,0 +1,41 @@
+#!/bin/bash
+# CECE-JSON v1.0 - JSON Tools
+format() {
+    if command -v jq &>/dev/null; then
+        cat "$1" | jq .
+    elif command -v python3 &>/dev/null; then
+        python3 -m json.tool "$1"
+    else
+        cat "$1"
+    fi
+}
+
+validate() {
+    FILE="$1"
+    if command -v jq &>/dev/null; then
+        if jq empty "$FILE" 2>/dev/null; then
+            echo "Valid JSON"
+        else
+            echo "Invalid JSON"
+        fi
+    elif command -v python3 &>/dev/null; then
+        python3 -c "import json; json.load(open('$FILE'))" 2>/dev/null && echo "Valid JSON" || echo "Invalid JSON"
+    fi
+}
+
+query() {
+    FILE="$1"
+    PATH="$2"
+    if command -v jq &>/dev/null; then
+        cat "$FILE" | jq "$PATH"
+    else
+        echo "Install jq for JSON queries"
+    fi
+}
+
+case "$1" in
+    format) format "$2" ;;
+    validate) validate "$2" ;;
+    query) query "$2" "$3" ;;
+    *) echo "CECE-JSON: format <file> | validate <file> | query <file> <jq-path>" ;;
+esac

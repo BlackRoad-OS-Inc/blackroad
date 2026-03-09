@@ -1,0 +1,246 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-GAMES v1.0 - Classic Games Collection
+#═══════════════════════════════════════════════════════════════
+
+game_guess() {
+    clear
+    echo "╔══════════════════════════════════════╗"
+    echo "║      NUMBER GUESSING GAME            ║"
+    echo "╚══════════════════════════════════════╝"
+    echo ""
+    echo "I am thinking of a number between 1 and 100."
+    echo ""
+    
+    SECRET=$((RANDOM % 100 + 1))
+    TRIES=0
+    
+    while true; do
+        echo -n "Your guess: "
+        read GUESS
+        ((TRIES++))
+        
+        if [ "$GUESS" -eq "$SECRET" ] 2>/dev/null; then
+            echo ""
+            echo "★ CORRECT! ★"
+            echo "You got it in $TRIES tries!"
+            break
+        elif [ "$GUESS" -lt "$SECRET" ] 2>/dev/null; then
+            echo "Too low! Try higher."
+        elif [ "$GUESS" -gt "$SECRET" ] 2>/dev/null; then
+            echo "Too high! Try lower."
+        else
+            echo "Please enter a number."
+        fi
+    done
+}
+
+game_rps() {
+    clear
+    echo "╔══════════════════════════════════════╗"
+    echo "║      ROCK PAPER SCISSORS             ║"
+    echo "╚══════════════════════════════════════╝"
+    echo ""
+    
+    CHOICES=("rock" "paper" "scissors")
+    WINS=0
+    LOSSES=0
+    
+    while true; do
+        echo "[R]ock, [P]aper, [S]cissors, or [Q]uit?"
+        echo -n "> "
+        read -n 1 CHOICE
+        echo ""
+        
+        case "$CHOICE" in
+            r|R) PLAYER="rock" ;;
+            p|P) PLAYER="paper" ;;
+            s|S) PLAYER="scissors" ;;
+            q|Q) 
+                echo "Final score: $WINS wins, $LOSSES losses"
+                return ;;
+            *) continue ;;
+        esac
+        
+        COMPUTER=${CHOICES[$RANDOM % 3]}
+        echo "You: $PLAYER  vs  CECE: $COMPUTER"
+        
+        if [ "$PLAYER" = "$COMPUTER" ]; then
+            echo "TIE!"
+        elif [ "$PLAYER" = "rock" ] && [ "$COMPUTER" = "scissors" ] ||
+             [ "$PLAYER" = "paper" ] && [ "$COMPUTER" = "rock" ] ||
+             [ "$PLAYER" = "scissors" ] && [ "$COMPUTER" = "paper" ]; then
+            echo "You WIN!"
+            ((WINS++))
+        else
+            echo "CECE wins!"
+            ((LOSSES++))
+        fi
+        echo "Score: $WINS - $LOSSES"
+        echo ""
+    done
+}
+
+game_hangman() {
+    clear
+    echo "╔══════════════════════════════════════╗"
+    echo "║           HANGMAN                    ║"
+    echo "╚══════════════════════════════════════╝"
+    echo ""
+    
+    WORDS=("blackroad" "sovereign" "computer" "terminal" "algorithm" "database" "network" "memory" "processor" "keyboard")
+    WORD=${WORDS[$RANDOM % ${#WORDS[@]}]}
+    GUESSED=""
+    WRONG=0
+    MAX_WRONG=6
+    
+    while [ $WRONG -lt $MAX_WRONG ]; do
+        # Draw hangman
+        echo ""
+        case $WRONG in
+            0) echo "  +---+"; echo "  |   |"; echo "      |"; echo "      |"; echo "      |"; echo "==========" ;;
+            1) echo "  +---+"; echo "  |   |"; echo "  O   |"; echo "      |"; echo "      |"; echo "==========" ;;
+            2) echo "  +---+"; echo "  |   |"; echo "  O   |"; echo "  |   |"; echo "      |"; echo "==========" ;;
+            3) echo "  +---+"; echo "  |   |"; echo "  O   |"; echo " /|   |"; echo "      |"; echo "==========" ;;
+            4) echo "  +---+"; echo "  |   |"; echo "  O   |"; echo " /|\\  |"; echo "      |"; echo "==========" ;;
+            5) echo "  +---+"; echo "  |   |"; echo "  O   |"; echo " /|\\  |"; echo " /    |"; echo "==========" ;;
+        esac
+        
+        # Show word
+        DISPLAY=""
+        COMPLETE=1
+        for ((i=0; i<${#WORD}; i++)); do
+            CHAR=${WORD:$i:1}
+            if [[ "$GUESSED" == *"$CHAR"* ]]; then
+                DISPLAY="$DISPLAY$CHAR "
+            else
+                DISPLAY="$DISPLAY_ "
+                COMPLETE=0
+            fi
+        done
+        echo ""
+        echo "Word: $DISPLAY"
+        echo "Guessed: $GUESSED"
+        
+        if [ $COMPLETE -eq 1 ]; then
+            echo ""
+            echo "★ YOU WIN! ★"
+            echo "The word was: $WORD"
+            return
+        fi
+        
+        echo -n "Guess a letter: "
+        read -n 1 LETTER
+        echo ""
+        LETTER=$(echo "$LETTER" | tr "[:upper:]" "[:lower:]")
+        
+        if [[ "$GUESSED" == *"$LETTER"* ]]; then
+            echo "Already guessed!"
+        elif [[ "$WORD" == *"$LETTER"* ]]; then
+            echo "Correct!"
+            GUESSED="$GUESSED$LETTER"
+        else
+            echo "Wrong!"
+            GUESSED="$GUESSED$LETTER"
+            ((WRONG++))
+        fi
+    done
+    
+    echo "  +---+"
+    echo "  |   |"
+    echo "  O   |"
+    echo " /|\\  |"
+    echo " / \\  |"
+    echo "=========="
+    echo ""
+    echo "GAME OVER! The word was: $WORD"
+}
+
+game_slots() {
+    clear
+    echo "╔══════════════════════════════════════╗"
+    echo "║         SLOT MACHINE                 ║"
+    echo "╚══════════════════════════════════════╝"
+    echo ""
+    
+    SYMBOLS=("🍒" "🍋" "🍊" "🍇" "⭐" "7️⃣")
+    CREDITS=100
+    
+    while [ $CREDITS -gt 0 ]; do
+        echo "Credits: $CREDITS"
+        echo -n "Bet (1-10) or Q to quit: "
+        read BET
+        
+        [ "$BET" = "q" ] || [ "$BET" = "Q" ] && break
+        
+        if ! [[ "$BET" =~ ^[0-9]+$ ]] || [ "$BET" -lt 1 ] || [ "$BET" -gt 10 ] || [ "$BET" -gt $CREDITS ]; then
+            echo "Invalid bet!"
+            continue
+        fi
+        
+        echo ""
+        echo "Spinning..."
+        sleep 1
+        
+        S1=${SYMBOLS[$RANDOM % ${#SYMBOLS[@]}]}
+        S2=${SYMBOLS[$RANDOM % ${#SYMBOLS[@]}]}
+        S3=${SYMBOLS[$RANDOM % ${#SYMBOLS[@]}]}
+        
+        echo "╔═══╦═══╦═══╗"
+        echo "║ $S1 ║ $S2 ║ $S3 ║"
+        echo "╚═══╩═══╩═══╝"
+        
+        if [ "$S1" = "$S2" ] && [ "$S2" = "$S3" ]; then
+            if [ "$S1" = "7️⃣" ]; then
+                WIN=$((BET * 100))
+                echo "★★★ JACKPOT! ★★★ +$WIN"
+            else
+                WIN=$((BET * 10))
+                echo "★ THREE OF A KIND! ★ +$WIN"
+            fi
+            CREDITS=$((CREDITS + WIN))
+        elif [ "$S1" = "$S2" ] || [ "$S2" = "$S3" ] || [ "$S1" = "$S3" ]; then
+            WIN=$((BET * 2))
+            echo "Two match! +$WIN"
+            CREDITS=$((CREDITS + WIN))
+        else
+            echo "No match. -$BET"
+            CREDITS=$((CREDITS - BET))
+        fi
+        echo ""
+    done
+    
+    echo ""
+    echo "Final credits: $CREDITS"
+}
+
+# Main menu
+while true; do
+    clear
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║              CECE-GAMES v1.0                              ║"
+    echo "║            Classic Games Collection                       ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    echo "  [1] Number Guessing Game"
+    echo "  [2] Rock Paper Scissors"
+    echo "  [3] Hangman"
+    echo "  [4] Slot Machine"
+    echo "  [Q] Quit"
+    echo ""
+    echo -n "Choose: "
+    read -n 1 CHOICE
+    echo ""
+    
+    case "$CHOICE" in
+        1) game_guess ;;
+        2) game_rps ;;
+        3) game_hangman ;;
+        4) game_slots ;;
+        q|Q) echo "Thanks for playing!"; exit 0 ;;
+    esac
+    
+    echo ""
+    echo "Press any key to continue..."
+    read -n 1
+done

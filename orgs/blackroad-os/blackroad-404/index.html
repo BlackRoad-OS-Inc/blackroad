@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 | Lost on the Road - BlackRoad</title>
+    <style>
+        :root {
+            --hot-pink: #FF1D6C;
+            --amber: #F5A623;
+            --electric-blue: #2979FF;
+            --violet: #9C27B0;
+            --black: #0a0a0a;
+            --gray: #2a2a2a;
+            --white: #fff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--black);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 34px;
+            overflow: hidden;
+        }
+        
+        .road {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: linear-gradient(180deg, transparent 0%, #1a1a1a 30%);
+        }
+        .road::before {
+            content: '';
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 4px;
+            background: repeating-linear-gradient(90deg, var(--amber) 0px, var(--amber) 40px, transparent 40px, transparent 80px);
+            animation: roadMove 1s linear infinite;
+        }
+        @keyframes roadMove {
+            from { background-position: 0 0; }
+            to { background-position: 80px 0; }
+        }
+        
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--white);
+            border-radius: 50%;
+            animation: twinkle 2s infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .content {
+            position: relative;
+            z-index: 10;
+        }
+        
+        .glitch {
+            font-size: 144px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--amber), var(--hot-pink), var(--violet), var(--electric-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            animation: glitch 3s infinite;
+        }
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-5px, 2px); }
+            94% { transform: translate(5px, -2px); }
+            96% { transform: translate(-3px, 1px); }
+            98% { transform: translate(3px, -1px); }
+        }
+        
+        .subtitle {
+            font-size: 28px;
+            margin: 21px 0;
+            color: var(--white);
+        }
+        
+        .message {
+            font-size: 16px;
+            color: #888;
+            max-width: 500px;
+            margin: 0 auto 34px;
+            line-height: 1.6;
+        }
+        
+        .car {
+            font-size: 64px;
+            animation: drive 3s ease-in-out infinite;
+            display: inline-block;
+        }
+        @keyframes drive {
+            0%, 100% { transform: translateX(-20px) rotate(-2deg); }
+            50% { transform: translateX(20px) rotate(2deg); }
+        }
+        
+        .actions {
+            display: flex;
+            gap: 21px;
+            justify-content: center;
+            margin-top: 34px;
+        }
+        .btn {
+            padding: 13px 34px;
+            border-radius: 100px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: var(--hot-pink);
+            color: var(--white);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(255, 29, 108, 0.4);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 1px solid var(--gray);
+        }
+        .btn-secondary:hover {
+            border-color: var(--hot-pink);
+        }
+        
+        .links {
+            margin-top: 55px;
+            display: flex;
+            gap: 21px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .link {
+            color: #666;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+        .link:hover { color: var(--hot-pink); }
+        
+        .kind-light {
+            position: fixed;
+            bottom: 21px;
+            font-size: 13px;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="road"></div>
+    
+    <div class="content">
+        <div class="glitch">404</div>
+        <div class="car">🚗</div>
+        <h1 class="subtitle">Lost on the Road</h1>
+        <p class="message">
+            Looks like you've taken a wrong turn. This page doesn't exist, 
+            but don't worry – the BlackRoad has many paths to explore.
+        </p>
+        
+        <div class="actions">
+            <a href="https://blackroad.io" class="btn btn-primary">Go Home</a>
+            <a href="https://blackroad-status.pages.dev" class="btn btn-secondary">Check Status</a>
+        </div>
+        
+        <div class="links">
+            <a href="https://blackroad-30k-agents.pages.dev" class="link">30K Agents</a>
+            <a href="https://blackroad-dashboard.pages.dev" class="link">Products</a>
+            <a href="https://console-blackroad-io.pages.dev" class="link">Admin</a>
+            <a href="https://github.com/BlackRoad-OS" class="link">GitHub</a>
+        </div>
+    </div>
+    
+    <div class="kind-light">☀️ Kind Light Mode</div>
+    
+    <script>
+        // Generate stars
+        const stars = document.getElementById('stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 70 + '%';
+            star.style.animationDelay = Math.random() * 2 + 's';
+            star.style.width = star.style.height = (Math.random() * 2 + 1) + 'px';
+            stars.appendChild(star);
+        }
+    </script>
+</body>
+</html>

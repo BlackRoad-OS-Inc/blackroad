@@ -1,0 +1,30 @@
+name = "blackroad-api-billing"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+PRICE_ID = "price_1T0CviChUUSEbzyh42cpU61t"
+PRODUCT_ID = "prod_Ty9CWimTX0iZYv"
+METERED_PRICE_ID = "price_1T0D0RChUUSEbzyhgXJ7A23w"
+METER_ID = "mtr_test_61U9axg1TchkoV7ov41ChUUSEbzyh4bY"
+
+# Cron trigger for invoice finalization - runs daily at midnight UTC
+[triggers]
+crons = ["0 0 * * *"]
+
+# KV namespace for real-time billing tracking
+[[kv_namespaces]]
+binding = "BILLING_REALTIME"
+id = "35085061d7fe4457a96d38bb5b8292e7"
+
+# Add STRIPE_SECRET_KEY as a secret: wrangler secret put STRIPE_SECRET_KEY
+
+# Durable Objects for 1ms latency
+[durable_objects]
+bindings = [
+  { name = "INSTANT_BALANCE", class_name = "InstantBalance" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["InstantBalance"]

@@ -1,0 +1,73 @@
+#!/bin/bash
+# CECE-SLIDES v1.0 - Our Own PowerPoint/Google Slides
+SLIDES_DIR=~/cece/slides
+mkdir -p "$SLIDES_DIR"
+
+new_deck() {
+    NAME="$1"
+    DECK_DIR="$SLIDES_DIR/$NAME"
+    mkdir -p "$DECK_DIR"
+    echo "title: $NAME" > "$DECK_DIR/deck.info"
+    echo "created: $(date -Iseconds)" >> "$DECK_DIR/deck.info"
+    echo "✅ Created presentation: $NAME"
+}
+
+add_slide() {
+    DECK="$1"
+    TITLE="$2"
+    CONTENT="$3"
+    DECK_DIR="$SLIDES_DIR/$DECK"
+    SLIDE_NUM=$(ls "$DECK_DIR"/slide-*.md 2>/dev/null | wc -l)
+    SLIDE_NUM=$((SLIDE_NUM + 1))
+    cat > "$DECK_DIR/slide-$SLIDE_NUM.md" << EOF
+# $TITLE
+
+$CONTENT
+EOF
+    echo "✅ Added slide $SLIDE_NUM: $TITLE"
+}
+
+present() {
+    DECK="$1"
+    DECK_DIR="$SLIDES_DIR/$DECK"
+    SLIDES=$(ls "$DECK_DIR"/slide-*.md 2>/dev/null | sort -V)
+    TOTAL=$(echo "$SLIDES" | wc -l)
+    NUM=1
+    
+    for slide in $SLIDES; do
+        clear
+        echo "═══════════════════════════════════════════════════════════════"
+        echo "  $DECK - Slide $NUM of $TOTAL"
+        echo "═══════════════════════════════════════════════════════════════"
+        echo ""
+        cat "$slide"
+        echo ""
+        echo "═══════════════════════════════════════════════════════════════"
+        echo "  [Enter] Next  [q] Quit"
+        read -r key
+        [ "$key" = "q" ] && break
+        NUM=$((NUM + 1))
+    done
+}
+
+list_decks() {
+    echo "📽️  PRESENTATIONS"
+    for d in "$SLIDES_DIR"/*; do
+        [ -d "$d" ] || continue
+        NAME=$(basename "$d")
+        SLIDES=$(ls "$d"/slide-*.md 2>/dev/null | wc -l)
+        echo "  📽️  $NAME ($SLIDES slides)"
+    done
+}
+
+case "$1" in
+    new) new_deck "$2" ;;
+    slide) add_slide "$2" "$3" "$4" ;;
+    present) present "$2" ;;
+    list) list_decks ;;
+    *) echo "🖤 CECE-SLIDES - Our Own PowerPoint"
+       echo "  new <name>                    Create deck"
+       echo "  slide <deck> <title> <text>   Add slide"
+       echo "  present <deck>                Present"
+       echo "  list                          List decks" ;;
+esac

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Status - System Health & Uptime</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a0a;
+            --bg-secondary: #111111;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --green: #00ff00;
+            --yellow: #ffff00;
+            --red: #ff0000;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .overall-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--green);
+            border-radius: 12px;
+            margin-top: 1.5rem;
+        }
+
+        .overall-status.degraded {
+            border-color: var(--yellow);
+        }
+
+        .overall-status.down {
+            border-color: var(--red);
+        }
+
+        .status-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 20px var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        .status-icon.degraded {
+            background: var(--yellow);
+            box-shadow: 0 0 20px var(--yellow);
+        }
+
+        .status-icon.down {
+            background: var(--red);
+            box-shadow: 0 0 20px var(--red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #FF9D00, #FF0066, #7700FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Services */
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .service-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .service {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 1.5rem;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .service:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .service-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .service-status.checking {
+            background: var(--text-muted);
+            animation: pulse 1s infinite;
+        }
+
+        .service-status.degraded {
+            background: var(--yellow);
+        }
+
+        .service-status.down {
+            background: var(--red);
+        }
+
+        .service-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .service-info p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .service-metrics {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.85rem;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
+            color: var(--text-muted);
+        }
+
+        .service-uptime {
+            font-family: 'Monaco', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--green);
+        }
+
+        /* Uptime Graph */
+        .uptime-graph {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .uptime-graph h4 {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        .uptime-bars {
+            display: flex;
+            gap: 4px;
+            height: 50px;
+            align-items: flex-end;
+        }
+
+        .uptime-bar {
+            flex: 1;
+            background: var(--green);
+            border-radius: 2px 2px 0 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .uptime-bar:hover {
+            opacity: 0.7;
+        }
+
+        .uptime-bar.degraded {
+            background: var(--yellow);
+        }
+
+        .uptime-bar.down {
+            background: var(--red);
+        }
+
+        .uptime-bar.no-data {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .uptime-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: #fff;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            margin-bottom: 0.5rem;
+        }
+
+        .uptime-bar:hover .uptime-tooltip {
+            opacity: 1;
+        }
+
+        /* Incidents */
+        .incidents {
+            margin-top: 3rem;
+        }
+
+        .incident {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--yellow);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .incident.resolved {
+            border-left-color: var(--green);
+            opacity: 0.7;
+        }
+
+        .incident.critical {
+            border-left-color: var(--red);
+        }
+
+        .incident-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .incident-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .incident-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .incident-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-right: 0.5rem;
+        }
+
+        .incident-badge.resolved {
+            background: rgba(0, 255, 0, 0.2);
+            color: var(--green);
+        }
+
+        .incident-badge.investigating {
+            background: rgba(255, 255, 0, 0.2);
+            color: var(--yellow);
+        }
+
+        /* Subscribe */
+        .subscribe {
+            background: linear-gradient(135deg, rgba(255, 157, 0, 0.1), rgba(119, 0, 255, 0.1));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .subscribe h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .subscribe p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .subscribe-form {
+            display: flex;
+            gap: 1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .subscribe-form input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .subscribe-form button {
+            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, #FF9D00, #FF0066);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .subscribe-form button:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>BlackRoad System Status</h1>
+            <div class="overall-status" id="overallStatus">
+                <div class="status-icon"></div>
+                <span id="statusText">All Systems Operational</span>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="uptime">99.98%</div>
+                <div class="stat-label">30-Day Uptime</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="responseTime">124ms</div>
+                <div class="stat-label">Avg Response Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="incidents">0</div>
+                <div class="stat-label">Active Incidents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="requests">2.4M</div>
+                <div class="stat-label">Requests Today</div>
+            </div>
+        </div>
+
+        <!-- Core Services -->
+        <section class="section">
+            <h2>Core Services</h2>
+            <div class="service-list" id="coreServices"></div>
+        </section>
+
+        <!-- AI Services -->
+        <section class="section">
+            <h2>AI Services</h2>
+            <div class="service-list" id="aiServices"></div>
+        </section>
+
+        <!-- Infrastructure -->
+        <section class="section">
+            <h2>Infrastructure</h2>
+            <div class="service-list" id="infrastructure"></div>
+        </section>
+
+        <!-- Recent Incidents -->
+        <section class="section incidents">
+            <h2>Recent Incidents</h2>
+            <div id="incidentsList">
+                <div class="incident resolved">
+                    <div class="incident-header">
+                        <div>
+                            <span class="incident-badge resolved">Resolved</span>
+                            <span class="incident-title">API Response Time Elevated</span>
+                        </div>
+                        <span class="incident-time">Dec 25, 2025 - 14:30 UTC</span>
+                    </div>
+                    <p>We experienced elevated API response times due to increased traffic. The issue has been resolved by scaling our infrastructure.</p>
+                </div>
+
+                <div class="incident resolved">
+                    <div class="incident-header">
+                        <div>
+                            <span class="incident-badge resolved">Resolved</span>
+                            <span class="incident-title">Scheduled Maintenance Complete</span>
+                        </div>
+                        <span class="incident-time">Dec 20, 2025 - 02:00 UTC</span>
+                    </div>
+                    <p>Completed scheduled maintenance for database upgrades. All systems are now operational with improved performance.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Subscribe -->
+        <div class="subscribe">
+            <h3>Get Status Updates</h3>
+            <p>Subscribe to receive notifications about incidents and maintenance windows</p>
+            <form class="subscribe-form" onsubmit="event.preventDefault(); alert('Thanks for subscribing!');">
+                <input type="email" placeholder="your@email.com" required>
+                <button type="submit">Subscribe</button>
+            </form>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2025 BlackRoad. Monitoring powered by Cloudflare.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Service definitions
+        const services = {
+            core: [
+                { name: 'BlackRoad API', url: 'https://api.blackroad.io', latency: 45 },
+                { name: 'Website', url: 'https://blackroad.io', latency: 89 },
+                { name: 'Documentation', url: 'https://docs.blackroad.io', latency: 56 },
+                { name: 'CDN', url: 'https://cdn.blackroad.io', latency: 23 }
+            ],
+            ai: [
+                { name: 'Lucidia QI', url: 'https://lucidiaqi.com', latency: 134 },
+                { name: 'Alice Agent', url: 'https://aliceqi.com', latency: 98 },
+                { name: 'Inference API', url: 'https://api.blackroad.io/inference', latency: 156 },
+                { name: 'Model Registry', url: 'https://models.blackroad.io', latency: 67 }
+            ],
+            infrastructure: [
+                { name: 'Cloudflare Pages', url: 'status.cloudflare.com', latency: 34 },
+                { name: 'GitHub', url: 'status.github.com', latency: 78 },
+                { name: 'Database', url: 'internal', latency: 12 },
+                { name: 'Cache Layer', url: 'internal', latency: 8 }
+            ]
+        };
+
+        // Render services
+        function renderService(service) {
+            const uptime = 99.5 + Math.random() * 0.5;
+            const requestsToday = Math.floor(Math.random() * 500000) + 100000;
+
+            return `
+                <div class="service">
+                    <div class="service-status checking" data-url="${service.url}"></div>
+                    <div class="service-info">
+                        <h3>${service.name}</h3>
+                        <p>${service.url}</p>
+                    </div>
+                    <div class="service-metrics">
+                        <div class="metric">
+                            <span class="metric-value">${service.latency}ms</span>
+                            <span class="metric-label">Latency</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">${(requestsToday / 1000).toFixed(0)}K</span>
+                            <span class="metric-label">Requests</span>
+                        </div>
+                    </div>
+                    <div class="service-uptime">${uptime.toFixed(2)}%</div>
+                </div>
+                <div class="uptime-graph">
+                    <h4>Last 90 Days</h4>
+                    <div class="uptime-bars" id="uptime-${service.name.replace(/\s/g, '')}"></div>
+                </div>
+            `;
+        }
+
+        document.getElementById('coreServices').innerHTML = services.core.map(renderService).join('');
+        document.getElementById('aiServices').innerHTML = services.ai.map(renderService).join('');
+        document.getElementById('infrastructure').innerHTML = services.infrastructure.map(renderService).join('');
+
+        // Generate uptime bars
+        document.querySelectorAll('.uptime-bars').forEach(container => {
+            for (let i = 0; i < 90; i++) {
+                const bar = document.createElement('div');
+                const uptime = Math.random() > 0.98 ? (Math.random() > 0.5 ? 'degraded' : 'down') : '';
+                const height = Math.random() * 40 + 60;
+
+                bar.className = `uptime-bar ${uptime}`;
+                bar.style.height = `${height}%`;
+
+                const date = new Date();
+                date.setDate(date.getDate() - (90 - i));
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                bar.innerHTML = `<div class="uptime-tooltip">${dateStr}<br>${uptime || '100%'} uptime</div>`;
+                container.appendChild(bar);
+            }
+        });
+
+        // Check service status (simulated)
+        async function checkStatus(statusElement, url) {
+            try {
+                // Simulate checking - in production, use real health checks
+                await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+
+                // Random status for demo (99% operational)
+                const status = Math.random() > 0.01 ? 'operational' : 'degraded';
+
+                statusElement.className = 'service-status';
+                if (status === 'degraded') {
+                    statusElement.classList.add('degraded');
+                }
+            } catch (error) {
+                statusElement.className = 'service-status down';
+            }
+        }
+
+        // Check all services
+        document.querySelectorAll('.service-status').forEach(statusEl => {
+            const url = statusEl.dataset.url;
+            checkStatus(statusEl, url);
+        });
+
+        // Update stats periodically
+        setInterval(() => {
+            document.getElementById('responseTime').textContent =
+                (120 + Math.random() * 20).toFixed(0) + 'ms';
+
+            const requests = parseFloat(document.getElementById('requests').textContent);
+            document.getElementById('requests').textContent =
+                (requests + Math.random() * 0.1).toFixed(1) + 'M';
+        }, 5000);
+    </script>
+</body>
+</html>

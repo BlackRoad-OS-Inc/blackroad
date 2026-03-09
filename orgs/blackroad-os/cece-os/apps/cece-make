@@ -1,0 +1,25 @@
+#!/bin/bash
+# CECE-MAKE v1.0 - Makefile Generator
+create() {
+    cat > Makefile << 'MKEOF'
+.PHONY: all build test clean
+
+all: build
+
+build:
+	@echo "Building..."
+
+test:
+	@echo "Testing..."
+
+clean:
+	@echo "Cleaning..."
+MKEOF
+    echo "Makefile created"
+}
+run() { make "$1"; }
+case "$1" in
+    create) create ;;
+    run) run "$2" ;;
+    *) echo "CECE-MAKE: create | run <target>" ;;
+esac

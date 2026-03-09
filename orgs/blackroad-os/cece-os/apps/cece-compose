@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-COMPOSE v1.0 - Docker Compose Helper
+up() { docker-compose up -d; }
+down() { docker-compose down; }
+logs() { docker-compose logs -f "$1"; }
+ps() { docker-compose ps; }
+case "$1" in
+    up) up ;;
+    down) down ;;
+    logs) logs "$2" ;;
+    ps) ps ;;
+    *) echo "CECE-COMPOSE: up | down | logs [service] | ps" ;;
+esac

@@ -1,0 +1,129 @@
+<template>
+    <div class="slds-page-header blackroad-header">
+        <div class="slds-page-header__row">
+            <div class="slds-page-header__col-title">
+                <div class="slds-media">
+                    <div class="slds-media__figure">
+                        <lightning-icon icon-name="custom:custom9" size="large"></lightning-icon>
+                    </div>
+                    <div class="slds-media__body">
+                        <h1 class="slds-page-header__title">BlackRoad OS Hub</h1>
+                        <p class="slds-page-header__meta-text">CRM Command Center</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="slds-grid slds-gutters slds-m-top_medium">
+        <div class="slds-col slds-size_1-of-4">
+            <lightning-card title="Connected CRMs" icon-name="standard:connected_apps">
+                <div class="slds-p-horizontal_medium">
+                    <p class="stat-number">{stats.activeCRMs} / {stats.totalCRMs}</p>
+                    <p class="stat-label">Active</p>
+                </div>
+            </lightning-card>
+        </div>
+        <div class="slds-col slds-size_1-of-4">
+            <lightning-card title="Total Households" icon-name="standard:household">
+                <div class="slds-p-horizontal_medium">
+                    <p class="stat-number">{stats.totalHouseholds}</p>
+                    <p class="stat-label">Client Households</p>
+                </div>
+            </lightning-card>
+        </div>
+        <div class="slds-col slds-size_1-of-4">
+            <lightning-card title="Total AUM" icon-name="standard:currency">
+                <div class="slds-p-horizontal_medium">
+                    <p class="stat-number">{formattedAUM}</p>
+                    <p class="stat-label">Assets Under Management</p>
+                </div>
+            </lightning-card>
+        </div>
+        <div class="slds-col slds-size_1-of-4">
+            <lightning-card title="Pending Actions" icon-name="standard:task">
+                <div class="slds-p-horizontal_medium">
+                    <p class="stat-number">{totalPending}</p>
+                    <p class="stat-label">Distributions / Events</p>
+                </div>
+            </lightning-card>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="slds-grid slds-gutters slds-m-top_medium">
+        <!-- Connected CRMs -->
+        <div class="slds-col slds-size_1-of-2">
+            <lightning-card title="Connected CRMs" icon-name="standard:connected_apps">
+                <lightning-button slot="actions" label="Add CRM" onclick={handleAddCRM}></lightning-button>
+                <template if:true={connectedCRMs}>
+                    <lightning-datatable
+                        key-field="Id"
+                        data={connectedCRMs}
+                        columns={crmColumns}
+                        hide-checkbox-column
+                        onrowaction={handleCRMAction}>
+                    </lightning-datatable>
+                </template>
+                <template if:false={connectedCRMs}>
+                    <div class="slds-p-around_medium slds-text-align_center">
+                        <p>No CRMs connected yet.</p>
+                    </div>
+                </template>
+            </lightning-card>
+        </div>
+
+        <!-- CRM Products -->
+        <div class="slds-col slds-size_1-of-2">
+            <lightning-card title="CRM Products" icon-name="standard:product">
+                <template if:true={crmProducts}>
+                    <ul class="slds-has-dividers_bottom-space">
+                        <template for:each={crmProducts} for:item="product">
+                            <li key={product.Id} class="slds-item slds-p-around_small">
+                                <div class="slds-grid slds-grid_vertical-align-center">
+                                    <div class="slds-col slds-grow">
+                                        <p class="slds-text-heading_small">{product.Name}</p>
+                                        <p class="slds-text-body_small slds-text-color_weak">{product.Target_Vertical__c}</p>
+                                    </div>
+                                    <div class="slds-col">
+                                        <lightning-badge label={product.Version__c}></lightning-badge>
+                                    </div>
+                                </div>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+            </lightning-card>
+        </div>
+    </div>
+
+    <!-- Households Needing Attention -->
+    <div class="slds-m-top_medium">
+        <lightning-card title="Households Needing Attention" icon-name="standard:warning">
+            <template if:true={householdsNeedingAttention}>
+                <lightning-datatable
+                    key-field="Id"
+                    data={householdsNeedingAttention}
+                    columns={householdColumns}
+                    hide-checkbox-column
+                    onrowaction={handleHouseholdAction}>
+                </lightning-datatable>
+            </template>
+        </lightning-card>
+    </div>
+
+    <!-- Recent Compliance Activity -->
+    <div class="slds-m-top_medium">
+        <lightning-card title="Recent Compliance Activity" icon-name="standard:logging">
+            <template if:true={complianceLogs}>
+                <lightning-datatable
+                    key-field="Id"
+                    data={complianceLogs}
+                    columns={logColumns}
+                    hide-checkbox-column>
+                </lightning-datatable>
+            </template>
+        </lightning-card>
+    </div>
+</template>

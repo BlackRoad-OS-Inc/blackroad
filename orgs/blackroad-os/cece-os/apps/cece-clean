@@ -1,0 +1,22 @@
+#!/bin/bash
+# CECE-CLEAN v1.0 - System Cleaner
+cache() {
+    rm -rf ~/.cache/* 2>/dev/null
+    echo "Cache cleared"
+}
+tmp() {
+    rm -rf /tmp/* 2>/dev/null
+    echo "Temp files cleared"
+}
+logs() {
+    sudo journalctl --vacuum-time=7d 2>/dev/null
+    echo "Old logs cleared"
+}
+all() { cache; tmp; logs; echo "System cleaned!"; }
+case "$1" in
+    cache) cache ;;
+    tmp) tmp ;;
+    logs) logs ;;
+    all) all ;;
+    *) echo "CECE-CLEAN: cache | tmp | logs | all" ;;
+esac

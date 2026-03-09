@@ -1,0 +1,62 @@
+#!/bin/bash
+# CECE-MAPS v1.0 - Our Own Google Maps
+MAPS_DIR=~/cece/maps
+mkdir -p "$MAPS_DIR/places" "$MAPS_DIR/routes"
+
+add_place() {
+    NAME="$1"
+    ADDRESS="$2"
+    PLACE_ID=$(echo "$NAME" | tr " " "-" | tr "[:upper:]" "[:lower:]")
+    cat > "$MAPS_DIR/places/$PLACE_ID.place" << EOF
+name: $NAME
+address: $ADDRESS
+added: $(date -Iseconds)
+visited: false
+notes: 
+EOF
+    echo "✅ Place saved: $NAME"
+}
+
+list_places() {
+    echo "📍 SAVED PLACES"
+    for p in "$MAPS_DIR/places"/*.place 2>/dev/null; do
+        [ -f "$p" ] || continue
+        NAME=$(grep "^name:" "$p" | cut -d: -f2-)
+        ADDRESS=$(grep "^address:" "$p" | cut -d: -f2-)
+        echo "  📍 $NAME"
+        echo "     $ADDRESS"
+    done
+}
+
+# ASCII map of your network!
+network_map() {
+    echo "🗺️  CECE NETWORK MAP"
+    echo ""
+    echo "    ┌──────────────┐"
+    echo "    │   INTERNET   │"
+    echo "    └──────┬───────┘"
+    echo "           │"
+    echo "    ┌──────┴───────┐"
+    echo "    │    ROUTER    │"
+    echo "    │  192.168.4.1 │"
+    echo "    └──────┬───────┘"
+    echo "           │"
+    echo "    ┌──────┼──────┬──────────┐"
+    echo "    │      │      │          │"
+    echo " ┌──┴──┐ ┌─┴──┐ ┌─┴──┐   ┌───┴───┐"
+    echo " │ALICE│ │ARIA│ │CECE│   │LUCIDIA│"
+    echo " │ .38 │ │ .? │ │ .64│   │  .64  │"
+    echo " └─────┘ └────┘ └────┘   └───────┘"
+    echo ""
+    echo "  🖤 The BlackRoad Family"
+}
+
+case "$1" in
+    add) add_place "$2" "$3" ;;
+    list) list_places ;;
+    network) network_map ;;
+    *) echo "🖤 CECE-MAPS - Our Own Google Maps"
+       echo "  add <name> <address>   Save place"
+       echo "  list                   List places"
+       echo "  network                Network map" ;;
+esac

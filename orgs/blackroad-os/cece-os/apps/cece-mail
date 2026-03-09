@@ -1,0 +1,53 @@
+#!/bin/bash
+# CECE-MAIL v1.0 - Our Own Email
+MAIL=~/cece/mail
+
+compose() {
+    echo -n "To: "; read TO
+    echo -n "Subject: "; read SUBJ
+    echo "Message (end with . on its own line):"
+    MSG=""
+    while read line; do
+        [ "$line" = "." ] && break
+        MSG="$MSG$line\n"
+    done
+    ID=$(date +%s)
+    echo -e "To: $TO\nSubject: $SUBJ\nDate: $(date)\n---\n$MSG" > "$MAIL/sent/$ID.mail"
+    # Simulate sending to recipient
+    mkdir -p ~/cece/mail/inbox 2>/dev/null
+    cp "$MAIL/sent/$ID.mail" "$MAIL/inbox/$ID.mail"
+    echo "✉️  Sent to $TO"
+}
+
+inbox() {
+    echo "📬 Inbox:"
+    for f in "$MAIL/inbox"/*.mail; do
+        [ -f "$f" ] || continue
+        ID=$(basename "$f" .mail)
+        SUBJ=$(grep "^Subject:" "$f" | cut -d: -f2-)
+        FROM=$(grep "^From:" "$f" | cut -d: -f2- || echo "local")
+        echo "  [$ID] $SUBJ"
+    done
+}
+
+read_mail() {
+    ID=$1
+    if [ -f "$MAIL/inbox/$ID.mail" ]; then
+        cat "$MAIL/inbox/$ID.mail"
+    else
+        echo "Mail not found"
+    fi
+}
+
+case "$1" in
+    compose|c|new) compose ;;
+    inbox|i) inbox ;;
+    read|r) read_mail "$2" ;;
+    sent) ls "$MAIL/sent" ;;
+    *)
+        echo "CECE-MAIL - Our Own Email"
+        echo "  compose - Write email"
+        echo "  inbox   - View inbox"
+        echo "  read ID - Read email"
+        ;;
+esac

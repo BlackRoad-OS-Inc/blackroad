@@ -1,0 +1,20 @@
+#!/bin/bash
+# CECE-SPEEDTEST v1.0 - Internet Speed Test
+test_speed() {
+    echo "Testing internet speed..."
+    if command -v speedtest-cli &>/dev/null; then
+        speedtest-cli --simple
+    else
+        echo "Download test:"
+        curl -o /dev/null -w "Speed: %{speed_download} bytes/sec\n" https://speed.cloudflare.com/__down?bytes=10000000 2>/dev/null
+    fi
+}
+ping_test() {
+    HOST="${1:-8.8.8.8}"
+    ping -c 5 "$HOST" | tail -1
+}
+case "$1" in
+    test) test_speed ;;
+    ping) ping_test "$2" ;;
+    *) test_speed ;;
+esac

@@ -1,0 +1,76 @@
+name: Deploy to DigitalOcean Droplet
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'droplet-services/**'
+      - 'docker-compose.yaml'
+      - 'Dockerfile'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Droplet via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            echo "🚀 Deploying to DigitalOcean Droplet..."
+
+            # Navigate to application directory
+            cd /opt/blackroad || exit 1
+
+            # Pull latest code
+            echo "📥 Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main
+
+            # Backup current state
+            echo "💾 Creating backup..."
+            docker-compose down
+            tar -czf backup_$(date +%Y%m%d_%H%M%S).tar.gz . || true
+
+            # Pull new images
+            echo "📦 Pulling Docker images..."
+            docker-compose pull
+
+            # Build and restart services
+            echo "🔨 Building and starting services..."
+            docker-compose up -d --build
+
+            # Wait for services to start
+            echo "⏳ Waiting for services..."
+            sleep 15
+
+            # Health check
+            echo "🏥 Running health checks..."
+            docker-compose ps
+
+            # Test services
+            curl -f http://localhost:8000/health || echo "⚠️ Health check failed"
+
+            echo "✅ Deployment complete!"
+
+      - name: Verify Deployment
+        run: |
+          echo "🔍 Verifying deployment..."
+          curl -I https://codex.blackroad.io/health || echo "⚠️ External health check failed"
+
+      - name: Notify on Success
+        if: success()
+        run: |
+          echo "✅ Droplet deployment successful!"
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Droplet deployment failed!"

@@ -1,0 +1,72 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "roadwebsocket"
+version = "0.1.0"
+description = "WebSocket client and server for BlackRoad OS with rooms, broadcasting, and reconnection"
+readme = "README.md"
+license = "LicenseRef-Proprietary"
+requires-python = ">=3.10"
+authors = [
+    { name = "BlackRoad OS", email = "blackroad.systems@gmail.com" }
+]
+keywords = [
+    "websocket",
+    "realtime",
+    "rooms",
+    "broadcasting",
+    "blackroad",
+    "async"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP",
+    "Framework :: AsyncIO",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/BlackRoad-OS/roadwebsocket"
+Documentation = "https://github.com/BlackRoad-OS/roadwebsocket#readme"
+Repository = "https://github.com/BlackRoad-OS/roadwebsocket"
+Issues = "https://github.com/BlackRoad-OS/roadwebsocket/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/roadwebsocket"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true

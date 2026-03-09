@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-VENV v1.0 - Python Virtual Env
+create() { python3 -m venv "$1" && echo "Created: $1"; }
+activate() { echo "Run: source $1/bin/activate"; }
+list() { pip list; }
+freeze() { pip freeze > requirements.txt && echo "Saved to requirements.txt"; }
+case "$1" in
+    create) create "$2" ;;
+    activate) activate "$2" ;;
+    list) list ;;
+    freeze) freeze ;;
+    *) echo "CECE-VENV: create <name> | activate <name> | list | freeze" ;;
+esac

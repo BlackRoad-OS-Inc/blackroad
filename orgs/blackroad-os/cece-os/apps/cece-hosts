@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-HOSTS v1.0 - Hosts File Manager
+list() { cat /etc/hosts; }
+add() { echo "$1 $2" | sudo tee -a /etc/hosts && echo "Added: $1 → $2"; }
+block() { echo "127.0.0.1 $1" | sudo tee -a /etc/hosts && echo "Blocked: $1"; }
+case "$1" in
+    list) list ;;
+    add) add "$2" "$3" ;;
+    block) block "$2" ;;
+    *) echo "CECE-HOSTS: list | add <ip> <hostname> | block <domain>" ;;
+esac

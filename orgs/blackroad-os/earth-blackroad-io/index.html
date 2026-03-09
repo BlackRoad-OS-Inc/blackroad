@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth - BlackRoad Planet Portal</title>
+    <style>
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --amber: #F5A623;
+            --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF;
+            --violet: #9C27B0;
+            --earth-green: #4CAF50;
+            --earth-ocean: #1E88E5;
+            --phi: 1.618;
+            --space-xs: 8px;
+            --space-sm: 13px;
+            --space-md: 21px;
+            --space-lg: 34px;
+            --space-xl: 55px;
+            --space-2xl: 89px;
+            --space-3xl: 144px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            line-height: 1.618;
+            background: radial-gradient(circle at 30% 50%, #001a33 0%, var(--black) 100%);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-2xl) var(--space-lg);
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: var(--space-3xl);
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg,
+                var(--earth-ocean) 0%,
+                var(--earth-green) 38.2%,
+                var(--electric-blue) 61.8%,
+                var(--violet) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--space-md);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: var(--space-xl);
+        }
+
+        .earth-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-lg);
+            margin: var(--space-2xl) 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(30, 136, 229, 0.3);
+            border-radius: var(--space-md);
+            padding: var(--space-xl);
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-card:hover {
+            border-color: var(--earth-green);
+            transform: translateY(-8px);
+            box-shadow: 0 21px 55px rgba(76, 175, 80, 0.2);
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: var(--space-md);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--earth-green), var(--earth-ocean));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--space-sm);
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+        }
+
+        .portal-section {
+            margin: var(--space-3xl) 0;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--earth-green);
+            margin-bottom: var(--space-xl);
+            text-align: center;
+        }
+
+        .portal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-lg);
+        }
+
+        .portal-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(245, 166, 35, 0.3);
+            border-radius: var(--space-md);
+            padding: var(--space-lg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .portal-card:hover {
+            border-color: var(--hot-pink);
+            transform: scale(1.02);
+        }
+
+        .portal-title {
+            color: var(--hot-pink);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: var(--space-sm);
+        }
+
+        .portal-description {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.618;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(34px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-21px);
+            }
+        }
+
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: var(--space-3xl);
+            padding: var(--space-xl);
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        a {
+            color: var(--electric-blue);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: var(--earth-green);
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+
+    <div class="container">
+        <div class="hero">
+            <h1 class="floating">🌍 Earth</h1>
+            <p class="subtitle">Planet Portal • Sustainability • Conservation</p>
+        </div>
+
+        <div class="earth-stats">
+            <div class="stat-card">
+                <div class="stat-icon">🌱</div>
+                <div class="stat-value">83%</div>
+                <div class="stat-label">Forest Coverage Goal</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💧</div>
+                <div class="stat-value">71%</div>
+                <div class="stat-label">Ocean Surface</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🌡️</div>
+                <div class="stat-value">1.5°C</div>
+                <div class="stat-label">Climate Target</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">♻️</div>
+                <div class="stat-value">100%</div>
+                <div class="stat-label">Renewable Goal</div>
+            </div>
+        </div>
+
+        <div class="portal-section">
+            <h2 class="section-title">Earth Initiatives</h2>
+            <div class="portal-grid">
+                <div class="portal-card">
+                    <div class="portal-title">🌳 Reforestation</div>
+                    <div class="portal-description">
+                        AI-powered reforestation planning and monitoring systems for
+                        global forest restoration projects.
+                    </div>
+                </div>
+
+                <div class="portal-card">
+                    <div class="portal-title">🌊 Ocean Health</div>
+                    <div class="portal-description">
+                        Real-time ocean monitoring, coral reef protection, and marine
+                        ecosystem preservation initiatives.
+                    </div>
+                </div>
+
+                <div class="portal-card">
+                    <div class="portal-title">☀️ Clean Energy</div>
+                    <div class="portal-description">
+                        Quantum-optimized renewable energy grid management and
+                        carbon-neutral infrastructure solutions.
+                    </div>
+                </div>
+
+                <div class="portal-card">
+                    <div class="portal-title">🔬 Climate Science</div>
+                    <div class="portal-description">
+                        Advanced climate modeling using quantum computing for
+                        accurate long-term predictions and policy planning.
+                    </div>
+                </div>
+
+                <div class="portal-card">
+                    <div class="portal-title">🏙️ Sustainable Cities</div>
+                    <div class="portal-description">
+                        Smart city infrastructure powered by AI for efficient
+                        resource management and carbon reduction.
+                    </div>
+                </div>
+
+                <div class="portal-card">
+                    <div class="portal-title">📊 Impact Tracking</div>
+                    <div class="portal-description">
+                        Real-time dashboard for global sustainability metrics,
+                        carbon tracking, and environmental impact assessment.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Earth Portal • Part of <a href="https://blackroad.io">BlackRoad OS</a></p>
+            <p>Together for a sustainable future 🌍💚</p>
+        </footer>
+    </div>
+
+    <script>
+        // Generate random stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.width = star.style.height = Math.random() * 3 + 'px';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+    </script>
+</body>
+</html>

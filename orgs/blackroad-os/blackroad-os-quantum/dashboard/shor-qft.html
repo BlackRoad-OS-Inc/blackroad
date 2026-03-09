@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐⚛️ Shor's Algorithm & QFT - BlackRoad Quantum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000000; --white: #FFFFFF;
+            --amber: #F5A623; --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF; --violet: #9C27B0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black); color: var(--white);
+            padding: 34px; line-height: 1.6;
+        }
+
+        h1 {
+            font-size: 55px; font-weight: 900;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 21px; text-align: center;
+        }
+
+        .subtitle {
+            text-align: center; font-size: 21px; color: var(--amber);
+            margin-bottom: 13px;
+        }
+
+        .warning {
+            text-align: center; font-size: 16px;
+            color: #FF1D6C; margin-bottom: 34px;
+            padding: 13px; background: rgba(255, 29, 108, 0.1);
+            border: 2px solid rgba(255, 29, 108, 0.3);
+            border-radius: 8px; max-width: 900px; margin: 0 auto 34px;
+        }
+
+        .controls {
+            display: flex; gap: 13px; justify-content: center;
+            margin-bottom: 34px; flex-wrap: wrap;
+        }
+
+        button {
+            padding: 13px 21px; font-size: 16px; font-weight: 700;
+            background: rgba(255, 29, 108, 0.2);
+            border: 2px solid var(--hot-pink);
+            border-radius: 8px; color: var(--white);
+            cursor: pointer; transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--hot-pink);
+            box-shadow: 0 5px 21px rgba(255, 29, 108, 0.5);
+            transform: translateY(-2px);
+        }
+
+        button.active {
+            background: var(--hot-pink);
+            box-shadow: 0 0 21px var(--hot-pink);
+        }
+
+        .canvas-container {
+            display: flex; justify-content: center;
+            margin-bottom: 34px;
+        }
+
+        canvas {
+            border: 2px solid rgba(255, 29, 108, 0.3);
+            border-radius: 13px;
+            box-shadow: 0 8px 32px rgba(255, 29, 108, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .info-panel {
+            max-width: 1200px; margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(41, 121, 255, 0.3);
+            border-radius: 13px; padding: 21px;
+        }
+
+        .info-title {
+            font-size: 28px; font-weight: 700;
+            color: var(--electric-blue);
+            margin-bottom: 13px;
+        }
+
+        .info-text {
+            font-size: 16px; color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 13px;
+        }
+
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: rgba(245, 166, 35, 0.1);
+            border-left: 3px solid var(--amber);
+            padding: 13px; margin: 13px 0;
+            font-size: 14px; color: var(--amber);
+            overflow-x: auto;
+        }
+
+        .back-link {
+            display: inline-block; margin-bottom: 21px;
+            color: var(--electric-blue); text-decoration: none;
+            font-size: 16px; transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--hot-pink); text-decoration: underline;
+        }
+
+        .demo-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(156, 39, 176, 0.3);
+            border-radius: 13px; padding: 21px;
+            margin: 21px auto; max-width: 800px;
+        }
+
+        .demo-title {
+            font-size: 21px; font-weight: 700;
+            color: var(--violet); margin-bottom: 13px;
+            text-align: center;
+        }
+
+        .number-input {
+            display: flex; gap: 13px; justify-content: center;
+            align-items: center; margin: 21px 0;
+        }
+
+        input[type="number"] {
+            padding: 8px 13px; font-size: 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--electric-blue);
+            border-radius: 8px; color: var(--white);
+            width: 100px; text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--hot-pink);
+            box-shadow: 0 0 13px rgba(255, 29, 108, 0.5);
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, rgba(255, 29, 108, 0.2), rgba(41, 121, 255, 0.2));
+            border: 2px solid var(--hot-pink);
+            border-radius: 8px; padding: 21px;
+            margin: 21px 0; text-align: center;
+        }
+
+        .result-label {
+            font-size: 16px; color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 34px; font-weight: 900;
+            background: linear-gradient(135deg, #FF1D6C, #2979FF);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-family: 'Courier New', monospace;
+        }
+
+        .step-indicator {
+            display: flex; justify-content: space-between;
+            margin: 21px auto; max-width: 900px;
+            padding: 13px;
+        }
+
+        .step {
+            flex: 1; text-align: center;
+            padding: 8px; border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            margin: 0 5px; transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: rgba(255, 29, 108, 0.3);
+            border-color: var(--hot-pink);
+            box-shadow: 0 0 13px var(--hot-pink);
+        }
+
+        .step.completed {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00FF88;
+        }
+
+        .step-number {
+            font-size: 18px; font-weight: 700;
+            color: var(--hot-pink); margin-bottom: 5px;
+        }
+
+        .step-name {
+            font-size: 13px; color: rgba(255, 255, 255, 0.8);
+        }
+
+        .complexity-comparison {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 21px; margin: 21px 0;
+        }
+
+        .complexity-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(156, 39, 176, 0.3);
+            border-radius: 8px; padding: 21px;
+            text-align: center;
+        }
+
+        .complexity-label {
+            font-size: 14px; color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase; margin-bottom: 8px;
+        }
+
+        .complexity-value {
+            font-size: 28px; font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .classical { color: #9C27B0; }
+        .quantum { color: #00FF88; }
+
+        .rsa-warning {
+            background: rgba(255, 29, 108, 0.1);
+            border: 2px solid var(--hot-pink);
+            border-radius: 8px; padding: 21px;
+            margin: 21px 0; text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Universe</a>
+
+    <h1>🔐⚛️ SHOR'S ALGORITHM & QFT</h1>
+    <div class="subtitle">The Algorithm That Can Break RSA Encryption</div>
+    <div class="warning">
+        ⚠️ This algorithm demonstrates why quantum computers threaten current cryptography.<br>
+        RSA-2048 (current standard) could be broken by a sufficiently large quantum computer!
+    </div>
+
+    <div class="controls">
+        <button onclick="selectMode('qft')" class="active" id="btn-qft">Quantum Fourier Transform</button>
+        <button onclick="selectMode('period-finding')" id="btn-period-finding">Period Finding</button>
+        <button onclick="selectMode('shor')" id="btn-shor">Shor's Algorithm</button>
+        <button onclick="selectMode('comparison')" id="btn-comparison">Classical vs Quantum</button>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="mainCanvas" width="1200" height="600"></canvas>
+    </div>
+
+    <div id="interactiveSection"></div>
+
+    <div class="info-panel" id="infoPanel">
+        <!-- Info will be inserted here -->
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentMode = 'qft';
+        let animationFrame = 0;
+        let isAnimating = true;
+
+        // Shor's algorithm state
+        let N = 15; // Number to factor
+        let a = 7;  // Random number coprime to N
+        let currentStep = 0;
+
+        function selectMode(mode) {
+            currentMode = mode;
+            animationFrame = 0;
+            currentStep = 0;
+
+            // Update button states
+            document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mode}`).classList.add('active');
+
+            updateContent();
+            draw();
+        }
+
+        function updateContent() {
+            const interactive = document.getElementById('interactiveSection');
+            const info = document.getElementById('infoPanel');
+
+            if (currentMode === 'qft') {
+                interactive.innerHTML = '';
+                info.innerHTML = `
+                    <div class="info-title">Quantum Fourier Transform (QFT)</div>
+                    <div class="info-text">
+                        The quantum analogue of the discrete Fourier transform. It's the key subroutine in Shor's algorithm
+                        and many other quantum algorithms. While the classical FFT takes O(n·2ⁿ) operations, QFT takes only O(n²) quantum gates!
+                    </div>
+
+                    <div class="formula">
+                        QFT|j⟩ = (1/√N) Σₖ e^(2πijk/N) |k⟩
+
+                        For n qubits (N = 2ⁿ):
+                        |j⟩ → (1/√N) Σₖ=₀^(N-1) exp(2πijk/N) |k⟩
+                    </div>
+
+                    <div class="info-text">
+                        <strong>Key Properties:</strong><br>
+                        • Maps computational basis to Fourier basis<br>
+                        • Creates interference patterns that reveal periodicity<br>
+                        • Reversible (QFT† is inverse QFT)<br>
+                        • Exponentially faster than classical FFT for quantum states
+                    </div>
+
+                    <div class="complexity-comparison">
+                        <div class="complexity-box">
+                            <div class="complexity-label">Classical FFT</div>
+                            <div class="complexity-value classical">O(n·2ⁿ)</div>
+                        </div>
+                        <div class="complexity-box">
+                            <div class="complexity-label">Quantum QFT</div>
+                            <div class="complexity-value quantum">O(n²)</div>
+                        </div>
+                    </div>
+
+                    <div class="info-text">
+                        The visualization shows QFT transforming a periodic state into sharp peaks at the frequencies.
+                        Watch how the quantum interference creates the characteristic comb pattern!
+                    </div>
+                `;
+            } else if (currentMode === 'period-finding') {
+                interactive.innerHTML = '';
+                info.innerHTML = `
+                    <div class="info-title">Quantum Period Finding</div>
+                    <div class="info-text">
+                        The core of Shor's algorithm! Given a function f(x) that is periodic with period r,
+                        quantum period finding can determine r exponentially faster than any known classical algorithm.
+                    </div>
+
+                    <div class="formula">
+                        Given: f(x + r) = f(x) for all x
+                        Find: period r
+
+                        Quantum Approach:
+                        1. Create superposition: Σₓ |x⟩|f(x)⟩
+                        2. Measure second register → collapses to periodic state
+                        3. Apply QFT to first register
+                        4. Measure → get multiple of N/r with high probability
+                    </div>
+
+                    <div class="info-text">
+                        <strong>Example: f(x) = aˣ mod N</strong><br>
+                        If a = 7, N = 15:<br>
+                        7¹ mod 15 = 7<br>
+                        7² mod 15 = 4<br>
+                        7³ mod 15 = 13<br>
+                        7⁴ mod 15 = 1 ← Back to start! Period r = 4
+                    </div>
+
+                    <div class="complexity-comparison">
+                        <div class="complexity-box">
+                            <div class="complexity-label">Classical Period Finding</div>
+                            <div class="complexity-value classical">O(√N)</div>
+                        </div>
+                        <div class="complexity-box">
+                            <div class="complexity-label">Quantum Period Finding</div>
+                            <div class="complexity-value quantum">O(log N)²</div>
+                        </div>
+                    </div>
+
+                    <div class="info-text">
+                        The visualization shows the periodic function and how QFT reveals the period through
+                        constructive interference at multiples of the period frequency.
+                    </div>
+                `;
+            } else if (currentMode === 'shor') {
+                interactive.innerHTML = `
+                    <div class="demo-section">
+                        <div class="demo-title">Factor a Number with Shor's Algorithm!</div>
+
+                        <div class="number-input">
+                            <label style="font-size: 18px; color: var(--amber);">N =</label>
+                            <input type="number" id="numberInput" value="${N}" min="15" max="10000" step="1">
+                            <button onclick="factorNumber()" style="padding: 8px 21px;">Factor It!</button>
+                        </div>
+
+                        <div id="factorResult"></div>
+
+                        <div class="step-indicator" id="stepIndicator"></div>
+                    </div>
+                `;
+
+                info.innerHTML = `
+                    <div class="info-title">Shor's Algorithm: Integer Factorization</div>
+                    <div class="info-text">
+                        The most famous quantum algorithm! Developed by Peter Shor in 1994, it can factor large numbers
+                        exponentially faster than the best known classical algorithms. This threatens RSA encryption,
+                        which relies on factoring being hard.
+                    </div>
+
+                    <div class="formula">
+                        Problem: Factor N into primes (N = p × q)
+
+                        Shor's Algorithm Steps:
+                        1. Pick random a < N, check gcd(a, N) ≠ 1 → easy factor!
+                        2. Use quantum period finding to find r where aʳ ≡ 1 (mod N)
+                        3. If r is even and aʳ/² ≢ -1 (mod N):
+                           - Compute gcd(aʳ/² - 1, N) → factor!
+                           - Compute gcd(aʳ/² + 1, N) → other factor!
+                        4. If fails, repeat with different a
+                    </div>
+
+                    <div class="complexity-comparison">
+                        <div class="complexity-box">
+                            <div class="complexity-label">Classical (GNFS)</div>
+                            <div class="complexity-value classical">exp(O(∛(log N)))</div>
+                            <div style="font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 8px;">
+                                Sub-exponential but very slow for large N
+                            </div>
+                        </div>
+                        <div class="complexity-box">
+                            <div class="complexity-label">Shor's Algorithm</div>
+                            <div class="complexity-value quantum">O((log N)³)</div>
+                            <div style="font-size: 12px; color: #00FF88; margin-top: 8px;">
+                                Polynomial! Exponential speedup!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rsa-warning">
+                        <div style="font-size: 21px; font-weight: 700; color: var(--hot-pink); margin-bottom: 13px;">
+                            🔐 Impact on Cryptography
+                        </div>
+                        <div style="font-size: 15px; line-height: 1.8;">
+                            <strong>RSA-2048:</strong> Would take classical computers ~300 trillion years to crack<br>
+                            <strong>Quantum computer with ~4000 qubits:</strong> Could crack it in hours!<br>
+                            <br>
+                            This is why we're developing post-quantum cryptography 🛡️
+                        </div>
+                    </div>
+                `;
+
+                updateStepIndicator();
+            } else if (currentMode === 'comparison') {
+                interactive.innerHTML = '';
+                info.innerHTML = `
+                    <div class="info-title">Classical vs Quantum Factoring</div>
+                    <div class="info-text">
+                        A visual comparison showing why Shor's algorithm is revolutionary.
+                        The visualization shows time scaling for different approaches to factor N-bit numbers.
+                    </div>
+
+                    <div class="formula">
+                        To factor an n-bit number:
+
+                        Trial Division: O(√N) = O(2^(n/2))
+                        → 1024-bit: ~2^512 operations (~10^154 operations!)
+
+                        Quadratic Sieve: O(exp(√(ln N · ln ln N)))
+                        → Better, but still exponential
+
+                        General Number Field Sieve (GNFS): O(exp(1.9(ln N)^(1/3)(ln ln N)^(2/3)))
+                        → Best classical algorithm, still sub-exponential
+                        → RSA-2048: ~2^110 operations (would take billions of years)
+
+                        Shor's Algorithm: O((log N)³)
+                        → Polynomial! Only ~(2048)³ = ~8.5 billion operations
+                        → Could break RSA-2048 in hours with enough qubits!
+                    </div>
+
+                    <div class="info-text">
+                        <strong>Real-world impact:</strong><br>
+                        • RSA-768 (768 bits): Factored classically in 2009 using GNFS (took 2000 CPU-years)<br>
+                        • RSA-2048 (current standard): Estimated 300 trillion years with classical computers<br>
+                        • RSA-2048 with Shor: Hours with ~4000 logical qubits (not yet built!)<br>
+                        <br>
+                        Current quantum computers have ~1000 physical qubits, but error rates are too high.
+                        We need error correction (each logical qubit needs ~1000 physical qubits).
+                        Estimate: 10-20 years until cryptographically relevant quantum computers exist.
+                    </div>
+
+                    <div class="rsa-warning">
+                        <div style="font-size: 18px; font-weight: 700; color: var(--electric-blue); margin-bottom: 13px;">
+                            The Quantum Threat Timeline
+                        </div>
+                        <div style="font-size: 14px; line-height: 1.8; text-align: left;">
+                            <strong>1994:</strong> Shor's algorithm discovered - "Oh no, RSA is doomed!"<br>
+                            <strong>2000s:</strong> First small quantum computers (1-10 qubits)<br>
+                            <strong>2019:</strong> Google's 53-qubit quantum supremacy<br>
+                            <strong>2023:</strong> IBM's 1000+ qubit processors (still too noisy)<br>
+                            <strong>2030s? (estimated):</strong> Fault-tolerant quantum computers with enough qubits<br>
+                            <br>
+                            <strong>Response:</strong> NIST is standardizing post-quantum cryptography NOW<br>
+                            (Lattice-based, code-based, multivariate, hash-based schemes)
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function factorNumber() {
+            N = parseInt(document.getElementById('numberInput').value);
+
+            if (N < 4) {
+                document.getElementById('factorResult').innerHTML = `
+                    <div style="color: var(--hot-pink); text-align: center; margin: 13px 0;">
+                        N must be at least 4!
+                    </div>
+                `;
+                return;
+            }
+
+            // Classical trial division for demo
+            let factor1 = null;
+            let factor2 = null;
+
+            // Check if even
+            if (N % 2 === 0) {
+                factor1 = 2;
+                factor2 = N / 2;
+            } else {
+                // Try odd factors
+                for (let i = 3; i <= Math.sqrt(N); i += 2) {
+                    if (N % i === 0) {
+                        factor1 = i;
+                        factor2 = N / i;
+                        break;
+                    }
+                }
+            }
+
+            if (factor1 && factor2) {
+                document.getElementById('factorResult').innerHTML = `
+                    <div class="result-box">
+                        <div class="result-label">Factors Found!</div>
+                        <div class="result-value">${N} = ${factor1} × ${factor2}</div>
+                    </div>
+                    <div style="text-align: center; color: var(--amber); margin-top: 13px; font-size: 14px;">
+                        (Computed classically for demo. Quantum computer would use Shor's algorithm!)
+                    </div>
+                `;
+
+                // Simulate Shor's steps
+                currentStep = 6;
+                updateStepIndicator();
+            } else {
+                document.getElementById('factorResult').innerHTML = `
+                    <div class="result-box">
+                        <div class="result-label">Result</div>
+                        <div class="result-value">${N} is prime!</div>
+                    </div>
+                `;
+                currentStep = 6;
+                updateStepIndicator();
+            }
+        }
+
+        function updateStepIndicator() {
+            const indicator = document.getElementById('stepIndicator');
+            if (!indicator) return;
+
+            const steps = [
+                "Pick random a",
+                "Check gcd(a,N)",
+                "Find period r",
+                "QFT magic",
+                "Check conditions",
+                "Compute factors"
+            ];
+
+            let html = '';
+            steps.forEach((name, i) => {
+                const state = i < currentStep ? 'completed' : (i === currentStep ? 'active' : '');
+                html += `
+                    <div class="step ${state}">
+                        <div class="step-number">${i + 1}</div>
+                        <div class="step-name">${name}</div>
+                    </div>
+                `;
+            });
+
+            indicator.innerHTML = html;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (currentMode === 'qft') {
+                drawQFT();
+            } else if (currentMode === 'period-finding') {
+                drawPeriodFinding();
+            } else if (currentMode === 'shor') {
+                drawShorCircuit();
+            } else if (currentMode === 'comparison') {
+                drawComparison();
+            }
+        }
+
+        function drawQFT() {
+            const n = 4; // 4 qubits
+            const N = Math.pow(2, n);
+
+            // Title
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText('Quantum Fourier Transform', 600, 35);
+
+            // Before QFT - show periodic state
+            const beforeY = 80;
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillStyle = '#2979FF';
+            ctx.fillText('Before QFT: Periodic State', 300, beforeY);
+
+            const barWidth = 30;
+            const barSpacing = 35;
+            const startX = 80;
+            const maxHeight = 150;
+
+            // Create periodic pattern (period = 4)
+            const period = 4;
+            for (let i = 0; i < N; i++) {
+                const amplitude = (i % period === 0) ? 1 : 0;
+                const height = amplitude * maxHeight;
+                const x = startX + i * barSpacing;
+                const y = beforeY + 50 + (maxHeight - height);
+
+                ctx.fillStyle = amplitude > 0 ? '#2979FF' : 'rgba(41, 121, 255, 0.2)';
+                ctx.fillRect(x, y, barWidth, height);
+
+                // Label
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.font = '11px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(i, x + barWidth/2, beforeY + 215);
+            }
+
+            // Arrow
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 34px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('QFT ↓', 600, 310);
+
+            // After QFT - show frequency domain
+            const afterY = 350;
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillStyle = '#9C27B0';
+            ctx.fillText('After QFT: Frequency Peaks', 300, afterY);
+
+            const t = (animationFrame % 120) / 120;
+
+            for (let k = 0; k < N; k++) {
+                // Fourier coefficient for periodic state
+                let amplitude = 0;
+                for (let j = 0; j < N; j++) {
+                    if (j % period === 0) {
+                        const phase = 2 * Math.PI * j * k / N;
+                        amplitude += Math.cos(phase);
+                    }
+                }
+                amplitude = Math.abs(amplitude) / Math.sqrt(N);
+
+                // Animate
+                const animAmp = amplitude * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
+                const height = animAmp * maxHeight;
+                const x = startX + k * barSpacing;
+                const y = afterY + 50 + (maxHeight - height);
+
+                // Color based on amplitude
+                if (amplitude > 0.5) {
+                    const glow = 0.3 + 0.3 * Math.sin(t * Math.PI * 2);
+                    ctx.fillStyle = `rgba(156, 39, 176, ${glow})`;
+                    ctx.fillRect(x - 5, y - 5, barWidth + 10, height + 10);
+                }
+
+                ctx.fillStyle = amplitude > 0.5 ? '#9C27B0' : 'rgba(156, 39, 176, 0.2)';
+                ctx.fillRect(x, y, barWidth, height);
+
+                // Label frequencies with peaks
+                if (amplitude > 0.5) {
+                    ctx.fillStyle = '#FF1D6C';
+                    ctx.font = 'bold 12px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`k=${k}`, x + barWidth/2, y - 10);
+                    ctx.fillText(`N/r=${N/period}`, x + barWidth/2, y - 25);
+                }
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.font = '11px Courier New';
+                ctx.fillText(k, x + barWidth/2, afterY + 215);
+            }
+
+            // Explanation
+            ctx.fillStyle = '#F5A623';
+            ctx.font = '14px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Period r = ${period} → Peaks at k = 0, ${N/period}, ${2*N/period}, ${3*N/period}`, 600, 585);
+        }
+
+        function drawPeriodFinding() {
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText('Period Finding: f(x) = 7ˣ mod 15', 600, 35);
+
+            const a = 7;
+            const N = 15;
+            const numPoints = 32;
+            const startX = 80;
+            const graphY = 100;
+            const graphWidth = 1040;
+            const graphHeight = 200;
+            const pointSpacing = graphWidth / numPoints;
+
+            // Draw function values
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(startX, graphY + graphHeight);
+            ctx.lineTo(startX + graphWidth, graphY + graphHeight);
+            ctx.stroke();
+
+            // Calculate and plot f(x) = a^x mod N
+            const values = [];
+            let period = 0;
+            for (let x = 0; x < numPoints; x++) {
+                let val = 1;
+                for (let i = 0; i < x; i++) {
+                    val = (val * a) % N;
+                }
+                values.push(val);
+
+                // Find period
+                if (x > 0 && val === 1 && period === 0) {
+                    period = x;
+                }
+            }
+
+            // Draw bars
+            const t = (animationFrame % 120) / 120;
+            for (let x = 0; x < numPoints; x++) {
+                const val = values[x];
+                const barHeight = (val / N) * graphHeight;
+                const barX = startX + x * pointSpacing;
+                const barY = graphY + graphHeight - barHeight;
+
+                // Highlight periodic pattern
+                const inPeriod = (x % period === 0);
+                const glow = inPeriod ? (0.5 + 0.5 * Math.sin(t * Math.PI * 2)) : 0;
+
+                if (inPeriod) {
+                    ctx.fillStyle = `rgba(255, 29, 108, ${0.3 + glow * 0.4})`;
+                    ctx.fillRect(barX - 3, barY - 3, 26, barHeight + 6);
+                }
+
+                ctx.fillStyle = inPeriod ? '#FF1D6C' : '#2979FF';
+                ctx.fillRect(barX, barY, 20, barHeight);
+
+                // Labels
+                if (x % 4 === 0 || inPeriod) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.font = '11px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(x, barX + 10, graphY + graphHeight + 18);
+                    ctx.fillText(val, barX + 10, barY - 5);
+                }
+            }
+
+            // Period annotation
+            if (period > 0) {
+                const arrowY = graphY + graphHeight + 40;
+                for (let i = 0; i <= numPoints / period; i++) {
+                    const x = startX + i * period * pointSpacing;
+                    ctx.strokeStyle = '#F5A623';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(x + 10, arrowY);
+                    ctx.lineTo(x + 10, arrowY + 20);
+                    ctx.stroke();
+                }
+
+                // Draw period bracket
+                const bracketY = arrowY + 30;
+                ctx.strokeStyle = '#F5A623';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(startX + 10, bracketY);
+                ctx.lineTo(startX + period * pointSpacing + 10, bracketY);
+                ctx.stroke();
+
+                ctx.fillStyle = '#F5A623';
+                ctx.font = 'bold 18px SF Pro Display';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Period r = ${period}`, startX + (period * pointSpacing) / 2 + 10, bracketY + 25);
+            }
+
+            // QFT application
+            const qftY = 380;
+            ctx.fillStyle = '#9C27B0';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('After quantum measurement → periodic superposition', 600, qftY);
+            ctx.fillText('Apply QFT → reveals period!', 600, qftY + 25);
+
+            // Show simplified circuit
+            const circuitY = qftY + 60;
+            const qubits = 5;
+            const qubitSpacing = 40;
+            const lineStartX = 200;
+            const lineEndX = 1000;
+
+            for (let i = 0; i < qubits; i++) {
+                const y = circuitY + i * qubitSpacing;
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(lineStartX, y);
+                ctx.lineTo(lineEndX, y);
+                ctx.stroke();
+
+                ctx.fillStyle = '#2979FF';
+                ctx.font = '14px Courier New';
+                ctx.textAlign = 'right';
+                ctx.fillText(`|q${i}⟩`, lineStartX - 10, y + 5);
+            }
+
+            // QFT box
+            const qftBoxX = 600;
+            const qftBoxWidth = 80;
+            const qftBoxHeight = (qubits - 1) * qubitSpacing;
+
+            ctx.fillStyle = 'rgba(156, 39, 176, 0.3)';
+            ctx.fillRect(qftBoxX - qftBoxWidth/2, circuitY - 20, qftBoxWidth, qftBoxHeight + 40);
+            ctx.strokeStyle = '#9C27B0';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(qftBoxX - qftBoxWidth/2, circuitY - 20, qftBoxWidth, qftBoxHeight + 40);
+
+            ctx.fillStyle = '#9C27B0';
+            ctx.font = 'bold 24px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('QFT', qftBoxX, circuitY + qftBoxHeight/2);
+
+            // Measurement
+            const measureX = 850;
+            for (let i = 0; i < qubits; i++) {
+                const y = circuitY + i * qubitSpacing;
+                drawMeasurementSymbol(measureX, y, 40);
+            }
+        }
+
+        function drawShorCircuit() {
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Shor's Algorithm Circuit: Factor N = ${N}`, 600, 35);
+
+            const n = 8; // Number of qubits (simplified)
+            const qubitY = 80;
+            const qubitSpacing = 35;
+            const lineStartX = 100;
+            const lineEndX = 1100;
+
+            // Draw qubit lines
+            for (let i = 0; i < n; i++) {
+                const y = qubitY + i * qubitSpacing;
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(lineStartX, y);
+                ctx.lineTo(lineEndX, y);
+                ctx.stroke();
+
+                ctx.fillStyle = i < n/2 ? '#2979FF' : '#9C27B0';
+                ctx.font = '13px Courier New';
+                ctx.textAlign = 'right';
+                if (i < n/2) {
+                    ctx.fillText(`|q${i}⟩`, lineStartX - 10, y + 5);
+                } else {
+                    ctx.fillText(`|r${i - n/2}⟩`, lineStartX - 10, y + 5);
+                }
+            }
+
+            let currentX = 200;
+
+            // Hadamard on first register
+            for (let i = 0; i < n/2; i++) {
+                drawQuantumGate(currentX, qubitY + i * qubitSpacing, 'H', '#2979FF');
+            }
+
+            ctx.fillStyle = '#F5A623';
+            ctx.font = '12px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Superposition', currentX, qubitY - 20);
+
+            currentX += 120;
+
+            // Modular exponentiation oracle
+            const oracleHeight = (n - 1) * qubitSpacing;
+            ctx.fillStyle = 'rgba(245, 166, 35, 0.2)';
+            ctx.fillRect(currentX - 40, qubitY - 15, 80, oracleHeight + 30);
+            ctx.strokeStyle = '#F5A623';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(currentX - 40, qubitY - 15, 80, oracleHeight + 30);
+
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 16px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('Uₐ', currentX, qubitY + oracleHeight/2);
+            ctx.font = '11px Courier New';
+            ctx.fillText(`aˣ mod N`, currentX, qubitY + oracleHeight/2 + 20);
+
+            ctx.font = '12px SF Pro Display';
+            ctx.fillText('Modular Exp', currentX, qubitY + oracleHeight + 50);
+
+            currentX += 120;
+
+            // QFT
+            const qftHeight = (n/2 - 1) * qubitSpacing;
+            ctx.fillStyle = 'rgba(156, 39, 176, 0.3)';
+            ctx.fillRect(currentX - 40, qubitY - 15, 80, qftHeight + 30);
+            ctx.strokeStyle = '#9C27B0';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(currentX - 40, qubitY - 15, 80, qftHeight + 30);
+
+            ctx.fillStyle = '#9C27B0';
+            ctx.font = 'bold 20px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('QFT', currentX, qubitY + qftHeight/2);
+
+            ctx.font = '12px SF Pro Display';
+            ctx.fillText('Period Finding', currentX, qubitY - 20);
+
+            currentX += 120;
+
+            // Measurement
+            for (let i = 0; i < n/2; i++) {
+                drawMeasurementSymbol(currentX, qubitY + i * qubitSpacing, 35);
+            }
+
+            ctx.fillStyle = '#00FF88';
+            ctx.font = '12px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Measure', currentX, qubitY - 20);
+
+            // Information box at bottom
+            const infoY = 370;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(100, infoY, 1000, 200);
+            ctx.strokeStyle = 'rgba(41, 121, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(100, infoY, 1000, 200);
+
+            ctx.fillStyle = '#2979FF';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.textAlign = 'left';
+            ctx.fillText('How Shor\'s Algorithm Works:', 120, infoY + 30);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = '14px SF Pro Display';
+            const steps = [
+                '1. Prepare superposition of all possible exponents',
+                '2. Compute aˣ mod N for all x simultaneously (quantum parallelism!)',
+                '3. Measure second register → collapses to periodic state',
+                '4. Apply QFT to extract period r from interference',
+                '5. Classical post-processing: factors = gcd(aʳ/² ± 1, N)'
+            ];
+
+            steps.forEach((step, i) => {
+                ctx.fillText(step, 140, infoY + 65 + i * 25);
+            });
+        }
+
+        function drawComparison() {
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText('Factoring Time: Classical vs Quantum', 600, 35);
+
+            // Graph showing time complexity
+            const graphX = 100;
+            const graphY = 80;
+            const graphWidth = 1000;
+            const graphHeight = 400;
+
+            // Draw axes
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(graphX, graphY);
+            ctx.lineTo(graphX, graphY + graphHeight);
+            ctx.lineTo(graphX + graphWidth, graphY + graphHeight);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '14px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.save();
+            ctx.translate(graphX - 50, graphY + graphHeight/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('Time (log scale)', 0, 0);
+            ctx.restore();
+
+            ctx.fillText('Number of Bits', graphX + graphWidth/2, graphY + graphHeight + 40);
+
+            // Plot curves
+            const numPoints = 50;
+            const maxBits = 4096;
+
+            // Classical (exponential)
+            ctx.strokeStyle = '#9C27B0';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let i = 0; i <= numPoints; i++) {
+                const bits = (i / numPoints) * Math.log2(maxBits) * 200;
+                const time = Math.exp(Math.pow(bits, 1/3) * 0.3); // Simplified GNFS
+                const x = graphX + (i / numPoints) * graphWidth;
+                const y = graphY + graphHeight - Math.min(Math.log(time) * 20, graphHeight);
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = '#9C27B0';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillText('Classical (GNFS)', 800, 150);
+
+            // Quantum (polynomial)
+            ctx.strokeStyle = '#00FF88';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let i = 0; i <= numPoints; i++) {
+                const bits = (i / numPoints) * Math.log2(maxBits) * 200;
+                const time = Math.pow(bits, 3); // O(n^3)
+                const x = graphX + (i / numPoints) * graphWidth;
+                const y = graphY + graphHeight - Math.min(Math.log(time) * 8, graphHeight - 50);
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = '#00FF88';
+            ctx.fillText('Quantum (Shor)', 800, 400);
+
+            // Mark RSA-2048
+            const rsa2048X = graphX + (11 / numPoints) * graphWidth;
+            ctx.strokeStyle = '#FF1D6C';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(rsa2048X, graphY);
+            ctx.lineTo(rsa2048X, graphY + graphHeight);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#FF1D6C';
+            ctx.font = 'bold 14px SF Pro Display';
+            ctx.save();
+            ctx.translate(rsa2048X + 5, graphY + 50);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('RSA-2048', 0, 0);
+            ctx.restore();
+
+            // Time estimates box
+            const boxY = 510;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(100, boxY, 1000, 70);
+            ctx.strokeStyle = 'rgba(255, 29, 108, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(100, boxY, 1000, 70);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '15px SF Pro Display';
+            ctx.textAlign = 'left';
+            ctx.fillText('RSA-2048 Factoring Time Estimates:', 120, boxY + 25);
+            ctx.fillStyle = '#9C27B0';
+            ctx.fillText('Classical: ~300 trillion years', 120, boxY + 50);
+            ctx.fillStyle = '#00FF88';
+            ctx.fillText('Quantum (with 4000 qubits): ~10 hours', 550, boxY + 50);
+        }
+
+        function drawQuantumGate(x, y, label, color) {
+            const size = 30;
+            ctx.fillStyle = `${color}33`;
+            ctx.fillRect(x - size/2, y - size/2, size, size);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - size/2, y - size/2, size, size);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 16px Courier New';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, x, y);
+        }
+
+        function drawMeasurementSymbol(x, y, size) {
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+            ctx.fillRect(x - size/2, y - size/2, size, size);
+            ctx.strokeStyle = '#00FF88';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - size/2, y - size/2, size, size);
+
+            // Meter arc
+            ctx.beginPath();
+            ctx.arc(x, y + 3, size/3, Math.PI, 0, false);
+            ctx.stroke();
+
+            // Needle
+            ctx.beginPath();
+            ctx.moveTo(x, y + 3);
+            ctx.lineTo(x + size/4, y - size/4);
+            ctx.stroke();
+        }
+
+        // Animation loop
+        function animate() {
+            animationFrame++;
+            if (animationFrame % 2 === 0) {
+                draw();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize
+        updateContent();
+        draw();
+        animate();
+    </script>
+</body>
+</html>

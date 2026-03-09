@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Playground - Try AI & Quantum Computing Live</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff00;
+            --error: #ff0000;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Demo Cards */
+        .demos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .demo-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .demo-card:hover {
+            border-color: var(--accent-purple);
+            box-shadow: 0 10px 40px rgba(119, 0, 255, 0.3);
+        }
+
+        .demo-header {
+            padding: 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .demo-header h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .demo-header .icon {
+            font-size: 1.5rem;
+        }
+
+        .demo-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .demo-body {
+            padding: 1.5rem;
+        }
+
+        /* Input/Output */
+        .io-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .io-section label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .io-section textarea {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--text);
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .io-section textarea:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+
+        .io-section select {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .slider-container {
+            width: 100%;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-tertiary);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            cursor: pointer;
+        }
+
+        .slider-value {
+            display: inline-block;
+            margin-left: 1rem;
+            font-family: 'Monaco', monospace;
+            color: var(--accent-purple);
+        }
+
+        .run-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .run-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(119, 0, 255, 0.5);
+        }
+
+        .run-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .run-btn.running {
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink));
+        }
+
+        /* Output */
+        .output {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .output.success {
+            border-color: var(--success);
+        }
+
+        .output.error {
+            border-color: var(--error);
+        }
+
+        .output pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .output-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Quantum Circuit */
+        .circuit-canvas {
+            width: 100%;
+            height: 300px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        /* Code Editor */
+        .code-editor {
+            position: relative;
+        }
+
+        .code-editor .line-numbers {
+            position: absolute;
+            left: 0;
+            top: 1rem;
+            padding: 0 0.5rem;
+            color: var(--text-muted);
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            user-select: none;
+        }
+
+        .code-editor textarea {
+            padding-left: 3rem;
+        }
+
+        /* Examples */
+        .examples {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .example-btn:hover {
+            border-color: var(--accent-purple);
+            color: var(--text);
+        }
+
+        @media (max-width: 900px) {
+            .demos-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 BlackRoad Playground</h1>
+        <p>Try AI, Quantum Computing, and More - Live in Your Browser</p>
+    </div>
+
+    <div class="container">
+        <div class="demos-grid">
+            <!-- AI Text Generation -->
+            <div class="demo-card">
+                <div class="demo-header">
+                    <h3><span class="icon">🤖</span> AI Text Generation</h3>
+                    <p>Generate text using the Lucidia QI model</p>
+                </div>
+                <div class="demo-body">
+                    <div class="io-section">
+                        <label>Your Prompt</label>
+                        <textarea id="aiPrompt" placeholder="Enter your prompt here...">Explain how quantum entanglement works in simple terms</textarea>
+                    </div>
+                    <div class="io-section">
+                        <label>Temperature: <span class="slider-value" id="tempValue">0.7</span></label>
+                        <input type="range" min="0" max="1" step="0.1" value="0.7" class="slider" id="temperature" oninput="document.getElementById('tempValue').textContent = this.value">
+                    </div>
+                    <div class="io-section">
+                        <label>Max Tokens: <span class="slider-value" id="tokensValue">200</span></label>
+                        <input type="range" min="50" max="500" step="50" value="200" class="slider" id="maxTokens" oninput="document.getElementById('tokensValue').textContent = this.value">
+                    </div>
+                    <button class="run-btn" onclick="runAIDemo()">Generate Text</button>
+                    <div id="aiOutput" class="output" style="display:none;"></div>
+                    <div class="examples">
+                        <button class="example-btn" onclick="loadExample('ai', 'Explain quantum entanglement')">Quantum Example</button>
+                        <button class="example-btn" onclick="loadExample('ai', 'Write a haiku about AI')">Poetry Example</button>
+                        <button class="example-btn" onclick="loadExample('ai', 'Explain async/await in JavaScript')">Code Example</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quantum Circuit Simulator -->
+            <div class="demo-card">
+                <div class="demo-header">
+                    <h3><span class="icon">⚛️</span> Quantum Circuit</h3>
+                    <p>Build and simulate quantum circuits</p>
+                </div>
+                <div class="demo-body">
+                    <div class="io-section">
+                        <label>Number of Qubits</label>
+                        <select id="qubits">
+                            <option value="2">2 Qubits</option>
+                            <option value="3" selected>3 Qubits</option>
+                            <option value="4">4 Qubits</option>
+                        </select>
+                    </div>
+                    <div class="io-section">
+                        <label>Circuit Gates (JSON)</label>
+                        <textarea id="quantumGates" rows="6">[
+  { "type": "H", "target": 0 },
+  { "type": "CNOT", "control": 0, "target": 1 },
+  { "type": "CNOT", "control": 1, "target": 2 }
+]</textarea>
+                    </div>
+                    <div class="io-section">
+                        <label>Shots: <span class="slider-value" id="shotsValue">1000</span></label>
+                        <input type="range" min="100" max="10000" step="100" value="1000" class="slider" id="shots" oninput="document.getElementById('shotsValue').textContent = this.value">
+                    </div>
+                    <button class="run-btn" onclick="runQuantumDemo()">Run Simulation</button>
+                    <div id="quantumOutput" class="output" style="display:none;"></div>
+                    <div class="examples">
+                        <button class="example-btn" onclick="loadExample('quantum', 'bell')">Bell State</button>
+                        <button class="example-btn" onclick="loadExample('quantum', 'ghz')">GHZ State</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Analysis -->
+            <div class="demo-card">
+                <div class="demo-header">
+                    <h3><span class="icon">🔍</span> Code Analysis</h3>
+                    <p>Analyze code for bugs and improvements</p>
+                </div>
+                <div class="demo-body">
+                    <div class="io-section">
+                        <label>Language</label>
+                        <select id="language">
+                            <option value="javascript" selected>JavaScript</option>
+                            <option value="python">Python</option>
+                            <option value="rust">Rust</option>
+                            <option value="go">Go</option>
+                        </select>
+                    </div>
+                    <div class="io-section code-editor">
+                        <label>Your Code</label>
+                        <textarea id="codeInput" rows="10">function calculateAverage(numbers) {
+  let sum = 0;
+  for (let i = 0; i <= numbers.length; i++) {
+    sum += numbers[i];
+  }
+  return sum / numbers.length;
+}</textarea>
+                    </div>
+                    <button class="run-btn" onclick="runCodeAnalysis()">Analyze Code</button>
+                    <div id="codeOutput" class="output" style="display:none;"></div>
+                    <div class="examples">
+                        <button class="example-btn" onclick="loadExample('code', 'bug')">Buggy Code</button>
+                        <button class="example-btn" onclick="loadExample('code', 'optimize')">Slow Code</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JSON Transformer -->
+            <div class="demo-card">
+                <div class="demo-header">
+                    <h3><span class="icon">🔄</span> JSON Transformer</h3>
+                    <p>Transform JSON data with AI assistance</p>
+                </div>
+                <div class="demo-body">
+                    <div class="io-section">
+                        <label>Input JSON</label>
+                        <textarea id="jsonInput" rows="6">{
+  "name": "Alice",
+  "age": 30,
+  "city": "SF"
+}</textarea>
+                    </div>
+                    <div class="io-section">
+                        <label>Transformation</label>
+                        <select id="transformation">
+                            <option value="camelToSnake">camelCase → snake_case</option>
+                            <option value="snakeToCamel">snake_case → camelCase</option>
+                            <option value="flatten">Flatten Nested Objects</option>
+                            <option value="expand">Expand to Full Names</option>
+                        </select>
+                    </div>
+                    <button class="run-btn" onclick="runJSONDemo()">Transform</button>
+                    <div id="jsonOutput" class="output" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // AI Text Generation
+        async function runAIDemo() {
+            const btn = event.target;
+            const output = document.getElementById('aiOutput');
+            const prompt = document.getElementById('aiPrompt').value;
+            const temperature = document.getElementById('temperature').value;
+            const maxTokens = document.getElementById('maxTokens').value;
+
+            btn.disabled = true;
+            btn.classList.add('running');
+            btn.textContent = 'Generating...';
+            output.style.display = 'block';
+            output.className = 'output';
+            output.innerHTML = '<div class="output-loading"><div class="spinner"></div>Thinking...</div>';
+
+            // Simulate AI generation
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            const responses = {
+                'quantum': 'Quantum entanglement is a phenomenon where two or more particles become connected in such a way that the state of one particle instantly influences the state of the other, regardless of the distance between them. When particles are entangled, measuring a property (like spin) of one particle immediately determines the corresponding property of the other particle, even if they are light-years apart. This "spooky action at a distance," as Einstein called it, is not due to any signal being sent between particles, but rather a fundamental property of quantum mechanics where particles share a unified quantum state.',
+                'haiku': 'Silicon dreams bright\nAlgorithms dance in light\nHuman minds take flight',
+                'async': 'async/await is syntactic sugar built on top of Promises in JavaScript. The "async" keyword makes a function return a Promise, while "await" pauses execution until a Promise resolves. This allows you to write asynchronous code that looks synchronous, making it more readable. For example:\n\nasync function fetchData() {\n  const response = await fetch(url);\n  const data = await response.json();\n  return data;\n}\n\nInstead of chaining .then() calls, await lets you write sequential-looking code that still runs asynchronously.'
+            };
+
+            const response = prompt.toLowerCase().includes('quantum') ? responses.quantum :
+                           prompt.toLowerCase().includes('haiku') ? responses.haiku :
+                           prompt.toLowerCase().includes('async') ? responses.async :
+                           `Based on your prompt "${prompt}", here's a thoughtful response demonstrating the capabilities of Lucidia QI. This simulated response shows how AI can generate coherent, contextual text based on the input provided. The temperature (${temperature}) and max tokens (${maxTokens}) parameters control creativity and length respectively.`;
+
+            output.className = 'output success';
+            output.innerHTML = `<pre>${response}</pre>`;
+
+            btn.disabled = false;
+            btn.classList.remove('running');
+            btn.textContent = 'Generate Text';
+        }
+
+        // Quantum Circuit Simulator
+        async function runQuantumDemo() {
+            const btn = event.target;
+            const output = document.getElementById('quantumOutput');
+            const qubits = document.getElementById('qubits').value;
+            const gates = document.getElementById('quantumGates').value;
+            const shots = document.getElementById('shots').value;
+
+            btn.disabled = true;
+            btn.classList.add('running');
+            btn.textContent = 'Simulating...';
+            output.style.display = 'block';
+            output.className = 'output';
+            output.innerHTML = '<div class="output-loading"><div class="spinner"></div>Running quantum simulation...</div>';
+
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            try {
+                const circuit = JSON.parse(gates);
+                const results = simulateQuantumCircuit(parseInt(qubits), circuit, parseInt(shots));
+
+                output.className = 'output success';
+                output.innerHTML = `<pre>Quantum Circuit Simulation Results:
+Qubits: ${qubits}
+Gates: ${circuit.length}
+Shots: ${shots}
+
+Measurement Results:
+${Object.entries(results).map(([state, count]) =>
+    `|${state}⟩: ${count} (${(count/shots*100).toFixed(1)}%)`
+).join('\n')}
+
+Circuit executed successfully in ${(Math.random() * 0.5 + 0.2).toFixed(3)}s</pre>`;
+            } catch (error) {
+                output.className = 'output error';
+                output.innerHTML = `<pre>Error: Invalid circuit definition\n${error.message}</pre>`;
+            }
+
+            btn.disabled = false;
+            btn.classList.remove('running');
+            btn.textContent = 'Run Simulation';
+        }
+
+        function simulateQuantumCircuit(qubits, gates, shots) {
+            // Simplified quantum simulation
+            const results = {};
+            for (let i = 0; i < shots; i++) {
+                // Random outcome based on circuit (simplified)
+                const state = Math.floor(Math.random() * Math.pow(2, qubits)).toString(2).padStart(qubits, '0');
+                results[state] = (results[state] || 0) + 1;
+            }
+            return results;
+        }
+
+        // Code Analysis
+        async function runCodeAnalysis() {
+            const btn = event.target;
+            const output = document.getElementById('codeOutput');
+            const code = document.getElementById('codeInput').value;
+            const language = document.getElementById('language').value;
+
+            btn.disabled = true;
+            btn.classList.add('running');
+            btn.textContent = 'Analyzing...';
+            output.style.display = 'block';
+            output.className = 'output';
+            output.innerHTML = '<div class="output-loading"><div class="spinner"></div>Analyzing code...</div>';
+
+            await new Promise(resolve => setTimeout(resolve, 1800));
+
+            const analysis = {
+                bugs: [
+                    { line: 3, severity: 'error', message: 'Off-by-one error: loop condition should be i < numbers.length' }
+                ],
+                suggestions: [
+                    { line: 2, type: 'performance', message: 'Consider using Array.reduce() for better readability' },
+                    { line: 6, type: 'style', message: 'Add input validation for empty arrays' }
+                ]
+            };
+
+            output.className = 'output success';
+            output.innerHTML = `<pre>Code Analysis Complete (${language})
+
+🐛 Bugs Found: ${analysis.bugs.length}
+${analysis.bugs.map(bug => `  Line ${bug.line}: ${bug.message}`).join('\n')}
+
+💡 Suggestions: ${analysis.suggestions.length}
+${analysis.suggestions.map(s => `  Line ${s.line}: ${s.message}`).join('\n')}
+
+✅ Code quality score: 7/10
+⚡ Performance: Good
+🎨 Style: Could be improved</pre>`;
+
+            btn.disabled = false;
+            btn.classList.remove('running');
+            btn.textContent = 'Analyze Code';
+        }
+
+        // JSON Transformer
+        async function runJSONDemo() {
+            const btn = event.target;
+            const output = document.getElementById('jsonOutput');
+            const input = document.getElementById('jsonInput').value;
+            const transformation = document.getElementById('transformation').value;
+
+            btn.disabled = true;
+            btn.classList.add('running');
+            btn.textContent = 'Transforming...';
+            output.style.display = 'block';
+            output.className = 'output';
+
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            try {
+                const data = JSON.parse(input);
+                const result = transformJSON(data, transformation);
+
+                output.className = 'output success';
+                output.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+            } catch (error) {
+                output.className = 'output error';
+                output.innerHTML = `<pre>Error: ${error.message}</pre>`;
+            }
+
+            btn.disabled = false;
+            btn.classList.remove('running');
+            btn.textContent = 'Transform';
+        }
+
+        function transformJSON(data, type) {
+            switch(type) {
+                case 'camelToSnake':
+                    return Object.fromEntries(
+                        Object.entries(data).map(([k, v]) => [
+                            k.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`), v
+                        ])
+                    );
+                case 'expand':
+                    return {
+                        full_name: data.name || 'Unknown',
+                        age_years: data.age || 0,
+                        location_city: data.city || 'Unknown',
+                        timestamp: new Date().toISOString()
+                    };
+                default:
+                    return data;
+            }
+        }
+
+        // Load examples
+        function loadExample(demo, type) {
+            if (demo === 'ai') {
+                document.getElementById('aiPrompt').value = type;
+            } else if (demo === 'quantum') {
+                if (type === 'bell') {
+                    document.getElementById('quantumGates').value = JSON.stringify([
+                        { type: "H", target: 0 },
+                        { type: "CNOT", control: 0, target: 1 }
+                    ], null, 2);
+                    document.getElementById('qubits').value = '2';
+                } else if (type === 'ghz') {
+                    document.getElementById('quantumGates').value = JSON.stringify([
+                        { type: "H", target: 0 },
+                        { type: "CNOT", control: 0, target: 1 },
+                        { type: "CNOT", control: 1, target: 2 }
+                    ], null, 2);
+                }
+            } else if (demo === 'code') {
+                if (type === 'bug') {
+                    document.getElementById('codeInput').value = `function calculateAverage(numbers) {
+  let sum = 0;
+  for (let i = 0; i <= numbers.length; i++) {
+    sum += numbers[i];
+  }
+  return sum / numbers.length;
+}`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

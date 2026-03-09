@@ -1,0 +1,17 @@
+#!/bin/bash
+# CECE-STATS v1.0 - CECE OS Statistics
+show() {
+    APPS=$(ls ~/cece/apps 2>/dev/null | wc -l)
+    REPOS=$(ls ~/cece/repos 2>/dev/null | wc -l)
+    MEMORY=$(du -sh ~/cece 2>/dev/null | cut -f1)
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  🖤 CECE OS STATISTICS 🖤"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  📱 Apps:       $APPS"
+    echo "  📚 Repos:      $REPOS"
+    echo "  💾 Disk Used:  $MEMORY"
+    echo "  🏠 Home:       ~/cece"
+    echo "  🖥️  Host:       $(hostname)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+case "$1" in *) show ;; esac

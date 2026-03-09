@@ -1,0 +1,34 @@
+#!/bin/bash
+# CECE-SYSINFO v1.0 - System Information
+system() {
+    echo "CECE System Info"
+    echo "================"
+    echo "Hostname: $(hostname)"
+    echo "User: $(whoami)"
+    echo "OS: $(uname -s)"
+    echo "Arch: $(uname -m)"
+    echo "Kernel: $(uname -r)"
+    uptime
+}
+
+disk() {
+    df -h 2>/dev/null | head -10
+}
+
+memory() {
+    free -h 2>/dev/null || echo "Memory info not available on this system"
+}
+
+network() {
+    echo "Network Interfaces:"
+    ip addr 2>/dev/null | grep -E "inet |: " || ifconfig 2>/dev/null
+}
+
+case "$1" in
+    system) system ;;
+    disk) disk ;;
+    memory) memory ;;
+    network) network ;;
+    all) system; echo ""; disk; echo ""; memory ;;
+    *) echo "CECE-SYSINFO: system | disk | memory | network | all" ;;
+esac

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadScreen - Professional Screen Recording & Video Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Pro Display', -apple-system, sans-serif;
+            background: #000;
+            color: #FFF;
+            line-height: 1.618;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 89px 34px;
+            background: linear-gradient(135deg, rgba(255,29,108,0.1) 0%, rgba(41,121,255,0.1) 100%);
+            text-align: center;
+        }
+        h1 {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+        .subtitle {
+            font-size: 24px;
+            opacity: 0.8;
+            margin-bottom: 55px;
+            max-width: 900px;
+        }
+        .btn {
+            padding: 21px 55px;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            color: #FFF;
+            border: none;
+            border-radius: 13px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+            margin: 0 8px;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 13px 34px rgba(255,29,108,0.4);
+        }
+        .recorder-demo {
+            padding: 144px 34px;
+            background: #000;
+        }
+        .demo-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .recorder-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            overflow: hidden;
+        }
+        .video-preview {
+            position: relative;
+            background: #000;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .video-placeholder {
+            text-align: center;
+        }
+        .video-placeholder-icon {
+            font-size: 89px;
+            margin-bottom: 21px;
+        }
+        .video-placeholder-text {
+            font-size: 24px;
+            opacity: 0.6;
+        }
+        .webcam-preview {
+            position: absolute;
+            bottom: 21px;
+            right: 21px;
+            width: 200px;
+            height: 150px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #FF1D6C;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .recording-status {
+            position: absolute;
+            top: 21px;
+            left: 21px;
+            background: rgba(255,29,108,0.9);
+            padding: 13px 21px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        .recording-dot {
+            width: 13px;
+            height: 13px;
+            background: #FFF;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .controls {
+            padding: 34px;
+            background: rgba(255,255,255,0.03);
+        }
+        .control-group {
+            display: flex;
+            gap: 13px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 21px;
+        }
+        .control-btn {
+            padding: 13px 34px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: #FFF;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .control-btn:hover {
+            background: rgba(255,29,108,0.3);
+            border-color: #FF1D6C;
+            transform: translateY(-2px);
+        }
+        .control-btn.primary {
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            border: none;
+        }
+        .control-btn.primary:hover {
+            transform: scale(1.05);
+        }
+        .settings-group {
+            display: flex;
+            gap: 21px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .setting-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 13px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .features {
+            padding: 144px 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .section-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            border-color: #FF1D6C;
+            transform: translateY(-5px);
+            box-shadow: 0 13px 34px rgba(255,29,108,0.2);
+        }
+        .feature-icon { font-size: 55px; margin-bottom: 21px; }
+        .feature-title { font-size: 24px; font-weight: 600; margin-bottom: 13px; color: #2979FF; }
+        .feature-desc { font-size: 16px; opacity: 0.8; line-height: 1.618; }
+        .use-cases {
+            padding: 144px 34px;
+            background: rgba(255,255,255,0.02);
+        }
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .use-case-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+            text-align: center;
+        }
+        .use-case-icon {
+            font-size: 55px;
+            margin-bottom: 21px;
+        }
+        .use-case-title {
+            font-size: 21px;
+            font-weight: 600;
+            margin-bottom: 13px;
+            color: #FF1D6C;
+        }
+        .use-case-desc {
+            opacity: 0.8;
+            line-height: 1.618;
+        }
+        .pricing {
+            padding: 144px 34px;
+        }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .pricing-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .pricing-card:hover {
+            border-color: #FF1D6C;
+            transform: translateY(-5px);
+        }
+        .plan-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 13px;
+            color: #FF1D6C;
+        }
+        .plan-price {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+        .plan-features {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 34px;
+        }
+        .plan-features li {
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            opacity: 0.8;
+        }
+        .plan-features li::before {
+            content: '✓ ';
+            color: #2ECC71;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        footer {
+            padding: 89px 34px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 34px; }
+            .subtitle { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div style="font-size: 89px; margin-bottom: 21px;">🎥</div>
+        <h1>RoadScreen</h1>
+        <p class="subtitle">Professional Screen Recording & Video Platform. HD Recording. Instant Sharing. AI-Powered Editing.</p>
+        <div>
+            <a href="#demo" class="btn">Try Recorder</a>
+            <a href="#features" class="btn">Explore Features</a>
+        </div>
+    </section>
+
+    <section class="recorder-demo" id="demo">
+        <h2 class="demo-title">Screen Recorder Demo</h2>
+        <div class="recorder-container">
+            <div class="video-preview">
+                <div class="video-placeholder">
+                    <div class="video-placeholder-icon">🎬</div>
+                    <div class="video-placeholder-text">Click "Start Recording" to begin</div>
+                </div>
+                <div class="webcam-preview">
+                    <span style="font-size: 55px;">📹</span>
+                </div>
+                <div class="recording-status" style="display: none;">
+                    <div class="recording-dot"></div>
+                    <span>Recording • 00:00:00</span>
+                </div>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <button class="control-btn primary">⏺️ Start Recording</button>
+                    <button class="control-btn">⏸️ Pause</button>
+                    <button class="control-btn">⏹️ Stop</button>
+                    <button class="control-btn">🎤 Mic: On</button>
+                    <button class="control-btn">🔊 System Audio: On</button>
+                    <button class="control-btn">📹 Webcam: On</button>
+                </div>
+                <div class="settings-group">
+                    <div class="setting-item">📺 Quality: 1080p HD</div>
+                    <div class="setting-item">🎞️ FPS: 60</div>
+                    <div class="setting-item">🖥️ Full Screen</div>
+                    <div class="setting-item">✏️ Annotations: On</div>
+                    <div class="setting-item">⌨️ Hotkeys: Enabled</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <h2 class="section-title">Powerful Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎥</div>
+                <h3 class="feature-title">HD Screen Recording</h3>
+                <p class="feature-desc">Record in 1080p, 1440p, or 4K at 60fps. Full screen, window, or custom area selection. Zero lag.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📹</div>
+                <h3 class="feature-title">Webcam Overlay</h3>
+                <p class="feature-desc">Add webcam to recordings with customizable size and position. Green screen support included.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎤</div>
+                <h3 class="feature-title">Dual Audio Recording</h3>
+                <p class="feature-desc">Capture system audio and microphone separately. Adjust levels independently. Noise cancellation.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✏️</div>
+                <h3 class="feature-title">Live Annotations</h3>
+                <p class="feature-desc">Draw, highlight, add text, and arrows while recording. Perfect for tutorials and presentations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✂️</div>
+                <h3 class="feature-title">Built-In Video Editor</h3>
+                <p class="feature-desc">Trim, cut, merge clips. Add transitions, captions, and effects. Timeline editing interface.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3 class="feature-title">AI-Powered Editing</h3>
+                <p class="feature-desc">Auto-remove silence, filler words, and background noise. AI captions and transcription.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔗</div>
+                <h3 class="feature-title">Instant Sharing</h3>
+                <p class="feature-desc">Share via link instantly. Upload to YouTube, Vimeo, or cloud storage. Embed anywhere.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">☁️</div>
+                <h3 class="feature-title">Cloud Storage</h3>
+                <p class="feature-desc">Automatic cloud backup. Access recordings from any device. Unlimited storage on Pro plan.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⌨️</div>
+                <h3 class="feature-title">Keyboard Shortcuts</h3>
+                <p class="feature-desc">Full keyboard control. Custom hotkeys. Start/stop recording without touching mouse.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="use-cases">
+        <h2 class="section-title">Perfect For</h2>
+        <div class="use-case-grid">
+            <div class="use-case-card">
+                <div class="use-case-icon">🎓</div>
+                <h3 class="use-case-title">Education</h3>
+                <p class="use-case-desc">Create course content, tutorials, and lectures. Screen recording with webcam and annotations.</p>
+            </div>
+            <div class="use-case-card">
+                <div class="use-case-icon">💼</div>
+                <h3 class="use-case-title">Business</h3>
+                <p class="use-case-desc">Product demos, sales presentations, and training materials. Professional quality recordings.</p>
+            </div>
+            <div class="use-case-card">
+                <div class="use-case-icon">🎮</div>
+                <h3 class="use-case-title">Gaming</h3>
+                <p class="use-case-desc">Record gameplay at 4K 60fps. Capture highlights, create montages, and stream to platforms.</p>
+            </div>
+            <div class="use-case-card">
+                <div class="use-case-icon">💻</div>
+                <h3 class="use-case-title">Development</h3>
+                <p class="use-case-desc">Code walkthroughs, bug reports, and documentation. Show your work with screen + terminal.</p>
+            </div>
+            <div class="use-case-card">
+                <div class="use-case-icon">🎨</div>
+                <h3 class="use-case-title">Design</h3>
+                <p class="use-case-desc">Design process videos, client presentations. Showcase your creative workflow.</p>
+            </div>
+            <div class="use-case-card">
+                <div class="use-case-icon">📱</div>
+                <h3 class="use-case-title">Marketing</h3>
+                <p class="use-case-desc">Product videos, social media content, and ads. Create engaging video content fast.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing">
+        <h2 class="section-title">Simple Pricing</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="plan-name">Free</div>
+                <div class="plan-price">$0</div>
+                <ul class="plan-features">
+                    <li>720p recording</li>
+                    <li>5 min per video</li>
+                    <li>System audio + mic</li>
+                    <li>Basic editing</li>
+                    <li>10 GB storage</li>
+                    <li>Share via link</li>
+                </ul>
+                <button class="btn">Get Started</button>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">Pro</div>
+                <div class="plan-price">$15<span style="font-size: 18px; opacity: 0.7;">/mo</span></div>
+                <ul class="plan-features">
+                    <li>4K recording at 60fps</li>
+                    <li>Unlimited duration</li>
+                    <li>Everything in Free</li>
+                    <li>Webcam overlay</li>
+                    <li>Live annotations</li>
+                    <li>AI editing tools</li>
+                    <li>Unlimited storage</li>
+                    <li>Custom branding</li>
+                </ul>
+                <button class="btn">Upgrade to Pro</button>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">Team</div>
+                <div class="plan-price">$25<span style="font-size: 18px; opacity: 0.7;">/user/mo</span></div>
+                <ul class="plan-features">
+                    <li>Everything in Pro</li>
+                    <li>Team collaboration</li>
+                    <li>Shared libraries</li>
+                    <li>Admin controls</li>
+                    <li>Priority support</li>
+                    <li>API access</li>
+                    <li>SSO integration</li>
+                </ul>
+                <button class="btn">Contact Sales</button>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div style="font-size: 34px; margin-bottom: 21px;">🎥 RoadScreen</div>
+        <p style="opacity: 0.6; font-size: 14px;">Built by BlackRoad OS | Professional screen recording platform</p>
+        <p style="opacity: 0.6; font-size: 14px; margin-top: 13px;">🖤🛣️ Record. Edit. Share.</p>
+    </footer>
+
+    <script>
+        // Simulate recording controls
+        let recording = false;
+        let recordingTime = 0;
+        let interval;
+
+        const startBtn = document.querySelector('.control-btn.primary');
+        const recordingStatus = document.querySelector('.recording-status');
+        const videoPlaceholder = document.querySelector('.video-placeholder');
+
+        startBtn.addEventListener('click', function() {
+            if (!recording) {
+                recording = true;
+                this.innerHTML = '⏹️ Stop Recording';
+                this.style.background = 'linear-gradient(135deg, #FF1D6C 38.2%, #2ECC71 61.8%)';
+                recordingStatus.style.display = 'flex';
+                videoPlaceholder.style.opacity = '0.3';
+
+                interval = setInterval(() => {
+                    recordingTime++;
+                    const hours = Math.floor(recordingTime / 3600);
+                    const minutes = Math.floor((recordingTime % 3600) / 60);
+                    const seconds = recordingTime % 60;
+                    const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    recordingStatus.querySelector('span').textContent = `Recording • ${timeStr}`;
+                }, 1000);
+            } else {
+                recording = false;
+                this.innerHTML = '⏺️ Start Recording';
+                this.style.background = 'linear-gradient(135deg, #FF1D6C 38.2%, #2979FF 61.8%)';
+                recordingStatus.style.display = 'none';
+                videoPlaceholder.style.opacity = '1';
+                clearInterval(interval);
+                recordingTime = 0;
+            }
+        });
+
+        // Animate on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.feature-card, .pricing-card, .use-case-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

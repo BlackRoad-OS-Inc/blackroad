@@ -1,0 +1,31 @@
+#!/bin/bash
+# CECE-API v1.0 - API Builder
+API_DIR=~/cece/apis
+mkdir -p "$API_DIR"
+create() {
+    NAME="$1"
+    PORT="${2:-8080}"
+    cat > "$API_DIR/$NAME.py" << PYEOF
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps({"api": "$NAME", "status": "ok"}).encode())
+
+print("API $NAME running on port $PORT")
+HTTPServer(('', $PORT), Handler).serve_forever()
+PYEOF
+    echo "API created: $API_DIR/$NAME.py (port $PORT)"
+}
+run() { python3 "$API_DIR/$1.py"; }
+list() { ls "$API_DIR"/*.py 2>/dev/null; }
+case "$1" in
+    create) create "$2" "$3" ;;
+    run) run "$2" ;;
+    list) list ;;
+    *) echo "CECE-API: create <name> [port] | run <name> | list" ;;
+esac

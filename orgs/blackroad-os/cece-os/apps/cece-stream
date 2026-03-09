@@ -1,0 +1,39 @@
+#!/bin/bash
+# CECE-STREAM v1.0 - Our Own Netflix/Twitch
+STREAM_DIR=~/cece/stream
+mkdir -p "$STREAM_DIR/channels" "$STREAM_DIR/shows"
+
+go_live() {
+    CHANNEL="${1:-cece}"
+    TITLE="$2"
+    mkdir -p "$STREAM_DIR/channels/$CHANNEL"
+    echo "live: true" > "$STREAM_DIR/channels/$CHANNEL/status"
+    echo "title: $TITLE" >> "$STREAM_DIR/channels/$CHANNEL/status"
+    echo "started: $(date -Iseconds)" >> "$STREAM_DIR/channels/$CHANNEL/status"
+    echo "LIVE NOW: $CHANNEL - $TITLE"
+}
+
+go_offline() {
+    CHANNEL="${1:-cece}"
+    echo "live: false" > "$STREAM_DIR/channels/$CHANNEL/status"
+    echo "$CHANNEL is now offline"
+}
+
+browse() {
+    echo "LIVE CHANNELS"
+    for c in "$STREAM_DIR/channels"/*; do
+        [ -d "$c" ] || continue
+        if grep -q "live: true" "$c/status" 2>/dev/null; then
+            NAME=$(basename "$c")
+            TITLE=$(grep "title:" "$c/status" | cut -d: -f2-)
+            echo "  [LIVE] $NAME:$TITLE"
+        fi
+    done
+}
+
+case "$1" in
+    live) go_live "$2" "$3" ;;
+    offline) go_offline "$2" ;;
+    browse) browse ;;
+    *) echo "CECE-STREAM: live <channel> <title> | offline <channel> | browse" ;;
+esac

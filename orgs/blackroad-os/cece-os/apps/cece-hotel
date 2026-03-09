@@ -1,0 +1,75 @@
+#!/bin/bash
+# CECE-HOTEL v1.0 - Our Own Airbnb/Booking
+HOTEL_DIR=~/cece/hotels
+mkdir -p "$HOTEL_DIR/listings" "$HOTEL_DIR/bookings"
+
+list_property() {
+    NAME="$1"
+    LOCATION="$2"
+    PRICE="$3"
+    PROP_ID=$(date +%s | tail -c 6)
+    cat > "$HOTEL_DIR/listings/$PROP_ID.listing" << EOF
+id: $PROP_ID
+name: $NAME
+location: $LOCATION
+price_per_night: $PRICE
+host: ${USER:-cece}
+created: $(date -Iseconds)
+EOF
+    echo "✅ Property listed: $NAME"
+}
+
+search() {
+    LOCATION="${1:-all}"
+    echo "🏨 PROPERTIES"
+    echo "═══════════════════════════════════════"
+    for l in "$HOTEL_DIR/listings"/*.listing 2>/dev/null; do
+        [ -f "$l" ] || continue
+        LOC=$(grep "^location:" "$l" | cut -d: -f2-)
+        if [ "$LOCATION" = "all" ] || echo "$LOC" | grep -qi "$LOCATION"; then
+            NAME=$(grep "^name:" "$l" | cut -d: -f2-)
+            PRICE=$(grep "^price_per_night:" "$l" | cut -d: -f2 | xargs)
+            ID=$(grep "^id:" "$l" | cut -d: -f2 | xargs)
+            echo "  🏠 $NAME"
+            echo "     $LOC | \$$PRICE/night | ID: $ID"
+            echo ""
+        fi
+    done
+}
+
+book() {
+    PROP_ID="$1"
+    NIGHTS="$2"
+    BOOKING_ID=$(date +%s)
+    
+    LISTING="$HOTEL_DIR/listings/$PROP_ID.listing"
+    [ ! -f "$LISTING" ] && echo "Property not found" && return
+    
+    PRICE=$(grep "^price_per_night:" "$LISTING" | cut -d: -f2 | xargs)
+    TOTAL=$((PRICE * NIGHTS))
+    NAME=$(grep "^name:" "$LISTING" | cut -d: -f2-)
+    
+    cat > "$HOTEL_DIR/bookings/$BOOKING_ID.booking" << EOF
+booking_id: $BOOKING_ID
+property_id: $PROP_ID
+property_name: $NAME
+nights: $NIGHTS
+total: $TOTAL
+booked: $(date -Iseconds)
+EOF
+    
+    echo "✅ Booking confirmed!"
+    echo "   Property: $NAME"
+    echo "   Nights: $NIGHTS"
+    echo "   Total: \$$TOTAL"
+}
+
+case "$1" in
+    list) list_property "$2" "$3" "$4" ;;
+    search) search "$2" ;;
+    book) book "$2" "$3" ;;
+    *) echo "🖤 CECE-HOTEL - Our Own Airbnb"
+       echo "  list <name> <location> <price>  List property"
+       echo "  search [location]               Search"
+       echo "  book <id> <nights>              Book property" ;;
+esac

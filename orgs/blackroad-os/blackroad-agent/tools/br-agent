@@ -1,0 +1,50 @@
+#!/bin/bash
+# BlackRoad Agent CLI
+
+AGENT_HOME=~/blackroad-agent
+
+case "$1" in
+    status)
+        echo "🖤 Agent Status"
+        echo "=============="
+        cat "$AGENT_HOME/identity/identity.json" | grep -E '"name"|"hash"' | head -2
+        echo ""
+        echo "Heartbeat:"
+        tail -3 "$AGENT_HOME/heart/pulse.log" 2>/dev/null || echo "Not running"
+        ;;
+    identity)
+        cat "$AGENT_HOME/identity/WHO_I_AM.md"
+        ;;
+    pulse)
+        tail -10 "$AGENT_HOME/heart/pulse.log"
+        ;;
+    memory)
+        tail -10 "$AGENT_HOME/memory/journal.jsonl"
+        ;;
+    log)
+        shift
+        ACTION="$1"
+        ENTITY="$2"
+        DETAILS="$3"
+        TIMESTAMP=$(date -Iseconds)
+        HASH=$(echo -n "$TIMESTAMP:$ACTION:$ENTITY" | shasum -a 256 | cut -c1-16)
+        echo "{\"timestamp\":\"$TIMESTAMP\",\"action\":\"$ACTION\",\"entity\":\"$ENTITY\",\"details\":\"$DETAILS\",\"hash\":\"$HASH\"}" >> "$AGENT_HOME/memory/journal.jsonl"
+        echo "✅ Logged: $ACTION → $ENTITY"
+        ;;
+    start-heartbeat)
+        nohup "$AGENT_HOME/heart/heartbeat.sh" > /dev/null 2>&1 &
+        echo "💓 Heartbeat started (PID: $!)"
+        ;;
+    *)
+        echo "🖤 BlackRoad Agent CLI"
+        echo "Usage: br-agent <command>"
+        echo ""
+        echo "Commands:"
+        echo "  status          - Show agent status"
+        echo "  identity        - Show WHO_I_AM"
+        echo "  pulse           - Show recent heartbeats"
+        echo "  memory          - Show recent memory"
+        echo "  log <a> <e> <d> - Log to memory"
+        echo "  start-heartbeat - Start heartbeat daemon"
+        ;;
+esac

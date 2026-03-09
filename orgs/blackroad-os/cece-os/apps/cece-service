@@ -1,0 +1,15 @@
+#!/bin/bash
+# CECE-SERVICE v1.0 - Service Manager
+list() { systemctl list-units --type=service --state=running 2>/dev/null | head -20; }
+status() { systemctl status "$1" 2>/dev/null; }
+start() { sudo systemctl start "$1" && echo "Started: $1"; }
+stop() { sudo systemctl stop "$1" && echo "Stopped: $1"; }
+restart() { sudo systemctl restart "$1" && echo "Restarted: $1"; }
+case "$1" in
+    list) list ;;
+    status) status "$2" ;;
+    start) start "$2" ;;
+    stop) stop "$2" ;;
+    restart) restart "$2" ;;
+    *) echo "CECE-SERVICE: list | status <name> | start <name> | stop <name> | restart <name>" ;;
+esac

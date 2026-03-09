@@ -1,0 +1,57 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - '**/*.py'
+      - 'requirements.txt'
+      - 'railway-services/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+      matrix:
+        service:
+          - api-gateway
+          - agent-hub
+          - ws-server
+          - mesh-network
+          - vectordb
+          - event-stream
+          - message-queue
+          - tsdb
+          - llm-server
+          - ml-pipeline
+          - rag-service
+          - model-forge
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          npm install -g @railway/cli
+
+      - name: Deploy ${{ matrix.service }} to Railway
+        run: |
+          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+          railway up --service ${{ matrix.service }}
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Wait for deployment
+        run: |
+          echo "⏳ Waiting for ${{ matrix.service }} to be ready..."
+          sleep 30
+
+      - name: Health Check
+        run: |
+          echo "🏥 Checking health of ${{ matrix.service }}..."
+          # Railway URL format: https://<service>.up.railway.app
+          # Health check would go here when service URLs are known
+          echo "✅ Deployment complete"

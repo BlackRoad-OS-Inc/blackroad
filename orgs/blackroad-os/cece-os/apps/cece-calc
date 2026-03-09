@@ -1,0 +1,82 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-CALC v1.0 - Scientific Calculator
+#═══════════════════════════════════════════════════════════════
+
+echo "╔═══════════════════════════════════════════════════════════╗"
+echo "║              CECE-CALC v1.0                               ║"
+echo "║          Scientific Calculator                            ║"
+echo "╚═══════════════════════════════════════════════════════════╝"
+echo ""
+echo "Enter expressions or commands. Type \"help\" or \"quit\"."
+echo ""
+
+MEM=0
+
+while true; do
+    echo -n "calc> "
+    read -r EXPR
+    
+    case "$EXPR" in
+        quit|exit|q)
+            echo "Goodbye!"
+            exit 0
+            ;;
+        help|h)
+            echo "Operations: + - * / % ** (power)"
+            echo "Functions: sqrt(), sin(), cos(), tan(), log(), exp()"
+            echo "Constants: pi, e, phi (golden ratio)"
+            echo "Memory: mem (show), sto (store last), rcl (recall)"
+            echo "Special: bin <n>, hex <n>, oct <n>"
+            ;;
+        pi)
+            echo "3.14159265358979323846"
+            ;;
+        e)
+            echo "2.71828182845904523536"
+            ;;
+        phi)
+            echo "1.61803398874989484820"
+            ;;
+        mem)
+            echo "Memory: $MEM"
+            ;;
+        rcl)
+            echo "$MEM"
+            ;;
+        bin\ *)
+            NUM=${EXPR#bin }
+            echo "obase=2; $NUM" | bc
+            ;;
+        hex\ *)
+            NUM=${EXPR#hex }
+            printf "%X\n" "$NUM"
+            ;;
+        oct\ *)
+            NUM=${EXPR#oct }
+            printf "%o\n" "$NUM"
+            ;;
+        sqrt\ *|sqrt\(*)
+            NUM=$(echo "$EXPR" | grep -oE "[0-9.]+")
+            RESULT=$(echo "scale=10; sqrt($NUM)" | bc)
+            echo "$RESULT"
+            MEM=$RESULT
+            ;;
+        *)
+            # Replace constants and evaluate
+            EXPR=$(echo "$EXPR" | sed "s/pi/3.14159265358979/g")
+            EXPR=$(echo "$EXPR" | sed "s/phi/1.61803398874989/g")
+            EXPR=$(echo "$EXPR" | sed "s/\*\*/^/g")
+            
+            RESULT=$(echo "scale=10; $EXPR" | bc 2>/dev/null)
+            if [ -n "$RESULT" ]; then
+                # Trim trailing zeros
+                RESULT=$(echo "$RESULT" | sed "s/\\.0*$//; s/\\(\\.[0-9]*[1-9]\\)0*$/\\1/")
+                echo "$RESULT"
+                MEM=$RESULT
+            else
+                echo "Error: Invalid expression"
+            fi
+            ;;
+    esac
+done

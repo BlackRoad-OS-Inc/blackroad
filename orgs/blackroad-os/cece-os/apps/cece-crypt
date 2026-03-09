@@ -1,0 +1,18 @@
+#!/bin/bash
+# CECE-CRYPT v1.0 - Encryption Tools
+encrypt() {
+    FILE="$1"
+    openssl enc -aes-256-cbc -salt -pbkdf2 -in "$FILE" -out "$FILE.enc"
+    echo "Encrypted: $FILE.enc"
+}
+decrypt() {
+    FILE="$1"
+    OUT="${FILE%.enc}"
+    openssl enc -aes-256-cbc -d -pbkdf2 -in "$FILE" -out "$OUT"
+    echo "Decrypted: $OUT"
+}
+case "$1" in
+    encrypt) encrypt "$2" ;;
+    decrypt) decrypt "$2" ;;
+    *) echo "CECE-CRYPT: encrypt <file> | decrypt <file.enc>" ;;
+esac

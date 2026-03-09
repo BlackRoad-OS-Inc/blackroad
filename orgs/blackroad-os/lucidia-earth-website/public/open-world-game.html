@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS — Open World Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        }
+        #canvas-container { position: fixed; inset: 0; }
+
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .crosshair::before,
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255,255,255,0.8);
+        }
+        .crosshair::before {
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            transform: translateX(-50%);
+        }
+        .crosshair::after {
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+
+        .hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 16px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            min-width: 250px;
+        }
+
+        .hud-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 12px;
+        }
+
+        .hud-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .hud-stat-label {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .hud-stat-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .health-bar,
+        .energy-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff1d6c, #ff6b9d);
+            transition: width 0.3s ease;
+        }
+
+        .energy-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2979ff, #6ec6ff);
+            transition: width 0.3s ease;
+        }
+
+        .inventory {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            min-width: 200px;
+        }
+
+        .inventory-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 12px;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .inventory-slot {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #fff;
+            position: relative;
+        }
+
+        .inventory-slot.has-item {
+            background: rgba(255,29,108,0.1);
+            border-color: rgba(255,29,108,0.3);
+        }
+
+        .inventory-count {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            font-size: 9px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .controls-help {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 16px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .controls-help-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 8px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .control-key {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .message {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            padding: 12px 24px;
+            border-radius: 8px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,29,108,0.3);
+            z-index: 100;
+            font-size: 13px;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .message.visible {
+            opacity: 1;
+        }
+
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease;
+        }
+        .loading.hidden { opacity: 0; pointer-events: none; }
+        .loading-spinner {
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #1a5a2e, #c2b280, #2d7a47, #87ceeb, #1e5a7f);
+            animation: spin 2s linear infinite;
+            position: relative;
+        }
+        .loading-spinner::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            background: #000;
+            border-radius: 50%;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { margin-top: 20px; color: rgba(255,255,255,0.7); font-size: 14px; }
+        .loading-bar {
+            width: 160px; height: 2px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 1px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #FF1D6C, #F5A623);
+            width: 0%;
+            transition: width 0.15s ease;
+        }
+
+        .start-screen {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease;
+        }
+
+        .start-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .start-title {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        .start-subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 40px;
+        }
+
+        .start-button {
+            padding: 16px 48px;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            border: none;
+            border-radius: 50px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 32px rgba(255,29,108,0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Generating world...</div>
+        <div class="loading-bar"><div class="loading-progress" id="loadingProgress"></div></div>
+    </div>
+
+    <div class="start-screen" id="startScreen">
+        <div class="start-title">OPEN WORLD</div>
+        <div class="start-subtitle">Explore. Gather. Survive.</div>
+        <button class="start-button" id="startButton">START GAME</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div class="crosshair"></div>
+
+    <div class="hud">
+        <div class="hud-title">Status</div>
+        <div class="hud-stat">
+            <span class="hud-stat-label">Health</span>
+            <span class="hud-stat-value" id="healthValue">100</span>
+        </div>
+        <div class="health-bar">
+            <div class="health-bar-fill" id="healthBar" style="width: 100%"></div>
+        </div>
+        <div class="hud-stat" style="margin-top: 12px;">
+            <span class="hud-stat-label">Energy</span>
+            <span class="hud-stat-value" id="energyValue">100</span>
+        </div>
+        <div class="energy-bar">
+            <div class="energy-bar-fill" id="energyBar" style="width: 100%"></div>
+        </div>
+        <div class="hud-stat" style="margin-top: 12px;">
+            <span class="hud-stat-label">Biome</span>
+            <span class="hud-stat-value" id="biomeValue">Unknown</span>
+        </div>
+        <div class="hud-stat">
+            <span class="hud-stat-label">Position</span>
+            <span class="hud-stat-value" id="positionValue">0, 0</span>
+        </div>
+    </div>
+
+    <div class="inventory">
+        <div class="inventory-title">Inventory</div>
+        <div class="inventory-grid" id="inventoryGrid">
+            <div class="inventory-slot" data-slot="0"></div>
+            <div class="inventory-slot" data-slot="1"></div>
+            <div class="inventory-slot" data-slot="2"></div>
+            <div class="inventory-slot" data-slot="3"></div>
+            <div class="inventory-slot" data-slot="4"></div>
+            <div class="inventory-slot" data-slot="5"></div>
+        </div>
+    </div>
+
+    <div class="controls-help">
+        <div class="controls-help-title">Controls</div>
+        <div class="control-row">
+            <span class="control-key">W</span>
+            <span class="control-key">A</span>
+            <span class="control-key">S</span>
+            <span class="control-key">D</span>
+            <span>Move</span>
+        </div>
+        <div class="control-row">
+            <span class="control-key">SPACE</span>
+            <span>Jump</span>
+        </div>
+        <div class="control-row">
+            <span class="control-key">SHIFT</span>
+            <span>Sprint</span>
+        </div>
+        <div class="control-row">
+            <span class="control-key">E</span>
+            <span>Interact</span>
+        </div>
+        <div class="control-row">
+            <span class="control-key">MOUSE</span>
+            <span>Look Around</span>
+        </div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const EARTH_RADIUS = 100;
+        const PLAYER_HEIGHT = 1.8;
+        const PLAYER_SPEED = 0.15;
+        const SPRINT_MULTIPLIER = 1.8;
+        const JUMP_FORCE = 0.5;
+        const GRAVITY = 0.02;
+        const INTERACTION_RANGE = 3;
+
+        // ============ BIOME DEFINITIONS ============
+        const BIOMES = {
+            TROPICAL_RAINFOREST: {
+                name: "Tropical Rainforest",
+                color: 0x1a5a1a,
+                icon: "TR",
+                temp: "27°C",
+                treeTypes: ['tropical', 'palm', 'giant'],
+                treeColors: [0x0d5c0d, 0x157a15, 0x1a8a1a, 0x228b22],
+                treeDensity: 1.5,
+                resources: ['wood', 'fruit', 'fiber'],
+                groundColor: 0x2d4a1c
+            },
+            TEMPERATE_FOREST: {
+                name: "Temperate Forest",
+                color: 0x2d5a27,
+                icon: "TF",
+                temp: "12°C",
+                treeTypes: ['oak', 'maple', 'birch', 'pine'],
+                treeColors: [0x228b22, 0x2e8b2e, 0x3cb371, 0x1a5a1a],
+                treeDensity: 1.0,
+                resources: ['wood', 'mushroom', 'stone'],
+                groundColor: 0x3d5a2c
+            },
+            SAVANNA: {
+                name: "Savanna",
+                color: 0xbdb76b,
+                icon: "SV",
+                temp: "25°C",
+                treeTypes: ['acacia', 'baobab'],
+                treeColors: [0x6b8e23, 0x556b2f, 0x8b7355],
+                treeDensity: 0.3,
+                resources: ['grass', 'bone', 'hide'],
+                groundColor: 0xc9b458
+            },
+            DESERT_HOT: {
+                name: "Hot Desert",
+                color: 0xc2b280,
+                icon: "DH",
+                temp: "38°C",
+                treeTypes: ['cactus'],
+                treeColors: [0x228b22, 0x556b2f],
+                treeDensity: 0.15,
+                resources: ['cactus', 'sand', 'crystal'],
+                groundColor: 0xd4b896
+            }
+        };
+
+        // ============ GAME STATE ============
+        let gameState = {
+            health: 100,
+            maxHealth: 100,
+            energy: 100,
+            maxEnergy: 100,
+            inventory: {},
+            currentBiome: null,
+            isGameStarted: false,
+            velocity: new THREE.Vector3(),
+            isJumping: false,
+            onGround: true
+        };
+
+        let scene, camera, renderer;
+        let earth, playerObj;
+        let trees = [];
+        let resources = [];
+
+        let keys = {};
+        let mouse = { x: 0, y: 0, locked: false };
+        let cameraPitch = 0;
+        let cameraYaw = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb);
+            scene.fog = new THREE.Fog(0x87ceeb, 50, 200);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, PLAYER_HEIGHT, 5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            createLights();
+            createGround();
+            createPlayer();
+            generateWorld();
+
+            window.addEventListener('resize', onResize);
+            setupControls();
+
+            document.getElementById('startButton').addEventListener('click', startGame);
+
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+            }, 1000);
+        }
+
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            gameState.isGameStarted = true;
+            requestPointerLock();
+            animate();
+        }
+
+        function createLights() {
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(50, 100, 50);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
+            sun.shadow.camera.near = 0.5;
+            sun.shadow.camera.far = 500;
+            sun.shadow.camera.left = -100;
+            sun.shadow.camera.right = 100;
+            sun.shadow.camera.top = 100;
+            sun.shadow.camera.bottom = -100;
+            scene.add(sun);
+
+            const ambient = new THREE.AmbientLight(0x404060, 0.6);
+            scene.add(ambient);
+
+            const hemi = new THREE.HemisphereLight(0x88aaff, 0x444422, 0.4);
+            scene.add(hemi);
+        }
+
+        function createGround() {
+            const geometry = new THREE.PlaneGeometry(500, 500, 100, 100);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x3d5a2c,
+                roughness: 0.9,
+                metalness: 0.1
+            });
+
+            // Add some terrain variation
+            const positions = geometry.attributes.position;
+            for (let i = 0; i < positions.count; i++) {
+                const z = positions.getZ(i);
+                positions.setZ(i, z + (Math.random() - 0.5) * 2);
+            }
+            geometry.computeVertexNormals();
+
+            const ground = new THREE.Mesh(geometry, material);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            earth = ground;
+        }
+
+        function createPlayer() {
+            playerObj = new THREE.Object3D();
+            playerObj.position.copy(camera.position);
+            scene.add(playerObj);
+        }
+
+        function generateWorld() {
+            // Trees
+            for (let i = 0; i < 100; i++) {
+                const tree = createTree();
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 10 + Math.random() * 80;
+                tree.position.x = Math.cos(angle) * dist;
+                tree.position.z = Math.sin(angle) * dist;
+                tree.position.y = 0;
+                trees.push(tree);
+                scene.add(tree);
+            }
+
+            // Resources
+            for (let i = 0; i < 50; i++) {
+                const resource = createResource();
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 5 + Math.random() * 90;
+                resource.position.x = Math.cos(angle) * dist;
+                resource.position.z = Math.sin(angle) * dist;
+                resource.position.y = 0.3;
+                resources.push(resource);
+                scene.add(resource);
+            }
+
+            document.getElementById('loadingProgress').style.width = '100%';
+        }
+
+        function createTree() {
+            const group = new THREE.Group();
+            const biome = BIOMES.TEMPERATE_FOREST;
+            const leafColor = biome.treeColors[Math.floor(Math.random() * biome.treeColors.length)];
+
+            const trunkGeom = new THREE.CylinderGeometry(0.2, 0.3, 3, 8);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a3728, roughness: 0.9 });
+            const trunk = new THREE.Mesh(trunkGeom, trunkMat);
+            trunk.position.y = 1.5;
+            trunk.castShadow = true;
+            trunk.receiveShadow = true;
+            group.add(trunk);
+
+            const leavesGeom = new THREE.SphereGeometry(1.5, 8, 8);
+            const leavesMat = new THREE.MeshStandardMaterial({ color: leafColor, roughness: 0.8 });
+            const leaves = new THREE.Mesh(leavesGeom, leavesMat);
+            leaves.position.y = 3.5;
+            leaves.castShadow = true;
+            leaves.receiveShadow = true;
+            group.add(leaves);
+
+            group.userData = { type: 'tree', harvestable: true, resource: 'wood' };
+            return group;
+        }
+
+        function createResource() {
+            const types = [
+                { name: 'stone', color: 0x808080, size: 0.4 },
+                { name: 'crystal', color: 0x4fc3f7, size: 0.3 },
+                { name: 'mushroom', color: 0xff6b6b, size: 0.25 }
+            ];
+            const type = types[Math.floor(Math.random() * types.length)];
+
+            const geometry = new THREE.SphereGeometry(type.size, 8, 8);
+            const material = new THREE.MeshStandardMaterial({
+                color: type.color,
+                roughness: 0.6,
+                metalness: 0.3,
+                emissive: type.color,
+                emissiveIntensity: 0.1
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true;
+            mesh.userData = { type: 'resource', resource: type.name, harvestable: true };
+
+            return mesh;
+        }
+
+        function setupControls() {
+            document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+            document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+            document.addEventListener('keydown', e => {
+                if (e.key.toLowerCase() === 'e') {
+                    tryInteract();
+                }
+            });
+
+            document.addEventListener('mousemove', e => {
+                if (!mouse.locked) return;
+                const sensitivity = 0.002;
+                cameraYaw -= e.movementX * sensitivity;
+                cameraPitch -= e.movementY * sensitivity;
+                cameraPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraPitch));
+            });
+
+            renderer.domElement.addEventListener('click', requestPointerLock);
+
+            document.addEventListener('pointerlockchange', () => {
+                mouse.locked = document.pointerLockElement === renderer.domElement;
+            });
+        }
+
+        function requestPointerLock() {
+            if (gameState.isGameStarted) {
+                renderer.domElement.requestPointerLock();
+            }
+        }
+
+        function tryInteract() {
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+
+            const interactables = [...trees, ...resources].filter(obj => obj.userData.harvestable);
+            const intersects = raycaster.intersectObjects(interactables, true);
+
+            if (intersects.length > 0 && intersects[0].distance < INTERACTION_RANGE) {
+                let targetObj = intersects[0].object;
+                while (targetObj.parent && !targetObj.userData.harvestable) {
+                    targetObj = targetObj.parent;
+                }
+
+                if (targetObj.userData.harvestable) {
+                    const resource = targetObj.userData.resource;
+                    addToInventory(resource);
+                    showMessage(`Collected ${resource}!`);
+
+                    scene.remove(targetObj);
+                    trees = trees.filter(t => t !== targetObj);
+                    resources = resources.filter(r => r !== targetObj);
+
+                    // Drain energy
+                    gameState.energy = Math.max(0, gameState.energy - 5);
+                    updateHUD();
+                }
+            }
+        }
+
+        function addToInventory(item) {
+            if (!gameState.inventory[item]) {
+                gameState.inventory[item] = 0;
+            }
+            gameState.inventory[item]++;
+            updateInventory();
+        }
+
+        function updateInventory() {
+            const slots = document.querySelectorAll('.inventory-slot');
+            const items = Object.entries(gameState.inventory);
+
+            slots.forEach((slot, i) => {
+                if (items[i]) {
+                    const [name, count] = items[i];
+                    slot.classList.add('has-item');
+                    slot.innerHTML = `
+                        <div style="font-size: 10px; text-transform: uppercase;">${name}</div>
+                        <div class="inventory-count">${count}</div>
+                    `;
+                } else {
+                    slot.classList.remove('has-item');
+                    slot.innerHTML = '';
+                }
+            });
+        }
+
+        function updateHUD() {
+            document.getElementById('healthValue').textContent = Math.round(gameState.health);
+            document.getElementById('healthBar').style.width = (gameState.health / gameState.maxHealth * 100) + '%';
+
+            document.getElementById('energyValue').textContent = Math.round(gameState.energy);
+            document.getElementById('energyBar').style.width = (gameState.energy / gameState.maxEnergy * 100) + '%';
+
+            const biome = getCurrentBiome();
+            document.getElementById('biomeValue').textContent = biome ? biome.name : 'Unknown';
+
+            const x = Math.round(camera.position.x);
+            const z = Math.round(camera.position.z);
+            document.getElementById('positionValue').textContent = `${x}, ${z}`;
+        }
+
+        function getCurrentBiome() {
+            const dist = Math.sqrt(camera.position.x ** 2 + camera.position.z ** 2);
+            if (dist < 30) return BIOMES.TEMPERATE_FOREST;
+            if (dist < 60) return BIOMES.SAVANNA;
+            if (dist < 90) return BIOMES.DESERT_HOT;
+            return BIOMES.TROPICAL_RAINFOREST;
+        }
+
+        function showMessage(text) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.classList.add('visible');
+            setTimeout(() => msg.classList.remove('visible'), 3000);
+        }
+
+        function updatePlayer(delta) {
+            if (!gameState.isGameStarted) return;
+
+            const moveSpeed = (keys['shift'] ? PLAYER_SPEED * SPRINT_MULTIPLIER : PLAYER_SPEED);
+            const direction = new THREE.Vector3();
+
+            if (keys['w']) direction.z -= 1;
+            if (keys['s']) direction.z += 1;
+            if (keys['a']) direction.x -= 1;
+            if (keys['d']) direction.x += 1;
+
+            if (direction.length() > 0) {
+                direction.normalize();
+                direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
+
+                camera.position.x += direction.x * moveSpeed;
+                camera.position.z += direction.z * moveSpeed;
+
+                // Sprint drains energy
+                if (keys['shift'] && direction.length() > 0) {
+                    gameState.energy = Math.max(0, gameState.energy - 0.1);
+                }
+            } else {
+                // Recover energy when not moving
+                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 0.05);
+            }
+
+            // Jump
+            if (keys[' '] && gameState.onGround) {
+                gameState.velocity.y = JUMP_FORCE;
+                gameState.isJumping = true;
+                gameState.onGround = false;
+            }
+
+            // Apply gravity
+            if (!gameState.onGround) {
+                gameState.velocity.y -= GRAVITY;
+                camera.position.y += gameState.velocity.y;
+
+                if (camera.position.y <= PLAYER_HEIGHT) {
+                    camera.position.y = PLAYER_HEIGHT;
+                    gameState.velocity.y = 0;
+                    gameState.onGround = true;
+                    gameState.isJumping = false;
+                }
+            }
+
+            // Update camera rotation
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = cameraYaw;
+            camera.rotation.x = cameraPitch;
+
+            updateHUD();
+        }
+
+        function animate() {
+            if (!gameState.isGameStarted) return;
+            requestAnimationFrame(animate);
+
+            const delta = 0.016;
+            updatePlayer(delta);
+
+            renderer.render(scene, camera);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+    </script>
+</body>
+</html>

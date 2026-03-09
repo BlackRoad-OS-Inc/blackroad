@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad OS — Living Earth</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        }
+        #canvas-container { position: fixed; inset: 0; }
+
+        .logo {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.75);
+            padding: 10px 18px;
+            border-radius: 50px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+        }
+        .logo-icon {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #FF1D6C, #F5A623);
+            border-radius: 50%;
+            position: relative;
+        }
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px; height: 10px;
+            background: #000;
+            border-radius: 50%;
+        }
+        .logo-text { color: #fff; font-weight: 600; font-size: 14px; }
+
+        .stats-bar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 10px 24px;
+            border-radius: 50px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+        }
+        .stat { display: flex; align-items: center; gap: 6px; }
+        .stat-icon { font-size: 15px; }
+        .stat-value { font-size: 13px; font-weight: 600; color: #fff; }
+
+        .biome-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 14px 18px;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .biome-title {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 10px;
+        }
+        .biome-list { display: flex; flex-direction: column; gap: 4px; }
+        .biome-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.8);
+        }
+        .biome-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .biome-count { margin-left: auto; color: rgba(255,255,255,0.5); font-size: 10px; }
+
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 16px 20px;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            max-width: 300px;
+        }
+        .info-panel.visible { opacity: 1; transform: translateY(0); }
+        .info-biome { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+        .info-name { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+        .info-desc { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.4; }
+        .info-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .info-stat { text-align: center; }
+        .info-stat-icon { font-size: 14px; }
+        .info-stat-value { font-size: 13px; font-weight: 600; color: #fff; }
+        .info-stat-label { font-size: 8px; color: rgba(255,255,255,0.4); text-transform: uppercase; }
+
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 100;
+        }
+        .ctrl-btn {
+            width: 42px; height: 42px;
+            border: none; border-radius: 50%;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .ctrl-btn:hover { background: rgba(255,29,108,0.4); transform: scale(1.1); }
+        .ctrl-btn.active { background: #FF1D6C; border-color: #FF1D6C; }
+
+        .fps { 
+            position: fixed; 
+            bottom: 20px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            z-index: 100;
+        }
+
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.6s ease;
+        }
+        .loading.hidden { opacity: 0; pointer-events: none; }
+        .loading-spinner {
+            width: 60px; height: 60px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #FF1D6C;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { margin-top: 20px; color: rgba(255,255,255,0.7); font-size: 14px; }
+    </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--black:#000;--ink:#0A0A0A;--surface:#111;--border:#1A1A1A;--dim:#666;--sub:#999;--white:#FFF;--pink:#FF1D6C;--amber:#F5A623;--violet:#9C27B0;--blue:#2979FF;--green:#00FF88;--gradient:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);--xs:8px;--sm:13px;--md:21px;--lg:34px;--xl:55px;--xxl:89px}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'JetBrains Mono',monospace;background:#000;color:#fff;line-height:1.618;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-top:70px}
+    h1{font-size:clamp(40px,8vw,100px);font-weight:600;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:21px}
+    h2{font-size:clamp(24px,4vw,48px);font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:21px}
+    h3{font-size:clamp(16px,2vw,24px);font-weight:600;color:#fff;margin-bottom:13px}
+    h4,h5,h6{color:#fff}
+    p{color:#999;line-height:1.8;margin-bottom:21px}
+    a{color:#2979FF;text-decoration:none;transition:color .2s}
+    a:hover{color:#FF1D6C}
+    strong{color:#fff}
+    code{font-family:inherit;background:#111;color:#00FF88;padding:2px 6px;border:1px solid #1A1A1A}
+    pre{background:#0A0A0A;border:1px solid #1A1A1A;border-left:2px solid #FF1D6C;padding:21px 34px;color:#00FF88;overflow-x:auto;margin-bottom:34px}
+    hr{border:none;height:1px;background:linear-gradient(135deg,#F5A623,#FF1D6C,#9C27B0,#2979FF);opacity:.3;margin:55px 0}
+    nav,.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;justify-content:space-between;align-items:center;padding:21px 55px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1A1A1A}
+    nav a,.nav a{color:#999;font-size:13px}
+    nav a:hover,.nav a:hover{color:#fff}
+    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header{padding:21px 55px 0;display:flex;justify-content:space-between;align-items:center}
+    header .logo{font-size:22px;font-weight:700;background:linear-gradient(135deg,#F5A623 0%,#FF1D6C 38.2%,#9C27B0 61.8%,#2979FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header nav{position:static;background:none;backdrop-filter:none;border:none;padding:0;display:flex;gap:34px}
+    .hero,section.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:89px 55px;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,29,108,.15) 0%,rgba(156,39,176,.1) 40%,transparent 70%);pointer-events:none;animation:orb 8s ease-in-out infinite}
+    @keyframes orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
+    .hero p,.tagline{font-size:18px;max-width:600px;color:#999;margin-bottom:55px;position:relative;z-index:1}
+    .hero h1{position:relative;z-index:1}
+    .earth-glow,.hero-glow,.neural-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,29,108,.07) 0%,transparent 60%);pointer-events:none}
+    section{padding:89px 55px;position:relative}
+    section:not(.hero){max-width:1200px;margin-left:auto;margin-right:auto}
+    section h2{color:#fff;-webkit-text-fill-color:#fff}
+    .btn,.btn-primary{display:inline-block;padding:13px 34px;font-family:inherit;font-size:14px;font-weight:600;background:#FF1D6C;color:#fff;text-decoration:none;border:none;cursor:pointer;transition:all .2s;position:relative;z-index:1}
+    .btn:hover,.btn-primary:hover{background:#fff;color:#000;transform:translateY(-2px)}
+    .features-grid,.ai-features,.pillars{display:flex;flex-wrap:wrap;gap:34px;justify-content:center}
+    .feature-card,.ai-feature,.pillar{background:rgba(255,255,255,.02);border:1px solid #1A1A1A;padding:55px;transition:all .3s;flex:1;min-width:220px;max-width:360px}
+    .feature-card:hover,.ai-feature:hover,.pillar:hover{background:rgba(255,255,255,.05);border-color:rgba(255,29,108,.4);transform:translateY(-4px)}
+    .feature-icon,.ai-feature-icon,.pillar-icon{font-size:28px;margin-bottom:21px;display:block}
+    .feature-card h3,.ai-feature-title,.pillar-name{color:#fff;margin-bottom:8px}
+    .feature-card p,.ai-feature-desc{font-size:14px;color:#666}
+    .badge,.ai-badge{display:inline-block;padding:4px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #1A1A1A;color:#999;margin-bottom:21px}
+    footer,.footer{padding:55px;border-top:1px solid #1A1A1A;color:#666;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:21px}
+    footer a,.footer a{color:#999}
+    footer a:hover,.footer a:hover{color:#FF1D6C}
+    @media(max-width:768px){nav,.nav{padding:21px}.hero,section.hero{padding:89px 21px}.features-grid,.ai-features,.pillars{flex-direction:column}.feature-card,.ai-feature{min-width:unset;max-width:unset}footer,.footer{flex-direction:column;text-align:center;padding:34px 21px}}
+  </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading biomes...</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div class="logo">
+        <div class="logo-icon"></div>
+        <span class="logo-text">BlackRoad Earth</span>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat"><span class="stat-icon">🌳</span><span class="stat-value" id="treeCount">0</span></div>
+        <div class="stat"><span class="stat-icon">🏠</span><span class="stat-value" id="houseCount">0</span></div>
+        <div class="stat"><span class="stat-icon">🐾</span><span class="stat-value" id="animalCount">0</span></div>
+        <div class="stat"><span class="stat-icon">🤖</span><span class="stat-value" id="agentCount">0</span></div>
+    </div>
+
+    <div class="biome-panel">
+        <div class="biome-title">Biomes</div>
+        <div class="biome-list" id="biomeList"></div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <div class="info-biome" id="infoBiome">Tropical Rainforest</div>
+        <div class="info-name" id="infoName">Amazon Basin</div>
+        <div class="info-desc" id="infoDesc">Description...</div>
+        <div class="info-stats">
+            <div class="info-stat">
+                <div class="info-stat-icon">🌳</div>
+                <div class="info-stat-value" id="infoTrees">0</div>
+                <div class="info-stat-label">Trees</div>
+            </div>
+            <div class="info-stat">
+                <div class="info-stat-icon">🐾</div>
+                <div class="info-stat-value" id="infoAnimals">0</div>
+                <div class="info-stat-label">Animals</div>
+            </div>
+            <div class="info-stat">
+                <div class="info-stat-icon">🌡️</div>
+                <div class="info-stat-value" id="infoTemp">0°</div>
+                <div class="info-stat-label">Temp</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="ctrl-btn active" id="btnRotate" title="Auto Rotate">🔄</button>
+        <button class="ctrl-btn active" id="btnClouds" title="Clouds">☁️</button>
+        <button class="ctrl-btn active" id="btnLife" title="Life">🌿</button>
+        <button class="ctrl-btn" id="btnNight" title="Night">🌙</button>
+    </div>
+
+    <div class="fps" id="fps">60 FPS</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // ============ CONFIG ============
+        const EARTH_RADIUS = 100;
+        const QUALITY = {
+            treesPerRegion: 15,      // Reduced from 40
+            animalsPerRegion: 5,     // Reduced from 15
+            agentsPerRegion: 2,      // Reduced from 3
+            housesPerRegion: 3,      // Reduced from 8
+            animateEveryNthFrame: 2  // Only animate every 2nd frame
+        };
+
+        const TEXTURES = {
+            earth: 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+            bump: 'https://unpkg.com/three-globe/example/img/earth-topology.png',
+            clouds: 'https://unpkg.com/three-globe/example/img/earth-clouds.png',
+            night: 'https://unpkg.com/three-globe/example/img/earth-night.jpg'
+        };
+
+        // Simplified biomes
+        const BIOMES = {
+            TROPICAL_RAINFOREST: { name: "Tropical Rainforest", color: 0x1a5a1a, icon: "🌴", temp: "27°C", treeColor: 0x0d5c0d },
+            TEMPERATE_FOREST: { name: "Temperate Forest", color: 0x2d5a27, icon: "🌲", temp: "12°C", treeColor: 0x228b22 },
+            BOREAL_TAIGA: { name: "Boreal Taiga", color: 0x1a4a2a, icon: "🌲", temp: "-5°C", treeColor: 0x0a3a0a },
+            TUNDRA: { name: "Tundra", color: 0x8fbc8f, icon: "❄️", temp: "-20°C", treeColor: 0x556b2f },
+            DESERT_HOT: { name: "Hot Desert", color: 0xc2b280, icon: "🏜️", temp: "38°C", treeColor: 0x228b22 },
+            SAVANNA: { name: "Savanna", color: 0xbdb76b, icon: "🦁", temp: "25°C", treeColor: 0x6b8e23 },
+            GRASSLAND: { name: "Grassland", color: 0x9acd32, icon: "🌾", temp: "15°C", treeColor: 0x7cba3d },
+            MOUNTAIN: { name: "Mountain", color: 0x696969, icon: "⛰️", temp: "-8°C", treeColor: 0x1a4a1a },
+            ICE_SHEET: { name: "Polar Ice", color: 0xf0f8ff, icon: "🧊", temp: "-50°C", treeColor: 0xffffff },
+            WETLAND: { name: "Wetland", color: 0x2f4f4f, icon: "🐊", temp: "22°C", treeColor: 0x2f4f2f }
+        };
+
+        // Reduced regions - key locations only
+        const BIOME_REGIONS = [
+            // Rainforests
+            { biome: 'TROPICAL_RAINFOREST', name: "Amazon Basin", lat: -3, lng: -60, radius: 18, desc: "World's largest rainforest" },
+            { biome: 'TROPICAL_RAINFOREST', name: "Congo Rainforest", lat: 0, lng: 22, radius: 12, desc: "Africa's largest rainforest" },
+            { biome: 'TROPICAL_RAINFOREST', name: "Southeast Asia", lat: 2, lng: 110, radius: 10, desc: "Borneo and Sumatra forests" },
+            
+            // Temperate
+            { biome: 'TEMPERATE_FOREST', name: "Eastern USA", lat: 38, lng: -80, radius: 12, desc: "Appalachian forests" },
+            { biome: 'TEMPERATE_FOREST', name: "Western Europe", lat: 48, lng: 8, radius: 10, desc: "European woodlands" },
+            { biome: 'TEMPERATE_FOREST', name: "East Asia", lat: 36, lng: 138, radius: 8, desc: "Japanese and Korean forests" },
+            
+            // Boreal
+            { biome: 'BOREAL_TAIGA', name: "Canadian Boreal", lat: 58, lng: -100, radius: 22, desc: "World's largest intact forest" },
+            { biome: 'BOREAL_TAIGA', name: "Siberian Taiga", lat: 62, lng: 100, radius: 25, desc: "Largest terrestrial biome" },
+            
+            // Tundra
+            { biome: 'TUNDRA', name: "Arctic Tundra", lat: 72, lng: -100, radius: 18, desc: "Frozen treeless plains" },
+            { biome: 'TUNDRA', name: "Siberian Tundra", lat: 72, lng: 130, radius: 16, desc: "Northern Russia permafrost" },
+            
+            // Deserts
+            { biome: 'DESERT_HOT', name: "Sahara Desert", lat: 24, lng: 10, radius: 25, desc: "World's largest hot desert" },
+            { biome: 'DESERT_HOT', name: "Arabian Desert", lat: 23, lng: 50, radius: 12, desc: "Arabian Peninsula" },
+            { biome: 'DESERT_HOT', name: "Australian Outback", lat: -24, lng: 135, radius: 18, desc: "Red heart of Australia" },
+            
+            // Savanna
+            { biome: 'SAVANNA', name: "Serengeti", lat: -3, lng: 35, radius: 10, desc: "Great migration lands" },
+            { biome: 'SAVANNA', name: "Brazilian Cerrado", lat: -15, lng: -48, radius: 12, desc: "South American savanna" },
+            
+            // Grassland
+            { biome: 'GRASSLAND', name: "Great Plains", lat: 42, lng: -100, radius: 15, desc: "North American prairie" },
+            { biome: 'GRASSLAND', name: "Eurasian Steppe", lat: 48, lng: 65, radius: 20, desc: "Vast grasslands" },
+            
+            // Mountains
+            { biome: 'MOUNTAIN', name: "Himalayas", lat: 28, lng: 85, radius: 12, desc: "World's highest peaks" },
+            { biome: 'MOUNTAIN', name: "Rocky Mountains", lat: 45, lng: -110, radius: 10, desc: "North American spine" },
+            { biome: 'MOUNTAIN', name: "Andes", lat: -15, lng: -72, radius: 10, desc: "Longest mountain range" },
+            { biome: 'MOUNTAIN', name: "European Alps", lat: 46, lng: 10, radius: 6, desc: "Central European peaks" },
+            
+            // Ice
+            { biome: 'ICE_SHEET', name: "Antarctica", lat: -82, lng: 0, radius: 28, desc: "Frozen continent" },
+            { biome: 'ICE_SHEET', name: "Greenland", lat: 75, lng: -42, radius: 15, desc: "Arctic ice sheet" },
+            
+            // Wetlands
+            { biome: 'WETLAND', name: "Pantanal", lat: -18, lng: -57, radius: 8, desc: "World's largest wetland" },
+            { biome: 'WETLAND', name: "Everglades", lat: 26, lng: -81, radius: 5, desc: "River of grass" }
+        ];
+
+        // ============ GLOBALS ============
+        let scene, camera, renderer;
+        let earth, clouds, nightLights;
+        let lifeGroup;
+        let regionData = [];
+        let counts = { trees: 0, houses: 0, animals: 0, agents: 0 };
+        
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let fps = 60;
+        
+        let autoRotate = true;
+        let showClouds = true;
+        let showLife = true;
+        let isNight = false;
+        
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        let spherical = { theta: 0, phi: Math.PI / 3, radius: 250 };
+
+        // ============ INIT ============
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000008);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+            updateCamera();
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Cap pixel ratio
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Load and build
+            loadTextures(() => {
+                createScene();
+                populateBiomes();
+                buildUI();
+                document.getElementById('loading').classList.add('hidden');
+                animate();
+            });
+
+            // Events
+            window.addEventListener('resize', onResize);
+            renderer.domElement.addEventListener('mousedown', e => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
+            renderer.domElement.addEventListener('mousemove', onDrag);
+            renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+            renderer.domElement.addEventListener('mouseleave', () => isDragging = false);
+            renderer.domElement.addEventListener('wheel', e => {
+                spherical.radius = Math.max(140, Math.min(400, spherical.radius + e.deltaY * 0.15));
+                updateCamera();
+            }, { passive: true });
+            renderer.domElement.addEventListener('click', onClick);
+            
+            // Touch
+            renderer.domElement.addEventListener('touchstart', e => {
+                if (e.touches.length === 1) { isDragging = true; prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+            }, { passive: true });
+            renderer.domElement.addEventListener('touchmove', e => {
+                if (!isDragging || e.touches.length !== 1) return;
+                const dx = e.touches[0].clientX - prevMouse.x;
+                const dy = e.touches[0].clientY - prevMouse.y;
+                spherical.theta -= dx * 0.005;
+                spherical.phi = Math.max(0.3, Math.min(Math.PI - 0.3, spherical.phi + dy * 0.005));
+                updateCamera();
+                prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }, { passive: true });
+            renderer.domElement.addEventListener('touchend', () => isDragging = false);
+
+            // Buttons
+            document.getElementById('btnRotate').onclick = () => { autoRotate = !autoRotate; document.getElementById('btnRotate').classList.toggle('active', autoRotate); };
+            document.getElementById('btnClouds').onclick = () => { showClouds = !showClouds; clouds.visible = showClouds; document.getElementById('btnClouds').classList.toggle('active', showClouds); };
+            document.getElementById('btnLife').onclick = () => { showLife = !showLife; lifeGroup.visible = showLife; document.getElementById('btnLife').classList.toggle('active', showLife); };
+            document.getElementById('btnNight').onclick = () => { 
+                isNight = !isNight; 
+                nightLights.material.opacity = isNight ? 0.8 : 0;
+                window.sunLight.intensity = isNight ? 0.15 : 1.2;
+                document.getElementById('btnNight').classList.toggle('active', isNight); 
+            };
+        }
+
+        function loadTextures(callback) {
+            const loader = new THREE.TextureLoader();
+            let loaded = 0;
+            const total = 4;
+            
+            window.tex = {};
+            Object.entries(TEXTURES).forEach(([key, url]) => {
+                loader.load(url, tex => {
+                    window.tex[key] = tex;
+                    loaded++;
+                    if (loaded === total) callback();
+                });
+            });
+        }
+
+        function createScene() {
+            // Stars - simple points
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(3000 * 3);
+            for (let i = 0; i < 3000; i++) {
+                const r = 600 + Math.random() * 800;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                starPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                starPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                starPos[i*3+2] = r * Math.cos(phi);
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.8 })));
+
+            // Lights
+            window.sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            window.sunLight.position.set(300, 150, 300);
+            scene.add(window.sunLight);
+            scene.add(new THREE.AmbientLight(0x404060, 0.35));
+
+            // Earth
+            const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64); // Reduced segments
+            earth = new THREE.Mesh(earthGeo, new THREE.MeshPhongMaterial({
+                map: window.tex.earth,
+                bumpMap: window.tex.bump,
+                bumpScale: 0.3,
+                shininess: 3
+            }));
+            scene.add(earth);
+
+            // Night lights
+            nightLights = new THREE.Mesh(earthGeo.clone(), new THREE.MeshBasicMaterial({
+                map: window.tex.night,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0
+            }));
+            nightLights.scale.setScalar(1.002);
+            scene.add(nightLights);
+
+            // Clouds
+            clouds = new THREE.Mesh(
+                new THREE.SphereGeometry(EARTH_RADIUS + 1, 48, 48),
+                new THREE.MeshPhongMaterial({ map: window.tex.clouds, transparent: true, opacity: 0.25, depthWrite: false })
+            );
+            scene.add(clouds);
+
+            // Atmosphere
+            scene.add(new THREE.Mesh(
+                new THREE.SphereGeometry(EARTH_RADIUS + 8, 32, 32),
+                new THREE.ShaderMaterial({
+                    vertexShader: `varying vec3 vN; void main() { vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+                    fragmentShader: `varying vec3 vN; void main() { float i = pow(0.6 - dot(vN, vec3(0,0,1)), 2.0); gl_FragColor = vec4(0.3, 0.6, 1.0, i * 0.35); }`,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.BackSide,
+                    transparent: true,
+                    depthWrite: false
+                })
+            ));
+
+            // Life container
+            lifeGroup = new THREE.Group();
+            scene.add(lifeGroup);
+        }
+
+        // ============ POPULATE ============
+        function populateBiomes() {
+            BIOME_REGIONS.forEach(region => {
+                const biome = BIOMES[region.biome];
+                const scale = region.radius / 12;
+                
+                const treesCount = Math.max(1, Math.floor(QUALITY.treesPerRegion * scale * (biome.name.includes('Desert') || biome.name.includes('Ice') ? 0.1 : 1)));
+                const housesCount = Math.max(0, Math.floor(QUALITY.housesPerRegion * scale * (biome.name.includes('Ice') ? 0.1 : 1)));
+                const animalsCount = Math.max(1, Math.floor(QUALITY.animalsPerRegion * scale));
+                const agentsCount = Math.floor(QUALITY.agentsPerRegion * scale);
+
+                const regionCounts = { trees: 0, animals: 0, houses: 0, agents: 0 };
+
+                // Trees - simple merged geometry approach
+                for (let i = 0; i < treesCount; i++) {
+                    const tree = createSimpleTree(biome);
+                    placeOnGlobe(tree, region);
+                    lifeGroup.add(tree);
+                    regionCounts.trees++;
+                    counts.trees++;
+                }
+
+                // Houses
+                for (let i = 0; i < housesCount; i++) {
+                    const house = createSimpleHouse(biome);
+                    placeOnGlobe(house, region);
+                    lifeGroup.add(house);
+                    regionCounts.houses++;
+                    counts.houses++;
+                }
+
+                // Animals - very simple
+                for (let i = 0; i < animalsCount; i++) {
+                    const animal = createSimpleAnimal(biome);
+                    placeOnGlobe(animal, region);
+                    animal.userData.region = region;
+                    lifeGroup.add(animal);
+                    regionCounts.animals++;
+                    counts.animals++;
+                }
+
+                // Agents
+                for (let i = 0; i < agentsCount; i++) {
+                    const agent = createSimpleAgent();
+                    placeOnGlobe(agent, region, 1.5);
+                    agent.userData.region = region;
+                    lifeGroup.add(agent);
+                    regionCounts.agents++;
+                    counts.agents++;
+                }
+
+                regionData.push({ ...region, biome, counts: regionCounts });
+            });
+
+            // Update UI counts
+            document.getElementById('treeCount').textContent = counts.trees;
+            document.getElementById('houseCount').textContent = counts.houses;
+            document.getElementById('animalCount').textContent = counts.animals;
+            document.getElementById('agentCount').textContent = counts.agents;
+        }
+
+        function placeOnGlobe(obj, region, heightOffset = 0) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * region.radius * 0.75;
+            const lat = region.lat + Math.cos(angle) * dist * 0.5;
+            const lng = region.lng + Math.sin(angle) * dist * 0.7;
+            
+            const phi = (90 - lat) * Math.PI / 180;
+            const theta = (lng + 180) * Math.PI / 180;
+            const r = EARTH_RADIUS + 0.2 + heightOffset;
+            
+            obj.position.set(
+                r * Math.sin(phi) * Math.cos(theta),
+                r * Math.cos(phi),
+                r * Math.sin(phi) * Math.sin(theta)
+            );
+            
+            const normal = obj.position.clone().normalize();
+            obj.lookAt(obj.position.clone().add(normal));
+            obj.rotateX(Math.PI / 2);
+            obj.rotateY(Math.random() * Math.PI * 2);
+            
+            obj.userData.lat = lat;
+            obj.userData.lng = lng;
+        }
+
+        // ============ SIMPLE CREATORS ============
+        function createSimpleTree(biome) {
+            const group = new THREE.Group();
+            
+            if (biome.name.includes('Desert')) {
+                // Cactus
+                const mat = new THREE.MeshLambertMaterial({ color: 0x228b22 });
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.8, 5), mat);
+                trunk.position.y = 0.4;
+                group.add(trunk);
+            } else if (biome.name.includes('Ice') || biome.name.includes('Tundra')) {
+                // Shrub
+                const mat = new THREE.MeshLambertMaterial({ color: 0x556b2f });
+                const bush = new THREE.Mesh(new THREE.SphereGeometry(0.2, 4, 4), mat);
+                bush.position.y = 0.15;
+                group.add(bush);
+            } else if (biome.name.includes('Savanna')) {
+                // Acacia
+                const trunkMat = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 1, 5), trunkMat);
+                trunk.position.y = 0.5;
+                group.add(trunk);
+                const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.15, 6), new THREE.MeshLambertMaterial({ color: biome.treeColor }));
+                canopy.position.y = 1.1;
+                group.add(canopy);
+            } else if (biome.name.includes('Boreal') || biome.name.includes('Mountain')) {
+                // Pine
+                const trunkMat = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.6, 5), trunkMat);
+                trunk.position.y = 0.3;
+                group.add(trunk);
+                const cone = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1, 5), new THREE.MeshLambertMaterial({ color: biome.treeColor }));
+                cone.position.y = 0.9;
+                group.add(cone);
+            } else {
+                // Regular tree
+                const trunkMat = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.6, 5), trunkMat);
+                trunk.position.y = 0.3;
+                group.add(trunk);
+                const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 0), new THREE.MeshLambertMaterial({ color: biome.treeColor }));
+                leaves.position.y = 0.8;
+                group.add(leaves);
+            }
+            
+            group.scale.setScalar(0.4 + Math.random() * 0.2);
+            return group;
+        }
+
+        function createSimpleHouse(biome) {
+            const group = new THREE.Group();
+            
+            const wallColor = biome.name.includes('Desert') ? 0xf5deb3 : 0xfaf8f5;
+            const roofColor = biome.name.includes('Desert') ? 0xdaa520 : 0xcc4444;
+            
+            const walls = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.5), new THREE.MeshLambertMaterial({ color: wallColor }));
+            walls.position.y = 0.2;
+            group.add(walls);
+            
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.3, 4), new THREE.MeshLambertMaterial({ color: roofColor }));
+            roof.position.y = 0.55;
+            roof.rotation.y = Math.PI / 4;
+            group.add(roof);
+            
+            group.scale.setScalar(0.5);
+            return group;
+        }
+
+        function createSimpleAnimal(biome) {
+            const group = new THREE.Group();
+            const color = biome.name.includes('Ice') ? 0xffffff : 
+                         biome.name.includes('Savanna') ? 0xd4a574 : 
+                         0x8b7355;
+            
+            const mat = new THREE.MeshLambertMaterial({ color });
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), mat);
+            body.scale.set(1, 0.7, 1.2);
+            group.add(body);
+            
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), mat);
+            head.position.set(0, 0.05, 0.12);
+            group.add(head);
+            
+            group.scale.setScalar(0.5);
+            group.userData.hop = Math.random() * Math.PI * 2;
+            return group;
+        }
+
+        function createSimpleAgent() {
+            const group = new THREE.Group();
+            const colors = [0xff1d6c, 0x2979ff, 0xf5a623, 0x9c27b0];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.25, 6), new THREE.MeshLambertMaterial({ color }));
+            body.position.y = 0.12;
+            group.add(body);
+            
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+            head.position.y = 0.32;
+            group.add(head);
+            
+            group.scale.setScalar(0.6);
+            group.userData.hover = Math.random() * Math.PI * 2;
+            return group;
+        }
+
+        // ============ UI ============
+        function buildUI() {
+            const list = document.getElementById('biomeList');
+            const biomeCounts = {};
+            BIOME_REGIONS.forEach(r => { biomeCounts[r.biome] = (biomeCounts[r.biome] || 0) + 1; });
+            
+            Object.entries(BIOMES).forEach(([key, biome]) => {
+                if (!biomeCounts[key]) return;
+                const item = document.createElement('div');
+                item.className = 'biome-item';
+                item.innerHTML = `<div class="biome-dot" style="background:#${biome.color.toString(16).padStart(6,'0')}"></div>
+                    <span>${biome.icon} ${biome.name}</span>
+                    <span class="biome-count">${biomeCounts[key]}</span>`;
+                list.appendChild(item);
+            });
+        }
+
+        function showInfo(region) {
+            document.getElementById('infoBiome').textContent = region.biome.icon + ' ' + region.biome.name;
+            document.getElementById('infoBiome').style.color = '#' + region.biome.color.toString(16).padStart(6, '0');
+            document.getElementById('infoName').textContent = region.name;
+            document.getElementById('infoDesc').textContent = region.desc;
+            document.getElementById('infoTrees').textContent = region.counts.trees;
+            document.getElementById('infoAnimals').textContent = region.counts.animals;
+            document.getElementById('infoTemp').textContent = region.biome.temp;
+            document.getElementById('infoPanel').classList.add('visible');
+            clearTimeout(window.infoTimeout);
+            window.infoTimeout = setTimeout(() => document.getElementById('infoPanel').classList.remove('visible'), 4000);
+        }
+
+        // ============ EVENTS ============
+        function updateCamera() {
+            camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+            camera.position.y = spherical.radius * Math.cos(spherical.phi);
+            camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onDrag(e) {
+            if (!isDragging) return;
+            const dx = e.clientX - prevMouse.x;
+            const dy = e.clientY - prevMouse.y;
+            spherical.theta -= dx * 0.005;
+            spherical.phi = Math.max(0.3, Math.min(Math.PI - 0.3, spherical.phi + dy * 0.005));
+            updateCamera();
+            prevMouse = { x: e.clientX, y: e.clientY };
+        }
+
+        function onClick(e) {
+            const mouse = new THREE.Vector2(
+                (e.clientX / window.innerWidth) * 2 - 1,
+                -(e.clientY / window.innerHeight) * 2 + 1
+            );
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(mouse, camera);
+            
+            const hits = ray.intersectObject(earth);
+            if (hits.length > 0) {
+                const p = hits[0].point.normalize().multiplyScalar(EARTH_RADIUS);
+                const lat = 90 - Math.acos(p.y / EARTH_RADIUS) * 180 / Math.PI;
+                const lng = Math.atan2(p.z, p.x) * 180 / Math.PI - 180;
+                
+                let nearest = null, minDist = Infinity;
+                regionData.forEach(r => {
+                    const d = Math.sqrt((lat - r.lat) ** 2 + (lng - r.lng) ** 2);
+                    if (d < r.radius && d < minDist) { minDist = d; nearest = r; }
+                });
+                if (nearest) showInfo(nearest);
+            }
+        }
+
+        // ============ ANIMATION ============
+        function animate() {
+            requestAnimationFrame(animate);
+            frameCount++;
+
+            // FPS counter
+            if (frameCount % 30 === 0) {
+                const now = performance.now();
+                fps = Math.round(30000 / (now - lastTime));
+                lastTime = now;
+                document.getElementById('fps').textContent = fps + ' FPS';
+            }
+
+            // Rotate earth slowly
+            earth.rotation.y += 0.0002;
+            nightLights.rotation.y = earth.rotation.y;
+            clouds.rotation.y += 0.00025;
+            lifeGroup.rotation.y = earth.rotation.y;
+
+            // Auto rotate camera
+            if (autoRotate && !isDragging) {
+                spherical.theta += 0.0008;
+                updateCamera();
+            }
+
+            // Animate life only every Nth frame
+            if (frameCount % QUALITY.animateEveryNthFrame === 0) {
+                lifeGroup.children.forEach(obj => {
+                    if (obj.userData.hop !== undefined) {
+                        obj.userData.hop += 0.1;
+                    }
+                    if (obj.userData.hover !== undefined) {
+                        obj.userData.hover += 0.05;
+                        // Slight bobbing
+                        obj.position.y += Math.sin(obj.userData.hover) * 0.002;
+                    }
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>

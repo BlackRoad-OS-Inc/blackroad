@@ -1,0 +1,61 @@
+# ============================================================================
+# BlackRoad OS - Stale Issue/PR Management
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Automatically marks and closes stale issues and PRs.
+# ============================================================================
+
+name: Stale
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Mark Stale Issues and PRs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          # Issue configuration
+          stale-issue-message: |
+            This issue has been automatically marked as stale because it has not had recent activity.
+            It will be closed in 14 days if no further activity occurs.
+
+            If this issue is still relevant:
+            - Add a comment explaining the current status
+            - Remove the `stale` label
+
+            Thank you for your contributions to BlackRoad OS!
+          stale-issue-label: 'stale'
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          exempt-issue-labels: 'pinned,security,critical,in-progress'
+
+          # PR configuration
+          stale-pr-message: |
+            This pull request has been automatically marked as stale because it has not had recent activity.
+            It will be closed in 7 days if no further activity occurs.
+
+            If this PR is still needed:
+            - Rebase on the latest main branch
+            - Address any review feedback
+            - Add a comment with status update
+
+            Thank you for your contributions!
+          stale-pr-label: 'stale'
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+          exempt-pr-labels: 'pinned,security,do-not-close'
+
+          # General
+          remove-stale-when-updated: true
+          operations-per-run: 100

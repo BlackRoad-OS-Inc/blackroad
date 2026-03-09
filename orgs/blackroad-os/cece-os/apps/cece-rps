@@ -1,0 +1,23 @@
+#!/bin/bash
+# CECE-RPS v1.0 - Rock Paper Scissors
+play() {
+    CHOICES=("rock" "paper" "scissors")
+    CPU="${CHOICES[$RANDOM % 3]}"
+    USER="${1,,}"
+    echo "You: $USER | CECE: $CPU"
+    if [ "$USER" = "$CPU" ]; then
+        echo "🤝 Tie!"
+    elif [ "$USER" = "rock" ] && [ "$CPU" = "scissors" ]; then
+        echo "🎉 You win!"
+    elif [ "$USER" = "paper" ] && [ "$CPU" = "rock" ]; then
+        echo "🎉 You win!"
+    elif [ "$USER" = "scissors" ] && [ "$CPU" = "paper" ]; then
+        echo "🎉 You win!"
+    else
+        echo "🤖 CECE wins!"
+    fi
+}
+case "$1" in
+    rock|paper|scissors) play "$1" ;;
+    *) echo "CECE-RPS: rock | paper | scissors" ;;
+esac

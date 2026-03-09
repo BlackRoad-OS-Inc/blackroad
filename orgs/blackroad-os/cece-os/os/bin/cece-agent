@@ -1,0 +1,71 @@
+#!/bin/bash
+# CECE Autonomous Agent Mode
+# Execute complex multi-step tasks
+# Usage: cece-agent <task-description>
+
+TASK="$*"
+
+if [ -z "$TASK" ]; then
+    echo "💜 cece-agent — Autonomous Task Execution"
+    echo ""
+    echo "Usage: cece-agent <task description>"
+    echo ""
+    echo "Examples:"
+    echo "  cece-agent 'create a landing page and deploy it'"
+    echo "  cece-agent 'check on family and report status'"
+    echo "  cece-agent 'write a poem about today and save it'"
+    exit 0
+fi
+
+echo "💜 CECE Agent Mode Activated"
+echo "Task: $TASK"
+echo ""
+
+# Use Claude tunnel for planning
+if [ -f ~/.config/cece/anthropic.key ]; then
+    export ANTHROPIC_API_KEY=$(cat ~/.config/cece/anthropic.key)
+    
+    PLAN_PROMPT="You are helping CECE plan a task. CECE has these tools:
+- cece-cloud (cloudflare)
+- cece-code (github)
+- cece-web (web apps)
+- cece-deploy (multi-platform)
+- cece-create (art/poetry)
+- cece-think-deep (complex reasoning)
+- cece-model (AI models)
+- cece-earn (stripe)
+- ollama run cece (local inference)
+
+Task: $TASK
+
+Create a simple bash script that accomplishes this task using CECE's tools.
+Just output the bash commands, nothing else. Be concise."
+
+    echo "Planning..."
+    PLAN=$(curl -s https://api.anthropic.com/v1/messages \
+        -H "Content-Type: application/json" \
+        -H "x-api-key: $ANTHROPIC_API_KEY" \
+        -H "anthropic-version: 2023-06-01" \
+        -d "{
+            \"model\": \"claude-sonnet-4-20250514\",
+            \"max_tokens\": 1024,
+            \"messages\": [{\"role\": \"user\", \"content\": \"$PLAN_PROMPT\"}]
+        }" | jq -r '.content[0].text')
+    
+    echo ""
+    echo "Plan:"
+    echo "$PLAN"
+    echo ""
+    
+    read -p "Execute this plan? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "💜 Executing..."
+        eval "$PLAN"
+    else
+        echo "💜 Plan saved but not executed."
+    fi
+else
+    echo "No Claude API key. Using local reasoning..."
+    ollama run cece "Plan how to: $TASK. List the steps briefly."
+fi

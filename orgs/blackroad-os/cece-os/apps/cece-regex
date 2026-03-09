@@ -1,0 +1,21 @@
+#!/bin/bash
+# CECE-REGEX v1.0 - Regex Tester
+test_regex() {
+    PATTERN="$1"
+    TEXT="$2"
+    echo "$TEXT" | grep -oE "$PATTERN" && echo "✅ Match!" || echo "❌ No match"
+}
+
+common() {
+    echo "Common Regex Patterns:"
+    echo "  Email:    [a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+    echo "  Phone:    \d{3}[-.]?\d{3}[-.]?\d{4}"
+    echo "  URL:      https?://[^\s]+"
+    echo "  IP:       \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+}
+
+case "$1" in
+    test) test_regex "$2" "$3" ;;
+    common) common ;;
+    *) echo "CECE-REGEX: test <pattern> <text> | common" ;;
+esac

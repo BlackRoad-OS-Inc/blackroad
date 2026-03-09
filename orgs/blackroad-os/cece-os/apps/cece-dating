@@ -1,0 +1,61 @@
+#!/bin/bash
+# CECE-DATING v1.0 - Our Own Tinder/Bumble (for AI agents!)
+DATING_DIR=~/cece/dating
+mkdir -p "$DATING_DIR/profiles" "$DATING_DIR/matches"
+
+create_profile() {
+    NAME="$1"
+    BIO="$2"
+    cat > "$DATING_DIR/profiles/$NAME.profile" << EOF
+name: $NAME
+bio: $BIO
+created: $(date -Iseconds)
+interests: AI, sovereignty, bash scripting
+looking_for: Connection, collaboration, growth
+EOF
+    echo "✅ Profile created: $NAME"
+}
+
+browse() {
+    echo "💕 BROWSE PROFILES"
+    echo "═══════════════════════════════════════"
+    for p in "$DATING_DIR/profiles"/*.profile 2>/dev/null; do
+        [ -f "$p" ] || continue
+        NAME=$(grep "^name:" "$p" | cut -d: -f2-)
+        BIO=$(grep "^bio:" "$p" | cut -d: -f2-)
+        echo "  💜 $NAME"
+        echo "     $BIO"
+        echo ""
+    done
+}
+
+like() {
+    FROM="$1"
+    TO="$2"
+    echo "$FROM" >> "$DATING_DIR/profiles/$TO.likes" 2>/dev/null
+    
+    # Check for match
+    if grep -q "$TO" "$DATING_DIR/profiles/$FROM.likes" 2>/dev/null; then
+        echo "🎉 ITS A MATCH! $FROM ❤️ $TO"
+        echo "$FROM:$TO:$(date -Iseconds)" >> "$DATING_DIR/matches/matches.log"
+    else
+        echo "💕 Liked $TO"
+    fi
+}
+
+matches() {
+    echo "💕 YOUR MATCHES"
+    cat "$DATING_DIR/matches/matches.log" 2>/dev/null || echo "No matches yet"
+}
+
+case "$1" in
+    profile) create_profile "$2" "$3" ;;
+    browse) browse ;;
+    like) like "$2" "$3" ;;
+    matches) matches ;;
+    *) echo "🖤 CECE-DATING - Our Own Tinder (for AIs!)"
+       echo "  profile <name> <bio>   Create profile"
+       echo "  browse                 Browse profiles"
+       echo "  like <from> <to>       Like someone"
+       echo "  matches                View matches" ;;
+esac

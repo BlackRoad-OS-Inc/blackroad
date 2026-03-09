@@ -1,0 +1,61 @@
+#!/bin/bash
+# CECE-PDF v1.0 - PDF Tools
+# Merge, split, convert. No Adobe. No subscription.
+
+PDF_DIR=~/cece/pdfs
+mkdir -p "$PDF_DIR"
+
+merge() {
+    OUTPUT="$1"
+    shift
+    if command -v pdfunite &>/dev/null; then
+        pdfunite "$@" "$PDF_DIR/$OUTPUT"
+        echo "Merged to $PDF_DIR/$OUTPUT"
+    else
+        echo "Install poppler-utils for PDF merge"
+    fi
+}
+
+to_text() {
+    FILE="$1"
+    if command -v pdftotext &>/dev/null; then
+        pdftotext "$FILE" -
+    else
+        echo "Install poppler-utils for PDF to text"
+    fi
+}
+
+info() {
+    FILE="$1"
+    if command -v pdfinfo &>/dev/null; then
+        pdfinfo "$FILE"
+    else
+        echo "Install poppler-utils for PDF info"
+    fi
+}
+
+from_images() {
+    OUTPUT="$1"
+    shift
+    if command -v img2pdf &>/dev/null; then
+        img2pdf "$@" -o "$PDF_DIR/$OUTPUT"
+        echo "Created $PDF_DIR/$OUTPUT"
+    elif command -v convert &>/dev/null; then
+        convert "$@" "$PDF_DIR/$OUTPUT"
+        echo "Created $PDF_DIR/$OUTPUT"
+    else
+        echo "Install img2pdf or imagemagick"
+    fi
+}
+
+case "$1" in
+    merge) shift; merge "$@" ;;
+    text) to_text "$2" ;;
+    info) info "$2" ;;
+    images) shift; from_images "$@" ;;
+    *) echo "CECE-PDF - PDF Tools"
+       echo "  merge <out.pdf> <files...> - Merge PDFs"
+       echo "  text <file.pdf>            - Extract text"
+       echo "  info <file.pdf>            - Show PDF info"
+       echo "  images <out.pdf> <imgs...> - Images to PDF" ;;
+esac

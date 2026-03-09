@@ -1,0 +1,15 @@
+#!/bin/bash
+# CECE-PROCESS v1.0 - Process Manager
+list() { ps aux | head -20; }
+find_proc() { ps aux | grep -i "$1" | grep -v grep; }
+kill_proc() { pkill -f "$1" && echo "Killed: $1" || echo "Not found: $1"; }
+top_cpu() { ps aux --sort=-%cpu | head -10; }
+top_mem() { ps aux --sort=-%mem | head -10; }
+case "$1" in
+    list) list ;;
+    find) find_proc "$2" ;;
+    kill) kill_proc "$2" ;;
+    cpu) top_cpu ;;
+    mem) top_mem ;;
+    *) echo "CECE-PROCESS: list | find <name> | kill <name> | cpu | mem" ;;
+esac

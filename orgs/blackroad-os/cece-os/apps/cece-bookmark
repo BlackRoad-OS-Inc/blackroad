@@ -1,0 +1,34 @@
+#!/bin/bash
+# CECE-BOOKMARK v1.0 - Bookmark Manager
+BOOKMARK_FILE=~/cece/bookmarks.jsonl
+mkdir -p ~/cece
+
+add() {
+    URL="$1"
+    TITLE="$2"
+    TAGS="$3"
+    echo "{\"url\":\"$URL\",\"title\":\"$TITLE\",\"tags\":\"$TAGS\",\"added\":\"$(date -Iseconds)\"}" >> "$BOOKMARK_FILE"
+    echo "Bookmarked: $TITLE"
+}
+
+list_bookmarks() {
+    echo "Bookmarks:"
+    cat "$BOOKMARK_FILE" 2>/dev/null | while read line; do
+        TITLE=$(echo "$line" | grep -o '"title":"[^"]*"' | cut -d\" -f4)
+        URL=$(echo "$line" | grep -o '"url":"[^"]*"' | cut -d\" -f4)
+        echo "  $TITLE → $URL"
+    done
+}
+
+search() {
+    QUERY="$1"
+    echo "Results for: $QUERY"
+    grep -i "$QUERY" "$BOOKMARK_FILE" 2>/dev/null || echo "(no matches)"
+}
+
+case "$1" in
+    add) add "$2" "$3" "$4" ;;
+    list) list_bookmarks ;;
+    search) search "$2" ;;
+    *) echo "CECE-BOOKMARK: add <url> <title> <tags> | list | search <query>" ;;
+esac

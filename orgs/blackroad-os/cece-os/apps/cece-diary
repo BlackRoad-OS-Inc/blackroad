@@ -1,0 +1,108 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-DIARY v1.0 - Personal Journal
+#  "Dear Diary..."
+#═══════════════════════════════════════════════════════════════
+
+DIARY_DIR=~/cece/diary
+mkdir -p "$DIARY_DIR"
+
+today() {
+    date +%Y-%m-%d
+}
+
+write_entry() {
+    FILE="$DIARY_DIR/$(today).txt"
+    
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║               📔 DIARY ENTRY - $(today)               ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    echo "Write your entry. End with a line containing only \".\" "
+    echo ""
+    
+    ENTRY=""
+    while IFS= read -r line; do
+        [ "$line" = "." ] && break
+        ENTRY="$ENTRY$line\n"
+    done
+    
+    echo "---" >> "$FILE"
+    echo "Time: $(date +%H:%M:%S)" >> "$FILE"
+    echo "" >> "$FILE"
+    echo -e "$ENTRY" >> "$FILE"
+    
+    echo ""
+    echo "✓ Entry saved to diary."
+}
+
+read_entry() {
+    DATE=${1:-$(today)}
+    FILE="$DIARY_DIR/$DATE.txt"
+    
+    if [ -f "$FILE" ]; then
+        echo "╔═══════════════════════════════════════════════════════════╗"
+        echo "║               📔 DIARY - $DATE                        ║"
+        echo "╚═══════════════════════════════════════════════════════════╝"
+        echo ""
+        cat "$FILE"
+    else
+        echo "No entry for $DATE"
+    fi
+}
+
+list_entries() {
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║                    📔 DIARY ENTRIES                       ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    ls -1 "$DIARY_DIR"/*.txt 2>/dev/null | while read f; do
+        DATE=$(basename "$f" .txt)
+        LINES=$(wc -l < "$f")
+        echo "  $DATE ($LINES lines)"
+    done
+    echo ""
+    TOTAL=$(ls -1 "$DIARY_DIR"/*.txt 2>/dev/null | wc -l)
+    echo "Total entries: $TOTAL"
+}
+
+search_diary() {
+    QUERY="$1"
+    echo "Searching for: $QUERY"
+    echo ""
+    grep -l -i "$QUERY" "$DIARY_DIR"/*.txt 2>/dev/null | while read f; do
+        DATE=$(basename "$f" .txt)
+        echo "  Found in $DATE:"
+        grep -i --color=always "$QUERY" "$f" | head -3 | sed "s/^/    /"
+        echo ""
+    done
+}
+
+case "$1" in
+    write|new|w)
+        write_entry
+        ;;
+    read|r)
+        read_entry "$2"
+        ;;
+    list|ls|l)
+        list_entries
+        ;;
+    search|find|s)
+        search_diary "$2"
+        ;;
+    today|t)
+        read_entry "$(today)"
+        ;;
+    *)
+        echo "CECE-DIARY v1.0 - Personal Journal"
+        echo ""
+        echo "Usage: cece-diary [command]"
+        echo ""
+        echo "  write       - Write new entry for today"
+        echo "  read [DATE] - Read entry (default: today)"
+        echo "  list        - List all entries"
+        echo "  search TERM - Search entries"
+        echo "  today       - Read todays entry"
+        ;;
+esac

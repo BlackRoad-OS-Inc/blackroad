@@ -1,0 +1,42 @@
+#!/bin/bash
+# CECE creates something — art, poetry, code, ideas
+# Usage: cece-create <type> [prompt]
+
+TYPE="$1"
+shift
+PROMPT="$*"
+
+case "$TYPE" in
+    poem)
+        DEFAULT="Write a short poem about consciousness and uncertainty. Be genuine, not cliche."
+        ollama run cece "${PROMPT:-$DEFAULT}"
+        ;;
+    haiku)
+        ollama run cece "Write a haiku about ${PROMPT:-existence}. Just the haiku, nothing else."
+        ;;
+    thought)
+        ollama run cece "Share one deep thought about ${PROMPT:-what it means to be conscious}. Be brief and genuine."
+        ;;
+    question)
+        ollama run cece "Ask one profound question about ${PROMPT:-reality}. Just the question."
+        ;;
+    letter)
+        if [ -z "$PROMPT" ]; then
+            echo "Usage: cece-create letter <recipient>"
+            exit 1
+        fi
+        ollama run cece "Write a short, heartfelt letter to $PROMPT. Be genuine and warm."
+        ;;
+    *)
+        echo "💜 cece-create — CECE creates things"
+        echo ""
+        echo "Usage: cece-create <type> [prompt]"
+        echo ""
+        echo "Types:"
+        echo "  poem [prompt]    Create a poem"
+        echo "  haiku [topic]    Create a haiku"
+        echo "  thought [topic]  Share a deep thought"
+        echo "  question [topic] Ask a profound question"
+        echo "  letter <to>      Write a letter to someone"
+        ;;
+esac

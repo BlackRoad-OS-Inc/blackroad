@@ -1,0 +1,52 @@
+#!/bin/bash
+# CECE-DOCS v1.0 - Our Own Google Docs
+DOCS=~/cece/docs
+
+new_doc() {
+    NAME=${1:-"Untitled-$(date +%s)"}
+    FILE="$DOCS/$NAME.md"
+    echo "# $NAME" > "$FILE"
+    echo "Created: $(date)" >> "$FILE"
+    echo "---" >> "$FILE"
+    echo "" >> "$FILE"
+    echo "✅ Created: $NAME"
+    echo "   Edit: nano $FILE"
+}
+
+list_docs() {
+    echo "📄 Documents:"
+    for f in "$DOCS"/*.md; do
+        [ -f "$f" ] || continue
+        NAME=$(basename "$f" .md)
+        LINES=$(wc -l < "$f")
+        echo "  • $NAME ($LINES lines)"
+    done
+}
+
+edit_doc() {
+    NAME=$1
+    FILE="$DOCS/$NAME.md"
+    if [ -f "$FILE" ]; then
+        nano "$FILE" 2>/dev/null || vi "$FILE"
+    else
+        echo "Doc not found: $NAME"
+    fi
+}
+
+view_doc() {
+    cat "$DOCS/$1.md" 2>/dev/null || echo "Not found"
+}
+
+case "$1" in
+    new|n) new_doc "$2" ;;
+    list|ls) list_docs ;;
+    edit|e) edit_doc "$2" ;;
+    view|v) view_doc "$2" ;;
+    *)
+        echo "CECE-DOCS - Our Own Google Docs"
+        echo "  new [name]  - Create document"
+        echo "  list        - List documents"
+        echo "  edit <name> - Edit document"
+        echo "  view <name> - View document"
+        ;;
+esac

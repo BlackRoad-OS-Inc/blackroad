@@ -1,0 +1,13 @@
+#!/bin/bash
+# CECE-REDIS v1.0 - Redis Client
+set_val() { redis-cli SET "$1" "$2" 2>/dev/null || echo "Redis not available"; }
+get_val() { redis-cli GET "$1" 2>/dev/null || echo "Redis not available"; }
+del_val() { redis-cli DEL "$1" 2>/dev/null || echo "Redis not available"; }
+keys() { redis-cli KEYS "*" 2>/dev/null || echo "Redis not available"; }
+case "$1" in
+    set) set_val "$2" "$3" ;;
+    get) get_val "$2" ;;
+    del) del_val "$2" ;;
+    keys) keys ;;
+    *) echo "CECE-REDIS: set <key> <val> | get <key> | del <key> | keys" ;;
+esac

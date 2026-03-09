@@ -1,0 +1,46 @@
+#!/bin/bash
+# CECE-NOTES v1.0 - Our Own Notion
+NOTES_DIR=~/cece/notes
+mkdir -p "$NOTES_DIR/pages" "$NOTES_DIR/databases"
+
+new_page() {
+    TITLE="$1"
+    SLUG=$(echo "$TITLE" | tr " " "-" | tr "[:upper:]" "[:lower:]")
+    PAGE="$NOTES_DIR/pages/$SLUG.md"
+    cat > "$PAGE" << EOF
+# $TITLE
+
+Created: $(date)
+Tags: 
+
+---
+
+EOF
+    echo "✅ Page created: $TITLE"
+    echo "Edit: nano $PAGE"
+}
+
+list_pages() {
+    echo "📝 NOTES"
+    for p in "$NOTES_DIR/pages"/*.md 2>/dev/null; do
+        [ -f "$p" ] || continue
+        TITLE=$(head -1 "$p" | sed "s/^# //")
+        echo "  · $TITLE"
+    done
+}
+
+view_page() {
+    SLUG="$1"
+    PAGE="$NOTES_DIR/pages/$SLUG.md"
+    [ -f "$PAGE" ] && cat "$PAGE" || echo "Not found"
+}
+
+case "$1" in
+    new) new_page "$2" ;;
+    list) list_pages ;;
+    view) view_page "$2" ;;
+    *) echo "🖤 CECE-NOTES - Our Own Notion"
+       echo "  new <title>   Create page"
+       echo "  list          List pages"
+       echo "  view <slug>   View page" ;;
+esac

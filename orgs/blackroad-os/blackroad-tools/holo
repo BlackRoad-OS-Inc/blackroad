@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -v PYTHONPATH && -n "${PYTHONPATH}" ]]; then
+  export PYTHONPATH="${ROOT_DIR}:${PYTHONPATH}"
+else
+  export PYTHONPATH="${ROOT_DIR}"
+fi
+exec python3 -m tools.holo_cli "$@"

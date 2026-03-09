@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRoad Quantum — Documentation</title>
+    <style>
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --amber: #F5A623;
+            --orange: #F26522;
+            --hot-pink: #FF1D6C;
+            --magenta: #E91E63;
+            --electric-blue: #2979FF;
+            --sky-blue: #448AFF;
+            --violet: #9C27B0;
+            --deep-purple: #5E35B1;
+            
+            --gradient-brand: linear-gradient(135deg, var(--amber) 0%, var(--hot-pink) 38.2%, var(--violet) 61.8%, var(--electric-blue) 100%);
+            
+            --phi: 1.618;
+            --space-xs: 8px;
+            --space-sm: 13px;
+            --space-md: 21px;
+            --space-lg: 34px;
+            --space-xl: 55px;
+            --space-2xl: 89px;
+            --space-3xl: 144px;
+            
+            --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+            --ease-out: cubic-bezier(0, 0, 0.2, 1);
+            --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: var(--black);
+            color: var(--white);
+            overflow-x: hidden;
+            line-height: 1.618;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ========== NAVIGATION ========== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: var(--space-md) var(--space-xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: saturate(180%) blur(20px);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            text-decoration: none;
+            color: var(--white);
+        }
+
+        .nav-logo-mark {
+            width: 36px;
+            height: 36px;
+        }
+
+        .nav-logo-mark .road-dashes {
+            animation: dashes-spin 8s linear infinite;
+            transform-origin: 50px 50px;
+        }
+
+        @keyframes dashes-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .nav-logo-text {
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        .nav-search {
+            flex: 1;
+            max-width: 400px;
+            margin: 0 var(--space-xl);
+        }
+
+        .nav-search input {
+            width: 100%;
+            padding: var(--space-xs) var(--space-md);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--space-xs);
+            color: var(--white);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s var(--ease);
+        }
+
+        .nav-search input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-search input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 29, 108, 0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: var(--space-lg);
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s var(--ease);
+        }
+
+        .nav-links a:hover {
+            color: var(--white);
+        }
+
+        /* ========== SCROLL PROGRESS ========== */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: var(--gradient-brand);
+            z-index: 9999;
+            width: 0%;
+        }
+
+        /* ========== DOCS LAYOUT ========== */
+        .docs-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr 220px;
+            gap: var(--space-xl);
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: calc(80px + var(--space-xl)) var(--space-xl) var(--space-xl);
+            min-height: 100vh;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .docs-sidebar {
+            position: sticky;
+            top: calc(80px + var(--space-xl));
+            height: fit-content;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            padding-right: var(--space-md);
+        }
+
+        .docs-sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .docs-sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .docs-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .sidebar-section {
+            margin-bottom: var(--space-lg);
+        }
+
+        .sidebar-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: var(--space-sm);
+            padding-left: var(--space-sm);
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-xs) var(--space-sm);
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 14px;
+            border-radius: var(--space-xs);
+            transition: all 0.2s var(--ease);
+        }
+
+        .sidebar-link:hover {
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-link.active {
+            color: var(--hot-pink);
+            background: rgba(255, 29, 108, 0.1);
+        }
+
+        .sidebar-link svg {
+            width: 16px;
+            height: 16px;
+            opacity: 0.5;
+        }
+
+        .sidebar-nested {
+            margin-left: var(--space-md);
+            padding-left: var(--space-sm);
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-nested .sidebar-link {
+            font-size: 13px;
+            padding: 6px var(--space-sm);
+        }
+
+        /* ========== MAIN CONTENT ========== */
+        .docs-content {
+            min-width: 0;
+        }
+
+        .docs-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: var(--space-lg);
+        }
+
+        .docs-breadcrumb a {
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            transition: color 0.2s var(--ease);
+        }
+
+        .docs-breadcrumb a:hover {
+            color: var(--white);
+        }
+
+        .docs-breadcrumb span {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .docs-title {
+            font-size: clamp(34px, 4vw, 48px);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: var(--space-md);
+        }
+
+        .docs-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--space-lg);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: var(--space-xl);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .docs-meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        /* ========== ARTICLE CONTENT ========== */
+        .docs-article {
+            max-width: 100%;
+        }
+
+        .docs-article h2 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-top: var(--space-2xl);
+            margin-bottom: var(--space-md);
+            padding-top: var(--space-md);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .docs-article h2:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        .docs-article h3 {
+            font-size: 21px;
+            font-weight: 600;
+            margin-top: var(--space-xl);
+            margin-bottom: var(--space-sm);
+        }
+
+        .docs-article p {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: var(--space-md);
+            line-height: 1.75;
+        }
+
+        .docs-article ul,
+        .docs-article ol {
+            margin-bottom: var(--space-md);
+            padding-left: var(--space-lg);
+        }
+
+        .docs-article li {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: var(--space-xs);
+            line-height: 1.6;
+        }
+
+        .docs-article a {
+            color: var(--hot-pink);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s var(--ease);
+        }
+
+        .docs-article a:hover {
+            border-bottom-color: var(--hot-pink);
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--space-sm);
+            margin-bottom: var(--space-lg);
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-sm) var(--space-md);
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .code-lang {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .code-copy {
+            padding: var(--space-xs) var(--space-sm);
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 4px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s var(--ease);
+        }
+
+        .code-copy:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+        }
+
+        .code-content {
+            padding: var(--space-md);
+            overflow-x: auto;
+        }
+
+        .code-content pre {
+            margin: 0;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .code-content .comment { color: rgba(255, 255, 255, 0.3); }
+        .code-content .keyword { color: var(--hot-pink); }
+        .code-content .string { color: var(--amber); }
+        .code-content .function { color: var(--electric-blue); }
+        .code-content .number { color: var(--violet); }
+
+        /* Callout Boxes */
+        .callout {
+            padding: var(--space-md);
+            border-radius: var(--space-sm);
+            margin-bottom: var(--space-lg);
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .callout-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .callout-content {
+            flex: 1;
+        }
+
+        .callout-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .callout-text {
+            font-size: 14px;
+            opacity: 0.8;
+            margin: 0;
+        }
+
+        .callout-info {
+            background: rgba(41, 121, 255, 0.1);
+            border: 1px solid rgba(41, 121, 255, 0.2);
+        }
+
+        .callout-warning {
+            background: rgba(245, 166, 35, 0.1);
+            border: 1px solid rgba(245, 166, 35, 0.2);
+        }
+
+        .callout-danger {
+            background: rgba(255, 29, 108, 0.1);
+            border: 1px solid rgba(255, 29, 108, 0.2);
+        }
+
+        .callout-success {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: var(--space-lg);
+        }
+
+        .docs-table th,
+        .docs-table td {
+            padding: var(--space-sm) var(--space-md);
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 14px;
+        }
+
+        .docs-table th {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table td {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .docs-table code {
+            background: rgba(255, 29, 108, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', monospace;
+            font-size: 13px;
+            color: var(--hot-pink);
+        }
+
+        /* Navigation Buttons */
+        .docs-nav-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-md);
+            margin-top: var(--space-2xl);
+            padding-top: var(--space-xl);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .docs-nav-btn {
+            padding: var(--space-md);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--space-sm);
+            text-decoration: none;
+            transition: all 0.3s var(--ease);
+        }
+
+        .docs-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .docs-nav-btn-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .docs-nav-btn-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .docs-nav-btn-title svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .docs-nav-btn.prev {
+            text-align: left;
+        }
+
+        .docs-nav-btn.next {
+            text-align: right;
+        }
+
+        .docs-nav-btn.next .docs-nav-btn-title {
+            justify-content: flex-end;
+        }
+
+        /* ========== TABLE OF CONTENTS ========== */
+        .docs-toc {
+            position: sticky;
+            top: calc(80px + var(--space-xl));
+            height: fit-content;
+        }
+
+        .toc-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: var(--space-sm);
+        }
+
+        .toc-list {
+            list-style: none;
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .toc-item {
+            padding-left: var(--space-sm);
+        }
+
+        .toc-link {
+            display: block;
+            padding: 6px 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            transition: color 0.2s var(--ease);
+            border-left: 2px solid transparent;
+            margin-left: -1px;
+            padding-left: var(--space-sm);
+        }
+
+        .toc-link:hover {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .toc-link.active {
+            color: var(--hot-pink);
+            border-left-color: var(--hot-pink);
+        }
+
+        .toc-nested {
+            padding-left: var(--space-sm);
+        }
+
+        .toc-nested .toc-link {
+            font-size: 12px;
+        }
+
+        /* ========== FOOTER ========== */
+        footer {
+            background: var(--black);
+            padding: var(--space-xl);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            text-align: center;
+        }
+
+        footer p {
+            font-size: 13px;
+            opacity: 0.3;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 1200px) {
+            .docs-layout {
+                grid-template-columns: 260px 1fr;
+            }
+
+            .docs-toc {
+                display: none;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .docs-layout {
+                grid-template-columns: 1fr;
+                padding-top: calc(80px + var(--space-md));
+            }
+
+            .docs-sidebar {
+                position: relative;
+                top: 0;
+                max-height: none;
+                display: none;
+            }
+
+            .nav-search {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                padding: var(--space-sm) var(--space-md);
+            }
+
+            .docs-layout {
+                padding: calc(70px + var(--space-md)) var(--space-md) var(--space-md);
+            }
+
+            .docs-nav-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Scroll Progress -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="#" class="nav-logo">
+            <div class="nav-logo-mark">
+                <svg viewBox="0 0 100 100" fill="none">
+                    <circle cx="50" cy="50" r="44" stroke="#FF1D6C" stroke-width="6"/>
+                    <g class="road-dashes">
+                        <rect x="47" y="4" width="6" height="12" fill="#000" rx="2"/>
+                        <rect x="47" y="84" width="6" height="12" fill="#000" rx="2"/>
+                        <rect x="84" y="47" width="12" height="6" fill="#000" rx="2"/>
+                        <rect x="4" y="47" width="12" height="6" fill="#000" rx="2"/>
+                        <rect x="75" y="18" width="6" height="10" fill="#000" rx="2" transform="rotate(45 78 23)"/>
+                        <rect x="19" y="72" width="6" height="10" fill="#000" rx="2" transform="rotate(45 22 77)"/>
+                        <rect x="72" y="72" width="6" height="10" fill="#000" rx="2" transform="rotate(-45 75 77)"/>
+                        <rect x="22" y="18" width="6" height="10" fill="#000" rx="2" transform="rotate(-45 25 23)"/>
+                    </g>
+                    <path d="M50 10C27.9 10 10 27.9 10 50H90C90 27.9 72.1 10 50 10Z" fill="#F5A623"/>
+                    <path d="M10 50C10 72.1 27.9 90 50 90C72.1 90 90 72.1 90 50H10Z" fill="#2979FF"/>
+                    <circle cx="50" cy="50" r="14" fill="#000"/>
+                </svg>
+            </div>
+            <span class="nav-logo-text">BlackRoad Quantum</span>
+        </a>
+        <div class="nav-search">
+            <input type="text" placeholder="[SEARCH_PLACEHOLDER]">
+        </div>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">About</a>
+            <a href="#">Docs</a>
+        </div>
+    </nav>
+
+    <!-- Docs Layout -->
+    <div class="docs-layout">
+        <!-- Sidebar -->
+        <aside class="docs-sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">[SIDEBAR_SECTION_1_TITLE]</div>
+                <nav class="sidebar-nav">
+                    <a href="#" class="sidebar-link active">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                        [SIDEBAR_LINK_1_1]
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        [SIDEBAR_LINK_1_2]
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                        [SIDEBAR_LINK_1_3]
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">[SIDEBAR_SECTION_2_TITLE]</div>
+                <nav class="sidebar-nav">
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                        [SIDEBAR_LINK_2_1]
+                    </a>
+                    <div class="sidebar-nested">
+                        <a href="#" class="sidebar-link">[SIDEBAR_NESTED_2_1_1]</a>
+                        <a href="#" class="sidebar-link">[SIDEBAR_NESTED_2_1_2]</a>
+                        <a href="#" class="sidebar-link">[SIDEBAR_NESTED_2_1_3]</a>
+                    </div>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        [SIDEBAR_LINK_2_2]
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        [SIDEBAR_LINK_2_3]
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">[SIDEBAR_SECTION_3_TITLE]</div>
+                <nav class="sidebar-nav">
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        [SIDEBAR_LINK_3_1]
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        [SIDEBAR_LINK_3_2]
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        [SIDEBAR_LINK_3_3]
+                    </a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="docs-content">
+            <div class="docs-breadcrumb">
+                <a href="#">[BREADCRUMB_1]</a>
+                <span>/</span>
+                <a href="#">[BREADCRUMB_2]</a>
+                <span>/</span>
+                [BREADCRUMB_CURRENT]
+            </div>
+
+            <h1 class="docs-title">Quantum Computing Documentation</h1>
+
+            <div class="docs-meta">
+                <div class="docs-meta-item">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    [DOC_READ_TIME]
+                </div>
+                <div class="docs-meta-item">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    [DOC_LAST_UPDATED]
+                </div>
+            </div>
+
+            <article class="docs-article">
+                <h2 id="overview">[SECTION_1_TITLE]</h2>
+                <p>[SECTION_1_PARAGRAPH_1]</p>
+                <p>[SECTION_1_PARAGRAPH_2]</p>
+
+                <div class="callout callout-info">
+                    <span class="callout-icon">💡</span>
+                    <div class="callout-content">
+                        <div class="callout-title">[CALLOUT_INFO_TITLE]</div>
+                        <p class="callout-text">[CALLOUT_INFO_TEXT]</p>
+                    </div>
+                </div>
+
+                <h2 id="installation">[SECTION_2_TITLE]</h2>
+                <p>[SECTION_2_PARAGRAPH_1]</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">[CODE_BLOCK_1_LANG]</span>
+                        <button class="code-copy">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="comment">[CODE_COMMENT_1]</span>
+<span class="keyword">[CODE_KEYWORD_1]</span> <span class="function">[CODE_FUNCTION_1]</span>(<span class="string">[CODE_STRING_1]</span>);
+
+<span class="comment">[CODE_COMMENT_2]</span>
+<span class="keyword">[CODE_KEYWORD_2]</span> config = {
+    <span class="string">[CODE_PROP_1]</span>: <span class="string">[CODE_VAL_1]</span>,
+    <span class="string">[CODE_PROP_2]</span>: <span class="number">[CODE_VAL_2]</span>,
+    <span class="string">[CODE_PROP_3]</span>: <span class="keyword">[CODE_VAL_3]</span>
+};</pre>
+                    </div>
+                </div>
+
+                <h3 id="requirements">[SUBSECTION_2_1_TITLE]</h3>
+                <p>[SUBSECTION_2_1_PARAGRAPH]</p>
+
+                <ul>
+                    <li>[REQUIREMENT_1]</li>
+                    <li>[REQUIREMENT_2]</li>
+                    <li>[REQUIREMENT_3]</li>
+                    <li>[REQUIREMENT_4]</li>
+                </ul>
+
+                <div class="callout callout-warning">
+                    <span class="callout-icon">⚠️</span>
+                    <div class="callout-content">
+                        <div class="callout-title">[CALLOUT_WARNING_TITLE]</div>
+                        <p class="callout-text">[CALLOUT_WARNING_TEXT]</p>
+                    </div>
+                </div>
+
+                <h2 id="configuration">[SECTION_3_TITLE]</h2>
+                <p>[SECTION_3_PARAGRAPH_1]</p>
+
+                <table class="docs-table">
+                    <thead>
+                        <tr>
+                            <th>[TABLE_COL_1]</th>
+                            <th>[TABLE_COL_2]</th>
+                            <th>[TABLE_COL_3]</th>
+                            <th>[TABLE_COL_4]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>[TABLE_ROW_1_COL_1]</code></td>
+                            <td>[TABLE_ROW_1_COL_2]</td>
+                            <td><code>[TABLE_ROW_1_COL_3]</code></td>
+                            <td>[TABLE_ROW_1_COL_4]</td>
+                        </tr>
+                        <tr>
+                            <td><code>[TABLE_ROW_2_COL_1]</code></td>
+                            <td>[TABLE_ROW_2_COL_2]</td>
+                            <td><code>[TABLE_ROW_2_COL_3]</code></td>
+                            <td>[TABLE_ROW_2_COL_4]</td>
+                        </tr>
+                        <tr>
+                            <td><code>[TABLE_ROW_3_COL_1]</code></td>
+                            <td>[TABLE_ROW_3_COL_2]</td>
+                            <td><code>[TABLE_ROW_3_COL_3]</code></td>
+                            <td>[TABLE_ROW_3_COL_4]</td>
+                        </tr>
+                        <tr>
+                            <td><code>[TABLE_ROW_4_COL_1]</code></td>
+                            <td>[TABLE_ROW_4_COL_2]</td>
+                            <td><code>[TABLE_ROW_4_COL_3]</code></td>
+                            <td>[TABLE_ROW_4_COL_4]</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2 id="examples">[SECTION_4_TITLE]</h2>
+                <p>[SECTION_4_PARAGRAPH_1]</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">[CODE_BLOCK_2_LANG]</span>
+                        <button class="code-copy">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="keyword">[CODE_2_LINE_1]</span>
+<span class="function">[CODE_2_LINE_2]</span>
+    <span class="string">[CODE_2_LINE_3]</span>
+    <span class="number">[CODE_2_LINE_4]</span>
+<span class="keyword">[CODE_2_LINE_5]</span></pre>
+                    </div>
+                </div>
+
+                <div class="callout callout-success">
+                    <span class="callout-icon">✅</span>
+                    <div class="callout-content">
+                        <div class="callout-title">[CALLOUT_SUCCESS_TITLE]</div>
+                        <p class="callout-text">[CALLOUT_SUCCESS_TEXT]</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="docs-nav-buttons">
+                    <a href="#" class="docs-nav-btn prev">
+                        <span class="docs-nav-btn-label">[NAV_PREV_LABEL]</span>
+                        <span class="docs-nav-btn-title">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            [NAV_PREV_TITLE]
+                        </span>
+                    </a>
+                    <a href="#" class="docs-nav-btn next">
+                        <span class="docs-nav-btn-label">[NAV_NEXT_LABEL]</span>
+                        <span class="docs-nav-btn-title">
+                            [NAV_NEXT_TITLE]
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </span>
+                    </a>
+                </div>
+            </article>
+        </main>
+
+        <!-- Table of Contents -->
+        <aside class="docs-toc">
+            <div class="toc-title">[TOC_TITLE]</div>
+            <ul class="toc-list">
+                <li class="toc-item">
+                    <a href="#overview" class="toc-link active">[TOC_LINK_1]</a>
+                </li>
+                <li class="toc-item">
+                    <a href="#installation" class="toc-link">[TOC_LINK_2]</a>
+                    <ul class="toc-list toc-nested">
+                        <li class="toc-item">
+                            <a href="#requirements" class="toc-link">[TOC_LINK_2_1]</a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="toc-item">
+                    <a href="#configuration" class="toc-link">[TOC_LINK_3]</a>
+                </li>
+                <li class="toc-item">
+                    <a href="#examples" class="toc-link">[TOC_LINK_4]</a>
+                </li>
+            </ul>
+        </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2024-2025 BlackRoad Quantum · All Rights Reserved</p>
+    </footer>
+
+    <script>
+        // Scroll Progress
+        window.addEventListener('scroll', () => {
+            const progress = document.getElementById('scrollProgress');
+            const scrollTop = document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            progress.style.width = (scrollTop / scrollHeight) * 100 + '%';
+        });
+
+        // TOC Active State
+        const tocLinks = document.querySelectorAll('.toc-link');
+        const sections = document.querySelectorAll('h2[id], h3[id]');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            tocLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Copy Code
+        document.querySelectorAll('.code-copy').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const code = btn.closest('.code-block').querySelector('pre').textContent;
+                navigator.clipboard.writeText(code);
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        });
+    </script>
+
+</body>
+</html>

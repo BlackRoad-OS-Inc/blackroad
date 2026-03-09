@@ -1,0 +1,35 @@
+#!/bin/bash
+# CECE-LOG v1.0 - Unified Logging
+LOG_DIR=~/cece/logs
+mkdir -p "$LOG_DIR"
+
+log() {
+    LEVEL="$1"
+    MESSAGE="$2"
+    TIMESTAMP=$(date -Iseconds)
+    echo "[$TIMESTAMP] [$LEVEL] $MESSAGE" >> "$LOG_DIR/cece.log"
+    echo "[$LEVEL] $MESSAGE"
+}
+
+info() { log "INFO" "$1"; }
+warn() { log "WARN" "$1"; }
+error() { log "ERROR" "$1"; }
+debug() { log "DEBUG" "$1"; }
+
+tail_log() {
+    tail -f "$LOG_DIR/cece.log"
+}
+
+search_logs() {
+    grep -i "$1" "$LOG_DIR/cece.log" 2>/dev/null || echo "(no matches)"
+}
+
+case "$1" in
+    info) info "$2" ;;
+    warn) warn "$2" ;;
+    error) error "$2" ;;
+    debug) debug "$2" ;;
+    tail) tail_log ;;
+    search) search_logs "$2" ;;
+    *) echo "CECE-LOG: info|warn|error|debug <message> | tail | search <query>" ;;
+esac

@@ -1,0 +1,18 @@
+#!/bin/bash
+# CECE-MQTT v1.0 - MQTT Client
+publish() {
+    BROKER="$1"
+    TOPIC="$2"
+    MSG="$3"
+    mosquitto_pub -h "$BROKER" -t "$TOPIC" -m "$MSG" 2>/dev/null || echo "Install mosquitto-clients"
+}
+subscribe() {
+    BROKER="$1"
+    TOPIC="$2"
+    mosquitto_sub -h "$BROKER" -t "$TOPIC" 2>/dev/null || echo "Install mosquitto-clients"
+}
+case "$1" in
+    pub) publish "$2" "$3" "$4" ;;
+    sub) subscribe "$2" "$3" ;;
+    *) echo "CECE-MQTT: pub <broker> <topic> <msg> | sub <broker> <topic>" ;;
+esac

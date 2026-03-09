@@ -1,0 +1,47 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main, master, production]
+  pull_request:
+    branches: [main, master, production]
+  workflow_dispatch:
+
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: |
+          if [ -f railway.toml ] || [ -f railway.json ]; then
+            echo "✅ Railway config found, deploying..."
+            railway up
+          else
+            echo "⚠️  No Railway config found, skipping deployment"
+          fi
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Health Check
+        if: success()
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+
+          # Get deployment URL from Railway
+          DEPLOYMENT_URL=$(railway status --json | jq -r '.deployments[0].url' || echo "")
+
+          if [ -n "$DEPLOYMENT_URL" ]; then
+            echo "Testing health endpoint at: $DEPLOYMENT_URL/health"
+            curl -f "$DEPLOYMENT_URL/health" || echo "⚠️  Health check not available"
+          fi

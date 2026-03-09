@@ -18,7 +18,4 @@ let package = Package(
         .target(
             name: "BlackRoadMac",
             path: "Sources/BlackRoadMac",
-            swiftSettings: [.define("MACOS")]
-        ),
-    ]
-)
+        

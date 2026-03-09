@@ -1,0 +1,50 @@
+#!/bin/bash
+# CECE-LOGS v1.0 - Our Own Splunk/Loggly
+LOGS_DIR=~/cece/logs
+mkdir -p "$LOGS_DIR/streams"
+
+log() {
+    STREAM="${1:-default}"
+    LEVEL="${2:-info}"
+    shift 2
+    MSG="$*"
+    echo "{\"time\":\"$(date -Iseconds)\",\"level\":\"$LEVEL\",\"message\":\"$MSG\"}" >> "$LOGS_DIR/streams/$STREAM.log"
+    echo "[$LEVEL] $MSG"
+}
+
+tail_log() {
+    STREAM="${1:-default}"
+    echo "📜 Tailing $STREAM..."
+    tail -f "$LOGS_DIR/streams/$STREAM.log" 2>/dev/null
+}
+
+search() {
+    QUERY="$1"
+    echo "🔍 Searching logs for: $QUERY"
+    echo "═══════════════════════════════════════"
+    grep -r -i "$QUERY" "$LOGS_DIR/streams/" 2>/dev/null | head -20
+}
+
+stats() {
+    echo "📊 LOG STATS"
+    echo "═══════════════════════════════════════"
+    for s in "$LOGS_DIR/streams"/*.log 2>/dev/null; do
+        [ -f "$s" ] || continue
+        NAME=$(basename "$s" .log)
+        LINES=$(wc -l < "$s")
+        ERRORS=$(grep -c "error" "$s" 2>/dev/null || echo 0)
+        echo "  $NAME: $LINES entries, $ERRORS errors"
+    done
+}
+
+case "$1" in
+    log) log "$2" "$3" "${@:4}" ;;
+    tail) tail_log "$2" ;;
+    search) search "$2" ;;
+    stats) stats ;;
+    *) echo "🖤 CECE-LOGS - Our Own Splunk"
+       echo "  log <stream> <level> <msg>  Write log"
+       echo "  tail <stream>               Tail logs"
+       echo "  search <query>              Search logs"
+       echo "  stats                       View stats" ;;
+esac

@@ -1,0 +1,16 @@
+#!/bin/bash
+# CECE-PROJECT v1.0 - Project Manager
+PROJ_DIR=~/cece/projects
+mkdir -p "$PROJ_DIR"
+create() {
+    NAME="$1"
+    mkdir -p "$PROJ_DIR/$NAME"/{src,docs,tests}
+    echo "# $NAME" > "$PROJ_DIR/$NAME/README.md"
+    echo "Project created: $PROJ_DIR/$NAME"
+}
+list() { ls -1 "$PROJ_DIR" 2>/dev/null || echo "No projects"; }
+case "$1" in
+    create) create "$2" ;;
+    list) list ;;
+    *) echo "CECE-PROJECT: create <name> | list" ;;
+esac

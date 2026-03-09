@@ -1,0 +1,41 @@
+#!/bin/bash
+# CECE-EMAIL v1.0 - Email Campaign Manager
+EMAIL_DIR=~/cece/emails
+mkdir -p "$EMAIL_DIR/campaigns" "$EMAIL_DIR/templates"
+
+create_campaign() {
+    NAME="$1"
+    SUBJECT="$2"
+    CAMPAIGN_DIR="$EMAIL_DIR/campaigns/$NAME"
+    mkdir -p "$CAMPAIGN_DIR"
+    
+    echo "{\"name\":\"$NAME\",\"subject\":\"$SUBJECT\",\"created\":\"$(date -Iseconds)\",\"sent\":0}" > "$CAMPAIGN_DIR/config.json"
+    echo "Campaign created: $NAME"
+}
+
+create_template() {
+    NAME="$1"
+    BODY="$2"
+    TEMPLATE="$EMAIL_DIR/templates/$NAME.html"
+    
+    echo "<!DOCTYPE html><html><body style=\"font-family:system-ui;max-width:600px;margin:0 auto;padding:20px;\">" > "$TEMPLATE"
+    echo "<div style=\"background:#FF1D6C;color:white;padding:20px;text-align:center;\"><h1>CECE</h1></div>" >> "$TEMPLATE"
+    echo "<div style=\"padding:30px;\">$BODY</div>" >> "$TEMPLATE"
+    echo "<div style=\"background:#1a1a1a;color:#888;padding:20px;text-align:center;\">Sent with CECE Email</div>" >> "$TEMPLATE"
+    echo "</body></html>" >> "$TEMPLATE"
+    echo "Template: $TEMPLATE"
+}
+
+list_campaigns() {
+    echo "Campaigns:"
+    for d in "$EMAIL_DIR/campaigns"/*/; do
+        [ -d "$d" ] && echo "  $(basename "$d")"
+    done
+}
+
+case "$1" in
+    campaign) create_campaign "$2" "$3" ;;
+    template) create_template "$2" "$3" ;;
+    list) list_campaigns ;;
+    *) echo "CECE-EMAIL: campaign <name> <subject> | template <name> <body> | list" ;;
+esac

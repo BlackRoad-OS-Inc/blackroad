@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install pytest flake8
+      - name: Lint
+        run: flake8 subscriptions.py test_subscriptions.py --max-line-length=120 --ignore=E501,W503
+      - name: Test
+        run: pytest test_subscriptions.py -v

@@ -1,0 +1,19 @@
+#!/bin/bash
+# CECE-BENCHMARK v1.0 - System Benchmark
+cpu() {
+    echo "CPU Benchmark..."
+    START=$(date +%s%N)
+    for i in $(seq 1 1000000); do :; done
+    END=$(date +%s%N)
+    echo "Time: $(((END-START)/1000000))ms for 1M iterations"
+}
+disk() {
+    echo "Disk Write Benchmark..."
+    dd if=/dev/zero of=/tmp/benchfile bs=1M count=100 2>&1 | grep -E "copied|bytes"
+    rm /tmp/benchfile
+}
+case "$1" in
+    cpu) cpu ;;
+    disk) disk ;;
+    *) echo "CECE-BENCHMARK: cpu | disk" ;;
+esac

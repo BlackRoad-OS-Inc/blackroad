@@ -1,0 +1,42 @@
+#!/bin/bash
+# CECE-MEET v1.0 - Our Own Zoom (Text-based meetings)
+MEET_DIR=~/cece/meet
+mkdir -p "$MEET_DIR"
+
+create_room() {
+    ROOM=${1:-$(date +%s | md5sum | head -c 6)}
+    touch "$MEET_DIR/$ROOM.room"
+    IP=$(hostname -I | awk "{print \$1}")
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║  🎥 MEETING ROOM CREATED                                  ║"
+    echo "╠═══════════════════════════════════════════════════════════╣"
+    echo "║  Room: $ROOM"
+    echo "║  Join: ssh cecilia \"~/cece/apps/cece-meet join $ROOM\""
+    echo "╚═══════════════════════════════════════════════════════════╝"
+}
+
+join_room() {
+    ROOM=$1
+    USER=$(whoami)
+    echo "[$USER joined the meeting]" >> "$MEET_DIR/$ROOM.room"
+    echo "🎥 Joined room: $ROOM (type to chat, Ctrl+C to leave)"
+    tail -f "$MEET_DIR/$ROOM.room" &
+    TAIL_PID=$!
+    while read line; do
+        echo "[$(date +%H:%M)] $USER: $line" >> "$MEET_DIR/$ROOM.room"
+    done
+    kill $TAIL_PID 2>/dev/null
+}
+
+case "$1" in
+    create|new|c) create_room "$2" ;;
+    join|j) join_room "$2" ;;
+    list) ls "$MEET_DIR"/*.room 2>/dev/null | xargs -I{} basename {} .room ;;
+    *)
+        echo "CECE-MEET - Our Own Zoom"
+        echo "  create [name] - Create meeting room"
+        echo "  join <name>   - Join meeting"
+        echo "  list          - List active rooms"
+        ;;
+esac

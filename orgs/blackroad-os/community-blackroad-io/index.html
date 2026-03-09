@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Hub - BlackRoad OS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff00;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-purple);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink), var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 3rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .card h2 {
+            color: var(--accent-purple);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .discussion-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .discussion-item:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .discussion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .discussion-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .discussion-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .discussion-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .discussion-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(119, 0, 255, 0.2);
+            border: 1px solid var(--accent-purple);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--accent-purple);
+            margin-right: 0.5rem;
+        }
+
+        .trending-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .trending-item:hover {
+            background: rgba(119, 0, 255, 0.05);
+        }
+
+        .trending-item:last-child {
+            border-bottom: none;
+        }
+
+        .trending-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .trending-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .member-item:last-child {
+            border-bottom: none;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .member-role {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .member-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--accent-purple);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #8800ff;
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .event-item {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--accent-purple);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .event-date {
+            font-size: 0.85rem;
+            color: var(--accent-purple);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-description {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .event-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .categories {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .category-btn:hover, .category-btn.active {
+            background: var(--accent-purple);
+            color: #fff;
+            border-color: var(--accent-purple);
+        }
+
+        .resource-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .resource-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .resource-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .resource-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .resource-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .resource-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">👥 Community Hub</div>
+        <nav class="nav">
+            <div class="nav-link active">Discussions</div>
+            <div class="nav-link">Events</div>
+            <div class="nav-link">Resources</div>
+            <div class="nav-link">Members</div>
+        </nav>
+        <button class="btn btn-primary">+ New Discussion</button>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h1>BlackRoad Community</h1>
+            <p>Connect, learn, and build together with developers worldwide</p>
+
+            <div class="stats-row">
+                <div class="stat">
+                    <div class="stat-value">8,432</div>
+                    <div class="stat-label">Members</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">1,234</div>
+                    <div class="stat-label">Discussions</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">456</div>
+                    <div class="stat-label">Projects</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">89</div>
+                    <div class="stat-label">Events</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="categories">
+            <button class="category-btn active">All</button>
+            <button class="category-btn">🤖 AI & ML</button>
+            <button class="category-btn">⚛️ Quantum</button>
+            <button class="category-btn">💻 Development</button>
+            <button class="category-btn">🚀 Deployment</button>
+            <button class="category-btn">💡 Ideas</button>
+            <button class="category-btn">❓ Support</button>
+        </div>
+
+        <div class="grid">
+            <div>
+                <div class="card">
+                    <h2>💬 Recent Discussions</h2>
+
+                    <div class="discussion-item">
+                        <div class="discussion-header">
+                            <div>
+                                <div class="discussion-title">How to optimize inference latency for real-time applications?</div>
+                                <div class="discussion-meta">
+                                    <div class="user-avatar">AJ</div>
+                                    <span>Alex Johnson</span>
+                                    <span>•</span>
+                                    <span>2 hours ago</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                            I'm building a real-time chat application and need to keep latency under 100ms...
+                        </p>
+                        <div>
+                            <span class="tag">AI</span>
+                            <span class="tag">Performance</span>
+                        </div>
+                        <div class="discussion-stats">
+                            <div class="discussion-stat">
+                                <span>👍</span>
+                                <span>23</span>
+                            </div>
+                            <div class="discussion-stat">
+                                <span>💬</span>
+                                <span>12 replies</span>
+                            </div>
+                            <div class="discussion-stat">
+                                <span>👁️</span>
+                                <span>342 views</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="discussion-item">
+                        <div class="discussion-header">
+                            <div>
+                                <div class="discussion-title">Quantum circuit optimization techniques</div>
+                                <div class="discussion-meta">
+                                    <div class="user-avatar">SM</div>
+                                    <span>Sarah Miller</span>
+                                    <span>•</span>
+                                    <span>5 hours ago</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                            What are the best practices for optimizing quantum circuits with 20+ qubits?
+                        </p>
+                        <div>
+                            <span class="tag">Quantum</span>
+                            <span class="tag">Optimization</span>
+                        </div>
+                        <div class="discussion-stats">
+                            <div class="discussion-stat">
+                                <span>👍</span>
+                                <span>45</span>
+                            </div>
+                            <div class="discussion-stat">
+                                <span>💬</span>
+                                <span>28 replies</span>
+                            </div>
+                            <div class="discussion-stat">
+                                <span>👁️</span>
+                                <span>567 views</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="discussion-item">
+                        <div class="discussion-header">
+                            <div>
+                                <div class="discussion-title">Show & Tell: Built an autonomous trading agent</div>
+                                <div class="discussion-meta">
+                                    <div class="user-avatar">MK</div>
+                                    <span>Mike Kim</span>
+                                    <span>•</span>
+                                    <span>1 day ago</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                            Just deployed an agent that analyzes market data and executes trades. Check it out!
+                        </p>
+                        <div>
+                            <span class="tag">Agents</span>
+                            <span class="tag">Showcase</span>
+                        </div>
+                        <div class="discussion-stats">
+                            <div class="discussion-stat">
+                                <span>👍</span>
+                                <span>89</span>
+                            </div>
+                            <div class="discussion-stat">
+                                <span>💬</span>
+                                <span>34 replies</span>
+                            </div>
+                            <div class="discussion-stat">
+                                <span>👁️</span>
+                                <span>1,234 views</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="discussion-item">
+                        <div class="discussion-header">
+                            <div>
+                                <div class="discussion-title">Best practices for agent orchestration?</div>
+                                <div class="discussion-meta">
+                                    <div class="user-avatar">LC</div>
+                                    <span>Lisa Chen</span>
+                                    <span>•</span>
+                                    <span>2 days ago</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                            Running 50+ agents and looking for orchestration patterns...
+                        </p>
+                        <div>
+                            <span class="tag">Agents</span>
+                            <span class="tag">Architecture</span>
+                        </div>
+                        <div class="discussion-stats">
+                            <div class="discussion-stat">
+                                <span>👍</span>
+                                <span>67</span>
+                            </div>
+                            <div class="discussion-stat">
+                                <span>💬</span>
+                                <span>45 replies</span>
+                            </div>
+                            <div class="discussion-stat">
+                                <span>👁️</span>
+                                <span>890 views</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 2rem;">
+                    <h2>📅 Upcoming Events</h2>
+
+                    <div class="event-item">
+                        <div class="event-date">🗓️ Tomorrow, 2:00 PM PST</div>
+                        <div class="event-title">AI Agent Workshop: Building Autonomous Systems</div>
+                        <div class="event-description">
+                            Learn how to build and deploy autonomous AI agents with real-world examples
+                        </div>
+                        <div class="event-meta">
+                            <span>👥 234 attending</span>
+                            <span>•</span>
+                            <span>Online</span>
+                        </div>
+                    </div>
+
+                    <div class="event-item">
+                        <div class="event-date">🗓️ Jan 25, 10:00 AM EST</div>
+                        <div class="event-title">Quantum Computing Deep Dive</div>
+                        <div class="event-description">
+                            Advanced quantum circuit design and optimization techniques
+                        </div>
+                        <div class="event-meta">
+                            <span>👥 156 attending</span>
+                            <span>•</span>
+                            <span>Online</span>
+                        </div>
+                    </div>
+
+                    <div class="event-item">
+                        <div class="event-date">🗓️ Feb 1, 3:00 PM GMT</div>
+                        <div class="event-title">BlackRoad API Masterclass</div>
+                        <div class="event-description">
+                            Master the BlackRoad API with hands-on examples and Q&A
+                        </div>
+                        <div class="event-meta">
+                            <span>👥 412 attending</span>
+                            <span>•</span>
+                            <span>Online</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h2>🔥 Trending Topics</h2>
+
+                    <div class="trending-item">
+                        <div class="trending-title">Multi-agent coordination patterns</div>
+                        <div class="trending-meta">89 discussions • 2.3k views</div>
+                    </div>
+
+                    <div class="trending-item">
+                        <div class="trending-title">Quantum error correction</div>
+                        <div class="trending-meta">67 discussions • 1.8k views</div>
+                    </div>
+
+                    <div class="trending-item">
+                        <div class="trending-title">Real-time inference optimization</div>
+                        <div class="trending-meta">134 discussions • 3.1k views</div>
+                    </div>
+
+                    <div class="trending-item">
+                        <div class="trending-title">Agent security best practices</div>
+                        <div class="trending-meta">45 discussions • 987 views</div>
+                    </div>
+
+                    <div class="trending-item">
+                        <div class="trending-title">Hybrid quantum-classical algorithms</div>
+                        <div class="trending-meta">78 discussions • 2.1k views</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>⭐ Top Contributors</h2>
+
+                    <div class="member-item">
+                        <div class="user-avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">SM</div>
+                        <div class="member-info">
+                            <div class="member-name">Sarah Miller</div>
+                            <div class="member-role">Quantum Researcher</div>
+                            <div class="member-stats">
+                                <span>234 posts</span>
+                                <span>•</span>
+                                <span>1.2k helpful</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="member-item">
+                        <div class="user-avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">AJ</div>
+                        <div class="member-info">
+                            <div class="member-name">Alex Johnson</div>
+                            <div class="member-role">AI Engineer</div>
+                            <div class="member-stats">
+                                <span>198 posts</span>
+                                <span>•</span>
+                                <span>987 helpful</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="member-item">
+                        <div class="user-avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">MK</div>
+                        <div class="member-info">
+                            <div class="member-name">Mike Kim</div>
+                            <div class="member-role">Full Stack Dev</div>
+                            <div class="member-stats">
+                                <span>167 posts</span>
+                                <span>•</span>
+                                <span>834 helpful</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="member-item">
+                        <div class="user-avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">LC</div>
+                        <div class="member-info">
+                            <div class="member-name">Lisa Chen</div>
+                            <div class="member-role">DevOps Lead</div>
+                            <div class="member-stats">
+                                <span>145 posts</span>
+                                <span>•</span>
+                                <span>756 helpful</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📚 Community Resources</h2>
+
+            <div class="resource-grid">
+                <div class="resource-card">
+                    <div class="resource-icon">📖</div>
+                    <div class="resource-title">Learning Paths</div>
+                    <div class="resource-description">Structured guides to master BlackRoad</div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-icon">💻</div>
+                    <div class="resource-title">Code Examples</div>
+                    <div class="resource-description">Real-world implementations & snippets</div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-icon">🎥</div>
+                    <div class="resource-title">Video Tutorials</div>
+                    <div class="resource-description">Step-by-step video guides</div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-icon">🛠️</div>
+                    <div class="resource-title">Developer Tools</div>
+                    <div class="resource-description">Community-built tools & plugins</div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-icon">📝</div>
+                    <div class="resource-title">Blog Posts</div>
+                    <div class="resource-description">Technical articles & insights</div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-icon">🎮</div>
+                    <div class="resource-title">Challenges</div>
+                    <div class="resource-description">Coding challenges & competitions</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

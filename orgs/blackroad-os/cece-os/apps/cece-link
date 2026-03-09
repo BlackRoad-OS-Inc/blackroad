@@ -1,0 +1,73 @@
+#!/bin/bash
+# CECE-LINK v1.0 - Link Shortener
+# Our Own Bit.ly
+
+LINK_DIR=~/cece/links
+mkdir -p "$LINK_DIR"
+LINK_DB="$LINK_DIR/links.db"
+
+shorten() {
+    URL="$1"
+    CUSTOM="$2"
+    
+    if [ -n "$CUSTOM" ]; then
+        CODE="$CUSTOM"
+    else
+        CODE=$(echo "$URL$(date +%s)" | md5sum | cut -c1-6)
+    fi
+    
+    echo "$CODE|$URL|$(date -Iseconds)|0" >> "$LINK_DB"
+    
+    echo "✅ Link shortened!"
+    echo "   Original: $URL"
+    echo "   Short: cece.link/$CODE"
+    echo ""
+    echo "   Resolve: cece-link go $CODE"
+}
+
+go_link() {
+    CODE="$1"
+    URL=$(grep "^$CODE|" "$LINK_DB" | cut -d"|" -f2)
+    
+    if [ -n "$URL" ]; then
+        # Increment click count
+        # (simplified - just log it)
+        echo "{\"code\":\"$CODE\",\"time\":\"$(date -Iseconds)\"}" >> "$LINK_DIR/clicks.log"
+        
+        echo "🔗 Redirecting to: $URL"
+        # If we had a browser: xdg-open "$URL" or open "$URL"
+        echo "$URL"
+    else
+        echo "Link not found: $CODE"
+    fi
+}
+
+list_links() {
+    echo "🔗 MY LINKS"
+    echo "═══════════════════════════════════════"
+    while IFS="|" read -r code url created clicks; do
+        echo "  $code → $url"
+    done < "$LINK_DB" 2>/dev/null
+}
+
+stats() {
+    TOTAL=$(wc -l < "$LINK_DB" 2>/dev/null || echo 0)
+    CLICKS=$(wc -l < "$LINK_DIR/clicks.log" 2>/dev/null || echo 0)
+    echo "📊 LINK STATS"
+    echo "  Total links: $TOTAL"
+    echo "  Total clicks: $CLICKS"
+}
+
+case "$1" in
+    shorten|new|add) shorten "$2" "$3" ;;
+    go|resolve) go_link "$2" ;;
+    list) list_links ;;
+    stats) stats ;;
+    *) echo "🖤 CECE-LINK - Link Shortener"
+       echo ""
+       echo "Commands:"
+       echo "  shorten <url> [custom]   Shorten URL"
+       echo "  go <code>                Resolve link"
+       echo "  list                     List all links"
+       echo "  stats                    View statistics" ;;
+esac

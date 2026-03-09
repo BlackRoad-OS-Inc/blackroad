@@ -1,0 +1,24 @@
+#!/bin/bash
+# CECE-HABIT v1.0 - Habit Tracker
+HABIT_DIR=~/cece/habits
+mkdir -p "$HABIT_DIR"
+add() { echo "$1" >> "$HABIT_DIR/habits.txt" && echo "Habit added: $1"; }
+check() {
+    HABIT="$1"
+    DATE=$(date +%Y-%m-%d)
+    echo "$DATE|$HABIT|done" >> "$HABIT_DIR/log.txt"
+    echo "✅ $HABIT checked off!"
+}
+streak() {
+    HABIT="$1"
+    COUNT=$(grep "|$HABIT|done" "$HABIT_DIR/log.txt" 2>/dev/null | wc -l)
+    echo "🔥 $HABIT: $COUNT day streak"
+}
+list() { cat "$HABIT_DIR/habits.txt" 2>/dev/null | nl; }
+case "$1" in
+    add) add "$2" ;;
+    check) check "$2" ;;
+    streak) streak "$2" ;;
+    list) list ;;
+    *) echo "CECE-HABIT: add <habit> | check <habit> | streak <habit> | list" ;;
+esac

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadMobile - Cross-Platform Mobile App Framework</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Pro Display', -apple-system, sans-serif;
+            background: #000;
+            color: #FFF;
+            line-height: 1.618;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 89px 34px;
+            background: linear-gradient(135deg, rgba(245,166,35,0.1) 0%, rgba(255,29,108,0.1) 100%);
+            text-align: center;
+        }
+        h1 {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+        .subtitle {
+            font-size: 24px;
+            opacity: 0.8;
+            margin-bottom: 55px;
+            max-width: 900px;
+        }
+        .btn {
+            padding: 21px 55px;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            color: #FFF;
+            border: none;
+            border-radius: 13px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+            margin: 0 8px;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 13px 34px rgba(245,166,35,0.4);
+        }
+        .phone-demo {
+            padding: 144px 34px;
+            background: #000;
+        }
+        .demo-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .phones-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 55px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .phone {
+            width: 350px;
+            background: rgba(255,255,255,0.05);
+            border: 13px solid rgba(255,255,255,0.1);
+            border-radius: 34px;
+            padding: 21px;
+            box-shadow: 0 34px 89px rgba(0,0,0,0.5);
+        }
+        .phone-header {
+            background: rgba(255,255,255,0.03);
+            border-radius: 21px;
+            padding: 13px;
+            margin-bottom: 13px;
+            text-align: center;
+        }
+        .phone-notch {
+            width: 144px;
+            height: 21px;
+            background: #000;
+            border-radius: 13px;
+            margin: 0 auto;
+        }
+        .phone-screen {
+            background: #111;
+            border-radius: 21px;
+            padding: 21px;
+            min-height: 600px;
+        }
+        .screen-header {
+            text-align: center;
+            margin-bottom: 34px;
+        }
+        .screen-title {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .screen-subtitle {
+            font-size: 14px;
+            opacity: 0.6;
+        }
+        .app-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 21px;
+            margin-bottom: 13px;
+        }
+        .app-card-header {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin-bottom: 13px;
+        }
+        .app-icon {
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .app-info h3 {
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+        .app-info p {
+            font-size: 13px;
+            opacity: 0.6;
+        }
+        .app-button {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            border: none;
+            border-radius: 8px;
+            color: #FFF;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 13px;
+        }
+        .code-example {
+            padding: 144px 34px;
+            background: rgba(255,255,255,0.02);
+        }
+        .code-block {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+        }
+        .code-block pre {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #FFF;
+            overflow-x: auto;
+        }
+        .code-block .keyword { color: #FF1D6C; }
+        .code-block .string { color: #2ECC71; }
+        .code-block .function { color: #F5A623; }
+        .code-block .component { color: #2979FF; }
+        .code-block .comment { color: #666; opacity: 0.8; }
+        .features {
+            padding: 144px 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .section-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            border-color: #F5A623;
+            transform: translateY(-5px);
+            box-shadow: 0 13px 34px rgba(245,166,35,0.2);
+        }
+        .feature-icon { font-size: 55px; margin-bottom: 21px; }
+        .feature-title { font-size: 24px; font-weight: 600; margin-bottom: 13px; color: #FF1D6C; }
+        .feature-desc { font-size: 16px; opacity: 0.8; line-height: 1.618; }
+        .pricing {
+            padding: 144px 34px;
+        }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .pricing-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 13px;
+            padding: 34px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .pricing-card:hover {
+            border-color: #F5A623;
+            transform: translateY(-5px);
+        }
+        .plan-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 13px;
+            color: #F5A623;
+        }
+        .plan-price {
+            font-size: 55px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #F5A623 38.2%, #FF1D6C 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 21px;
+        }
+        .plan-features {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 34px;
+        }
+        .plan-features li {
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            opacity: 0.8;
+        }
+        .plan-features li::before {
+            content: '✓ ';
+            color: #2ECC71;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        footer {
+            padding: 89px 34px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            .phones-container { flex-direction: column; align-items: center; }
+            h1 { font-size: 34px; }
+            .subtitle { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div style="font-size: 89px; margin-bottom: 21px;">📱</div>
+        <h1>RoadMobile</h1>
+        <p class="subtitle">Cross-Platform Mobile App Framework. Build iOS & Android Apps. Single Codebase. Native Performance.</p>
+        <div>
+            <a href="#demo" class="btn">View Demo</a>
+            <a href="#docs" class="btn">Documentation</a>
+        </div>
+    </section>
+
+    <section class="phone-demo" id="demo">
+        <h2 class="demo-title">Build Beautiful Mobile Apps</h2>
+        <div class="phones-container">
+            <div class="phone">
+                <div class="phone-header">
+                    <div class="phone-notch"></div>
+                </div>
+                <div class="phone-screen">
+                    <div class="screen-header">
+                        <div class="screen-title">My Apps</div>
+                        <div class="screen-subtitle">Built with RoadMobile</div>
+                    </div>
+
+                    <div class="app-card">
+                        <div class="app-card-header">
+                            <div class="app-icon">🎯</div>
+                            <div class="app-info">
+                                <h3>Task Manager</h3>
+                                <p>Productivity app</p>
+                            </div>
+                        </div>
+                        <p style="font-size: 14px; opacity: 0.8;">Manage your tasks with ease. Sync across devices.</p>
+                        <button class="app-button">Open App</button>
+                    </div>
+
+                    <div class="app-card">
+                        <div class="app-card-header">
+                            <div class="app-icon">🛒</div>
+                            <div class="app-info">
+                                <h3>Shopping List</h3>
+                                <p>E-commerce</p>
+                            </div>
+                        </div>
+                        <p style="font-size: 14px; opacity: 0.8;">Share lists with family. Never forget items.</p>
+                        <button class="app-button">Open App</button>
+                    </div>
+
+                    <div class="app-card">
+                        <div class="app-card-header">
+                            <div class="app-icon">💰</div>
+                            <div class="app-info">
+                                <h3>Budget Tracker</h3>
+                                <p>Finance</p>
+                            </div>
+                        </div>
+                        <p style="font-size: 14px; opacity: 0.8;">Track expenses. Visualize spending patterns.</p>
+                        <button class="app-button">Open App</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="code-example" id="docs">
+        <h2 class="section-title">Simple & Powerful API</h2>
+        <div class="code-block">
+            <pre><span class="comment">// Create a new RoadMobile app</span>
+<span class="keyword">import</span> { <span class="component">App</span>, <span class="component">Screen</span>, <span class="component">Button</span>, <span class="component">Card</span> } <span class="keyword">from</span> <span class="string">'@blackroad/mobile'</span>;
+
+<span class="keyword">export default function</span> <span class="function">MyApp</span>() {
+  <span class="keyword">return</span> (
+    <<span class="component">App</span> theme=<span class="string">"blackroad"</span>>
+      <<span class="component">Screen</span> title=<span class="string">"Welcome"</span>>
+        <<span class="component">Card</span>>
+          <Text>🖤 Welcome to RoadMobile</Text>
+          <Text style={{ opacity: <span class="string">0.8</span> }}>
+            Build amazing mobile apps with ease.
+          </Text>
+
+          <<span class="component">Button</span>
+            <span class="function">onPress</span>={() => <span class="function">alert</span>(<span class="string">'Hello RoadMobile!'</span>)}
+            gradient={[<span class="string">'#F5A623'</span>, <span class="string">'#FF1D6C'</span>]}
+          >
+            Get Started
+          </<span class="component">Button</span>>
+        </<span class="component">Card</span>>
+      </<span class="component">Screen</span>>
+    </<span class="component">App</span>>
+  );
+}
+
+<span class="comment">// Components use BlackRoad design system by default</span>
+<span class="comment">// • Golden Ratio spacing (8-144px)</span>
+<span class="comment">// • BlackRoad color palette</span>
+<span class="comment">// • Beautiful animations built-in</span>
+<span class="comment">// • Responsive across all devices</span></pre>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <h2 class="section-title">Everything You Need</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3 class="feature-title">Cross-Platform</h3>
+                <p class="feature-desc">Write once, run on iOS and Android. Single codebase for both platforms. Native performance guaranteed.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3 class="feature-title">BlackRoad Design System</h3>
+                <p class="feature-desc">50+ pre-built components. Golden Ratio spacing. BlackRoad colors. Beautiful animations included.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Hot Reload</h3>
+                <p class="feature-desc">See changes instantly. No rebuild required. Save hours of development time. Fast iteration.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3 class="feature-title">Native Performance</h3>
+                <p class="feature-desc">Compiles to native code. 60 FPS animations. Low memory usage. Fast startup times.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3 class="feature-title">Push Notifications</h3>
+                <p class="feature-desc">Built-in push notification support. iOS and Android. Rich notifications. Deep linking.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💾</div>
+                <h3 class="feature-title">Offline Support</h3>
+                <p class="feature-desc">Local database (SQLite). Automatic sync. Offline-first architecture. Background sync.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📸</div>
+                <h3 class="feature-title">Native APIs</h3>
+                <p class="feature-desc">Camera, location, sensors, biometrics. File system access. Contacts, calendar integration.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛒</div>
+                <h3 class="feature-title">App Store Deployment</h3>
+                <p class="feature-desc">One-command deployment to App Store and Play Store. Automatic code signing. OTA updates.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <h3 class="feature-title">Developer Tools</h3>
+                <p class="feature-desc">Built-in debugger. Performance profiler. Network inspector. Crash reporting. Analytics.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing">
+        <h2 class="section-title">Flexible Pricing</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="plan-name">Open Source</div>
+                <div class="plan-price">FREE</div>
+                <ul class="plan-features">
+                    <li>Framework source code</li>
+                    <li>50+ components</li>
+                    <li>Cross-platform builds</li>
+                    <li>Hot reload</li>
+                    <li>Community support</li>
+                    <li>Documentation</li>
+                </ul>
+                <button class="btn">Get Started</button>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">Pro</div>
+                <div class="plan-price">$29<span style="font-size: 18px; opacity: 0.7;">/mo</span></div>
+                <ul class="plan-features">
+                    <li>Everything in Open Source</li>
+                    <li>Premium components</li>
+                    <li>Advanced animations</li>
+                    <li>Push notifications</li>
+                    <li>Analytics integration</li>
+                    <li>Priority support</li>
+                    <li>Code signing service</li>
+                </ul>
+                <button class="btn">Upgrade to Pro</button>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-price">Custom</div>
+                <ul class="plan-features">
+                    <li>Everything in Pro</li>
+                    <li>Custom components</li>
+                    <li>White label solution</li>
+                    <li>On-premise deployment</li>
+                    <li>24/7 dedicated support</li>
+                    <li>Training & consulting</li>
+                    <li>SLA guarantees</li>
+                </ul>
+                <button class="btn">Contact Sales</button>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div style="font-size: 34px; margin-bottom: 21px;">📱 RoadMobile</div>
+        <p style="opacity: 0.6; font-size: 14px;">Built by BlackRoad OS | Cross-platform mobile app framework</p>
+        <p style="opacity: 0.6; font-size: 14px; margin-top: 13px;">🖤🛣️ Build. Deploy. Scale.</p>
+    </footer>
+
+    <script>
+        // Animate on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.feature-card, .pricing-card, .app-card, .phone').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

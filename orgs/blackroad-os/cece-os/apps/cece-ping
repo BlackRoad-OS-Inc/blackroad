@@ -1,0 +1,31 @@
+#!/bin/bash
+# CECE-PING v1.0 - Network Diagnostics
+check_host() {
+    HOST="$1"
+    if ping -c 1 -W 2 "$HOST" &>/dev/null; then
+        echo "✅ $HOST - reachable"
+    else
+        echo "❌ $HOST - unreachable"
+    fi
+}
+
+scan_network() {
+    PREFIX="${1:-192.168.4}"
+    echo "Scanning $PREFIX.0/24..."
+    for i in $(seq 1 254); do
+        (ping -c 1 -W 1 "$PREFIX.$i" &>/dev/null && echo "✅ $PREFIX.$i") &
+    done
+    wait
+}
+
+trace() {
+    HOST="$1"
+    traceroute "$HOST" 2>/dev/null || echo "Install traceroute for route tracing"
+}
+
+case "$1" in
+    check) check_host "$2" ;;
+    scan) scan_network "$2" ;;
+    trace) trace "$2" ;;
+    *) echo "CECE-PING: check <host> | scan [prefix] | trace <host>" ;;
+esac

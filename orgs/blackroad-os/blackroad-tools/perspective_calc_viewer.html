@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PerspectiveCalc Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Inter", "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        box-sizing: border-box;
+      }
+
+      header {
+        grid-column: 1 / -1;
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.75rem;
+      }
+
+      p {
+        margin: 0.25rem 0 0;
+        font-size: 0.95rem;
+        color: #cbd5f5;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 160px;
+        resize: vertical;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: rgba(15, 23, 42, 0.7);
+        color: inherit;
+        padding: 0.75rem;
+        font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+        font-size: 0.85rem;
+      }
+
+      button,
+      input[type="file"],
+      .download-link {
+        appearance: none;
+        border: none;
+        border-radius: 0.75rem;
+        padding: 0.6rem 1rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        background: linear-gradient(135deg, #38bdf8, #6366f1);
+        color: #0f172a;
+        cursor: pointer;
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+      }
+
+      button:hover,
+      .download-link:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(99, 102, 241, 0.35);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .controls {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .card {
+        padding: 1rem;
+        border-radius: 1rem;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
+      }
+
+      .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      input[type="range"] {
+        flex: 1;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at top, rgba(99, 102, 241, 0.15), transparent 65%),
+          linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.95));
+        border-radius: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      .canvas-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1rem;
+      }
+
+      .status {
+        font-size: 0.8rem;
+        color: #f8fafc;
+        margin-top: 0.5rem;
+      }
+
+      .legend {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+        font-size: 0.85rem;
+        color: #cbd5f5;
+      }
+
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .legend span::before {
+        content: "";
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+
+      .legend span.points::before {
+        background: #38bdf8;
+      }
+
+      .legend span.lines::before {
+        background: #fbbf24;
+      }
+
+      .legend span.horizon::before {
+        background: #f97316;
+      }
+
+      .legend span.vanishing::before {
+        background: #34d399;
+      }
+
+      .horizon-label {
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: rgba(248, 250, 252, 0.7);
+      }
+
+      @media (max-width: 960px) {
+        body {
+          grid-template-columns: 1fr;
+        }
+
+        canvas {
+          min-height: 360px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>PerspectiveCalc Viewer</h1>
+      <p>
+        Paste 3D coordinates, set the viewing distance, and preview the projected scene.
+        Points are connected in CSV order. Horizon is the eye level at <code>y' = 0</code>.
+      </p>
+    </header>
+
+    <section class="controls">
+      <div class="card">
+        <label for="points-input">Points CSV (x,y,z[,d])</label>
+        <textarea id="points-input" placeholder="x,y,z,d&#10;1,1,4,5&#10;..." spellcheck="false"></textarea>
+        <div class="slider-container">
+          <label for="distance-slider" style="margin: 0">d:</label>
+          <input id="distance-slider" type="range" min="1" max="200" step="0.5" value="10" />
+          <span id="distance-value">10</span>
+        </div>
+        <button id="project-btn">Project</button>
+        <div class="status" id="status"></div>
+      </div>
+
+      <div class="card">
+        <label for="directions-input">Direction vectors (optional vx,vy,vz,label)</label>
+        <textarea id="directions-input" placeholder="vx,vy,vz,label&#10;0,0,1,Depth&#10;..." spellcheck="false"></textarea>
+        <button id="export-csv" disabled>Export projected CSV</button>
+        <button id="export-png" disabled>Export PNG</button>
+      </div>
+    </section>
+
+    <section class="canvas-wrapper">
+      <span class="horizon-label">Horizon</span>
+      <canvas id="viewport" width="1000" height="700"></canvas>
+      <div class="legend">
+        <span class="points">Projected points</span>
+        <span class="lines">Connection path</span>
+        <span class="horizon">Horizon (y'=0)</span>
+        <span class="vanishing">Vanishing points</span>
+      </div>
+    </section>
+
+    <script>
+      const pointsInput = document.getElementById("points-input");
+      const directionsInput = document.getElementById("directions-input");
+      const distanceSlider = document.getElementById("distance-slider");
+      const distanceValue = document.getElementById("distance-value");
+      const statusEl = document.getElementById("status");
+      const projectBtn = document.getElementById("project-btn");
+      const exportCsvBtn = document.getElementById("export-csv");
+      const exportPngBtn = document.getElementById("export-png");
+      const canvas = document.getElementById("viewport");
+      const ctx = canvas.getContext("2d");
+
+      let projectedPoints = [];
+      let vanishingPoints = [];
+
+      distanceSlider.addEventListener("input", () => {
+        distanceValue.textContent = distanceSlider.value;
+      });
+
+      projectBtn.addEventListener("click", () => {
+        try {
+          const distance = parseFloat(distanceSlider.value);
+          const points = parseCsv(pointsInput.value);
+          const directions = parseCsv(directionsInput.value, true);
+          projectedPoints = projectPoints(points, distance);
+          vanishingPoints = computeVanishingPoints(directions, distance);
+          drawScene(projectedPoints, vanishingPoints);
+          statusEl.textContent = `${projectedPoints.length} point(s) projected.`;
+          exportCsvBtn.disabled = projectedPoints.length === 0;
+          exportPngBtn.disabled = projectedPoints.length === 0;
+        } catch (error) {
+          statusEl.textContent = error.message;
+          projectedPoints = [];
+          vanishingPoints = [];
+          exportCsvBtn.disabled = true;
+          exportPngBtn.disabled = true;
+        }
+      });
+
+      exportCsvBtn.addEventListener("click", () => {
+        const header = "index,x,y,z,d,x_proj,y_proj";
+        const rows = projectedPoints.map((p) =>
+          [p.index, p.x, p.y, p.z, p.d, p.x_proj, p.y_proj].join(",")
+        );
+        const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" });
+        downloadBlob(blob, "projected_points.csv");
+      });
+
+      exportPngBtn.addEventListener("click", () => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            downloadBlob(blob, "perspective.png");
+          }
+        });
+      });
+
+      function downloadBlob(blob, filename) {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function parseCsv(text, allowLabel = false) {
+        const trimmed = text.trim();
+        if (!trimmed) return [];
+        const [headerLine, ...rows] = trimmed.split(/\r?\n/).filter(Boolean);
+        const headers = headerLine.split(/\s*,\s*/);
+        const required = allowLabel ? ["vx", "vy", "vz"] : ["x", "y", "z"];
+        for (const field of required) {
+          if (!headers.includes(field)) {
+            throw new Error(`Missing column "${field}".`);
+          }
+        }
+        const labelIndex = allowLabel ? headers.indexOf("label") : -1;
+        return rows.map((line, rowIdx) => {
+          const values = line.split(/\s*,\s*/);
+          if (values.length < headers.length) {
+            throw new Error(`Row ${rowIdx + 2} has fewer values than headers.`);
+          }
+          const record = Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ""]));
+          if (allowLabel) {
+            const vx = parseFloat(record.vx);
+            const vy = parseFloat(record.vy);
+            const vz = parseFloat(record.vz);
+            if (![vx, vy, vz].every(Number.isFinite)) {
+              throw new Error(`Direction row ${rowIdx + 2} has invalid numeric values.`);
+            }
+            return {
+              vx,
+              vy,
+              vz,
+              label: labelIndex >= 0 ? record.label : undefined,
+            };
+          }
+          const x = parseFloat(record.x);
+          const y = parseFloat(record.y);
+          const z = parseFloat(record.z);
+          const d = record.d ? parseFloat(record.d) : undefined;
+          if (![x, y, z].every(Number.isFinite)) {
+            throw new Error(`Point row ${rowIdx + 2} has invalid numeric values.`);
+          }
+          if (record.d && !Number.isFinite(d)) {
+            throw new Error(`Point row ${rowIdx + 2} has invalid distance value.`);
+          }
+          return { x, y, z, d };
+        });
+      }
+
+      function projectPoints(points, defaultDistance) {
+        if (points.length === 0) return [];
+        return points.map((p, index) => {
+          const d = Number.isFinite(p.d) ? p.d : defaultDistance;
+          if (!Number.isFinite(d)) {
+            throw new Error("Each point needs a distance column or slider value.");
+          }
+          const denominator = p.z + d;
+          if (denominator === 0) {
+            throw new Error(`Point ${index} has z + d = 0.`);
+          }
+          const factor = d / denominator;
+          return {
+            index,
+            x: p.x,
+            y: p.y,
+            z: p.z,
+            d,
+            x_proj: factor * p.x,
+            y_proj: factor * p.y,
+          };
+        });
+      }
+
+      function computeVanishingPoints(directions, distance) {
+        return directions.map((dir) => {
+          if (dir.vz === 0) {
+            return { ...dir, finite: false };
+          }
+          const factor = distance / dir.vz;
+          return {
+            ...dir,
+            finite: true,
+            x: factor * dir.vx,
+            y: factor * dir.vy,
+          };
+        });
+      }
+
+      function drawScene(points, vps) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const margin = 50;
+        const { scale, offsetX, offsetY } = computeViewportTransform(points, vps, margin);
+
+        // Draw horizon at y' = 0
+        const horizonY = transformProjected(0, 0, scale, offsetX, offsetY).y;
+        ctx.strokeStyle = "rgba(249, 115, 22, 0.9)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(canvas.width, horizonY);
+        ctx.stroke();
+
+        // Draw connection lines
+        if (points.length > 1) {
+          ctx.strokeStyle = "rgba(251, 191, 36, 0.9)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          const first = transformProjected(points[0].x_proj, points[0].y_proj, scale, offsetX, offsetY);
+          ctx.moveTo(first.x, first.y);
+          for (let i = 1; i < points.length; i++) {
+            const pt = transformProjected(points[i].x_proj, points[i].y_proj, scale, offsetX, offsetY);
+            ctx.lineTo(pt.x, pt.y);
+          }
+          ctx.stroke();
+        }
+
+        // Draw points
+        ctx.fillStyle = "#38bdf8";
+        for (const pt of points) {
+          const { x, y } = transformProjected(pt.x_proj, pt.y_proj, scale, offsetX, offsetY);
+          ctx.beginPath();
+          ctx.arc(x, y, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Draw vanishing points
+        ctx.fillStyle = "#34d399";
+        ctx.strokeStyle = "rgba(52, 211, 153, 0.35)";
+        ctx.lineWidth = 1.5;
+        for (const vp of vps) {
+          if (!vp.finite) continue;
+          const { x, y } = transformProjected(vp.x, vp.y, scale, offsetX, offsetY);
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          if (vp.label) {
+            ctx.font = "12px 'Inter', sans-serif";
+            ctx.fillText(vp.label, x + 8, y - 8);
+          }
+        }
+      }
+
+      function computeViewportTransform(points, vps, margin) {
+        const xs = [];
+        const ys = [];
+        points.forEach((p) => {
+          xs.push(p.x_proj);
+          ys.push(p.y_proj);
+        });
+        vps.forEach((vp) => {
+          if (vp.finite) {
+            xs.push(vp.x);
+            ys.push(vp.y);
+          }
+        });
+        if (xs.length === 0 || ys.length === 0) {
+          xs.push(-1, 1);
+          ys.push(-1, 1);
+        }
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        const width = maxX - minX || 1;
+        const height = maxY - minY || 1;
+        const scale = Math.min(
+          (canvas.width - margin * 2) / width,
+          (canvas.height - margin * 2) / height
+        );
+        const offsetX = (canvas.width - scale * (minX + maxX)) / 2;
+        const offsetY = (canvas.height - scale * (minY + maxY)) / 2;
+        return { scale, offsetX, offsetY };
+      }
+
+      function transformProjected(xProj, yProj, scale, offsetX, offsetY) {
+        return {
+          x: xProj * scale + offsetX,
+          y: canvas.height - (yProj * scale + offsetY),
+        };
+      }
+
+      // Kick off with placeholder content
+      pointsInput.value = `x,y,z\n-1,-1,4\n1,-1,4\n1,1,4\n-1,1,4\n-1,-1,8\n1,-1,8\n1,1,8\n-1,1,8`;
+      projectBtn.click();
+    </script>
+  </body>
+</html>

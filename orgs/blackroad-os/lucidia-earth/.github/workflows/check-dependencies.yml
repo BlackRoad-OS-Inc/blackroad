@@ -1,0 +1,277 @@
+name: Check Dependencies
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check if index exists
+        id: check_index
+        run: |
+          if [ -f .blackroad/workflow-index.jsonl ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No workflow index found in this repo"
+          fi
+
+      - name: Parse dependencies
+        if: steps.check_index.outputs.exists == 'true'
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const indexPath = '.blackroad/workflow-index.jsonl';
+            
+            if (!fs.existsSync(indexPath)) {
+              console.log('No index file found');
+              return;
+            }
+            
+            const lines = fs.readFileSync(indexPath, 'utf8').split('\n').filter(l => l);
+            const workflows = lines.map(l => JSON.parse(l));
+            
+            // Find workflows with dependencies
+            const withDeps = workflows.filter(w => w.deps && w.deps.length > 0);
+            
+            if (withDeps.length === 0) {
+              console.log('No workflows with dependencies');
+              return;
+            }
+            
+            // Separate local and cross-repo deps
+            const localDeps = [];
+            const crossRepoDeps = [];
+            
+            for (const workflow of withDeps) {
+              for (const dep of workflow.deps) {
+                if (dep.includes('#')) {
+                  // Cross-repo dependency
+                  crossRepoDeps.push({
+                    workflow: workflow.id,
+                    dep: dep,
+                    repo: dep.split('#')[0],
+                    depId: dep.split('#')[1]
+                  });
+                } else {
+                  // Local dependency
+                  localDeps.push({
+                    workflow: workflow.id,
+                    dep: dep
+                  });
+                }
+              }
+            }
+            
+            core.setOutput('local_deps', JSON.stringify(localDeps));
+            core.setOutput('cross_repo_deps', JSON.stringify(crossRepoDeps));
+            core.setOutput('has_deps', 'true');
+
+      - name: Check local dependencies
+        if: steps.parse.outputs.has_deps == 'true'
+        id: check_local
+        run: |
+          LOCAL_DEPS='${{ steps.parse.outputs.local_deps }}'
+          
+          if [ "$LOCAL_DEPS" = "[]" ]; then
+            echo "No local dependencies to check"
+            echo "blocked=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "Checking local dependencies..."
+          echo "$LOCAL_DEPS" | jq -r '.[] | "\(.workflow) depends on \(.dep)"'
+          
+          BLOCKED=false
+          
+          # Check each dependency
+          for dep_id in $(echo "$LOCAL_DEPS" | jq -r '.[].dep'); do
+            # Check if dep exists and is Done
+            if grep -q "\"id\":\"$dep_id\"" .blackroad/workflow-index.jsonl; then
+              STATE=$(grep "\"id\":\"$dep_id\"" .blackroad/workflow-index.jsonl | jq -r '.state')
+              if [ "$STATE" != "Done" ]; then
+                echo "⚠️ Dependency $dep_id is not Done (state: $STATE)"
+                BLOCKED=true
+              fi
+            else
+              echo "⚠️ Dependency $dep_id not found in index"
+              BLOCKED=true
+            fi
+          done
+          
+          echo "blocked=$BLOCKED" >> $GITHUB_OUTPUT
+
+      - name: Check cross-repo dependencies
+        if: steps.parse.outputs.has_deps == 'true'
+        id: check_cross
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CROSS_DEPS='${{ steps.parse.outputs.cross_repo_deps }}'
+          
+          if [ "$CROSS_DEPS" = "[]" ]; then
+            echo "No cross-repo dependencies to check"
+            echo "blocked=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "Checking cross-repo dependencies..."
+          echo "$CROSS_DEPS" | jq -r '.[] | "\(.workflow) depends on \(.repo)#\(.depId)"'
+          
+          BLOCKED=false
+          
+          # For each cross-repo dep, try to fetch the workflow index
+          for repo in $(echo "$CROSS_DEPS" | jq -r '.[].repo' | sort -u); do
+            echo "Fetching index from $repo..."
+            
+            # Try to download the workflow index from the dependency repo
+            if gh api "/repos/$repo/contents/.blackroad/workflow-index.jsonl" \
+                 --jq '.content' 2>/dev/null | base64 -d > /tmp/dep-index.jsonl; then
+              echo "✅ Found index in $repo"
+              
+              # Check each dep from this repo
+              for dep_id in $(echo "$CROSS_DEPS" | jq -r "select(.repo==\"$repo\") | .depId"); do
+                if grep -q "\"id\":\"$dep_id\"" /tmp/dep-index.jsonl; then
+                  STATE=$(grep "\"id\":\"$dep_id\"" /tmp/dep-index.jsonl | jq -r '.state')
+                  if [ "$STATE" != "Done" ]; then
+                    echo "⚠️ Dependency $repo#$dep_id is not Done (state: $STATE)"
+                    BLOCKED=true
+                  else
+                    echo "✅ Dependency $repo#$dep_id is Done"
+                  fi
+                else
+                  echo "⚠️ Dependency $dep_id not found in $repo"
+                  BLOCKED=true
+                fi
+              done
+            else
+              echo "⚠️ Could not fetch index from $repo (may be private or not exist)"
+              BLOCKED=true
+            fi
+          done
+          
+          echo "blocked=$BLOCKED" >> $GITHUB_OUTPUT
+
+      - name: Create or update alert issue
+        if: steps.check_local.outputs.blocked == 'true' || steps.check_cross.outputs.blocked == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const localDeps = JSON.parse('${{ steps.parse.outputs.local_deps }}');
+            const crossDeps = JSON.parse('${{ steps.parse.outputs.cross_repo_deps }}');
+            
+            // Build alert body
+            let body = '## ⚠️ Blocked Dependencies Detected\n\n';
+            body += '_This issue is auto-generated by dependency checker_\n\n';
+            body += `**Last checked**: ${new Date().toISOString()}\n\n`;
+            
+            if (localDeps.length > 0) {
+              body += '### Local Dependencies\n\n';
+              for (const dep of localDeps) {
+                body += `- \`${dep.workflow}\` depends on \`${dep.dep}\`\n`;
+              }
+              body += '\n';
+            }
+            
+            if (crossDeps.length > 0) {
+              body += '### Cross-Repo Dependencies\n\n';
+              for (const dep of crossDeps) {
+                body += `- \`${dep.workflow}\` depends on \`${dep.repo}#${dep.depId}\`\n`;
+              }
+              body += '\n';
+            }
+            
+            body += '---\n\n';
+            body += '**Next Steps**:\n';
+            body += '1. Check status of blocked dependencies\n';
+            body += '2. Coordinate with dependency owners if needed\n';
+            body += '3. Update traffic lights (🔴 Red if blocked, 🟡 Yellow if waiting)\n';
+            body += '4. This issue will auto-close when all dependencies are Done\n';
+            
+            // Check for existing alert
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'dependency-alert',
+              state: 'open'
+            });
+            
+            if (issues.length > 0) {
+              // Update existing alert
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body: body
+              });
+              console.log(`Updated alert issue #${issues[0].number}`);
+            } else {
+              // Create new alert
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '⚠️ Dependency Alert: Blocked Workflows',
+                body: body,
+                labels: ['dependency-alert', '🔴']
+              });
+              console.log('Created new dependency alert issue');
+            }
+
+      - name: Close alert if all clear
+        if: steps.check_local.outputs.blocked == 'false' && steps.check_cross.outputs.blocked == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Find open alert issues
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'dependency-alert',
+              state: 'open'
+            });
+            
+            for (const issue of issues) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: '✅ All dependencies resolved. Auto-closing.'
+              });
+              
+              console.log(`Closed alert issue #${issue.number}`);
+            }
+
+      - name: Generate summary
+        run: |
+          echo "## 🔍 Dependency Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.check_local.outputs.blocked }}" = "true" ] || [ "${{ steps.check_cross.outputs.blocked }}" = "true" ]; then
+            echo "**Status**: ⚠️ **BLOCKED**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Some workflows have unresolved dependencies." >> $GITHUB_STEP_SUMMARY
+            echo "Check the dependency alert issue for details." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status**: ✅ **ALL CLEAR**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All dependencies are resolved." >> $GITHUB_STEP_SUMMARY
+          fi

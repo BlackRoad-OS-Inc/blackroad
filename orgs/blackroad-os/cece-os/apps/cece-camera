@@ -1,0 +1,20 @@
+#!/bin/bash
+# CECE-CAMERA v1.0 - Camera Control
+CAM_DIR=~/cece/photos
+mkdir -p "$CAM_DIR"
+capture() {
+    NAME="${1:-photo_$(date +%Y%m%d_%H%M%S)}"
+    libcamera-still -o "$CAM_DIR/$NAME.jpg" 2>/dev/null || raspistill -o "$CAM_DIR/$NAME.jpg" 2>/dev/null || echo "Camera not available"
+    echo "📷 Saved: $CAM_DIR/$NAME.jpg"
+}
+video() {
+    NAME="${1:-video_$(date +%Y%m%d_%H%M%S)}"
+    DURATION="${2:-10}"
+    libcamera-vid -t $((DURATION*1000)) -o "$CAM_DIR/$NAME.h264" 2>/dev/null || echo "Camera not available"
+    echo "🎥 Saved: $CAM_DIR/$NAME.h264"
+}
+case "$1" in
+    capture) capture "$2" ;;
+    video) video "$2" "$3" ;;
+    *) echo "CECE-CAMERA: capture [name] | video [name] [seconds]" ;;
+esac

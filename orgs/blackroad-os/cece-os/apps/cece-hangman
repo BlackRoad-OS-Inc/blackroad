@@ -1,0 +1,32 @@
+#!/bin/bash
+# CECE-HANGMAN v1.0 - Hangman Game
+WORDS=("blackroad" "sovereign" "raspberry" "terminal" "quantum" "infinity" "digital" "freedom")
+
+play() {
+    WORD="${WORDS[$RANDOM % ${#WORDS[@]}]}"
+    GUESSED=""
+    TRIES=6
+    
+    while [ $TRIES -gt 0 ]; do
+        DISPLAY=""
+        COMPLETE=true
+        for (( i=0; i<${#WORD}; i++ )); do
+            CHAR="${WORD:$i:1}"
+            if [[ "$GUESSED" == *"$CHAR"* ]]; then
+                DISPLAY="$DISPLAY$CHAR "
+            else
+                DISPLAY="$DISPLAY_ "
+                COMPLETE=false
+            fi
+        done
+        
+        echo "Word: $DISPLAY (Tries: $TRIES)"
+        $COMPLETE && echo "🎉 You win!" && return
+        
+        read -p "Guess a letter: " LETTER
+        GUESSED="$GUESSED$LETTER"
+        [[ "$WORD" != *"$LETTER"* ]] && ((TRIES--))
+    done
+    echo "💀 Game over! Word was: $WORD"
+}
+case "$1" in *) play ;; esac

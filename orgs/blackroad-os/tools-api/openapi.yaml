@@ -1,0 +1,698 @@
+openapi: 3.1.0
+info:
+  title: BlackRoad Tools API
+  description: |
+    Core API for BlackRoad's AI agent ecosystem. Provides agent management, 
+    memory persistence (PS-SHA∞), trinary reasoning, and multi-agent coordination.
+  version: 1.0.0
+  contact:
+    name: BlackRoad OS
+    url: https://blackroad.io
+  license:
+    name: MIT
+
+servers:
+  - url: https://blackroad-tools.amundsonalexa.workers.dev
+    description: Production
+  - url: http://localhost:8787
+    description: Local development
+
+tags:
+  - name: Agents
+    description: Agent lifecycle and management
+  - name: Memory
+    description: PS-SHA∞ persistent memory system
+  - name: Reasoning
+    description: Trinary logic reasoning engine
+  - name: Coordination
+    description: Multi-agent event bus and orchestration
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  # Agent Endpoints
+  /tools/agent/spawn:
+    post:
+      tags: [Agents]
+      summary: Spawn a new agent
+      operationId: spawnAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpawnAgentRequest'
+      responses:
+        '201':
+          description: Agent spawned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /tools/agent/{agentId}:
+    get:
+      tags: [Agents]
+      summary: Get agent details
+      operationId: getAgent
+      parameters:
+        - $ref: '#/components/parameters/AgentId'
+      responses:
+        '200':
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /tools/agent/{agentId}/invoke:
+    post:
+      tags: [Agents]
+      summary: Invoke agent capability
+      operationId: invokeAgent
+      parameters:
+        - $ref: '#/components/parameters/AgentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvokeRequest'
+      responses:
+        '200':
+          description: Invocation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvokeResponse'
+
+  /tools/agent/list:
+    get:
+      tags: [Agents]
+      summary: List all agents
+      operationId: listAgents
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Filter by agent type
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, dormant, suspended]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Agent list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Agent'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+
+  # Memory Endpoints
+  /tools/memory/store:
+    post:
+      tags: [Memory]
+      summary: Store memory with PS-SHA∞ hash
+      operationId: storeMemory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreMemoryRequest'
+      responses:
+        '201':
+          description: Memory stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+
+  /tools/memory/recall:
+    post:
+      tags: [Memory]
+      summary: Recall memories by query
+      operationId: recallMemory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecallRequest'
+      responses:
+        '200':
+          description: Recalled memories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MemoryEntry'
+
+  /tools/memory/verify:
+    post:
+      tags: [Memory]
+      summary: Verify memory integrity via hash chain
+      operationId: verifyMemory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hash]
+              properties:
+                hash:
+                  type: string
+                  description: PS-SHA∞ hash to verify
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  chain_depth:
+                    type: integer
+                  root_hash:
+                    type: string
+
+  # Reasoning Endpoints
+  /tools/reasoning/evaluate:
+    post:
+      tags: [Reasoning]
+      summary: Evaluate proposition with trinary logic
+      operationId: evaluateReasoning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateRequest'
+      responses:
+        '200':
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrinaryResult'
+
+  /tools/reasoning/resolve:
+    post:
+      tags: [Reasoning]
+      summary: Resolve contradictions
+      operationId: resolveContradiction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveRequest'
+      responses:
+        '200':
+          description: Resolution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResolutionResult'
+
+  /tools/reasoning/infer:
+    post:
+      tags: [Reasoning]
+      summary: Perform inference chain
+      operationId: infer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferRequest'
+      responses:
+        '200':
+          description: Inference result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceResult'
+
+  # Coordination Endpoints
+  /tools/coordination/publish:
+    post:
+      tags: [Coordination]
+      summary: Publish event to bus
+      operationId: publishEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '202':
+          description: Event published
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event_id:
+                    type: string
+                  subscribers_notified:
+                    type: integer
+
+  /tools/coordination/subscribe:
+    post:
+      tags: [Coordination]
+      summary: Subscribe agent to event types
+      operationId: subscribe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+      responses:
+        '200':
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscription_id:
+                    type: string
+                  event_types:
+                    type: array
+                    items:
+                      type: string
+
+  /tools/coordination/orchestrate:
+    post:
+      tags: [Coordination]
+      summary: Orchestrate multi-agent task
+      operationId: orchestrate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrchestrateRequest'
+      responses:
+        '202':
+          description: Orchestration started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrchestrationResult'
+
+components:
+  parameters:
+    AgentId:
+      name: agentId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^agent-\d{4}$'
+      description: Agent identifier (e.g., agent-0001)
+
+  schemas:
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+          example: agent-0001
+        name:
+          type: string
+          example: Aurora Knight
+        type:
+          type: string
+          enum: [analyst, architect, creative, engineer, guardian, historian, linguist, mathematician, mediator, philosopher, physicist, psychologist, researcher, speaker, strategist, synthesizer, teacher, theorist, visionary, coordinator]
+        capabilities:
+          type: array
+          items:
+            type: string
+        birthday:
+          type: string
+          format: date
+        family:
+          type: object
+        memory_hash:
+          type: string
+          description: Current PS-SHA∞ memory state hash
+        home_world:
+          type: string
+          example: lucidia
+        status:
+          type: string
+          enum: [active, dormant, suspended]
+
+    SpawnAgentRequest:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        home_world:
+          type: string
+          default: lucidia
+
+    InvokeRequest:
+      type: object
+      required: [capability, input]
+      properties:
+        capability:
+          type: string
+        input:
+          type: object
+        context:
+          type: object
+
+    InvokeResponse:
+      type: object
+      properties:
+        result:
+          type: object
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        reasoning_trace:
+          type: array
+          items:
+            type: string
+
+    StoreMemoryRequest:
+      type: object
+      required: [agent_id, content]
+      properties:
+        agent_id:
+          type: string
+        content:
+          type: object
+        tags:
+          type: array
+          items:
+            type: string
+        importance:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    MemoryEntry:
+      type: object
+      properties:
+        hash:
+          type: string
+          description: PS-SHA∞ hash
+        agent_id:
+          type: string
+        content:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        parent_hash:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    RecallRequest:
+      type: object
+      required: [agent_id]
+      properties:
+        agent_id:
+          type: string
+        query:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        limit:
+          type: integer
+          default: 10
+        time_range:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+
+    EvaluateRequest:
+      type: object
+      required: [proposition]
+      properties:
+        proposition:
+          type: string
+        context:
+          type: object
+        evidence:
+          type: array
+          items:
+            type: object
+
+    TrinaryResult:
+      type: object
+      properties:
+        value:
+          type: integer
+          enum: [-1, 0, 1]
+          description: "-1=false, 0=unknown, 1=true"
+        confidence:
+          type: number
+        reasoning:
+          type: string
+        supporting_evidence:
+          type: array
+          items:
+            type: string
+        contradicting_evidence:
+          type: array
+          items:
+            type: string
+
+    ResolveRequest:
+      type: object
+      required: [claims]
+      properties:
+        claims:
+          type: array
+          items:
+            type: object
+            properties:
+              statement:
+                type: string
+              source:
+                type: string
+              confidence:
+                type: number
+        strategy:
+          type: string
+          enum: [quarantine, branch, merge, escalate]
+
+    ResolutionResult:
+      type: object
+      properties:
+        resolved:
+          type: boolean
+        strategy_used:
+          type: string
+        result:
+          type: object
+        quarantined:
+          type: array
+          items:
+            type: string
+
+    InferRequest:
+      type: object
+      required: [premises]
+      properties:
+        premises:
+          type: array
+          items:
+            type: string
+        goal:
+          type: string
+        max_depth:
+          type: integer
+          default: 5
+
+    InferenceResult:
+      type: object
+      properties:
+        conclusion:
+          type: string
+        valid:
+          type: boolean
+        proof_chain:
+          type: array
+          items:
+            type: object
+            properties:
+              step:
+                type: integer
+              statement:
+                type: string
+              justification:
+                type: string
+
+    PublishRequest:
+      type: object
+      required: [event_type, payload]
+      properties:
+        event_type:
+          type: string
+        payload:
+          type: object
+        source_agent:
+          type: string
+        priority:
+          type: string
+          enum: [low, normal, high, critical]
+
+    SubscribeRequest:
+      type: object
+      required: [agent_id, event_types]
+      properties:
+        agent_id:
+          type: string
+        event_types:
+          type: array
+          items:
+            type: string
+        filter:
+          type: object
+
+    OrchestrateRequest:
+      type: object
+      required: [task, agents]
+      properties:
+        task:
+          type: object
+          properties:
+            description:
+              type: string
+            goal:
+              type: string
+            constraints:
+              type: array
+              items:
+                type: string
+        agents:
+          type: array
+          items:
+            type: string
+        strategy:
+          type: string
+          enum: [parallel, sequential, hierarchical, consensus]
+        timeout_ms:
+          type: integer
+          default: 30000
+
+    OrchestrationResult:
+      type: object
+      properties:
+        orchestration_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        agents_assigned:
+          type: array
+          items:
+            type: string
+        estimated_completion:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: object
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Agent not found

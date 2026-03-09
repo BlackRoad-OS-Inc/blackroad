@@ -1,0 +1,23 @@
+#!/bin/bash
+# CECE-SOCKET v1.0 - Socket Tools
+listen() {
+    PORT="$1"
+    nc -l -p "$PORT" 2>/dev/null || nc -l "$PORT"
+}
+connect() {
+    HOST="$1"
+    PORT="$2"
+    nc "$HOST" "$PORT"
+}
+send() {
+    HOST="$1"
+    PORT="$2"
+    MSG="$3"
+    echo "$MSG" | nc "$HOST" "$PORT"
+}
+case "$1" in
+    listen) listen "$2" ;;
+    connect) connect "$2" "$3" ;;
+    send) send "$2" "$3" "$4" ;;
+    *) echo "CECE-SOCKET: listen <port> | connect <host> <port> | send <host> <port> <msg>" ;;
+esac

@@ -1,0 +1,11 @@
+#!/bin/bash
+# CECE-GRAPHQL v1.0 - GraphQL Client
+query() {
+    URL="$1"
+    QUERY="$2"
+    curl -s -X POST -H "Content-Type: application/json" -d "{\"query\":\"$QUERY\"}" "$URL"
+}
+case "$1" in
+    query) query "$2" "$3" ;;
+    *) echo "CECE-GRAPHQL: query <url> <query>" ;;
+esac

@@ -1,0 +1,9 @@
+#!/bin/bash
+# CECE-CF v1.0 - Cloudflare Helper
+zones() { curl -s -X GET "https://api.cloudflare.com/client/v4/zones" -H "Authorization: Bearer $CF_TOKEN" | jq '.result[].name'; }
+dns() { echo "DNS management via Cloudflare API"; }
+case "$1" in
+    zones) zones ;;
+    dns) dns ;;
+    *) echo "CECE-CF: zones | dns" ;;
+esac

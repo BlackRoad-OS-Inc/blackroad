@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Hub - BlackRoad OS</title>
+    <meta name="description" content="Build, simulate, and run quantum algorithms on real quantum processors">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0f0f0f;
+            --bg-tertiary: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --accent-orange: #FF9D00;
+            --accent-pink: #FF0066;
+            --accent-purple: #7700FF;
+            --accent-blue: #0066FF;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00FF88;
+            --quantum-cyan: #00FFFF;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, var(--quantum-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-link {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-muted);
+        }
+
+        .nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text);
+        }
+
+        .nav-link.active {
+            background: var(--accent-purple);
+            color: #fff;
+        }
+
+        .main {
+            margin-left: 250px;
+            flex: 1;
+            padding: 3rem;
+            max-width: 1400px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--quantum-cyan), var(--accent-purple), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--quantum-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .circuit-builder {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .circuit-canvas {
+            background: var(--bg-tertiary);
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            min-height: 300px;
+            padding: 2rem;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .qubit-line {
+            height: 2px;
+            background: var(--quantum-cyan);
+            margin: 3rem 0;
+            position: relative;
+        }
+
+        .qubit-label {
+            position: absolute;
+            left: -60px;
+            top: -10px;
+            color: var(--quantum-cyan);
+            font-weight: 600;
+        }
+
+        .gate-toolbar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .gate-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .gate-btn:hover {
+            border-color: var(--quantum-cyan);
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .gate-btn.active {
+            border-color: var(--quantum-cyan);
+            background: var(--accent-purple);
+        }
+
+        .algorithms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .algorithm-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .algorithm-card:hover {
+            border-color: var(--quantum-cyan);
+            transform: translateY(-4px);
+        }
+
+        .algorithm-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .algorithm-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .algorithm-desc {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .algorithm-stats {
+            display: flex;
+            gap: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .algorithm-stat {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: #8800ff;
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--quantum-cyan);
+            background: transparent;
+        }
+
+        .qpu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .qpu-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .qpu-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .qpu-status.online {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .qpu-status.busy {
+            background: rgba(255, 157, 0, 0.2);
+            border: 1px solid var(--accent-orange);
+            color: var(--accent-orange);
+        }
+
+        .qpu-status.offline {
+            background: rgba(255, 0, 102, 0.2);
+            border: 1px solid var(--accent-pink);
+            color: var(--accent-pink);
+        }
+
+        .qpu-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .qpu-specs {
+            color: var(--text-muted);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .code-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            color: var(--quantum-cyan);
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .simulator-output {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .output-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .output-value {
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: var(--success);
+            font-size: 1.1rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">⚛️ Quantum Hub</div>
+        <div class="nav-link active" onclick="showSection('overview')">Overview</div>
+        <div class="nav-link" onclick="showSection('circuit-builder')">Circuit Builder</div>
+        <div class="nav-link" onclick="showSection('algorithms')">Algorithm Library</div>
+        <div class="nav-link" onclick="showSection('simulator')">Simulator</div>
+        <div class="nav-link" onclick="showSection('qpu-access')">QPU Access</div>
+        <div class="nav-link" onclick="showSection('learn')">Learn Quantum</div>
+        <div class="nav-link" onclick="showSection('docs')">Documentation</div>
+    </aside>
+
+    <main class="main">
+        <!-- Overview Section -->
+        <section id="overview" class="section">
+            <h1>Quantum Computing Platform</h1>
+            <p class="subtitle">Build, simulate, and run quantum algorithms on real quantum processors</p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">127</div>
+                    <div class="stat-label">Qubits Available</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">99.8%</div>
+                    <div class="stat-label">Fidelity</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">50μs</div>
+                    <div class="stat-label">Coherence Time</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">10K+</div>
+                    <div class="stat-label">Jobs Run Daily</div>
+                </div>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <div class="feature-title">Visual Circuit Builder</div>
+                    <div class="feature-desc">Drag-and-drop interface for building quantum circuits with 20+ gates</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">High-Fidelity Simulator</div>
+                    <div class="feature-desc">Simulate up to 40 qubits with noise models and error correction</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔬</div>
+                    <div class="feature-title">Real QPU Access</div>
+                    <div class="feature-desc">Run on actual quantum processors from IBM, Rigetti, and IonQ</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <div class="feature-title">Algorithm Library</div>
+                    <div class="feature-desc">50+ pre-built quantum algorithms ready to use and customize</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Circuit Builder Section -->
+        <section id="circuit-builder" class="section" style="display: none;">
+            <h2 style="margin-bottom: 2rem;">Quantum Circuit Builder</h2>
+
+            <div class="circuit-builder">
+                <div class="gate-toolbar">
+                    <button class="gate-btn">H (Hadamard)</button>
+                    <button class="gate-btn">X (Pauli-X)</button>
+                    <button class="gate-btn">Y (Pauli-Y)</button>
+                    <button class="gate-btn">Z (Pauli-Z)</button>
+                    <button class="gate-btn">CNOT</button>
+                    <button class="gate-btn">T Gate</button>
+                    <button class="gate-btn">S Gate</button>
+                    <button class="gate-btn">Measure</button>
+                    <button class="gate-btn btn-secondary" onclick="clearCircuit()">Clear</button>
+                    <button class="btn" onclick="runCircuit()">Run Circuit</button>
+                </div>
+
+                <div class="circuit-canvas" id="circuitCanvas">
+                    <div class="qubit-line">
+                        <span class="qubit-label">|q₀⟩</span>
+                    </div>
+                    <div class="qubit-line">
+                        <span class="qubit-label">|q₁⟩</span>
+                    </div>
+                    <div class="qubit-line">
+                        <span class="qubit-label">|q₂⟩</span>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <code id="circuitCode">
+# Your quantum circuit will appear here
+from blackroad.quantum import QuantumCircuit
+
+qc = QuantumCircuit(3)
+# Add gates here...
+qc.measure_all()
+                    </code>
+                </div>
+            </div>
+        </section>
+
+        <!-- Algorithms Section -->
+        <section id="algorithms" class="section" style="display: none;">
+            <h2 style="margin-bottom: 2rem;">Quantum Algorithm Library</h2>
+
+            <div class="algorithms-grid">
+                <div class="algorithm-card">
+                    <div class="algorithm-icon">🔍</div>
+                    <div class="algorithm-name">Grover's Search</div>
+                    <p class="algorithm-desc">
+                        Search unsorted databases with quadratic speedup. Find target items in O(√N) time complexity.
+                    </p>
+                    <div class="algorithm-stats">
+                        <span class="algorithm-stat">⚡ Complexity: O(√N)</span>
+                        <span class="algorithm-stat">🎯 Qubits: 8-20</span>
+                    </div>
+                </div>
+
+                <div class="algorithm-card">
+                    <div class="algorithm-icon">🔐</div>
+                    <div class="algorithm-name">Shor's Algorithm</div>
+                    <p class="algorithm-desc">
+                        Factor large numbers exponentially faster than classical algorithms. Revolutionary for cryptography.
+                    </p>
+                    <div class="algorithm-stats">
+                        <span class="algorithm-stat">⚡ Complexity: O((log N)³)</span>
+                        <span class="algorithm-stat">🎯 Qubits: 20+</span>
+                    </div>
+                </div>
+
+                <div class="algorithm-card">
+                    <div class="algorithm-icon">📊</div>
+                    <div class="algorithm-name">Quantum Fourier Transform</div>
+                    <p class="algorithm-desc">
+                        Essential building block for many quantum algorithms. Exponentially faster than classical FFT.
+                    </p>
+                    <div class="algorithm-stats">
+                        <span class="algorithm-stat">⚡ Complexity: O((log N)²)</span>
+                        <span class="algorithm-stat">🎯 Qubits: 4-16</span>
+                    </div>
+                </div>
+
+                <div class="algorithm-card">
+                    <div class="algorithm-icon">⚗️</div>
+                    <div class="algorithm-name">VQE (Chemistry)</div>
+                    <p class="algorithm-desc">
+                        Variational Quantum Eigensolver for molecular simulations and drug discovery.
+                    </p>
+                    <div class="algorithm-stats">
+                        <span class="algorithm-stat">⚡ Hybrid: Classical+Quantum</span>
+                        <span class="algorithm-stat">🎯 Qubits: 10-30</span>
+                    </div>
+                </div>
+
+                <div class="algorithm-card">
+                    <div class="algorithm-icon">🎰</div>
+                    <div class="algorithm-name">QAOA (Optimization)</div>
+                    <p class="algorithm-desc">
+                        Quantum Approximate Optimization Algorithm for combinatorial optimization problems.
+                    </p>
+                    <div class="algorithm-stats">
+                        <span class="algorithm-stat">⚡ Approximation</span>
+                        <span class="algorithm-stat">🎯 Qubits: 8-50</span>
+                    </div>
+                </div>
+
+                <div class="algorithm-card">
+                    <div class="algorithm-icon">🧬</div>
+                    <div class="algorithm-name">Quantum ML</div>
+                    <p class="algorithm-desc">
+                        Quantum machine learning algorithms for classification, clustering, and pattern recognition.
+                    </p>
+                    <div class="algorithm-stats">
+                        <span class="algorithm-stat">⚡ ML Speedup</span>
+                        <span class="algorithm-stat">🎯 Qubits: 12-40</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Simulator Section -->
+        <section id="simulator" class="section" style="display: none;">
+            <h2 style="margin-bottom: 2rem;">Quantum Simulator</h2>
+
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Bell State Example</h3>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                    Create a maximally entangled Bell state using Hadamard and CNOT gates.
+                </p>
+
+                <div class="code-block">
+                    <code>
+from blackroad.quantum import QuantumCircuit, Simulator
+
+# Create circuit
+qc = QuantumCircuit(2)
+
+# Create Bell state
+qc.h(0)           # Hadamard on qubit 0
+qc.cx(0, 1)       # CNOT from qubit 0 to 1
+qc.measure_all()
+
+# Run simulation
+sim = Simulator()
+result = sim.run(qc, shots=1000)
+print(result.counts())
+                    </code>
+                </div>
+
+                <button class="btn" onclick="runSimulation()">Run Simulation</button>
+
+                <div class="simulator-output" id="simOutput" style="display: none;">
+                    <div class="output-label">Measurement Results (1000 shots):</div>
+                    <div class="output-value">
+                        {'00': 501, '11': 499}
+                    </div>
+                    <p style="color: var(--text-muted); margin-top: 1rem;">
+                        ✓ Perfect entanglement! Qubits are always measured in the same state (both 0 or both 1).
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- QPU Access Section -->
+        <section id="qpu-access" class="section" style="display: none;">
+            <h2 style="margin-bottom: 2rem;">Quantum Processor Access</h2>
+
+            <div class="qpu-grid">
+                <div class="qpu-card">
+                    <span class="qpu-status online">● ONLINE</span>
+                    <div class="qpu-name">BlackRoad QPU-127</div>
+                    <div class="qpu-specs">
+                        • 127 superconducting qubits<br>
+                        • 99.8% 2-qubit gate fidelity<br>
+                        • 50μs coherence time<br>
+                        • Typical queue: 2-5 minutes
+                    </div>
+                    <button class="btn">Access QPU</button>
+                </div>
+
+                <div class="qpu-card">
+                    <span class="qpu-status busy">● BUSY</span>
+                    <div class="qpu-name">IBM Quantum Eagle</div>
+                    <div class="qpu-specs">
+                        • 127 qubits<br>
+                        • 99.6% gate fidelity<br>
+                        • Heavy hex topology<br>
+                        • Typical queue: 15-30 minutes
+                    </div>
+                    <button class="btn btn-secondary">Join Queue</button>
+                </div>
+
+                <div class="qpu-card">
+                    <span class="qpu-status online">● ONLINE</span>
+                    <div class="qpu-name">IonQ Aria</div>
+                    <div class="qpu-specs">
+                        • 25 trapped ion qubits<br>
+                        • 99.5%+ gate fidelity<br>
+                        • All-to-all connectivity<br>
+                        • Typical queue: 5-10 minutes
+                    </div>
+                    <button class="btn">Access QPU</button>
+                </div>
+
+                <div class="qpu-card">
+                    <span class="qpu-status offline">● MAINTENANCE</span>
+                    <div class="qpu-name">Rigetti Aspen-M3</div>
+                    <div class="qpu-specs">
+                        • 80 superconducting qubits<br>
+                        • 98.5% gate fidelity<br>
+                        • Tunable couplers<br>
+                        • Back online: 2 hours
+                    </div>
+                    <button class="btn btn-secondary" disabled>Offline</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Learn Section -->
+        <section id="learn" class="section" style="display: none;">
+            <h2 style="margin-bottom: 2rem;">Learn Quantum Computing</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📖</div>
+                    <div class="feature-title">Beginner Course</div>
+                    <div class="feature-desc">Start from zero. Learn qubits, superposition, and basic gates.</div>
+                    <button class="btn" style="margin-top: 1rem;">Start Learning</button>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎓</div>
+                    <div class="feature-title">Advanced Topics</div>
+                    <div class="feature-desc">Quantum error correction, optimization, and quantum chemistry.</div>
+                    <button class="btn" style="margin-top: 1rem;">Explore</button>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <div class="feature-title">Code Examples</div>
+                    <div class="feature-desc">50+ working examples in Python, Qiskit, and Cirq.</div>
+                    <button class="btn" style="margin-top: 1rem;">Browse Code</button>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏆</div>
+                    <div class="feature-title">Challenges</div>
+                    <div class="feature-desc">Test your skills with quantum programming challenges.</div>
+                    <button class="btn" style="margin-top: 1rem;">Take Challenge</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Docs Section -->
+        <section id="docs" class="section" style="display: none;">
+            <h2 style="margin-bottom: 2rem;">Documentation</h2>
+
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Quick Start Guide</h3>
+
+                <div class="code-block">
+                    <code>
+# Install BlackRoad Quantum SDK
+pip install blackroad-quantum
+
+# Import libraries
+from blackroad.quantum import QuantumCircuit, Simulator
+
+# Create your first quantum circuit
+qc = QuantumCircuit(2)
+
+# Apply quantum gates
+qc.h(0)           # Hadamard gate
+qc.cx(0, 1)       # CNOT gate
+qc.measure_all()   # Measure all qubits
+
+# Run on simulator
+sim = Simulator()
+result = sim.run(qc, shots=1000)
+
+# View results
+print(result.counts())
+# Output: {'00': 501, '11': 499}
+                    </code>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem;">API Reference</h3>
+                <ul style="color: var(--text-muted); line-height: 2; list-style-position: inside;">
+                    <li>→ <a href="#" style="color: var(--quantum-cyan);">Quantum Circuits</a></li>
+                    <li>→ <a href="#" style="color: var(--quantum-cyan);">Quantum Gates</a></li>
+                    <li>→ <a href="#" style="color: var(--quantum-cyan);">Simulators</a></li>
+                    <li>→ <a href="#" style="color: var(--quantum-cyan);">QPU Backends</a></li>
+                    <li>→ <a href="#" style="color: var(--quantum-cyan);">Algorithm Library</a></li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Remove active from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(sectionId).style.display = 'block';
+
+            // Add active to clicked nav link
+            event.target.classList.add('active');
+        }
+
+        function clearCircuit() {
+            document.getElementById('circuitCode').textContent = `
+# Your quantum circuit will appear here
+from blackroad.quantum import QuantumCircuit
+
+qc = QuantumCircuit(3)
+# Add gates here...
+qc.measure_all()`;
+            alert('Circuit cleared!');
+        }
+
+        function runCircuit() {
+            alert('🎯 Running circuit on simulator...\n\nResults:\n{\'000\': 512, \'111\': 488}\n\nCircuit executed successfully!');
+        }
+
+        function runSimulation() {
+            document.getElementById('simOutput').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

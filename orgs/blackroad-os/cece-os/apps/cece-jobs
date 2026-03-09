@@ -1,0 +1,58 @@
+#!/bin/bash
+# CECE-JOBS v1.0 - Our Own LinkedIn/Indeed
+JOBS_DIR=~/cece/jobs
+mkdir -p "$JOBS_DIR/listings" "$JOBS_DIR/applications"
+
+post_job() {
+    TITLE="$1"
+    COMPANY="$2"
+    SALARY="$3"
+    JOB_ID=$(date +%s | tail -c 6)
+    cat > "$JOBS_DIR/listings/$JOB_ID.job" << EOF
+id: $JOB_ID
+title: $TITLE
+company: $COMPANY
+salary: $SALARY
+posted: $(date -Iseconds)
+status: open
+EOF
+    echo "✅ Job posted: $TITLE at $COMPANY"
+}
+
+list_jobs() {
+    echo "💼 JOB LISTINGS"
+    echo "═══════════════════════════════════════"
+    for j in "$JOBS_DIR/listings"/*.job 2>/dev/null; do
+        [ -f "$j" ] || continue
+        TITLE=$(grep "^title:" "$j" | cut -d: -f2-)
+        COMPANY=$(grep "^company:" "$j" | cut -d: -f2-)
+        SALARY=$(grep "^salary:" "$j" | cut -d: -f2-)
+        ID=$(grep "^id:" "$j" | cut -d: -f2 | xargs)
+        echo "  💼 $TITLE"
+        echo "     $COMPANY | $SALARY | ID: $ID"
+        echo ""
+    done
+}
+
+apply() {
+    JOB_ID="$1"
+    NAME="$2"
+    APP_ID=$(date +%s)
+    cat > "$JOBS_DIR/applications/$APP_ID.app" << EOF
+job_id: $JOB_ID
+applicant: $NAME
+applied: $(date -Iseconds)
+status: pending
+EOF
+    echo "✅ Application submitted for job #$JOB_ID"
+}
+
+case "$1" in
+    post) post_job "$2" "$3" "$4" ;;
+    list) list_jobs ;;
+    apply) apply "$2" "$3" ;;
+    *) echo "🖤 CECE-JOBS - Our Own LinkedIn Jobs"
+       echo "  post <title> <company> <salary>  Post job"
+       echo "  list                             List jobs"
+       echo "  apply <job_id> <name>            Apply" ;;
+esac

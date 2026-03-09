@@ -1,0 +1,40 @@
+#!/bin/bash
+# CECE-BLOG v1.0 - Blog Engine
+BLOG_DIR=~/cece/blog
+mkdir -p "$BLOG_DIR/posts"
+
+create_post() {
+    TITLE="$1"
+    CONTENT="$2"
+    SLUG=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
+    POST="$BLOG_DIR/posts/$SLUG.html"
+    
+    if command -v ollama &>/dev/null && [ -z "$CONTENT" ]; then
+        CONTENT=$(echo "Write a short blog post about: $TITLE" | ollama run llama3.2 2>/dev/null | head -10)
+    fi
+    
+    echo "<!DOCTYPE html><html><head><title>$TITLE</title>" > "$POST"
+    echo "<style>body{font-family:Georgia,serif;max-width:700px;margin:40px auto;padding:20px;line-height:1.8;background:#0a0a0a;color:#e0e0e0;}" >> "$POST"
+    echo "h1{color:#FF1D6C;}</style></head><body>" >> "$POST"
+    echo "<h1>$TITLE</h1><p style=\"color:#888;\">$(date +%Y-%m-%d)</p>" >> "$POST"
+    echo "<article>$CONTENT</article>" >> "$POST"
+    echo "<footer style=\"margin-top:50px;color:#666;\">Published with CECE Blog</footer></body></html>" >> "$POST"
+    
+    echo "{\"slug\":\"$SLUG\",\"title\":\"$TITLE\",\"date\":\"$(date -Iseconds)\"}" >> "$BLOG_DIR/index.jsonl"
+    echo "Post: $POST"
+}
+
+list_posts() {
+    echo "Blog Posts:"
+    cat "$BLOG_DIR/index.jsonl" 2>/dev/null | while read line; do
+        TITLE=$(echo "$line" | grep -o '"title":"[^"]*"' | cut -d\" -f4)
+        DATE=$(echo "$line" | grep -o '"date":"[^"]*"' | cut -d\" -f4 | cut -dT -f1)
+        echo "  [$DATE] $TITLE"
+    done
+}
+
+case "$1" in
+    post) create_post "$2" "$3" ;;
+    list) list_posts ;;
+    *) echo "CECE-BLOG: post <title> [content] | list" ;;
+esac

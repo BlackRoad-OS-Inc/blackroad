@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬⚛️ Quantum Error Correction - BlackRoad Quantum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000000; --white: #FFFFFF;
+            --amber: #F5A623; --hot-pink: #FF1D6C;
+            --electric-blue: #2979FF; --violet: #9C27B0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--black); color: var(--white);
+            padding: 34px; line-height: 1.6;
+        }
+
+        h1 {
+            font-size: 55px; font-weight: 900;
+            background: linear-gradient(135deg, #F5A623, #FF1D6C, #9C27B0, #2979FF);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 21px; text-align: center;
+        }
+
+        .subtitle {
+            text-align: center; font-size: 21px; color: var(--amber);
+            margin-bottom: 34px;
+        }
+
+        .controls {
+            display: flex; gap: 13px; justify-content: center;
+            margin-bottom: 34px; flex-wrap: wrap;
+        }
+
+        button {
+            padding: 13px 21px; font-size: 16px; font-weight: 700;
+            background: rgba(255, 29, 108, 0.2);
+            border: 2px solid var(--hot-pink);
+            border-radius: 8px; color: var(--white);
+            cursor: pointer; transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--hot-pink);
+            box-shadow: 0 5px 21px rgba(255, 29, 108, 0.5);
+            transform: translateY(-2px);
+        }
+
+        button.active {
+            background: var(--hot-pink);
+            box-shadow: 0 0 21px var(--hot-pink);
+        }
+
+        .canvas-container {
+            display: flex; justify-content: center;
+            margin-bottom: 34px;
+        }
+
+        canvas {
+            border: 2px solid rgba(255, 29, 108, 0.3);
+            border-radius: 13px;
+            box-shadow: 0 8px 32px rgba(255, 29, 108, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .info-panel {
+            max-width: 1200px; margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(41, 121, 255, 0.3);
+            border-radius: 13px; padding: 21px;
+        }
+
+        .info-title {
+            font-size: 28px; font-weight: 700;
+            color: var(--electric-blue);
+            margin-bottom: 13px;
+        }
+
+        .info-text {
+            font-size: 16px; color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 13px;
+        }
+
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: rgba(245, 166, 35, 0.1);
+            border-left: 3px solid var(--amber);
+            padding: 13px; margin: 13px 0;
+            font-size: 14px; color: var(--amber);
+            overflow-x: auto;
+        }
+
+        .back-link {
+            display: inline-block; margin-bottom: 21px;
+            color: var(--electric-blue); text-decoration: none;
+            font-size: 16px; transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--hot-pink); text-decoration: underline;
+        }
+
+        .challenge-box {
+            background: rgba(255, 29, 108, 0.1);
+            border: 2px solid var(--hot-pink);
+            border-radius: 13px; padding: 21px;
+            margin: 21px 0; text-align: center;
+        }
+
+        .challenge-title {
+            font-size: 21px; font-weight: 700;
+            color: var(--hot-pink); margin-bottom: 13px;
+        }
+
+        .ratio-display {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 21px; margin: 21px 0;
+        }
+
+        .ratio-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(156, 39, 176, 0.3);
+            border-radius: 8px; padding: 21px;
+            text-align: center;
+        }
+
+        .ratio-label {
+            font-size: 14px; color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase; margin-bottom: 8px;
+        }
+
+        .ratio-value {
+            font-size: 34px; font-weight: 900;
+            font-family: 'Courier New', monospace;
+        }
+
+        .error-btn {
+            padding: 8px 21px; font-size: 14px;
+            background: rgba(255, 29, 108, 0.3);
+            border-color: var(--hot-pink);
+            margin: 5px;
+        }
+
+        .error-btn:hover {
+            background: var(--hot-pink);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 13px;
+            margin: 21px 0;
+        }
+
+        .stat-box {
+            background: rgba(41, 121, 255, 0.1);
+            border: 2px solid rgba(41, 121, 255, 0.3);
+            border-radius: 8px;
+            padding: 13px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--electric-blue);
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Universe</a>
+
+    <h1>🔬⚛️ QUANTUM ERROR CORRECTION</h1>
+    <div class="subtitle">Fighting Decoherence: Why We Need 1000 Qubits for 1 Qubit</div>
+
+    <div class="controls">
+        <button onclick="selectMode('decoherence')" class="active" id="btn-decoherence">Decoherence</button>
+        <button onclick="selectMode('bit-flip')" id="btn-bit-flip">3-Qubit Bit-Flip Code</button>
+        <button onclick="selectMode('phase-flip')" id="btn-phase-flip">Phase-Flip Code</button>
+        <button onclick="selectMode('shor')" id="btn-shor">Shor's 9-Qubit Code</button>
+        <button onclick="selectMode('surface')" id="btn-surface">Surface Codes</button>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="mainCanvas" width="1200" height="600"></canvas>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <!-- Info will be inserted here -->
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentMode = 'decoherence';
+        let animationFrame = 0;
+        let errorRate = 0.001; // Per gate
+        let hasError = false;
+        let errorType = null;
+        let correctionSuccess = true;
+
+        function selectMode(mode) {
+            currentMode = mode;
+            animationFrame = 0;
+            hasError = false;
+
+            // Update button states
+            document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mode}`).classList.add('active');
+
+            updateInfo();
+            draw();
+        }
+
+        function updateInfo() {
+            const info = document.getElementById('infoPanel');
+
+            if (currentMode === 'decoherence') {
+                info.innerHTML = `
+                    <div class="info-title">The Decoherence Problem</div>
+                    <div class="info-text">
+                        Quantum computers are incredibly fragile. The quantum states we need for computation
+                        are destroyed by interaction with the environment—a process called <strong>decoherence</strong>.
+                    </div>
+
+                    <div class="challenge-box">
+                        <div class="challenge-title">⚠️ The Challenge</div>
+                        <div style="font-size: 18px; line-height: 1.8;">
+                            Current quantum computers have error rates of ~0.1% per gate<br>
+                            Useful algorithms need millions of gates<br>
+                            Without error correction: 99.9%<sup>1,000,000</sup> ≈ 0.00004% success rate<br>
+                            <strong>That's complete failure!</strong>
+                        </div>
+                    </div>
+
+                    <div class="info-text">
+                        <strong>Types of Quantum Errors:</strong>
+                    </div>
+
+                    <div class="ratio-display">
+                        <div class="ratio-box">
+                            <div class="ratio-label">Bit-Flip Error</div>
+                            <div class="ratio-value" style="color: #FF1D6C;">X</div>
+                            <div style="font-size: 14px; margin-top: 8px; color: rgba(255,255,255,0.8);">
+                                |0⟩ → |1⟩<br>
+                                |1⟩ → |0⟩<br>
+                                Like classical bit flip
+                            </div>
+                        </div>
+                        <div class="ratio-box">
+                            <div class="ratio-label">Phase-Flip Error</div>
+                            <div class="ratio-value" style="color: #2979FF;">Z</div>
+                            <div style="font-size: 14px; margin-top: 8px; color: rgba(255,255,255,0.8);">
+                                |+⟩ → |-⟩<br>
+                                |-⟩ → |+⟩<br>
+                                No classical analogue!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-text">
+                        <strong>Decoherence Times (T₂):</strong><br>
+                        • Superconducting qubits: ~100 microseconds<br>
+                        • Ion traps: ~1 second<br>
+                        • Photonic qubits: ~1 millisecond<br>
+                        <br>
+                        But algorithms need seconds to hours! Error correction is essential.
+                    </div>
+
+                    <div class="formula">
+                        Decoherence destroys superposition:
+
+                        |ψ⟩ = α|0⟩ + β|1⟩  →  (environment interaction)  →  mixed state
+
+                        Pure state → Mixed state (no longer quantum!)
+
+                        T₂ coherence time: How long until state is 1/e ≈ 37% degraded
+                    </div>
+
+                    <div class="info-text" style="margin-top: 21px;">
+                        The visualization shows a qubit gradually losing coherence over time.
+                        Watch the Bloch vector shrink as decoherence destroys the quantum state!
+                    </div>
+                `;
+            } else if (currentMode === 'bit-flip') {
+                info.innerHTML = `
+                    <div class="info-title">3-Qubit Bit-Flip Code</div>
+                    <div class="info-text">
+                        The simplest quantum error correction code! Protects against bit-flip errors (X errors)
+                        by encoding 1 logical qubit into 3 physical qubits.
+                    </div>
+
+                    <div class="formula">
+                        Encoding:
+                        |0⟩ₗ → |000⟩  (logical 0)
+                        |1⟩ₗ → |111⟩  (logical 1)
+
+                        Superposition:
+                        (α|0⟩ + β|1⟩)ₗ → α|000⟩ + β|111⟩
+                    </div>
+
+                    <div class="info-text">
+                        <strong>How It Works:</strong><br>
+                        1. <strong>Encode:</strong> Spread logical qubit across 3 physical qubits<br>
+                        2. <strong>Error occurs:</strong> One qubit flips (e.g., |000⟩ → |010⟩)<br>
+                        3. <strong>Syndrome measurement:</strong> Measure CNOT parities without destroying state<br>
+                        4. <strong>Correction:</strong> Apply X to the flipped qubit<br>
+                        5. <strong>Success:</strong> Original state recovered!
+                    </div>
+
+                    <div class="ratio-display">
+                        <div class="ratio-box">
+                            <div class="ratio-label">Without Error Correction</div>
+                            <div class="ratio-value" style="color: #FF1D6C;">1 qubit</div>
+                            <div style="font-size: 14px; margin-top: 8px;">
+                                Error rate: 0.1%<br>
+                                Fails after ~1000 gates
+                            </div>
+                        </div>
+                        <div class="ratio-box">
+                            <div class="ratio-label">With 3-Qubit Code</div>
+                            <div class="ratio-value" style="color: #00FF88;">3 qubits</div>
+                            <div style="font-size: 14px; margin-top: 8px;">
+                                Error rate: ~0.0001%<br>
+                                1000× improvement!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-text">
+                        <strong>Syndrome Measurements:</strong><br>
+                        Measure Z₀Z₁ and Z₁Z₂ to detect errors without collapsing the qubit state!<br>
+                        • 00: No error<br>
+                        • 01: Error on qubit 2<br>
+                        • 10: Error on qubit 0<br>
+                        • 11: Error on qubit 1
+                    </div>
+
+                    <div style="text-align: center; margin-top: 21px;">
+                        <button class="error-btn" onclick="introduceError(0)">Flip Qubit 0</button>
+                        <button class="error-btn" onclick="introduceError(1)">Flip Qubit 1</button>
+                        <button class="error-btn" onclick="introduceError(2)">Flip Qubit 2</button>
+                        <button class="error-btn" onclick="correctError()">Correct Error</button>
+                    </div>
+                `;
+            } else if (currentMode === 'phase-flip') {
+                info.innerHTML = `
+                    <div class="info-title">Phase-Flip Code</div>
+                    <div class="info-text">
+                        Phase-flip errors have no classical analogue! They flip the relative phase between
+                        |0⟩ and |1⟩ without changing the computational basis state.
+                    </div>
+
+                    <div class="formula">
+                        Phase-Flip Error (Z gate):
+                        α|0⟩ + β|1⟩  →  α|0⟩ - β|1⟩
+
+                        In X basis:
+                        |+⟩ = (|0⟩ + |1⟩)/√2  →  |-⟩ = (|0⟩ - |1⟩)/√2
+
+                        Phase-flip in computational basis = Bit-flip in Hadamard basis!
+                    </div>
+
+                    <div class="info-text">
+                        <strong>Clever Trick:</strong><br>
+                        Apply Hadamard gates to transform phase errors into bit errors,
+                        then use bit-flip code!
+                    </div>
+
+                    <div class="ratio-display">
+                        <div class="ratio-box" style="grid-column: span 2;">
+                            <div class="ratio-label">Phase-Flip Protection</div>
+                            <div style="font-size: 16px; margin-top: 13px; line-height: 1.8; text-align: left;">
+                                1. Encode in Hadamard basis: H ⊗ H ⊗ H<br>
+                                2. Phase error becomes bit error in this basis<br>
+                                3. Detect using syndrome measurements<br>
+                                4. Apply Z correction<br>
+                                5. Transform back: H ⊗ H ⊗ H
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-text">
+                        This is beautiful! By changing basis, we convert a uniquely quantum error
+                        (phase flip) into something we already know how to fix (bit flip).
+                    </div>
+
+                    <div class="challenge-box">
+                        <div class="challenge-title">🤔 The Problem</div>
+                        <div style="font-size: 16px;">
+                            Bit-flip code protects against X errors<br>
+                            Phase-flip code protects against Z errors<br>
+                            <strong>But real errors are arbitrary combinations!</strong><br>
+                            <br>
+                            General error: aI + bX + cY + dZ<br>
+                            We need something better...
+                        </div>
+                    </div>
+                `;
+            } else if (currentMode === 'shor') {
+                info.innerHTML = `
+                    <div class="info-title">Shor's 9-Qubit Code</div>
+                    <div class="info-text">
+                        The first quantum error correction code that protects against <strong>arbitrary</strong>
+                        single-qubit errors! Combines bit-flip and phase-flip protection.
+                    </div>
+
+                    <div class="formula">
+                        Encoding 1 logical qubit into 9 physical qubits:
+
+                        |0⟩ₗ → (|000⟩ + |111⟩)(|000⟩ + |111⟩)(|000⟩ + |111⟩) / 2√2
+                        |1⟩ₗ → (|000⟩ - |111⟩)(|000⟩ - |111⟩)(|000⟩ - |111⟩) / 2√2
+
+                        3 blocks of 3 qubits each:
+                        • Inner layer: Protects against bit-flips (X)
+                        • Outer layer: Protects against phase-flips (Z)
+                    </div>
+
+                    <div class="info-text">
+                        <strong>Two-Level Protection:</strong>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Physical Qubits</div>
+                            <div class="stat-value">9</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Logical Qubits</div>
+                            <div class="stat-value">1</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Syndrome Qubits</div>
+                            <div class="stat-value">8</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Overhead</div>
+                            <div class="stat-value">9×</div>
+                        </div>
+                    </div>
+
+                    <div class="info-text">
+                        <strong>How It Works:</strong><br>
+                        1. <strong>Level 1 (Bit-flip):</strong> Each block of 3 qubits encodes against X errors<br>
+                        2. <strong>Level 2 (Phase-flip):</strong> The 3 blocks encode against Z errors<br>
+                        3. <strong>Syndrome extraction:</strong> 8 ancilla qubits measure error syndromes<br>
+                        4. <strong>Error correction:</strong> Apply X, Y, or Z to fix any single-qubit error<br>
+                    </div>
+
+                    <div class="ratio-display">
+                        <div class="ratio-box">
+                            <div class="ratio-label">Protects Against</div>
+                            <div style="font-size: 18px; margin-top: 13px; line-height: 1.8;">
+                                ✓ X (bit-flip)<br>
+                                ✓ Y (both flips)<br>
+                                ✓ Z (phase-flip)<br>
+                                ✓ Any single-qubit error!
+                            </div>
+                        </div>
+                        <div class="ratio-box">
+                            <div class="ratio-label">Limitations</div>
+                            <div style="font-size: 18px; margin-top: 13px; line-height: 1.8;">
+                                ✗ Multiple errors<br>
+                                ✗ Measurement errors<br>
+                                ✗ Gate errors during correction<br>
+                                Needs fault-tolerance!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="challenge-box">
+                        <div class="challenge-title">📊 The Overhead Problem</div>
+                        <div style="font-size: 16px; line-height: 1.8;">
+                            Shor's code: 9 qubits → 1 logical qubit (9× overhead)<br>
+                            But we need ~1000 gates for useful computation<br>
+                            <strong>Each gate can introduce new errors!</strong><br>
+                            <br>
+                            Solution: Fault-tolerant error correction with better codes...
+                        </div>
+                    </div>
+                `;
+            } else if (currentMode === 'surface') {
+                info.innerHTML = `
+                    <div class="info-title">Surface Codes</div>
+                    <div class="info-text">
+                        The current leading approach for fault-tolerant quantum computing!
+                        Surface codes use a 2D lattice of qubits with nearest-neighbor interactions only.
+                    </div>
+
+                    <div class="formula">
+                        Surface code on d × d lattice:
+                        • Data qubits: (d² + 1) / 2
+                        • Ancilla qubits: (d² - 1) / 2
+                        • Total qubits: d²
+                        • Logical qubits: 1
+
+                        Code distance d:
+                        • Corrects up to (d-1)/2 errors
+                        • Larger d = better protection but more qubits
+                    </div>
+
+                    <div class="info-text">
+                        <strong>Why Surface Codes Are Winning:</strong><br>
+                        ✓ Only nearest-neighbor interactions (easier to build hardware!)<br>
+                        ✓ High error threshold (~1% per gate)<br>
+                        ✓ Fault-tolerant (can correct errors during correction)<br>
+                        ✓ Modular and scalable<br>
+                        ✓ Works with current superconducting qubit technology
+                    </div>
+
+                    <div class="ratio-display">
+                        <div class="ratio-box">
+                            <div class="ratio-label">Distance 3 Code</div>
+                            <div class="ratio-value" style="color: #2979FF;">9 qubits</div>
+                            <div style="font-size: 14px; margin-top: 8px;">
+                                Corrects 1 error<br>
+                                Threshold: ~0.5%
+                            </div>
+                        </div>
+                        <div class="ratio-box">
+                            <div class="ratio-label">Distance 5 Code</div>
+                            <div class="ratio-value" style="color: #9C27B0;">25 qubits</div>
+                            <div style="font-size: 14px; margin-top: 8px;">
+                                Corrects 2 errors<br>
+                                Threshold: ~0.6%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="challenge-box">
+                        <div class="challenge-title">🎯 The Path to Useful Quantum Computing</div>
+                        <div style="font-size: 15px; line-height: 1.8; text-align: left; max-width: 900px; margin: 13px auto;">
+                            <strong>Current State (2024-2026):</strong><br>
+                            • IBM: 1000+ physical qubits, error rate ~0.1%<br>
+                            • Google: 70 qubits, error rate ~0.1%<br>
+                            • Can barely correct errors (not fault-tolerant yet)<br>
+                            <br>
+                            <strong>Near-Term Goal (2030s):</strong><br>
+                            • Logical qubits with error rate < 10⁻⁶<br>
+                            • ~1000 physical qubits per logical qubit<br>
+                            • ~100 logical qubits for useful algorithms<br>
+                            • <strong>Total: ~100,000 physical qubits!</strong><br>
+                            <br>
+                            <strong>Long-Term (2040s+):</strong><br>
+                            • 1000+ logical qubits<br>
+                            • Millions of physical qubits<br>
+                            • Break RSA, simulate molecules, optimize portfolios, etc.
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Logical Qubits Needed</div>
+                            <div class="stat-value">1000+</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Physical per Logical</div>
+                            <div class="stat-value">~1000</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Total Physical Qubits</div>
+                            <div class="stat-value" style="font-size: 20px;">1M+</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">ETA</div>
+                            <div class="stat-value" style="font-size: 20px;">2040s?</div>
+                        </div>
+                    </div>
+
+                    <div class="info-text" style="margin-top: 21px;">
+                        <strong>The visualization shows a surface code lattice.</strong> Data qubits (blue circles) store
+                        the logical information. Ancilla qubits (pink squares) measure error syndromes. The lattice
+                        structure allows local error detection and correction!
+                    </div>
+                `;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (currentMode === 'decoherence') {
+                drawDecoherence();
+            } else if (currentMode === 'bit-flip') {
+                drawBitFlipCode();
+            } else if (currentMode === 'phase-flip') {
+                drawPhaseFlipCode();
+            } else if (currentMode === 'shor') {
+                drawShorCode();
+            } else if (currentMode === 'surface') {
+                drawSurfaceCode();
+            }
+        }
+
+        function drawDecoherence() {
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText('Quantum Decoherence Over Time', 600, 35);
+
+            const t = (animationFrame % 300) / 300;
+            const T2 = 100; // Coherence time in arbitrary units
+            const decay = Math.exp(-t * 5); // Exponential decay
+
+            // Draw Bloch sphere
+            const centerX = 300;
+            const centerY = 300;
+            const radius = 150;
+
+            // Sphere
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Axes
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - radius);
+            ctx.lineTo(centerX, centerY + radius);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(centerX - radius, centerY);
+            ctx.lineTo(centerX + radius, centerY);
+            ctx.stroke();
+
+            // State vector (shrinking)
+            const angle = t * Math.PI * 4;
+            const vecLength = radius * decay;
+            const x = centerX + vecLength * Math.cos(angle) * 0.7;
+            const y = centerY - vecLength * 0.5;
+
+            // Trail
+            ctx.strokeStyle = `rgba(255, 29, 108, ${decay * 0.3})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, vecLength, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Vector
+            ctx.strokeStyle = `rgba(255, 29, 108, ${decay})`;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            ctx.fillStyle = `rgba(255, 29, 108, ${decay})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Labels
+            ctx.fillStyle = '#2979FF';
+            ctx.font = '16px Courier New';
+            ctx.fillText('|0⟩', centerX, centerY - radius - 15);
+            ctx.fillText('|1⟩', centerX, centerY + radius + 25);
+
+            // Time graph
+            const graphX = 700;
+            const graphY = 100;
+            const graphW = 450;
+            const graphH = 400;
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(graphX, graphY, graphW, graphH);
+
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.fillText('Fidelity vs Time', graphX + graphW/2, graphY - 10);
+
+            // Decay curve
+            ctx.strokeStyle = '#FF1D6C';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let i = 0; i <= 100; i++) {
+                const time = i / 100;
+                const fidelity = Math.exp(-time * 5);
+                const px = graphX + time * graphW;
+                const py = graphY + graphH - fidelity * graphH;
+
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            // Current time marker
+            const markerX = graphX + t * graphW;
+            const markerY = graphY + graphH - decay * graphH;
+
+            ctx.strokeStyle = '#00FF88';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(markerX, graphY);
+            ctx.lineTo(markerX, graphY + graphH);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#00FF88';
+            ctx.beginPath();
+            ctx.arc(markerX, markerY, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Axis labels
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '14px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Time (t/T₂)', graphX + graphW/2, graphY + graphH + 30);
+
+            ctx.save();
+            ctx.translate(graphX - 40, graphY + graphH/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('Fidelity', 0, 0);
+            ctx.restore();
+
+            // Current values
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 16px Courier New';
+            ctx.textAlign = 'left';
+            ctx.fillText(`t/T₂ = ${t.toFixed(2)}`, graphX + 20, graphY + 30);
+            ctx.fillText(`Fidelity = ${(decay * 100).toFixed(1)}%`, graphX + 20, graphY + 55);
+
+            animationFrame++;
+        }
+
+        function drawBitFlipCode() {
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#FF1D6C';
+            ctx.textAlign = 'center';
+            ctx.fillText('3-Qubit Bit-Flip Code', 600, 35);
+
+            const qubitY = 150;
+            const qubitSpacing = 120;
+
+            // Draw 3 qubits
+            for (let i = 0; i < 3; i++) {
+                const x = 200 + i * 300;
+                const y = qubitY;
+
+                // Qubit circle
+                const isError = hasError && errorType === i;
+                ctx.fillStyle = isError ? 'rgba(255, 29, 108, 0.3)' : 'rgba(41, 121, 255, 0.2)';
+                ctx.beginPath();
+                ctx.arc(x, y, 60, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = isError ? '#FF1D6C' : '#2979FF';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // State label
+                const state = (hasError && errorType === i) ? '1' : '0';
+                ctx.fillStyle = isError ? '#FF1D6C' : '#2979FF';
+                ctx.font = 'bold 34px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(`|${state}⟩`, x, y + 12);
+
+                // Qubit label
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '16px SF Pro Display';
+                ctx.fillText(`Qubit ${i}`, x, y + 90);
+
+                // Error marker
+                if (isError) {
+                    ctx.fillStyle = '#FF1D6C';
+                    ctx.font = 'bold 18px SF Pro Display';
+                    ctx.fillText('ERROR!', x, y - 80);
+                }
+            }
+
+            // Encoding
+            ctx.fillStyle = '#F5A623';
+            ctx.font = '18px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Logical |0⟩ₗ encoded as |000⟩', 600, 80);
+
+            // Syndrome measurement
+            const syndromeY = 350;
+            ctx.fillStyle = 'rgba(245, 166, 35, 0.1)';
+            ctx.fillRect(150, syndromeY - 30, 900, 100);
+            ctx.strokeStyle = '#F5A623';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(150, syndromeY - 30, 900, 100);
+
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.fillText('Syndrome Measurement', 600, syndromeY - 5);
+
+            // Parity checks
+            ctx.font = '16px Courier New';
+            ctx.fillText(`Z₀Z₁ = ${hasError && (errorType === 0 || errorType === 1) ? '1' : '0'}`, 350, syndromeY + 30);
+            ctx.fillText(`Z₁Z₂ = ${hasError && (errorType === 1 || errorType === 2) ? '1' : '0'}`, 850, syndromeY + 30);
+
+            // Error syndrome
+            if (hasError) {
+                const syndromes = [
+                    {z0z1: 1, z1z2: 0, qubit: 0},
+                    {z0z1: 1, z1z2: 1, qubit: 1},
+                    {z0z1: 0, z1z2: 1, qubit: 2}
+                ];
+
+                const syndrome = syndromes[errorType];
+                ctx.fillStyle = '#FF1D6C';
+                ctx.font = 'bold 16px SF Pro Display';
+                ctx.fillText(`Syndrome: ${syndrome.z0z1}${syndrome.z1z2} → Error on Qubit ${syndrome.qubit}`, 600, syndromeY + 60);
+            } else {
+                ctx.fillStyle = '#00FF88';
+                ctx.font = 'bold 16px SF Pro Display';
+                ctx.fillText('Syndrome: 00 → No error detected', 600, syndromeY + 60);
+            }
+
+            // Correction
+            const correctionY = 500;
+            if (hasError && !correctionSuccess) {
+                ctx.fillStyle = '#2979FF';
+                ctx.font = 'bold 18px SF Pro Display';
+                ctx.fillText('Apply X gate to correct error →', 600, correctionY);
+            } else if (correctionSuccess && hasError) {
+                ctx.fillStyle = '#00FF88';
+                ctx.font = 'bold 20px SF Pro Display';
+                ctx.fillText('✓ Error Corrected! State restored to |000⟩', 600, correctionY);
+            }
+        }
+
+        function drawPhaseFlipCode() {
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#2979FF';
+            ctx.textAlign = 'center';
+            ctx.fillText('Phase-Flip Code in Hadamard Basis', 600, 35);
+
+            const y = 200;
+
+            // Show transformation
+            const stages = [
+                {x: 200, label: 'Computational Basis', state: '|ψ⟩'},
+                {x: 450, label: 'Apply H⊗³', state: 'H|ψ⟩'},
+                {x: 700, label: 'Encoded State', state: '|ψ⟩ₗ'},
+                {x: 950, label: 'After H⊗³', state: '|ψ⟩'}
+            ];
+
+            stages.forEach((stage, i) => {
+                ctx.fillStyle = 'rgba(156, 39, 176, 0.2)';
+                ctx.beginPath();
+                ctx.arc(stage.x, y, 70, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#9C27B0';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.fillStyle = '#9C27B0';
+                ctx.font = 'bold 28px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(stage.state, stage.x, y + 10);
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '14px SF Pro Display';
+                ctx.fillText(stage.label, stage.x, y + 100);
+
+                // Arrows
+                if (i < stages.length - 1) {
+                    ctx.strokeStyle = '#F5A623';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(stage.x + 80, y);
+                    ctx.lineTo(stages[i + 1].x - 80, y);
+                    ctx.stroke();
+
+                    // Arrowhead
+                    ctx.beginPath();
+                    ctx.moveTo(stages[i + 1].x - 80, y);
+                    ctx.lineTo(stages[i + 1].x - 95, y - 10);
+                    ctx.lineTo(stages[i + 1].x - 95, y + 10);
+                    ctx.closePath();
+                    ctx.fillStyle = '#F5A623';
+                    ctx.fill();
+                }
+            });
+
+            // Explanation
+            const explainY = 350;
+            ctx.fillStyle = 'rgba(41, 121, 255, 0.1)';
+            ctx.fillRect(100, explainY, 1000, 200);
+            ctx.strokeStyle = '#2979FF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(100, explainY, 1000, 200);
+
+            ctx.fillStyle = '#2979FF';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Phase-Flip → Bit-Flip Transformation', 600, explainY + 30);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = '16px SF Pro Display';
+            ctx.textAlign = 'left';
+            const lines = [
+                '1. Phase-flip in computational basis: Z|+⟩ = |-⟩',
+                '2. Apply Hadamard: Transforms to bit-flip in Hadamard basis',
+                '3. Now we can use bit-flip code to detect and correct!',
+                '4. Transform back with Hadamard to restore original basis',
+                '',
+                'Key insight: Basis change converts phase errors to bit errors!'
+            ];
+
+            lines.forEach((line, i) => {
+                ctx.fillText(line, 120, explainY + 65 + i * 22);
+            });
+        }
+
+        function drawShorCode() {
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#9C27B0';
+            ctx.textAlign = 'center';
+            ctx.fillText("Shor's 9-Qubit Code: Two-Level Protection", 600, 35);
+
+            // Draw 3 blocks of 3 qubits
+            const blockSpacing = 350;
+            const qubitSize = 35;
+
+            for (let block = 0; block < 3; block++) {
+                const blockX = 200 + block * blockSpacing;
+                const blockY = 150;
+
+                // Block container
+                ctx.strokeStyle = '#2979FF';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(blockX - 60, blockY - 60, 120, 220);
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = '#2979FF';
+                ctx.font = 'bold 16px SF Pro Display';
+                ctx.fillText(`Block ${block}`, blockX, blockY - 70);
+
+                // 3 qubits in this block
+                for (let qubit = 0; qubit < 3; qubit++) {
+                    const y = blockY + qubit * 70;
+
+                    ctx.fillStyle = 'rgba(41, 121, 255, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(blockX, y, qubitSize, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#2979FF';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '14px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`q${block * 3 + qubit}`, blockX, y + 5);
+                }
+
+                // Bit-flip protection label
+                ctx.fillStyle = '#F5A623';
+                ctx.font = '13px SF Pro Display';
+                ctx.fillText('Bit-flip', blockX, blockY + 170);
+                ctx.fillText('protection', blockX, blockY + 187);
+            }
+
+            // Phase-flip protection between blocks
+            ctx.strokeStyle = '#9C27B0';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 8]);
+            ctx.strokeRect(130, 80, 940, 370);
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#9C27B0';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.textAlign = 'center';
+            ctx.fillText('Phase-flip protection across blocks', 600, 470);
+
+            // Legend
+            const legendY = 520;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(150, legendY, 900, 60);
+
+            ctx.fillStyle = '#2979FF';
+            ctx.font = '15px SF Pro Display';
+            ctx.textAlign = 'left';
+            ctx.fillText('Inner layer (blue): 3-qubit codes protect each block against bit-flips', 170, legendY + 25);
+
+            ctx.fillStyle = '#9C27B0';
+            ctx.fillText('Outer layer (purple): 3 blocks encode against phase-flips', 170, legendY + 50);
+        }
+
+        function drawSurfaceCode() {
+            ctx.font = 'bold 24px SF Pro Display';
+            ctx.fillStyle = '#00FF88';
+            ctx.textAlign = 'center';
+            ctx.fillText('Surface Code Lattice (Distance 5)', 600, 35);
+
+            const gridSize = 5;
+            const cellSize = 80;
+            const startX = 300;
+            const startY = 100;
+
+            // Draw data qubits (circles) and syndrome qubits (squares)
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    const x = startX + col * cellSize;
+                    const y = startY + row * cellSize;
+
+                    // Checkerboard pattern
+                    const isData = (row + col) % 2 === 0;
+
+                    if (isData) {
+                        // Data qubit (circle)
+                        ctx.fillStyle = 'rgba(41, 121, 255, 0.3)';
+                        ctx.beginPath();
+                        ctx.arc(x, y, 25, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.strokeStyle = '#2979FF';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                    } else {
+                        // Syndrome qubit (square)
+                        ctx.fillStyle = 'rgba(255, 29, 108, 0.3)';
+                        ctx.fillRect(x - 20, y - 20, 40, 40);
+
+                        ctx.strokeStyle = '#FF1D6C';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(x - 20, y - 20, 40, 40);
+                    }
+
+                    // Label
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '11px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(isData ? 'D' : 'S', x, y + 4);
+                }
+            }
+
+            // Connections
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize - 1; col++) {
+                    const x1 = startX + col * cellSize;
+                    const x2 = startX + (col + 1) * cellSize;
+                    const y = startY + row * cellSize;
+
+                    ctx.beginPath();
+                    ctx.moveTo(x1 + 25, y);
+                    ctx.lineTo(x2 - 25, y);
+                    ctx.stroke();
+                }
+            }
+
+            for (let row = 0; row < gridSize - 1; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    const x = startX + col * cellSize;
+                    const y1 = startY + row * cellSize;
+                    const y2 = startY + (row + 1) * cellSize;
+
+                    ctx.beginPath();
+                    ctx.moveTo(x, y1 + 25);
+                    ctx.lineTo(x, y2 - 25);
+                    ctx.stroke();
+                }
+            }
+
+            // Legend
+            const legendX = 750;
+            const legendY = 150;
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(legendX, legendY, 400, 350);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(legendX, legendY, 400, 350);
+
+            ctx.fillStyle = '#00FF88';
+            ctx.font = 'bold 18px SF Pro Display';
+            ctx.textAlign = 'left';
+            ctx.fillText('Surface Code Properties:', legendX + 20, legendY + 35);
+
+            // Data qubit example
+            ctx.fillStyle = 'rgba(41, 121, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(legendX + 40, legendY + 70, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#2979FF';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = '15px SF Pro Display';
+            ctx.fillText('Data qubits store information', legendX + 70, legendY + 75);
+
+            // Syndrome qubit example
+            ctx.fillStyle = 'rgba(255, 29, 108, 0.3)';
+            ctx.fillRect(legendX + 25, legendY + 95, 30, 30);
+            ctx.strokeStyle = '#FF1D6C';
+            ctx.strokeRect(legendX + 25, legendY + 95, 30, 30);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillText('Syndrome qubits detect errors', legendX + 70, legendY + 115);
+
+            // Stats
+            ctx.fillStyle = '#F5A623';
+            ctx.font = 'bold 16px SF Pro Display';
+            ctx.fillText('Code Distance: 5', legendX + 20, legendY + 160);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = '14px SF Pro Display';
+            const stats = [
+                `Total qubits: ${gridSize * gridSize}`,
+                `Data qubits: ${Math.ceil(gridSize * gridSize / 2)}`,
+                `Syndrome qubits: ${Math.floor(gridSize * gridSize / 2)}`,
+                `Logical qubits: 1`,
+                '',
+                `Can correct: ${Math.floor((gridSize - 1) / 2)} errors`,
+                '',
+                'Only nearest-neighbor',
+                'interactions needed!',
+                '',
+                'Error threshold: ~1%'
+            ];
+
+            stats.forEach((stat, i) => {
+                ctx.fillText(stat, legendX + 20, legendY + 185 + i * 20);
+            });
+        }
+
+        function introduceError(qubit) {
+            hasError = true;
+            errorType = qubit;
+            correctionSuccess = false;
+            draw();
+        }
+
+        function correctError() {
+            correctionSuccess = true;
+            draw();
+        }
+
+        // Animation loop
+        function animate() {
+            if (currentMode === 'decoherence') {
+                draw();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize
+        updateInfo();
+        draw();
+        animate();
+    </script>
+</body>
+</html>
