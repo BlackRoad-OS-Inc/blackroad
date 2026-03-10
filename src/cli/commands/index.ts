@@ -8,6 +8,8 @@ import { configCommand } from './config.js'
 import { gatewayCommand } from './gateway.js'
 import { invokeCommand } from './invoke.js'
 import { initCommand } from './init.js'
+import { modelsCommand } from './models.js'
+import { chatCommand } from './chat.js'
 
 export const program = new Command()
   .name('br')
@@ -22,3 +24,5 @@ program.addCommand(configCommand)
 program.addCommand(gatewayCommand)
 program.addCommand(invokeCommand)
 program.addCommand(initCommand)
+program.addCommand(modelsCommand)
+program.addCommand(chatCommand)
