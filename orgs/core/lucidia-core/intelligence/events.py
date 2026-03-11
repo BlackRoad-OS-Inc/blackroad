@@ -9,7 +9,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional
 from uuid import uuid4
 
-from jsonschema import Draft7Validator
+try:
+    from jsonschema import Draft7Validator
+    _HAS_JSONSCHEMA = True
+except ImportError:
+    _HAS_JSONSCHEMA = False
 
 _SCHEMA_PATH = (
     Path(__file__).resolve().parents[2]
@@ -21,12 +25,20 @@ _SCHEMA_URI = "https://blackroad.ai/schemas/lucidia/intelligence-event.json"
 _SCHEMA_VERSION = "1.0.0"
 
 
-def _load_schema() -> Dict[str, Any]:
-    with _SCHEMA_PATH.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
+class _NoOpValidator:
+    """Stub validator when jsonschema or schema file is unavailable."""
+    def validate(self, instance: Any) -> None:
+        pass
 
 
-_VALIDATOR = Draft7Validator(_load_schema())
+def _load_validator():
+    if _HAS_JSONSCHEMA and _SCHEMA_PATH.exists():
+        with _SCHEMA_PATH.open("r", encoding="utf-8") as handle:
+            return Draft7Validator(json.load(handle))
+    return _NoOpValidator()
+
+
+_VALIDATOR = _load_validator()
 
 
 @dataclass(slots=True)

@@ -7,17 +7,42 @@ on:
     branches: [main, feat/docs-docusaurus-v3]
 
 jobs:
+  validate:
+    name: Build Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run build validation tests
+        run: npm run test:validate
+
+      - name: Check formatting
+        run: npm run prettier:check
+        continue-on-error: true
+
   build:
+    name: Build Docs
+    needs: validate
     permissions:
       contents: write
       issues: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@f43a3398dc5d8737c2dbc7bf8ad6b50918d7a3d4
+        uses: actions/checkout@v4
 
       - name: Use Node.js 20
-        uses: actions/setup-node@b829d2ab59ffb3738572edf3c6dbd9bfebc477f1
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
@@ -40,6 +65,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build
+
       - name: Comment preview URL
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -48,7 +74,7 @@ jobs:
           script: |
             const repoName = context.repo.repo;
             const previewUrl = `https://${{ github.repository_owner }}.github.io/${repoName}/`;
-            const body = `🚀 Docs preview ready: ${previewUrl}`;
+            const body = `Docs preview ready: ${previewUrl}`;
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,

@@ -1,4 +1,9 @@
-"""Lucidia's interactive console with Codex coordination helpers."""
+"""Lucidia's interactive console with Codex coordination helpers.
+
+Provides a tiny REPL so users can run Python snippets. On startup,
+Lucidia introduces herself with a short message about her origins and
+abilities. Prefix commands with ':' to control the console.
+"""
 from __future__ import annotations
 
 import io
@@ -6,7 +11,7 @@ import json
 from contextlib import redirect_stdout
 from typing import Iterable
 
-from .harmony import HarmonyCoordinator
+from harmony import HarmonyCoordinator
 
 PROMPT = "lucidia> "
 CAPABILITIES = ["repl", "hologram-console", "lucidia-link"]
@@ -74,17 +79,6 @@ def _handle_command(command: str, coordinator: HarmonyCoordinator) -> bool:
         return True
     print(f"Unknown command: {command}")
     return True
-"""Command-line interface for Lucidia.
-
-Provides a tiny REPL so users can run Python snippets. On startup,
-Lucidia introduces herself with a short message about her origins and
-abilities.
-"""
-
-from __future__ import annotations
-
-import io
-from contextlib import redirect_stdout
 
 
 def main() -> None:
@@ -114,34 +108,23 @@ def main() -> None:
         stripped = code.strip()
         if not stripped:
             continue
-        lowered = stripped.lower()
-        if lowered in {"exit", "quit"}:
+        if stripped.lower() in {"exit", "quit"}:
             break
         if stripped.startswith(":"):
             if not _handle_command(stripped, coordinator):
                 break
             continue
-    print("Hello, I'm Lucidia. I was built by BlackRoad!")
-    print("I love coding, can talk, and I'm super fast.")
-    print("Type Python code to run it. Enter 'exit' to quit.")
-    while True:
-        try:
-            code = input("lucidia> ")
-        except EOFError:
-            print()
-            break
-        if not code.strip() or code.strip().lower() in {"exit", "quit"}:
-            break
         local_vars: dict[str, object] = {}
         stdout = io.StringIO()
         try:
             with redirect_stdout(stdout):
-                exec(code, {"__builtins__": {"print": print}}, local_vars)
+                exec(stripped, {"__builtins__": {"print": print}}, local_vars)  # noqa: S102
             output = stdout.getvalue().strip()
             if output:
                 print(output)
-        except Exception as exc:  # noqa: BLE001 - broad for user feedback
+        except Exception as exc:  # noqa: BLE001
             print(f"Error: {exc}")
+
     coordinator.update_local_status(
         role="hologram-console",
         status="offline",
@@ -153,3 +136,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

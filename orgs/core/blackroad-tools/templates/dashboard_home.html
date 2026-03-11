@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BlackRoad OS - Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg-primary: #020308;
+      --bg-secondary: rgba(6, 10, 30, 0.92);
+      --bg-card: rgba(12, 18, 40, 0.85);
+      --text-primary: #f5f5ff;
+      --text-muted: rgba(245, 245, 255, 0.7);
+      --accent-cyan: #00e5ff;
+      --accent-green: #1af59d;
+      --accent-yellow: #ffc400;
+      --accent-purple: #a855f7;
+      --accent-orange: #ff9d00;
+      --accent-pink: #ff0066;
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --gradient-brand: linear-gradient(135deg, #ff9d00, #ff0066, #7700ff, #0066ff);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(circle at top, #050816 0, #020308 45%, #000000 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      font-size: 3rem;
+      font-weight: 700;
+      background: var(--gradient-brand);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    /* Health Bar */
+    .health-bar {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .health-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+
+    .health-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .health-dot.ok { background: var(--accent-green); }
+    .health-dot.error { background: #ff4444; }
+    .health-dot.loading { background: var(--accent-yellow); animation: pulse 1s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Nav Cards Grid */
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .nav-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+      display: block;
+    }
+
+    .nav-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-card .icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+
+    .nav-card .title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .nav-card .desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .nav-card.quantum { border-left: 3px solid var(--accent-purple); }
+    .nav-card.learning { border-left: 3px solid var(--accent-green); }
+    .nav-card.models { border-left: 3px solid var(--accent-cyan); }
+    .nav-card.quests { border-left: 3px solid var(--accent-orange); }
+    .nav-card.status { border-left: 3px solid var(--accent-pink); }
+
+    /* Quick Stats Section */
+    .quick-stats {
+      margin-top: 32px;
+      padding: 24px;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .quick-stats h2 {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 600;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .stat-value.xp { color: var(--accent-yellow); }
+    .stat-value.rank { color: var(--accent-purple); }
+    .stat-value.streak { color: var(--accent-orange); }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Coach Card */
+    .coach-card {
+      margin-top: 24px;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(0, 229, 255, 0.05));
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 12px;
+    }
+
+    .coach-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .coach-header .sigma {
+      font-size: 1.5rem;
+      color: var(--accent-purple);
+    }
+
+    .coach-header .title {
+      font-weight: 600;
+    }
+
+    .coach-action {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .coach-action strong {
+      color: var(--text-primary);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .mono {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">BlackRoad OS</div>
+      <div class="tagline">Ranked Quantum Operating System</div>
+    </div>
+
+    <!-- Health Bar -->
+    <div class="health-bar" id="health-bar">
+      <div class="health-item">
+        <span class="health-dot loading" id="health-console"></span>
+        <span>Console</span>
+      </div>
+      <div class="health-item">
+        <span class="health-dot loading" id="health-operator"></span>
+        <span>Operator</span>
+      </div>
+      <div class="health-item">
+        <span class="health-dot loading" id="health-quantum"></span>
+        <span>Quantum ψ</span>
+      </div>
+    </div>
+
+    <!-- Navigation Grid -->
+    <div class="nav-grid">
+      <a href="/quantum" class="nav-card quantum">
+        <div class="icon">ψ</div>
+        <div class="title">Quantum Console</div>
+        <div class="desc">Run predictions with quantum ML models. Visualize decision boundaries and train classifiers.</div>
+      </a>
+
+      <a href="/learning" class="nav-card learning">
+        <div class="icon">Σ</div>
+        <div class="title">Learning History</div>
+        <div class="desc">Track your XP, rank, and learning streak. View completed lessons and quiz results.</div>
+      </a>
+
+      <a href="/models" class="nav-card models">
+        <div class="icon">🔮</div>
+        <div class="title">Model Registry</div>
+        <div class="desc">Browse quantum models and their rank requirements. See your unlock progress.</div>
+      </a>
+
+      <a href="/quests" class="nav-card quests">
+        <div class="icon">🎯</div>
+        <div class="title">Quests & Promotion</div>
+        <div class="desc">View your promotion path progress. Complete quests to earn badges and XP.</div>
+      </a>
+
+      <a href="/status" class="nav-card status">
+        <div class="icon">📡</div>
+        <div class="title">System Status</div>
+        <div class="desc">Monitor service health, ledger events, and infrastructure status.</div>
+      </a>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="quick-stats" id="quick-stats">
+      <h2>Your Progress</h2>
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-value xp" id="stat-xp">--</div>
+          <div class="stat-label">Total XP</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value rank" id="stat-rank">--</div>
+          <div class="stat-label">Current Rank</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value streak" id="stat-streak">--</div>
+          <div class="stat-label">Day Streak</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coach Card -->
+    <div class="coach-card" id="coach-card" style="display: none;">
+      <div class="coach-header">
+        <span class="sigma">Σ</span>
+        <span class="title">Coach Suggestion</span>
+      </div>
+      <div class="coach-action" id="coach-action">Loading...</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>BlackRoad OS v0.2 &middot; <span class="mono">&copy; 2025 BlackRoad OS, Inc.</span></p>
+    </div>
+  </div>
+
+  <script>
+    // Fetch health status
+    async function checkHealth() {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+
+        document.getElementById('health-console').className =
+          'health-dot ' + (data.services?.console?.ok ? 'ok' : 'error');
+        document.getElementById('health-operator').className =
+          'health-dot ' + (data.services?.operator?.ok ? 'ok' : 'error');
+        document.getElementById('health-quantum').className =
+          'health-dot ' + (data.services?.quantum?.ok ? 'ok' : 'error');
+      } catch (e) {
+        console.error('Health check failed:', e);
+      }
+    }
+
+    // Fetch stats
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/learning/stats');
+        const data = await res.json();
+
+        if (data.ok && data.stats) {
+          document.getElementById('stat-xp').textContent = data.stats.xp || 0;
+          document.getElementById('stat-rank').textContent =
+            data.stats.rank?.rank_name || 'Novice';
+          document.getElementById('stat-streak').textContent =
+            data.stats.current_streak_days || 0;
+        }
+      } catch (e) {
+        console.error('Stats load failed:', e);
+      }
+    }
+
+    // Fetch coach suggestion
+    async function loadCoach() {
+      try {
+        const res = await fetch('/api/promotion/coach');
+        const data = await res.json();
+
+        if (data.ok && data.suggestion) {
+          const s = data.suggestion;
+          const coachCard = document.getElementById('coach-card');
+          coachCard.style.display = 'block';
+
+          if (s.stage_id === 'complete') {
+            document.getElementById('coach-action').innerHTML =
+              '<strong>Path Complete!</strong> ' + (s.action || 'All goals achieved.');
+          } else {
+            document.getElementById('coach-action').innerHTML =
+              '<strong>Next:</strong> ' + (s.action || 'Keep going!');
+          }
+        }
+      } catch (e) {
+        console.error('Coach load failed:', e);
+      }
+    }
+
+    // Init
+    checkHealth();
+    loadStats();
+    loadCoach();
+
+    // Refresh health every 30s
+    setInterval(checkHealth, 30000);
+  </script>
+</body>
+</html>

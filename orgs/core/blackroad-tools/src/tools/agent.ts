@@ -26,22 +26,25 @@ export class AgentTools {
       query += ' ORDER BY id LIMIT ? OFFSET ?';
       params.push(limit, offset);
 
-      const result = await env.DB.prepare(query).bind(...params).all();
-      
-      return Response.json({
-        agents: result.results,
-        count: result.results?.length || 0,
-        offset,
-        limit
-      }, { headers: corsHeaders });
+      const result = await env.DB.prepare(query)
+        .bind(...params)
+        .all();
+
+      return Response.json(
+        {
+          agents: result.results,
+          count: result.results?.length || 0,
+          offset,
+          limit,
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // GET /tools/agent/get/:id - Get specific agent
     if (path.startsWith('/get/')) {
       const agentId = path.replace('/get/', '');
-      const result = await env.DB.prepare(
-        'SELECT * FROM agents WHERE id = ?'
-      ).bind(agentId).first();
+      const result = await env.DB.prepare('SELECT * FROM agents WHERE id = ?').bind(agentId).first();
 
       if (!result) {
         return Response.json({ error: 'Agent not found' }, { status: 404, headers: corsHeaders });
@@ -51,9 +54,9 @@ export class AgentTools {
 
     // GET /tools/agent/capabilities - List all unique capabilities
     if (path === '/capabilities' || path === '/capabilities/') {
-      const result = await env.DB.prepare(
-        'SELECT DISTINCT type, capabilities FROM agents WHERE status = ?'
-      ).bind('active').all();
+      const result = await env.DB.prepare('SELECT DISTINCT type, capabilities FROM agents WHERE status = ?')
+        .bind('active')
+        .all();
 
       const allCapabilities = new Set<string>();
       const typeCapabilities: Record<string, Set<string>> = {};
@@ -61,60 +64,66 @@ export class AgentTools {
       result.results?.forEach((row: any) => {
         const caps = JSON.parse(row.capabilities || '[]');
         caps.forEach((c: string) => allCapabilities.add(c));
-        
+
         if (!typeCapabilities[row.type]) {
           typeCapabilities[row.type] = new Set();
         }
         caps.forEach((c: string) => typeCapabilities[row.type].add(c));
       });
 
-      return Response.json({
-        capabilities: Array.from(allCapabilities).sort(),
-        byType: Object.fromEntries(
-          Object.entries(typeCapabilities).map(([k, v]) => [k, Array.from(v).sort()])
-        )
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          capabilities: Array.from(allCapabilities).sort(),
+          byType: Object.fromEntries(Object.entries(typeCapabilities).map(([k, v]) => [k, Array.from(v).sort()])),
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // GET /tools/agent/types - List all agent types with counts
     if (path === '/types' || path === '/types/') {
       const result = await env.DB.prepare(
         'SELECT type, COUNT(*) as count FROM agents WHERE status = ? GROUP BY type ORDER BY count DESC'
-      ).bind('active').all();
+      )
+        .bind('active')
+        .all();
 
       return Response.json({ types: result.results }, { headers: corsHeaders });
     }
 
     // POST /tools/agent/find - Find agents by capability match
     if (path === '/find' && request.method === 'POST') {
-      const body = await request.json() as { capabilities: string[], matchAll?: boolean };
+      const body = (await request.json()) as { capabilities: string[]; matchAll?: boolean };
       const { capabilities, matchAll = false } = body;
 
       let agents: any[] = [];
-      
+
       if (matchAll) {
         // Agent must have ALL capabilities
         let query = 'SELECT * FROM agents WHERE status = ?';
-        capabilities.forEach(cap => {
+        capabilities.forEach((cap) => {
           query += ` AND capabilities LIKE '%${cap}%'`;
         });
         const result = await env.DB.prepare(query).bind('active').all();
         agents = result.results || [];
       } else {
         // Agent must have ANY capability
-        const placeholders = capabilities.map(() => "capabilities LIKE ?").join(' OR ');
-        const params = capabilities.map(c => `%${c}%`);
-        const result = await env.DB.prepare(
-          `SELECT * FROM agents WHERE status = ? AND (${placeholders})`
-        ).bind('active', ...params).all();
+        const placeholders = capabilities.map(() => 'capabilities LIKE ?').join(' OR ');
+        const params = capabilities.map((c) => `%${c}%`);
+        const result = await env.DB.prepare(`SELECT * FROM agents WHERE status = ? AND (${placeholders})`)
+          .bind('active', ...params)
+          .all();
         agents = result.results || [];
       }
 
-      return Response.json({ 
-        agents,
-        count: agents.length,
-        query: { capabilities, matchAll }
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          agents,
+          count: agents.length,
+          query: { capabilities, matchAll },
+        },
+        { headers: corsHeaders }
+      );
     }
 
     return Response.json({ error: 'Unknown agent endpoint', path }, { status: 404, headers: corsHeaders });

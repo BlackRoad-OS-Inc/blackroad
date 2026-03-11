@@ -40,7 +40,7 @@ curl http://ORIN_IP:8000/v1/chat/completions \
   -d '{
     "model":"lucidia-core-neox",
     "messages":[
-      {"role":"system","content":"You are Lucidia—trinary logic & Codex Ψ′."},
+      {"role":"system","content":"You are Lucidia—trinary logic & BlackRoad OS Ψ′."},
       {"role":"user","content":"In 2 lines, outline Ψ′_32 contradiction path for breath 𝔅(t)."}
     ],
     "max_tokens": 96

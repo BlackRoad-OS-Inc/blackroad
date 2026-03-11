@@ -1,5 +1,5 @@
 # Purpose: Clone/pull many repos declared in config/repos.json and emit a manifest for Lucidia.
-# Usage:   python3 tools/codex_multi_repo_loader.py [--config config/repos.json]
+# Usage:   python3 tools/blackroad os_multi_repo_loader.py [--config config/repos.json]
 # Notes:   Supports SSH (with optional key) or HTTPS (with or without token).
 import argparse
 import json
@@ -31,8 +31,8 @@ def load_cfg(path: Path):
 
 def build_env(cfg):
     env = os.environ.copy()
-    ssh_key = os.environ.get("CODEX_SSH_KEY") or cfg.get("git_ssh_key") or ""
-    accept_new = os.environ.get("CODEX_SSH_ACCEPT_NEW", "0") == "1"
+    ssh_key = os.environ.get("BLACKROAD OS_SSH_KEY") or cfg.get("git_ssh_key") or ""
+    accept_new = os.environ.get("BLACKROAD OS_SSH_ACCEPT_NEW", "0") == "1"
     strict = cfg.get("git_ssh_strict_hostkey", True) and not accept_new
 
     ssh_cmd = ["ssh"]
@@ -161,7 +161,7 @@ def main():
 
     cfg = load_cfg(cfg_path)
 
-    base = Path(os.environ.get("CODEX_REPOS_BASE") or cfg.get("base_dir") or "./repos").expanduser()
+    base = Path(os.environ.get("BLACKROAD OS_REPOS_BASE") or cfg.get("base_dir") or "./repos").expanduser()
     ensure_dir(base)
 
     env = build_env(cfg)
@@ -188,7 +188,7 @@ def main():
 
     out_dir = Path("runtime/manifests")
     ensure_dir(out_dir)
-    manifest_path = out_dir / "codex_repos_manifest.json"
+    manifest_path = out_dir / "blackroad os_repos_manifest.json"
     with manifest_path.open("w") as f:
         json.dump(manifest, f, indent=2)
 

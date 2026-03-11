@@ -31,7 +31,7 @@ export class CoordinationTools {
 
     // POST /tools/coordination/publish - Publish event to topic
     if (path === '/publish' && request.method === 'POST') {
-      const body = await request.json() as {
+      const body = (await request.json()) as {
         topic: string;
         type: string;
         payload: any;
@@ -46,7 +46,7 @@ export class CoordinationTools {
         payload: body.payload,
         source_agent: agentId,
         timestamp: Date.now(),
-        ttl: body.ttl || 3600
+        ttl: body.ttl || 3600,
       };
 
       // Store in topic queue
@@ -54,18 +54,21 @@ export class CoordinationTools {
       const existingEvents = await env.TOOLS_KV.get(topicKey);
       const events: Event[] = existingEvents ? JSON.parse(existingEvents) : [];
       events.push(event);
-      
+
       // Keep only recent events within TTL
       const now = Date.now();
-      const validEvents = events.filter(e => now - e.timestamp < (e.ttl || 3600) * 1000);
+      const validEvents = events.filter((e) => now - e.timestamp < (e.ttl || 3600) * 1000);
       await env.TOOLS_KV.put(topicKey, JSON.stringify(validEvents.slice(-100)));
 
-      return Response.json({
-        published: true,
-        event_id: eventId,
-        topic: body.topic,
-        subscribers_notified: 0 // Would integrate with WebSockets/SSE
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          published: true,
+          event_id: eventId,
+          topic: body.topic,
+          subscribers_notified: 0, // Would integrate with WebSockets/SSE
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // GET /tools/coordination/subscribe/:topic - Get events from topic
@@ -79,16 +82,19 @@ export class CoordinationTools {
       const events: Event[] = existingEvents ? JSON.parse(existingEvents) : [];
 
       const filtered = events
-        .filter(e => e.timestamp > since)
+        .filter((e) => e.timestamp > since)
         .slice(-limit)
         .reverse();
 
-      return Response.json({
-        topic,
-        events: filtered,
-        count: filtered.length,
-        latest_timestamp: filtered[0]?.timestamp || since
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          topic,
+          events: filtered,
+          count: filtered.length,
+          latest_timestamp: filtered[0]?.timestamp || since,
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // GET /tools/coordination/topics - List all active topics
@@ -100,18 +106,21 @@ export class CoordinationTools {
         'task.completed',
         'memory.committed',
         'reasoning.contradiction',
-        'system.alert'
+        'system.alert',
       ];
 
-      return Response.json({
-        topics: knownTopics,
-        count: knownTopics.length
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          topics: knownTopics,
+          count: knownTopics.length,
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // POST /tools/coordination/delegate - Delegate task to agent
     if (path === '/delegate' && request.method === 'POST') {
-      const body = await request.json() as {
+      const body = (await request.json()) as {
         task_type: string;
         description: string;
         target_agent?: string;
@@ -127,11 +136,11 @@ export class CoordinationTools {
       if (!targetAgent && body.required_capabilities?.length) {
         const caps = body.required_capabilities;
         let query = 'SELECT * FROM agents WHERE status = ?';
-        caps.forEach(cap => {
+        caps.forEach((cap) => {
           query += ` AND capabilities LIKE '%${cap}%'`;
         });
         query += ' LIMIT 1';
-        
+
         const result = await env.DB.prepare(query).bind('active').first();
         if (result) {
           targetAgent = (result as any).id;
@@ -139,10 +148,13 @@ export class CoordinationTools {
       }
 
       if (!targetAgent) {
-        return Response.json({ 
-          error: 'No capable agent found',
-          required_capabilities: body.required_capabilities 
-        }, { status: 400, headers: corsHeaders });
+        return Response.json(
+          {
+            error: 'No capable agent found',
+            required_capabilities: body.required_capabilities,
+          },
+          { status: 400, headers: corsHeaders }
+        );
       }
 
       const taskId = `task_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -155,7 +167,7 @@ export class CoordinationTools {
         status: 'pending',
         priority: body.priority || 5,
         created_at: new Date().toISOString(),
-        due_at: body.due_at
+        due_at: body.due_at,
       };
 
       // Store task
@@ -179,22 +191,25 @@ export class CoordinationTools {
         type: 'task_delegated',
         payload: { task_id: taskId, assigned_to: targetAgent },
         source_agent: agentId,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
       await env.TOOLS_KV.put(topicKey, JSON.stringify(eventList.slice(-100)));
 
-      return Response.json({
-        delegated: true,
-        task_id: taskId,
-        assigned_to: targetAgent,
-        status: 'pending'
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          delegated: true,
+          task_id: taskId,
+          assigned_to: targetAgent,
+          status: 'pending',
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // GET /tools/coordination/tasks - Get agent's task queue
     if (path === '/tasks' || path === '/tasks/') {
       const status = url.searchParams.get('status');
-      
+
       const queueKey = `queue:${agentId}`;
       const existingQueue = await env.TOOLS_KV.get(queueKey);
       const queue: string[] = existingQueue ? JSON.parse(existingQueue) : [];
@@ -213,16 +228,19 @@ export class CoordinationTools {
       // Sort by priority (lower = higher priority)
       tasks.sort((a, b) => a.priority - b.priority);
 
-      return Response.json({
-        tasks,
-        count: tasks.length,
-        agent_id: agentId
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          tasks,
+          count: tasks.length,
+          agent_id: agentId,
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // POST /tools/coordination/complete - Complete a task
     if (path === '/complete' && request.method === 'POST') {
-      const body = await request.json() as {
+      const body = (await request.json()) as {
         task_id: string;
         status: 'completed' | 'failed';
         result?: any;
@@ -251,15 +269,18 @@ export class CoordinationTools {
         type: 'task_' + body.status,
         payload: { task_id: body.task_id, result: body.result },
         source_agent: agentId,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
       await env.TOOLS_KV.put(topicKey, JSON.stringify(eventList.slice(-100)));
 
-      return Response.json({
-        task_id: body.task_id,
-        status: body.status,
-        completed: true
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          task_id: body.task_id,
+          status: body.status,
+          completed: true,
+        },
+        { headers: corsHeaders }
+      );
     }
 
     return Response.json({ error: 'Unknown coordination endpoint', path }, { status: 404, headers: corsHeaders });

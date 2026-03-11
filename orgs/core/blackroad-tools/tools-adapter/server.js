@@ -56,9 +56,28 @@ const mem = new Map();
 
 // Tool implementations
 async function ask_cloud(args) {
-  // Placeholder: your cloud LLM endpoint here
-  // Return structure consistent with tool result
-  return { answer: "(cloud answer placeholder)", citations: [] };
+  const fetch = (await import("node-fetch")).default;
+  const endpoint = process.env.BLACKBOX_API_URL || process.env.LUCIDIA_API_URL;
+  const apiKey = process.env.BLACKBOX_API_KEY || process.env.LUCIDIA_API_KEY;
+  if (!endpoint || !apiKey) {
+    return { answer: "(LLM endpoint not configured - set BLACKBOX_API_URL/BLACKBOX_API_KEY or LUCIDIA_API_URL/LUCIDIA_API_KEY)", citations: [] };
+  }
+  const r = await fetch(`${endpoint}/v1/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: process.env.BLACKBOX_MODEL || "blackbox-pro",
+      messages: [{ role: "user", content: args.question || "" }],
+      context: args.context || "",
+    }),
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`LLM error ${r.status}: ${text.slice(0, 500)}`);
+  }
+  const data = await r.json();
+  const answer = data?.choices?.[0]?.message?.content ?? data?.answer ?? "";
+  return { answer, citations: data?.citations ?? [] };
 }
 
 async function ping_pi(args) {

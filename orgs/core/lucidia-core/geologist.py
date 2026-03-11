@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Codex-19 Geologist agent implementation.
+"""BlackRoad OS-19 Geologist agent implementation.
 
 The Geologist listens for long-term pressure across the Lucidia substrate. It
 transforms strata observations into:
@@ -9,7 +9,7 @@ transforms strata observations into:
 * continuity briefs that provide temporal context for sibling agents, and
 * markdown core samples that archive what was learned each epoch.
 
-The implementation honours the Codex-19 charter by favouring patient analysis
+The implementation honours the BlackRoad OS-19 charter by favouring patient analysis
 and preserving historical context over quick reactions.
 """
 
@@ -26,7 +26,7 @@ from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 import yaml
 
 DEFAULT_STATE_ROOT = Path("/srv/lucidia/geologist")
-DEFAULT_EMIT_ROOT = Path("/codex/prompts/next")
+DEFAULT_EMIT_ROOT = Path("/blackroad os/prompts/next")
 STRATA_LOG_NAME = "strata_log.jsonl"
 STATE_FILENAME = "state.json"
 STRESS_MAP_NAME = "stress_map.json"
@@ -124,7 +124,7 @@ def load_seed(path: Path) -> GeologistSeed:
             raise ValueError(f"Geologist seed missing required field: {required}")
 
     return GeologistSeed(
-        identifier=str(data.get("id", "codex-19")),
+        identifier=str(data.get("id", "blackroad os-19")),
         agent_name=str(charter["agent_name"]),
         generation=str(charter["generation"]),
         parent=str(charter.get("parent")) if charter.get("parent") else None,
@@ -299,7 +299,7 @@ class StrataObservation:
 
 
 class Geologist:
-    """Implements the Codex-19 Geologist behavioural loop."""
+    """Implements the BlackRoad OS-19 Geologist behavioural loop."""
 
     def __init__(
         self,
@@ -472,7 +472,7 @@ class Geologist:
         generated_at: datetime,
     ) -> str:
         lines = [
-            "# Codex-19 Geologist Core Sample",
+            "# BlackRoad OS-19 Geologist Core Sample",
             f"*Epoch:* {generated_at.isoformat()}",
             f"*Moral constant:* {self.seed.moral_constant}",
             "",
@@ -596,8 +596,8 @@ class Geologist:
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the Codex-19 Geologist agent")
-    parser.add_argument("--seed", default="codex19.yaml", help="Path to the seed manifest")
+    parser = argparse.ArgumentParser(description="Run the BlackRoad OS-19 Geologist agent")
+    parser.add_argument("--seed", default="blackroad os19.yaml", help="Path to the seed manifest")
     parser.add_argument(
         "--state-root",
         default=str(DEFAULT_STATE_ROOT),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Materialize the Codex-0 "Lucidia Origin" seed into runnable prompt assets."""
+"""Materialize the BlackRoad OS-0 "Lucidia Origin" seed into runnable prompt assets."""
 from __future__ import annotations
 
 import argparse
@@ -222,21 +222,21 @@ def _write_manifest(emit_dir: Path, stem: str, seed: Dict[str, Any], prompt_path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Emit the Codex-0 Lucidia Origin prompt assets.")
+    parser = argparse.ArgumentParser(description="Emit the BlackRoad OS-0 Lucidia Origin prompt assets.")
     parser.add_argument(
         "--seed",
-        default="codex0.yaml",
-        help="Seed definition file (defaults to codex0.yaml, searched relative to lucidia/seeds).",
+        default="blackroad os0.yaml",
+        help="Seed definition file (defaults to blackroad os0.yaml, searched relative to lucidia/seeds).",
     )
     parser.add_argument(
         "--emit",
-        default="codex/prompts/next",
-        help="Directory to write generated artifacts (defaults to codex/prompts/next).",
+        default="blackroad os/prompts/next",
+        help="Directory to write generated artifacts (defaults to blackroad os/prompts/next).",
     )
     parser.add_argument(
         "--stem",
-        default="codex0_lucidia_origin",
-        help="Filename stem for generated artifacts (defaults to codex0_lucidia_origin).",
+        default="blackroad os0_lucidia_origin",
+        help="Filename stem for generated artifacts (defaults to blackroad os0_lucidia_origin).",
     )
     args = parser.parse_args()
 
@@ -248,9 +248,9 @@ def main() -> None:
     prompt_path = _write_yaml_prompt(emit_dir, args.stem, prompt_text, seed)
     manifest_path = _write_manifest(emit_dir, args.stem, seed, prompt_path)
 
-    print(f"[codex-0] Seed loaded from {seed_path}")
-    print(f"[codex-0] Prompt written to {prompt_path}")
-    print(f"[codex-0] Manifest written to {manifest_path}")
+    print(f"[blackroad os-0] Seed loaded from {seed_path}")
+    print(f"[blackroad os-0] Prompt written to {prompt_path}")
+    print(f"[blackroad os-0] Manifest written to {manifest_path}")
 
 
 if __name__ == "__main__":

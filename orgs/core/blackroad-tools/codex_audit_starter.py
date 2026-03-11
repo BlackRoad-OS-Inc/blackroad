@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json, pathlib
 
-m = json.loads(pathlib.Path("runtime/manifests/codex_repos_manifest.json").read_text())
+m = json.loads(pathlib.Path("runtime/manifests/blackroad os_repos_manifest.json").read_text())
 for r in m["repos"]:
     p = pathlib.Path(r["path"])
     print(f"\n=== {r['name']} ({r['branch']}) @ {r['head'][:7]} ===")

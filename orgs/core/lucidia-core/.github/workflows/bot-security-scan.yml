@@ -1,0 +1,149 @@
+name: Bot - Security Scan
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
+permissions:
+  contents: read
+  security-events: write
+  issues: write
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Secret scanning
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const secretPatterns = [
+              { name: 'API Key', pattern: /(?:api[_-]?key|apikey)[\s:=]+['"]?([a-zA-Z0-9_-]{20,})['"]?/gi },
+              { name: 'Password', pattern: /(?:password|passwd|pwd)[\s:=]+['"]?([^\s'"]{8,})['"]?/gi },
+              { name: 'Token', pattern: /(?:token|auth[_-]?token)[\s:=]+['"]?([a-zA-Z0-9_-]{20,})['"]?/gi },
+              { name: 'Private Key', pattern: /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/gi },
+              { name: 'AWS Key', pattern: /AKIA[0-9A-Z]{16}/gi },
+              { name: 'GitHub Token', pattern: /gh[ps]_[a-zA-Z0-9]{36,}/gi }
+            ];
+
+            const findings = [];
+
+            function scanDirectory(dir) {
+              const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+              for (const entry of entries) {
+                const fullPath = path.join(dir, entry.name);
+
+                // Skip node_modules, .git, etc.
+                if (entry.name.startsWith('.') || entry.name === 'node_modules') {
+                  continue;
+                }
+
+                if (entry.isDirectory()) {
+                  scanDirectory(fullPath);
+                } else if (entry.isFile()) {
+                  try {
+                    const content = fs.readFileSync(fullPath, 'utf8');
+
+                    for (const { name, pattern } of secretPatterns) {
+                      const matches = content.match(pattern);
+                      if (matches) {
+                        findings.push({
+                          type: name,
+                          file: fullPath,
+                          count: matches.length
+                        });
+                      }
+                    }
+                  } catch (err) {
+                    // Skip binary files
+                  }
+                }
+              }
+            }
+
+            scanDirectory('.');
+
+            if (findings.length > 0) {
+              const message = `🚨 **Security Alert: Potential Secrets Detected**
+
+${findings.map(f => `- **${f.type}** found in \`${f.file}\` (${f.count} occurrence${f.count > 1 ? 's' : ''})`).join('\n')}
+
+⚠️ **Action Required:**
+1. Verify if these are real secrets
+2. If yes, rotate credentials immediately
+3. Remove from git history
+4. Use environment variables instead
+
+cc: @${context.repo.owner}`;
+
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 Security: Potential Secrets Detected',
+                body: message,
+                labels: ['security', 'priority:high']
+              });
+
+              core.setFailed('Potential secrets detected!');
+            }
+
+      - name: Dependency scan
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Check for package.json
+            if (fs.existsSync('package.json')) {
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+
+              const outdatedWarnings = [];
+
+              // Known vulnerable package patterns (simplified)
+              const knownVulnerable = ['event-stream@3.3.6', 'lodash@<4.17.21'];
+
+              for (const [name, version] of Object.entries(deps)) {
+                const fullDep = `${name}@${version}`;
+                if (knownVulnerable.some(v => fullDep.includes(v))) {
+                  outdatedWarnings.push(`⚠️ ${name}@${version} has known vulnerabilities`);
+                }
+              }
+
+              if (outdatedWarnings.length > 0) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: '🔒 Security: Vulnerable Dependencies Detected',
+                  body: `**Vulnerable dependencies found:**\n\n${outdatedWarnings.join('\n')}\n\nPlease update to secure versions.`,
+                  labels: ['security', 'dependencies']
+                });
+              }
+            }
+
+      - name: CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, python, typescript
+        continue-on-error: true
+
+      - name: Run CodeQL
+        uses: github/codeql-action/analyze@v3
+        continue-on-error: true
+
+      - name: Log to memory
+        run: |
+          if [ -f ~/memory-system.sh ]; then
+            ~/memory-system.sh log bot-action "security-scan" "Security scan completed for ${{ github.repository }}"
+          fi

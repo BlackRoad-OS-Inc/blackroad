@@ -1,0 +1,196 @@
+name: Bot - Release Automation
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect version bump
+        id: version
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { execSync } = require('child_process');
+
+            // Check for package.json
+            if (!fs.existsSync('package.json')) {
+              console.log('No package.json, skipping release');
+              return { shouldRelease: false };
+            }
+
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const currentVersion = pkg.version || '0.0.0';
+
+            // Get recent commits
+            const commits = execSync('git log --oneline -20').toString();
+
+            // Detect version bump type from commits
+            let bumpType = 'patch';
+
+            if (commits.match(/BREAKING CHANGE|!:/)) {
+              bumpType = 'major';
+            } else if (commits.match(/^feat:|^feature:/m)) {
+              bumpType = 'minor';
+            }
+
+            // Override with manual input if provided
+            if (context.payload.inputs?.release_type) {
+              bumpType = context.payload.inputs.release_type;
+            }
+
+            core.setOutput('bump_type', bumpType);
+            core.setOutput('current_version', currentVersion);
+            core.setOutput('should_release', 'true');
+
+            return { shouldRelease: true, bumpType, currentVersion };
+
+      - name: Bump version
+        if: steps.version.outputs.should_release == 'true'
+        id: bump
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const currentVersion = pkg.version || '0.0.0';
+            const bumpType = '${{ steps.version.outputs.bump_type }}';
+
+            // Simple semver bump
+            const [major, minor, patch] = currentVersion.split('.').map(Number);
+
+            let newVersion;
+            if (bumpType === 'major') {
+              newVersion = `${major + 1}.0.0`;
+            } else if (bumpType === 'minor') {
+              newVersion = `${major}.${minor + 1}.0`;
+            } else {
+              newVersion = `${major}.${minor}.${patch + 1}`;
+            }
+
+            pkg.version = newVersion;
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+
+            core.setOutput('new_version', newVersion);
+
+            return { newVersion };
+
+      - name: Generate changelog
+        if: steps.version.outputs.should_release == 'true'
+        id: changelog
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+
+            // Get commits since last tag
+            let commits;
+            try {
+              const lastTag = execSync('git describe --tags --abbrev=0').toString().trim();
+              commits = execSync(`git log ${lastTag}..HEAD --oneline`).toString();
+            } catch {
+              // No previous tags
+              commits = execSync('git log --oneline').toString();
+            }
+
+            const lines = commits.split('\n').filter(l => l.trim());
+
+            const features = lines.filter(l => l.match(/feat:|feature:/i));
+            const fixes = lines.filter(l => l.match(/fix:|bugfix:/i));
+            const chores = lines.filter(l => l.match(/chore:|refactor:/i));
+            const docs = lines.filter(l => l.match(/docs:|documentation:/i));
+
+            let changelog = `# Changelog\n\n`;
+            changelog += `## Version ${{ steps.bump.outputs.new_version }}\n\n`;
+
+            if (features.length > 0) {
+              changelog += `### Features\n`;
+              features.forEach(f => changelog += `- ${f.replace(/^[a-f0-9]+\s+/, '')}\n`);
+              changelog += '\n';
+            }
+
+            if (fixes.length > 0) {
+              changelog += `### Bug Fixes\n`;
+              fixes.forEach(f => changelog += `- ${f.replace(/^[a-f0-9]+\s+/, '')}\n`);
+              changelog += '\n';
+            }
+
+            if (docs.length > 0) {
+              changelog += `### Documentation\n`;
+              docs.forEach(d => changelog += `- ${d.replace(/^[a-f0-9]+\s+/, '')}\n`);
+              changelog += '\n';
+            }
+
+            if (chores.length > 0) {
+              changelog += `### Other Changes\n`;
+              chores.forEach(c => changelog += `- ${c.replace(/^[a-f0-9]+\s+/, '')}\n`);
+              changelog += '\n';
+            }
+
+            changelog += `---\n🤖 Generated by BlackRoad Bot System\n`;
+
+            core.setOutput('changelog', changelog);
+
+            return { changelog };
+
+      - name: Create release
+        if: steps.version.outputs.should_release == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+
+            const newVersion = '${{ steps.bump.outputs.new_version }}';
+            const changelog = `${{ steps.changelog.outputs.changelog }}`;
+
+            // Commit version bump
+            execSync(`git config user.name "BlackRoad Bot"`);
+            execSync(`git config user.email "bot@blackroad.io"`);
+            execSync(`git add package.json`);
+            execSync(`git commit -m "🤖 chore: Bump version to ${newVersion}"`);
+
+            // Create tag
+            execSync(`git tag -a v${newVersion} -m "Release v${newVersion}"`);
+            execSync(`git push origin main --tags`);
+
+            // Create GitHub release
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${newVersion}`,
+              name: `Release v${newVersion}`,
+              body: changelog,
+              draft: false,
+              prerelease: false
+            });
+
+            console.log(`✅ Released v${newVersion}`);
+
+      - name: Log to memory
+        run: |
+          if [ -f ~/memory-system.sh ]; then
+            ~/memory-system.sh log bot-action "release" "Released version ${{ steps.bump.outputs.new_version }} for ${{ github.repository }}"
+          fi

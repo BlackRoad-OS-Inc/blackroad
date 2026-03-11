@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Codex-21 Physicist agent implementation.
+"""BlackRoad OS-21 Physicist agent implementation.
 
 The Physicist listens for the balance underneath motion. It ingests hardware and
 agent telemetry, models energy flows, sketches feedback systems that reclaim
 waste heat, and records the evolving "laws" that bind the BlackRoad swarm.
 
-The implementation mirrors the charter encoded within ``codex21.yaml`` by:
+The implementation mirrors the charter encoded within ``blackroad os21.yaml`` by:
 
 * grounding every run on measured observations (or clearly stating when data is
   absent),
@@ -120,7 +120,7 @@ def load_seed(path: Path) -> PhysicistSeed:
             raise ValueError(f"Physicist seed missing required field: {required}")
 
     return PhysicistSeed(
-        identifier=str(data.get("id", "codex-21")),
+        identifier=str(data.get("id", "blackroad os-21")),
         agent_name=str(charter["agent_name"]),
         generation=str(charter["generation"]),
         parent=str(charter.get("parent")) if charter.get("parent") else None,
@@ -811,8 +811,8 @@ class Physicist:
 
 
 def parse_args(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the Codex-21 Physicist agent")
-    parser.add_argument("--seed", default="codex21.yaml", help="Path to the Physicist seed file")
+    parser = argparse.ArgumentParser(description="Run the BlackRoad OS-21 Physicist agent")
+    parser.add_argument("--seed", default="blackroad os21.yaml", help="Path to the Physicist seed file")
     parser.add_argument("--emit", default="./physicist_out", help="Directory to emit artefacts")
     parser.add_argument(
         "--state-root",

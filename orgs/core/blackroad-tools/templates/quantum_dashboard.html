@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BlackRoad Quantum Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(ellipse at top, #0a0f1e 0%, #050816 40%, #020308 70%, #000 100%);
+      color: #f0f0ff;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin: 0;
+      background: linear-gradient(135deg, #ff9d00, #ff0066, #7700ff, #0066ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .chip {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.4);
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+    .subtitle {
+      margin-top: 8px;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+    .panel {
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(145deg, rgba(10,15,35,0.95), rgba(5,8,22,0.98));
+      padding: 20px 24px;
+      margin-top: 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .panel h2 {
+      font-size: 1.1rem;
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .col {
+      flex: 1 1 200px;
+    }
+    label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.7;
+      margin-bottom: 6px;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.5);
+      color: #f0f0ff;
+      font-size: 1rem;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="number"]:focus {
+      border-color: rgba(0,180,255,0.7);
+      box-shadow: 0 0 0 2px rgba(0,180,255,0.25);
+    }
+    button {
+      cursor: pointer;
+      padding: 12px 24px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #ff9d00 0%, #ff0066 50%, #0066ff 100%);
+      color: #050816;
+      margin-top: 20px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(255,0,102,0.4);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+    .status-pill.online {
+      background: rgba(26,245,157,0.12);
+      border: 1px solid rgba(26,245,157,0.5);
+      color: #1af59d;
+    }
+    .status-pill.offline {
+      background: rgba(255,86,86,0.12);
+      border: 1px solid rgba(255,86,86,0.5);
+      color: #ff5656;
+    }
+    .status-pill.loading {
+      background: rgba(255,200,0,0.12);
+      border: 1px solid rgba(255,200,0,0.4);
+      color: #ffc800;
+    }
+    .mono {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    }
+    .result-card {
+      margin-top: 16px;
+      padding: 16px 18px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(0,102,255,0.15) 0%, rgba(119,0,255,0.1) 100%);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .result-json {
+      background: rgba(0,0,0,0.4);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .math-explainer {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: rgba(255,157,0,0.08);
+      border-left: 3px solid #ff9d00;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    .math-explainer .formula {
+      font-family: "JetBrains Mono", monospace;
+      background: rgba(0,0,0,0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .prob-bar {
+      display: flex;
+      height: 24px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 12px;
+      background: rgba(0,0,0,0.3);
+    }
+    .prob-bar .p0 {
+      background: linear-gradient(90deg, #0066ff, #00aaff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      transition: width 0.3s;
+    }
+    .prob-bar .p1 {
+      background: linear-gradient(90deg, #ff0066, #ff6600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      transition: width 0.3s;
+    }
+    .learn-list {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 0.85rem;
+      line-height: 1.8;
+    }
+    .learn-list code {
+      background: rgba(0,0,0,0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+    a {
+      color: #66b2ff;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .muted {
+      opacity: 0.6;
+    }
+    .small {
+      font-size: 0.8rem;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div style="margin-bottom: 24px;">
+      <a href="/" style="color: #00e5ff; text-decoration: none; font-size: 0.9rem;">&larr; Dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1>ψ Quantum Dashboard</h1>
+      <span class="chip">BRQ-01 Spiral</span>
+      <span class="chip">2 qubits</span>
+    </div>
+    <p class="subtitle">
+      First BlackRoad AI quantum node: talk to ψ, see predictions, and map them to ⟨Z⟩ and probabilities.
+    </p>
+
+    <!-- Status Panel -->
+    <div class="panel">
+      <h2>📡 Node Status</h2>
+      <div id="status-container">
+        <span id="status-pill" class="status-pill loading">checking...</span>
+        <span id="status-details" class="small muted mono" style="margin-left: 12px;"></span>
+      </div>
+    </div>
+
+    <!-- Prediction Panel -->
+    <div class="panel">
+      <h2>🔮 Run a Prediction</h2>
+      <p class="small muted">
+        BRQ-01 takes a 2D feature vector <code class="mono">x = [x₀, x₁]</code> and returns
+        the probability for class 1. We compute the implied ⟨Z⟩ using
+        <code class="mono">⟨Z⟩ = 1 - 2p₁</code>.
+      </p>
+
+      <div class="row">
+        <div class="col">
+          <label for="x0">x₀ (rotation on qubit 0)</label>
+          <input id="x0" type="number" step="0.1" value="0.0" />
+        </div>
+        <div class="col">
+          <label for="x1">x₁ (rotation on qubit 1)</label>
+          <input id="x1" type="number" step="0.1" value="0.0" />
+        </div>
+      </div>
+
+      <button id="run-btn">Run ψ on this input</button>
+
+      <!-- Results -->
+      <div id="result-area" class="result-card hidden">
+        <h3 style="margin: 0 0 12px; font-size: 0.95rem;">Response from ψ</h3>
+        <div id="result-json" class="result-json mono"></div>
+
+        <div class="prob-bar">
+          <div id="prob-p0" class="p0" style="width: 50%;">P(0)</div>
+          <div id="prob-p1" class="p1" style="width: 50%;">P(1)</div>
+        </div>
+
+        <div id="math-explainer" class="math-explainer"></div>
+      </div>
+    </div>
+
+    <!-- Learn Panel -->
+    <div class="panel">
+      <h2>📐 Learn the Math</h2>
+      <p class="small muted">
+        Want to see how ψ thinks under the hood? Open <strong>Math Lab (Σ)</strong> from the terminal:
+      </p>
+      <ul class="learn-list">
+        <li><code>1</code> - Vectors → Qubits → ψ</li>
+        <li><code>2</code> - Matrices → Gates → RX/RY/RZ</li>
+        <li><code>3</code> - Inner Products & ⟨ψ|φ⟩</li>
+        <li><code>4</code> - Tensor Products & Entanglement</li>
+        <li><code>5</code> - Live BRQ-01 Demo (ψ on this Pi)</li>
+      </ul>
+      <p class="small muted" style="margin-top: 12px;">
+        Run: <code class="mono">python3 ./blackroad-math-lab.py</code> or press <code>m</code> in the menu.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <p class="small muted" style="text-align: center; margin-top: 32px;">
+      © 2025 BlackRoad OS, Inc. · ψ uses PennyLane (Apache 2.0, © Xanadu)
+    </p>
+  </div>
+
+  <script>
+    const QUANTUM_API = '/api/quantum';
+
+    const statusPill = document.getElementById('status-pill');
+    const statusDetails = document.getElementById('status-details');
+    const runBtn = document.getElementById('run-btn');
+    const resultArea = document.getElementById('result-area');
+    const resultJson = document.getElementById('result-json');
+    const mathExplainer = document.getElementById('math-explainer');
+    const probP0 = document.getElementById('prob-p0');
+    const probP1 = document.getElementById('prob-p1');
+
+    async function checkStatus() {
+      statusPill.className = 'status-pill loading';
+      statusPill.textContent = 'checking...';
+      statusDetails.textContent = '';
+
+      try {
+        const res = await fetch(`${QUANTUM_API}/status`);
+        const data = await res.json();
+
+        if (data.ok && data.data) {
+          statusPill.className = 'status-pill online';
+          statusPill.textContent = '● online';
+
+          const s = data.data;
+          const details = [];
+          if (s.node_id) details.push(s.node_id);
+          if (s.pennylane_version) details.push(`PennyLane ${s.pennylane_version}`);
+          statusDetails.textContent = details.join(' · ');
+        } else {
+          throw new Error(data.error || 'Unknown error');
+        }
+      } catch (err) {
+        statusPill.className = 'status-pill offline';
+        statusPill.textContent = '● offline';
+        statusDetails.textContent = err.message || 'Connection failed';
+      }
+    }
+
+    async function runPrediction() {
+      const x0 = parseFloat(document.getElementById('x0').value) || 0;
+      const x1 = parseFloat(document.getElementById('x1').value) || 0;
+
+      runBtn.disabled = true;
+      runBtn.textContent = 'Running...';
+
+      try {
+        const res = await fetch(`${QUANTUM_API}/predict`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ x0, x1 })
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          throw new Error(data.error || 'Prediction failed');
+        }
+
+        const payload = data.data;
+        resultJson.textContent = JSON.stringify(payload, null, 2);
+
+        const p1 = parseFloat(payload.probability || 0);
+        const cls = payload.class;
+        const p0 = 1 - p1;
+        const expZ = 1 - 2 * p1;
+
+        // Update probability bar
+        probP0.style.width = `${p0 * 100}%`;
+        probP0.textContent = `P(0) = ${(p0 * 100).toFixed(1)}%`;
+        probP1.style.width = `${p1 * 100}%`;
+        probP1.textContent = `P(1) = ${(p1 * 100).toFixed(1)}%`;
+
+        // Math explanation
+        mathExplainer.innerHTML = `
+          <strong>Decoding the math:</strong><br><br>
+          From response: <span class="formula">p₁ = ${p1.toFixed(4)}</span>,
+          class = <span class="formula">${cls}</span><br><br>
+
+          Implied expectation value:<br>
+          <span class="formula">⟨Z⟩ = 1 - 2p₁ = 1 - 2×${p1.toFixed(4)} = ${expZ.toFixed(4)}</span><br><br>
+
+          From inner product math:<br>
+          <span class="formula">⟨Z⟩ = |α|² - |β|²</span><br>
+          <span class="formula">P(0) = |α|² = ${p0.toFixed(4)}</span><br>
+          <span class="formula">P(1) = |β|² = ${p1.toFixed(4)}</span><br><br>
+
+          The classifier says: "For x = [${x0}, ${x1}], I computed |ψ⟩ with
+          <strong>${(p0*100).toFixed(1)}%</strong> chance of |0⟩ and
+          <strong>${(p1*100).toFixed(1)}%</strong> chance of |1⟩,
+          so I predict class <strong>${cls}</strong>."
+        `;
+
+        resultArea.classList.remove('hidden');
+
+      } catch (err) {
+        resultJson.textContent = `Error: ${err.message}`;
+        mathExplainer.innerHTML = '';
+        probP0.style.width = '50%';
+        probP1.style.width = '50%';
+        resultArea.classList.remove('hidden');
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = 'Run ψ on this input';
+      }
+    }
+
+    // Event listeners
+    runBtn.addEventListener('click', runPrediction);
+
+    // Allow Enter key to trigger prediction
+    document.getElementById('x0').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') runPrediction();
+    });
+    document.getElementById('x1').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') runPrediction();
+    });
+
+    // Initial status check
+    checkStatus();
+    // Refresh status every 30 seconds
+    setInterval(checkStatus, 30000);
+  </script>
+</body>
+</html>

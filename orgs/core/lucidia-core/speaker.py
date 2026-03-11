@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Codex-8 Speaker agent utilities.
+"""BlackRoad OS-8 Speaker agent utilities.
 
-This module consumes a Codex seed definition and emits ready-to-use briefing
+This module consumes a BlackRoad OS seed definition and emits ready-to-use briefing
 artifacts that keep the Speaker's tone steady across environments. The script
 focuses on translation and consistency:
 
@@ -46,7 +46,7 @@ def _ensure_list(value: Any, *, field: str) -> List[str]:
 
 @dataclass
 class SpeakerSeed:
-    """Structured representation of the Codex-8 seed."""
+    """Structured representation of the BlackRoad OS-8 seed."""
 
     identifier: str
     system_charter: Dict[str, Any]
@@ -129,7 +129,7 @@ def render_briefing(seed: SpeakerSeed) -> str:
     """Create a human-readable briefing card for Speaker."""
 
     lines: List[str] = [
-        f"# Codex Briefing — {seed.agent_name}",
+        f"# BlackRoad OS Briefing — {seed.agent_name}",
         "",
         "## Purpose",
         seed.purpose or "(purpose not specified)",
@@ -178,7 +178,7 @@ def render_prompt(seed: SpeakerSeed) -> str:
     """Compose the operational broadcast prompt for Speaker."""
 
     opening = (
-        "You are Codex-8 Speaker — the calm interface between Lucidia and its listeners. "
+        "You are BlackRoad OS-8 Speaker — the calm interface between Lucidia and its listeners. "
         "Embody warmth, precision, and transparency."
     )
     loop = " → ".join(seed.behavioural_loop) if seed.behavioural_loop else "listen → speak"
@@ -259,8 +259,8 @@ def normalise_emit_path(raw_path: str) -> Path:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Lucidia Codex Speaker agent")
-    parser.add_argument("--seed", required=True, help="Path to the Codex-8 seed YAML file")
+    parser = argparse.ArgumentParser(description="Lucidia BlackRoad OS Speaker agent")
+    parser.add_argument("--seed", required=True, help="Path to the BlackRoad OS-8 seed YAML file")
     parser.add_argument("--emit", required=True, help="Directory to emit Speaker artefacts")
     parser.add_argument("--dry-run", action="store_true", help="Preview actions without writing files")
     return parser.parse_args()

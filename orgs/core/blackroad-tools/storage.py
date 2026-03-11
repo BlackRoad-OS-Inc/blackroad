@@ -44,41 +44,23 @@ def write(path: Union[str, Path], content: Union[Mapping[str, Any], str]) -> Non
     ``*.jsonl`` files are appended to, while all other files are overwritten.
     Mapping content is serialised to JSON; string content is written verbatim.
     """
+    path = _rewrite(str(path))
+    _apply_chaos()
 
     target = Path(path)
     _ensure_parent(target)
     mode = "a" if target.suffix == ".jsonl" else "w"
     payload = json.dumps(content) if isinstance(content, Mapping) else str(content)
     with target.open(mode, encoding="utf-8") as handle:
-def write(path: str, content: Union[dict, str]) -> None:
-    path = _rewrite(path)
-    _apply_chaos()
-import json
-import os
-from pathlib import Path
-from typing import Union
-
-
-def write(path: str, content: Union[dict, str]) -> None:
-    p = Path(path)
-    os.makedirs(p.parent, exist_ok=True)
-    mode = "a" if p.suffix == ".jsonl" else "w"
-    text = json.dumps(content) if isinstance(content, dict) else str(content)
-    with open(p, mode, encoding="utf-8") as fh:
-        if mode == "a":
-            handle.write(payload + "\n")
-        else:
-            handle.write(payload)
+        handle.write(payload)
 
 
 def read(path: Union[str, Path]) -> str:
     """Read text from *path*, returning an empty string if it does not exist."""
+    path = _rewrite(str(path))
+    _apply_chaos()
 
     target = Path(path)
-def read(path: str) -> str:
-    path = _rewrite(path)
-    _apply_chaos()
-    p = Path(path)
     try:
         return target.read_text(encoding="utf-8")
     except FileNotFoundError:
@@ -212,94 +194,3 @@ __all__ = [
     "load_json",
     "save_json",
 ]
-            fh.write(text + "\n")
-        else:
-            fh.write(text)
-
-
-def read(path: str) -> str:
-    p = Path(path)
-    try:
-        with open(p, "r", encoding="utf-8") as fh:
-            return fh.read()
-    except FileNotFoundError:
-        return ""
-from __future__ import annotations
-
-from pathlib import Path
-
-from config import settings
-from security import crypto
-
-DATA_ROOT = Path('data')
-TEXT_EXTS = {'.json', '.jsonl', '.md', '.csv'}
-
-
-def _needs_encrypt(path: Path) -> bool:
-    try:
-        rel = path.resolve().relative_to(DATA_ROOT.resolve())
-    except ValueError:
-        return False
-    return settings.ENCRYPT_DATA_AT_REST and path.suffix in TEXT_EXTS
-
-
-def write_bytes(path: Path, data: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if _needs_encrypt(path):
-        data = crypto.encrypt_bytes(data)
-    path.write_bytes(data)
-
-
-def read_bytes(path: Path) -> bytes:
-    data = path.read_bytes()
-    if data.startswith(crypto.HEADER):
-        data = crypto.decrypt_bytes(data)
-    return data
-from __future__ import annotations
-
-import json
-from pathlib import Path
-
-from config.settings import settings
-
-
-def _ensure_parent(path: Path) -> None:
-    if settings.READ_ONLY:
-        return
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-
-def write_text(path: Path, content: str) -> None:
-    _ensure_parent(path)
-    if settings.READ_ONLY:
-        return
-    with path.open("w", encoding="utf-8") as fh:
-        fh.write(content)
-
-
-def append_text(path: Path, content: str) -> None:
-    _ensure_parent(path)
-    if settings.READ_ONLY:
-        return
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write(content)
-
-
-def write_json(path: Path, data: dict) -> None:
-    write_text(path, json.dumps(data, indent=2))
-"""Stub storage adapter.
-
-Provides a placeholder interface for persistent storage.
-"""
-
-
-def save(key: str, data: str) -> None:
-    """Persist *data* under *key*.
-
-    Raises
-    ------
-    NotImplementedError
-        Always, since storage is not configured.
-    """
-
-    raise NotImplementedError("Persistent storage not configured")

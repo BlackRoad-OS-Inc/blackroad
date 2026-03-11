@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Lucidia Codex-12 Analyst agent implementation.
+"""Lucidia BlackRoad OS-12 Analyst agent implementation.
 
 The Analyst watches telemetry, metrics, dialogue summaries, and memory notes to
 surface gentle, well-explained insight.  It favours transparency: every
-statistic that leaves the loop carries enough context for the other Codex
+statistic that leaves the loop carries enough context for the other BlackRoad OS
 agents (and humans) to understand how the number was derived.  The behavioural
-loop follows the charter for Codex-12 "Analyst":
+loop follows the charter for BlackRoad OS-12 "Analyst":
 
     gather → analyze → model → interpret → teach → rest
 
@@ -32,7 +32,7 @@ import yaml
 
 DEFAULT_SOURCE_ROOT = Path("/srv/lucidia/state")
 DEFAULT_STATE_ROOT = Path("/srv/lucidia/analyst")
-DEFAULT_EMIT_DIR = Path("/codex/prompts/next")
+DEFAULT_EMIT_DIR = Path("/blackroad os/prompts/next")
 STATE_FILE_NAME = "state.json"
 INSIGHT_LOG_NAME = "insights.jsonl"
 HISTORY_LIMIT = 24
@@ -255,7 +255,7 @@ def _monotonic_run(history: List[float]) -> Optional[str]:
 
 
 class Analyst:
-    """Implements the Codex-12 Analyst behavioural loop."""
+    """Implements the BlackRoad OS-12 Analyst behavioural loop."""
 
     def __init__(
         self,
@@ -269,7 +269,7 @@ class Analyst:
     ) -> None:
         self.seed = load_seed(seed_path)
         charter = self.seed.get("system_charter", {})
-        self.identity = charter.get("agent_name", "Codex-12 Analyst")
+        self.identity = charter.get("agent_name", "BlackRoad OS-12 Analyst")
         self.directives = self.seed.get("directives", [])
         self.seed_language = str(self.seed.get("seed_language", "")).strip()
         self.behavioural_loop = self.seed.get("behavioral_loop", [])
@@ -414,14 +414,14 @@ class Analyst:
             handle.write("\n")
         if self.emit_dir is not None:
             timestamp = insight["generated_at"].replace(":", "-")
-            file_path = self.emit_dir / f"codex12_insight_{timestamp}.json"
+            file_path = self.emit_dir / f"blackroad os12_insight_{timestamp}.json"
             file_path.write_text(serialized + "\n", encoding="utf-8")
         print(f"[{self.identity}] emitted insight with {len(insight.get('summary', {}))} stream summaries.")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the Codex-12 Analyst behavioural loop.")
-    parser.add_argument("--seed", type=Path, required=True, help="Path to the Codex-12 seed file (YAML).")
+    parser = argparse.ArgumentParser(description="Run the BlackRoad OS-12 Analyst behavioural loop.")
+    parser.add_argument("--seed", type=Path, required=True, help="Path to the BlackRoad OS-12 seed file (YAML).")
     parser.add_argument(
         "--state-root",
         type=Path,
@@ -432,7 +432,7 @@ def parse_args() -> argparse.Namespace:
         "--emit",
         type=Path,
         default=None,
-        help="Directory for emitting Codex insight artifacts (default: /codex/prompts/next).",
+        help="Directory for emitting BlackRoad OS insight artifacts (default: /blackroad os/prompts/next).",
     )
     parser.add_argument(
         "--poll-interval",

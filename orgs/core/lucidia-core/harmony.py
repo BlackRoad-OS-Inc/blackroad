@@ -1,4 +1,4 @@
-"""Utilities to coordinate Lucidia with sibling Codex deployments."""
+"""Utilities to coordinate Lucidia with sibling BlackRoad OS deployments."""
 from __future__ import annotations
 
 import json
@@ -36,7 +36,7 @@ class HarmonyCoordinator:
     """Persist lightweight coordination events for multi-node Lucidia setups.
 
     The coordinator keeps a small JSON ledger describing the local node as well
-    as any handshakes initiated with sibling Codex deployments.  It does not
+    as any handshakes initiated with sibling BlackRoad OS deployments.  It does not
     assume bidirectional connectivity; instead it records intent so an
     out-of-band transport (SSH, MQTT, etc.) can replay the handshake.
     """

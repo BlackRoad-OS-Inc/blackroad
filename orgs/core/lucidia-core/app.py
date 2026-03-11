@@ -7,6 +7,8 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 
+# --- routes ----------------------------------------------------------------
+
 @app.route("/")
 def index():
     """Health check and API info."""

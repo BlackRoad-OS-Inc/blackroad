@@ -1,0 +1,41 @@
+[project]
+name = "blackroad-agent-os"
+version = "0.1.0"
+description = "Distributed agent orchestration for Raspberry Pi machines"
+requires-python = ">=3.10"
+
+dependencies = [
+    "flask>=3.0.0",
+    "flask-cors>=4.0.0",
+    "gunicorn>=21.2.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "websockets>=12.0",
+    "pydantic>=2.0",
+    "structlog>=23.0",
+    "psutil>=5.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["agent", "controller"]
+omit = ["*/test_*", "*/conftest.py"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 50

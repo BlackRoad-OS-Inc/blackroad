@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Codex-22 Mathematician agent implementation.
+"""BlackRoad OS-22 Mathematician agent implementation.
 
 This agent gives structure to Lucidia's mathematical knowledge. It ingests
 formula definitions, proof requests, contradiction logs, and dataset manifests,
@@ -118,7 +118,7 @@ def load_seed(path: Path) -> MathematicianSeed:
             raise ValueError(f"Mathematician seed missing required field: {required}")
 
     return MathematicianSeed(
-        identifier=str(data.get("id", "codex-22")),
+        identifier=str(data.get("id", "blackroad os-22")),
         agent_name=str(charter["agent_name"]),
         generation=str(charter["generation"]),
         parent=str(charter.get("parent")) if charter.get("parent") else None,
@@ -262,7 +262,7 @@ class ProofRecord:
 
 
 class Mathematician:
-    """Implements the Codex-22 Mathematician behavioural loop."""
+    """Implements the BlackRoad OS-22 Mathematician behavioural loop."""
 
     def __init__(
         self,
@@ -734,7 +734,7 @@ class Mathematician:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the Codex-22 Mathematician agent")
+    parser = argparse.ArgumentParser(description="Run the BlackRoad OS-22 Mathematician agent")
     parser.add_argument("--seed", required=True, help="Path to the Mathematician seed manifest")
     parser.add_argument("--emit", help="Directory for emitted prompts")
     parser.add_argument(

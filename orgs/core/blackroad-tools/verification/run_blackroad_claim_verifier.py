@@ -6,9 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Dict
-from typing import Any, Dict, List, Sequence, Set
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, List, Sequence, Set
 
 DEFAULT_CLAIMS_PATH = Path("docs/verification/blackroad_resume_claims.json")
 
@@ -151,8 +149,8 @@ def resolve_top_resume_bullet_records(
 
     if policy is None:
         policy = resolve_resume_policy(claims)
-        "prompt": RESUME_VERIFICATION_PROMPT.strip(),
-    }
+
+    return []
 
 
 def resolve_top_resume_bullets(claims: Dict[str, Any]) -> List[str]:
@@ -383,7 +381,6 @@ def resolve_interview_validation(claims: Dict[str, Any]) -> List[Dict[str, Any]]
         try:
             related_bullet = bullets[related_id]
         except (IndexError, TypeError):
-        except IndexError:
             raise SystemExit(
                 f"interview_validation entry {index} references bullet {related_id}, which is out of range."
             ) from None
@@ -466,17 +463,12 @@ def main() -> None:
         default=None,
         help="Optional path to write the payload JSON. Prints to stdout when omitted.",
     )
-
-    args = parser.parse_args()
-    claims = load_claims(args.claims)
-    action_group = parser.add_mutually_exclusive_group()
-    action_group.add_argument(
     parser.add_argument(
         "--resume-bullets",
         action="store_true",
         help="When set, print the top resume bullets instead of the verification payload.",
     )
-    action_group.add_argument(
+    parser.add_argument(
         "--validate",
         action="store_true",
         help="Validate the claims file structure and exit without emitting the payload.",
@@ -484,43 +476,16 @@ def main() -> None:
 
     args = parser.parse_args()
     claims = load_claims(args.claims)
+
     if args.validate:
         validate_claims(claims)
         print("Claims file structure verified.")
         return
 
     if args.resume_bullets:
-        policy = resolve_resume_policy(claims)
-        bullet_records = resolve_top_resume_bullet_records(claims, policy)
-        validation_entries = resolve_interview_validation(claims)
-        grouped_validation = group_interview_validation_by_bullet(validation_entries)
-        entity = require_entity_string(claims)
-        rendered = format_resume_bullets(bullet_records, grouped_validation, policy, entity)
-        bullets = resolve_top_resume_bullets(claims)
-        rendered = format_resume_bullets(bullets)
-        validation_entries = resolve_interview_validation(claims)
-        validation_section = format_interview_validation(validation_entries)
-        if validation_section:
-            rendered = f"{rendered}\n\n{validation_section}"
-
-    args = parser.parse_args()
-    claims = load_claims(args.claims)
-    if args.resume_bullets:
         bullets = claims.get("top_resume_bullets")
         if not bullets:
-            raise SystemExit(
-                "No 'top_resume_bullets' section found in claims JSON.\n"
-                "Please ensure your claims file includes a 'top_resume_bullets' key with a list of resume bullets.\n"
-                "Example structure:\n"
-                '{\n'
-                '  "top_resume_bullets": [\n'
-                '    "Built distributed memory palace for multi-agent chat",\n'
-                '    "Reduced latency by 30% via async SSE routes",\n'
-                '    "Benchmarked QNN estimator on CI artifacts"\n'
-                '  ],\n'
-                '  ...\n'
-                '}\n'
-            )
+            raise SystemExit("No 'top_resume_bullets' section found in claims JSON.")
         rendered = format_resume_bullets(bullets)
         if args.output is None:
             print(rendered)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Codex-3 Researcher agent.
+"""BlackRoad OS-3 Researcher agent.
 
-This agent follows the charter provided in ``codex3.yaml``. It watches for
+This agent follows the charter provided in ``blackroad os3.yaml``. It watches for
 experiment briefs dropped into ``/srv/lucidia/researcher/inbox.jsonl`` and
 contradictions escalated by Guardian via
 ``/srv/lucidia/state/contradictions.log``. Each cycle moves through the
@@ -12,12 +12,12 @@ Key behaviours implemented here:
 
 * Structured experiment ingestion with reproducibility fingerprints.
 * Hypothesis generation from Guardian contradictions.
-* Teaching card emission for other Codex agents.
+* Teaching card emission for other BlackRoad OS agents.
 * Emergence tracking that highlights recurring research topics.
 
 The seed manifest is stored as JSON (valid YAML) so we can load it using the
 standard library. The ``--emit`` directory receives machine-readable deltas
-that downstream Codex tooling can ingest.
+that downstream BlackRoad OS tooling can ingest.
 """
 
 from __future__ import annotations
@@ -78,11 +78,11 @@ class ResearchState:
 
 
 class Researcher:
-    """Implements the Codex-3 Researcher behavioural loop."""
+    """Implements the BlackRoad OS-3 Researcher behavioural loop."""
 
     def __init__(self, seed_path: Path, emit_dir: Path, poll_interval: float = 5.0):
         self.seed_manifest = self._load_seed(seed_path)
-        self.identity = self.seed_manifest.get("agent", "Codex-3 Researcher")
+        self.identity = self.seed_manifest.get("agent", "BlackRoad OS-3 Researcher")
         self.directives = self.seed_manifest.get("directives", [])
         self.core_tasks = self.seed_manifest.get("core_tasks", [])
         self.behavioural_loop = self.seed_manifest.get(
@@ -347,8 +347,8 @@ class Researcher:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Codex-3 Researcher agent")
-    parser.add_argument("--seed", type=Path, required=True, help="Path to codex3 seed manifest")
+    parser = argparse.ArgumentParser(description="BlackRoad OS-3 Researcher agent")
+    parser.add_argument("--seed", type=Path, required=True, help="Path to blackroad os3 seed manifest")
     parser.add_argument("--emit", type=Path, required=True, help="Directory to write output deltas")
     parser.add_argument(
         "--interval",

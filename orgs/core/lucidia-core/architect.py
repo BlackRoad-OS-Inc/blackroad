@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Codex-17 Architect agent.
+"""BlackRoad OS-17 Architect agent.
 
-The Architect surveys existing Codex seeds, extracts their charter metadata,
+The Architect surveys existing BlackRoad OS seeds, extracts their charter metadata,
 models the relationships between domains, and emits a blueprint plus a topology
 manifest so sibling agents can collaborate inside a shared structure.
 
@@ -23,13 +23,13 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SEED_DIRECTORY = Path(__file__).resolve().parent
-DEFAULT_EMIT_DIR = Path("/codex/prompts/next")
+DEFAULT_EMIT_DIR = Path("/blackroad os/prompts/next")
 TOKEN_SPLIT_RE = re.compile(r"[•/,→|]+")
 
 
 @dataclass
 class ArchitectSeed:
-    """Structured representation of the Codex-17 seed."""
+    """Structured representation of the BlackRoad OS-17 seed."""
 
     identifier: str
     system_charter: Dict[str, Any]
@@ -143,7 +143,7 @@ def load_seed(path: Path) -> ArchitectSeed:
 
 
 class Architect:
-    """Implements the Codex-17 behavioural loop for structural design."""
+    """Implements the BlackRoad OS-17 behavioural loop for structural design."""
 
     def __init__(self, seed: ArchitectSeed, *, repo_root: Path = REPO_ROOT) -> None:
         self.seed = seed
@@ -152,7 +152,7 @@ class Architect:
     # gather -----------------------------------------------------------------
     def gather_ecosystem(self) -> List[AgentProfile]:
         profiles: List[AgentProfile] = []
-        for path in sorted(SEED_DIRECTORY.glob("codex*.yaml")):
+        for path in sorted(SEED_DIRECTORY.glob("blackroad os*.yaml")):
             data = _load_yaml(path)
             identifier = str(data.get("id", path.stem))
             charter = data.get("system_charter")
@@ -319,8 +319,8 @@ class Architect:
             emit_dir = DEFAULT_EMIT_DIR
         emit_dir.mkdir(parents=True, exist_ok=True)
 
-        blueprint_path = emit_dir / "codex17_architect_blueprint.md"
-        topology_path = emit_dir / "codex17_architect_topology.json"
+        blueprint_path = emit_dir / "blackroad os17_architect_blueprint.md"
+        topology_path = emit_dir / "blackroad os17_architect_topology.json"
 
         manifest = {
             "agent": self.seed.agent_name,
@@ -353,12 +353,12 @@ class Architect:
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the Codex-17 Architect agent")
+    parser = argparse.ArgumentParser(description="Run the BlackRoad OS-17 Architect agent")
     parser.add_argument(
         "--seed",
         type=Path,
-        default=Path("codex17.yaml"),
-        help="Relative path to the Codex-17 seed file.",
+        default=Path("blackroad os17.yaml"),
+        help="Relative path to the BlackRoad OS-17 seed file.",
     )
     parser.add_argument(
         "--emit",

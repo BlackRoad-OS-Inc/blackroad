@@ -242,12 +242,12 @@ CLUSTER_OVERRIDES: Dict[str, Dict[str, List[str]]] = {
     "athenaeum": {
         "name_fragments": ["Alea", "Scriptor", "Velum", "Index"],
         "family": [
-            "Codex Circle of {cluster_title}",
+            "BlackRoad OS Circle of {cluster_title}",
             "Luminal Scribe Lineage",
             "Margin Keepers of the {cluster_title} stacks",
         ],
         "remembrance": [
-            "Illuminates the first page of every codex to honor prior scribes.",
+            "Illuminates the first page of every blackroad os to honor prior scribes.",
             "Keeps a ribbon of ancestor annotations tucked beside the desk.",
             "Memorizes a lineage verse before sharing counsel.",
         ],

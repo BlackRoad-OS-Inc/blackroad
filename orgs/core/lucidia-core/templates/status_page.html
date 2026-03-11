@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>System Status - BlackRoad OS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg-primary: #020308;
+      --bg-secondary: rgba(6, 10, 30, 0.92);
+      --bg-card: rgba(12, 18, 40, 0.85);
+      --text-primary: #f5f5ff;
+      --text-muted: rgba(245, 245, 255, 0.7);
+      --accent-cyan: #00e5ff;
+      --accent-green: #1af59d;
+      --accent-yellow: #ffc400;
+      --accent-purple: #a855f7;
+      --accent-orange: #ff9d00;
+      --accent-pink: #ff0066;
+      --accent-red: #ff4444;
+      --border-subtle: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(circle at top, #050816 0, #020308 45%, #000000 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    /* Nav */
+    .nav {
+      margin-bottom: 24px;
+    }
+
+    .nav a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    /* Header */
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+
+    .mono {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    /* Overall Status */
+    .overall-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+
+    .overall-status.healthy {
+      background: rgba(26, 245, 157, 0.1);
+      border: 1px solid rgba(26, 245, 157, 0.3);
+    }
+
+    .overall-status.degraded {
+      background: rgba(255, 196, 0, 0.1);
+      border: 1px solid rgba(255, 196, 0, 0.3);
+    }
+
+    .overall-status.down {
+      background: rgba(255, 68, 68, 0.1);
+      border: 1px solid rgba(255, 68, 68, 0.3);
+    }
+
+    .overall-icon {
+      font-size: 2.5rem;
+    }
+
+    .overall-text {
+      flex: 1;
+    }
+
+    .overall-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .overall-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .refresh-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-primary);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .refresh-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Services Grid */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .service-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .service-card.ok {
+      border-left: 3px solid var(--accent-green);
+    }
+
+    .service-card.error {
+      border-left: 3px solid var(--accent-red);
+    }
+
+    .service-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .service-name {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .service-status {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+
+    .service-status.ok {
+      background: rgba(26, 245, 157, 0.15);
+      border: 1px solid rgba(26, 245, 157, 0.4);
+      color: var(--accent-green);
+    }
+
+    .service-status.error {
+      background: rgba(255, 68, 68, 0.15);
+      border: 1px solid rgba(255, 68, 68, 0.4);
+      color: var(--accent-red);
+    }
+
+    .service-details {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .service-url {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.8rem;
+      color: var(--accent-cyan);
+      margin-top: 8px;
+    }
+
+    .service-error {
+      font-size: 0.8rem;
+      color: var(--accent-red);
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(255, 68, 68, 0.1);
+      border-radius: 6px;
+    }
+
+    /* Info Sections */
+    .info-section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .info-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .info-item {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+    }
+
+    .info-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.9rem;
+    }
+
+    /* Endpoints List */
+    .endpoints-list {
+      list-style: none;
+    }
+
+    .endpoints-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.85rem;
+      display: flex;
+      gap: 12px;
+    }
+
+    .endpoints-list li:last-child {
+      border-bottom: none;
+    }
+
+    .endpoint-method {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--accent-cyan);
+    }
+
+    .endpoint-path {
+      font-family: "JetBrains Mono", monospace;
+      color: var(--text-primary);
+    }
+
+    .endpoint-desc {
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    /* Last Updated */
+    .last-updated {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Navigation -->
+    <div class="nav">
+      <a href="/">&larr; Dashboard</a>
+    </div>
+
+    <!-- Header -->
+    <h1>System Status</h1>
+    <p class="subtitle">Monitor BlackRoad OS service health and infrastructure</p>
+
+    <!-- Overall Status -->
+    <div class="overall-status healthy" id="overall-status">
+      <div class="overall-icon" id="overall-icon">⏳</div>
+      <div class="overall-text">
+        <div class="overall-title" id="overall-title">Checking services...</div>
+        <div class="overall-desc" id="overall-desc">Please wait</div>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" onclick="refresh()">
+        Refresh
+      </button>
+    </div>
+
+    <!-- Services Grid -->
+    <div class="services-grid" id="services-grid">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Operator Info -->
+    <div class="info-section" id="operator-info" style="display: none;">
+      <div class="info-title">📡 Operator API</div>
+      <div id="operator-endpoints"></div>
+    </div>
+
+    <!-- Console Info -->
+    <div class="info-section">
+      <div class="info-title">🖥️ Console Routes</div>
+      <ul class="endpoints-list">
+        <li>
+          <span class="endpoint-method">GET</span>
+          <span class="endpoint-path">/</span>
+          <span class="endpoint-desc">Dashboard home</span>
+        </li>
+        <li>
+          <span class="endpoint-method">GET</span>
+          <span class="endpoint-path">/quantum</span>
+          <span class="endpoint-desc">Quantum predictions</span>
+        </li>
+        <li>
+          <span class="endpoint-method">GET</span>
+          <span class="endpoint-path">/learning</span>
+          <span class="endpoint-desc">Learning history</span>
+        </li>
+        <li>
+          <span class="endpoint-method">GET</span>
+          <span class="endpoint-path">/models</span>
+          <span class="endpoint-desc">Model registry</span>
+        </li>
+        <li>
+          <span class="endpoint-method">GET</span>
+          <span class="endpoint-path">/quests</span>
+          <span class="endpoint-desc">Promotion path</span>
+        </li>
+        <li>
+          <span class="endpoint-method">GET</span>
+          <span class="endpoint-path">/status</span>
+          <span class="endpoint-desc">This page</span>
+        </li>
+        <li>
+          <span class="endpoint-method">GET</span>
+          <span class="endpoint-path">/api/health</span>
+          <span class="endpoint-desc">Aggregated health</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Last Updated -->
+    <div class="last-updated" id="last-updated">
+      Last checked: --
+    </div>
+  </div>
+
+  <script>
+    const SERVICES = [
+      {
+        key: 'console',
+        name: 'Web Console',
+        desc: 'This dashboard and UI server',
+        icon: '🖥️'
+      },
+      {
+        key: 'operator',
+        name: 'Operator API',
+        desc: 'Ledger, learning stats, promotion engine',
+        icon: '📡'
+      },
+      {
+        key: 'quantum',
+        name: 'Quantum Node',
+        desc: 'PennyLane-based quantum ML service',
+        icon: 'ψ'
+      }
+    ];
+
+    async function refresh() {
+      const btn = document.getElementById('refresh-btn');
+      btn.disabled = true;
+      btn.textContent = 'Checking...';
+
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+
+        updateUI(data);
+      } catch (e) {
+        updateUI({ ok: false, error: e.message, services: {} });
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Refresh';
+
+      document.getElementById('last-updated').textContent =
+        `Last checked: ${new Date().toLocaleTimeString()}`;
+    }
+
+    function updateUI(data) {
+      const services = data.services || {};
+      const allOk = data.ok;
+      const okCount = Object.values(services).filter(s => s.ok).length;
+      const total = Object.keys(services).length;
+
+      // Overall status
+      const overall = document.getElementById('overall-status');
+      const icon = document.getElementById('overall-icon');
+      const title = document.getElementById('overall-title');
+      const desc = document.getElementById('overall-desc');
+
+      if (allOk) {
+        overall.className = 'overall-status healthy';
+        icon.textContent = '✅';
+        title.textContent = 'All Systems Operational';
+        desc.textContent = `${okCount}/${total} services healthy`;
+      } else if (okCount > 0) {
+        overall.className = 'overall-status degraded';
+        icon.textContent = '⚠️';
+        title.textContent = 'Partial Outage';
+        desc.textContent = `${okCount}/${total} services healthy`;
+      } else {
+        overall.className = 'overall-status down';
+        icon.textContent = '❌';
+        title.textContent = 'Major Outage';
+        desc.textContent = 'All services unreachable';
+      }
+
+      // Service cards
+      const grid = document.getElementById('services-grid');
+      let html = '';
+
+      for (const svc of SERVICES) {
+        const status = services[svc.key] || { ok: false, error: 'Unknown' };
+        const cardClass = status.ok ? 'ok' : 'error';
+        const statusText = status.ok ? 'Healthy' : 'Down';
+
+        let errorHtml = '';
+        if (!status.ok && status.error) {
+          errorHtml = `<div class="service-error">${status.error}</div>`;
+        }
+
+        html += `
+          <div class="service-card ${cardClass}">
+            <div class="service-header">
+              <div class="service-name">${svc.icon} ${svc.name}</div>
+              <div class="service-status ${cardClass}">${statusText}</div>
+            </div>
+            <div class="service-details">${svc.desc}</div>
+            ${errorHtml}
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+
+      // Load operator endpoints if available
+      if (services.operator?.ok) {
+        loadOperatorInfo();
+      }
+    }
+
+    async function loadOperatorInfo() {
+      try {
+        const res = await fetch('/api/operator/status');
+        const data = await res.json();
+
+        if (data.ok && data.data) {
+          const info = document.getElementById('operator-info');
+          info.style.display = 'block';
+
+          const endpoints = data.data.endpoints || [];
+          let html = '<ul class="endpoints-list">';
+
+          for (const ep of endpoints) {
+            html += `
+              <li>
+                <span class="endpoint-method">GET/POST</span>
+                <span class="endpoint-path">${ep}</span>
+              </li>
+            `;
+          }
+
+          html += '</ul>';
+          document.getElementById('operator-endpoints').innerHTML = html;
+        }
+      } catch (e) {
+        console.error('Failed to load operator info:', e);
+      }
+    }
+
+    // Init
+    refresh();
+
+    // Auto-refresh every 60s
+    setInterval(refresh, 60000);
+  </script>
+</body>
+</html>

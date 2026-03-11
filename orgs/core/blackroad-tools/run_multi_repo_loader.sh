@@ -7,4 +7,4 @@ if [ -f ".env" ]; then
   export $(grep -v '^#' .env | xargs -I {} echo {})
 fi
 
-python3 tools/codex_multi_repo_loader.py --config config/repos.json
+python3 tools/blackroad os_multi_repo_loader.py --config config/repos.json

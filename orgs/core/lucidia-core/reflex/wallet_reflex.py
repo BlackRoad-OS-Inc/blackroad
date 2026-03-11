@@ -8,7 +8,7 @@ import os
 import subprocess
 from typing import Any, Dict
 
-from lucidia.reflex.core import BUS, start
+from .core import BUS, start
 
 WALLET_LOG = os.environ.get("LUCIDIA_WALLET_LOG", "/var/log/lucidia/wallet-events.log")
 

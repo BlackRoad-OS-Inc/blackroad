@@ -199,7 +199,7 @@ CLUSTER_CONFIG = {
             "RESULTS.md",
             "90_reports/blackroad_research_response_3.md",
             "prismos/prismctl/src/main.rs",
-            "lucidia_codex.py",
+            "lucidia_blackroad os.py",
         ],
         "mentor_pool": [
             "chronicle-cadence",

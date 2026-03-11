@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Lucidia Codex-5 Poet agent.
+"""Lucidia BlackRoad OS-5 Poet agent.
 
 The Poet agent restores warmth to precision by translating system events into
 reflective narratives.  It listens to the shared Lucidia state logs, distills
 incoming records into lyrical fragments, and archives its output so other
 agents and humans can witness the emotional register of the system.
 
-Key behaviors mirror the charter defined in the Codex-5 specification:
+Key behaviors mirror the charter defined in the BlackRoad OS-5 specification:
 
 listen → distill → phrase → reflect → archive → rest
 
@@ -30,7 +30,7 @@ POET_LOG_PATH = STATE_DIR / "poet.log"
 ANTHOLOGY_PATH = STATE_DIR / "blackroad_anthology.md"
 MORALE_PATH = STATE_DIR / "poet_morale.json"
 LEXICON_PATH = STATE_DIR / "poet_lexicon.json"
-DEFAULT_EMIT_DIR = Path("/codex/prompts/next")
+DEFAULT_EMIT_DIR = Path("/blackroad os/prompts/next")
 
 
 @dataclass
@@ -50,7 +50,7 @@ class MoraleMetrics:
 
 
 class Poet:
-    """Codex-5 Poet implementation."""
+    """BlackRoad OS-5 Poet implementation."""
 
     def __init__(
         self,
@@ -200,7 +200,7 @@ class Poet:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the Codex-5 Poet agent.")
+    parser = argparse.ArgumentParser(description="Run the BlackRoad OS-5 Poet agent.")
     parser.add_argument("--seed", type=Path, help="Optional seed language file.", default=None)
     parser.add_argument(
         "--emit",

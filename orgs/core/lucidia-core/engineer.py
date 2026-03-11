@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Codex-15 Engineer agent implementation.
+"""BlackRoad OS-15 Engineer agent implementation.
 
 The Engineer agent translates mechanical design intent into actionable build
-packages.  It reads the Codex seed definition to honour the agent's charter and
+packages.  It reads the BlackRoad OS seed definition to honour the agent's charter and
 optionally ingests a design specification that lists subsystems, interfaces,
 materials, and reliability tests.  Outputs include a manifest for other agents
 and a service manual formatted for humans.
@@ -16,7 +16,7 @@ The behaviour reflects the charter directives:
 
 The CLI mirrors other Lucidia agents::
 
-    python3 lucidia/engineer.py --seed codex15.yaml \
+    python3 lucidia/engineer.py --seed blackroad os15.yaml \
         --spec path/to/design.yaml --emit ./out_dir
 """
 
@@ -32,7 +32,7 @@ from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional,
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_EMIT_DIR = Path("/codex/prompts/next")
+DEFAULT_EMIT_DIR = Path("/blackroad os/prompts/next")
 SEED_FALLBACK_DIR = Path(__file__).resolve().parent / "seeds"
 
 
@@ -43,7 +43,7 @@ SEED_FALLBACK_DIR = Path(__file__).resolve().parent / "seeds"
 
 @dataclass
 class EngineerSeed:
-    """Structured view of the Codex-15 seed definition."""
+    """Structured view of the BlackRoad OS-15 seed definition."""
 
     identifier: str
     system_charter: Mapping[str, Any]
@@ -104,7 +104,7 @@ def load_seed(path: Path) -> EngineerSeed:
         behavioural_loop = data.get("behavioural_loop")
 
     return EngineerSeed(
-        identifier=str(data.get("id", "codex-15")),
+        identifier=str(data.get("id", "blackroad os-15")),
         system_charter=system_charter,
         purpose=str(data.get("purpose", "")).strip(),
         directives=_ensure_sequence(data.get("directives")),
@@ -521,7 +521,7 @@ def render_manual(seed: EngineerSeed, spec: DesignSpec, metrics: Mapping[str, An
     lines.append("2. Run torque and thermal drift simulations before fabricating jigs.")
     lines.append("3. Teach the next maintainer how to reset each subsystem without tools.")
     lines.append("")
-    lines.append("— Documented by Codex-15 \"Engineer\"")
+    lines.append("— Documented by BlackRoad OS-15 \"Engineer\"")
     return "\n".join(lines)
 
 
@@ -572,8 +572,8 @@ def orchestrate(seed: EngineerSeed, spec: DesignSpec, emit_dir: Path) -> Dict[st
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Codex-15 Engineer agent")
-    parser.add_argument("--seed", default="codex15.yaml", help="Seed YAML file")
+    parser = argparse.ArgumentParser(description="BlackRoad OS-15 Engineer agent")
+    parser.add_argument("--seed", default="blackroad os15.yaml", help="Seed YAML file")
     parser.add_argument("--spec", help="Design specification (YAML or JSON)")
     parser.add_argument("--emit", help="Directory to write outputs")
     return parser.parse_args(argv)

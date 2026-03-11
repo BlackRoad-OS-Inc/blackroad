@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Lucidia Codex Builder agent.
+"""Lucidia BlackRoad OS Builder agent.
 
-This agent turns Codex design seeds into concrete build cards and
+This agent turns BlackRoad OS design seeds into concrete build cards and
 lightweight metrics. It favours clarity over flash so that humans can
 understand why each artefact exists and how to extend it.
 """
@@ -22,7 +22,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 @dataclass
 class SeedPacket:
-    """Structured representation of a Codex seed file."""
+    """Structured representation of a BlackRoad OS seed file."""
 
     identifier: str
     system_charter: Dict[str, Any]
@@ -135,7 +135,7 @@ def render_build_card(seed: SeedPacket, metrics: Dict[str, Any]) -> str:
     loop_diagram = render_loop(seed.behavioural_loop)
 
     lines = [
-        f"# Codex Build Card — {seed.agent_name}",
+        f"# BlackRoad OS Build Card — {seed.agent_name}",
         "",
         "## Identity",
     ]
@@ -222,7 +222,7 @@ def normalise_emit_path(raw_path: str) -> Path:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Lucidia Codex Builder agent")
+    parser = argparse.ArgumentParser(description="Lucidia BlackRoad OS Builder agent")
     parser.add_argument("--seed", required=True, type=str, help="Path to the seed YAML file")
     parser.add_argument("--emit", required=True, type=str, help="Directory to emit build artefacts")
     parser.add_argument("--dry-run", action="store_true", help="Preview actions without writing files")

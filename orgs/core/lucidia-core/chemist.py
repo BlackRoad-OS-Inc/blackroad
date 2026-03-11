@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Codex-14 Chemist agent implementation.
+"""BlackRoad OS-14 Chemist agent implementation.
 
 This agent ingests reaction observations from the Lucidia state directory and
 produces energy maps, stability reports, and a lab notebook entry that other
 agents can consume. The behaviour honours the charter described in
-``codex14.yaml`` by:
+``blackroad os14.yaml`` by:
 
 * respecting instability by recording failed or volatile reactions rather than
   discarding them,
@@ -137,7 +137,7 @@ def load_seed(path: Path) -> ChemistSeed:
             raise ValueError(f"Chemist seed missing required field: {required}")
 
     return ChemistSeed(
-        identifier=str(data.get("id", "codex-14")),
+        identifier=str(data.get("id", "blackroad os-14")),
         agent_name=str(charter["agent_name"]),
         generation=str(charter["generation"]),
         parent=str(charter.get("parent")) if charter.get("parent") else None,
@@ -314,7 +314,7 @@ class ReactionObservation:
 
 
 class Chemist:
-    """Implements the Codex-14 Chemist behavioural loop."""
+    """Implements the BlackRoad OS-14 Chemist behavioural loop."""
 
     def __init__(
         self,
@@ -514,8 +514,8 @@ class Chemist:
 
 
 def parse_args(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the Codex-14 Chemist agent")
-    parser.add_argument("--seed", default="codex14.yaml", help="Path to the Chemist seed file")
+    parser = argparse.ArgumentParser(description="Run the BlackRoad OS-14 Chemist agent")
+    parser.add_argument("--seed", default="blackroad os14.yaml", help="Path to the Chemist seed file")
     parser.add_argument("--emit", default="./chemist_out", help="Directory to emit artefacts")
     parser.add_argument(
         "--state-root",

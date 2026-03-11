@@ -1,4 +1,4 @@
-"""Lightweight Codex deployment pipeline helpers.
+"""Lightweight BlackRoad OS deployment pipeline helpers.
 
 The original module accumulated several overlapping implementations during
 merges.  The current version keeps a compact, well-defined surface that the
@@ -122,7 +122,7 @@ def validate_services() -> Dict[str, str]:
 # CLI
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="BlackRoad Codex pipeline")
+    parser = argparse.ArgumentParser(description="BlackRoad BlackRoad OS pipeline")
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -165,11 +165,6 @@ def _run_command(command: str, *, dry_run: bool) -> None:
     else:  # pragma: no cover - parser enforces valid choices
         raise ValueError(f"Unknown command: {command}")
 
-        "--dry-run", action="store_true", help="Simulate actions without executing commands"
-    )
-    parser.add_argument(
-        "--skip-validate", action="store_true", help="Skip service health validation"
-    )
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point used by tests and manual runs."""
@@ -187,6 +182,5 @@ def main(argv: list[str] | None = None) -> int:
     return 1 if failed else 0
 
 
-if __name__ == "__main__":  # pragma: no cover - manual invocation
 if __name__ == "__main__":
     raise SystemExit(main())

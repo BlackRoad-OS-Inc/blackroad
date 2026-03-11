@@ -6,7 +6,7 @@ function generateMemoryHash(content: string, agentId: string, timestamp: number)
   let hash = 0;
   for (let i = 0; i < combined.length; i++) {
     const char = combined.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash;
   }
   return Math.abs(hash).toString(16).padStart(16, '0').slice(0, 16);
@@ -20,7 +20,7 @@ export class MemoryTools {
 
     // POST /tools/memory/store - Store a memory
     if (path === '/store' && request.method === 'POST') {
-      const body = await request.json() as {
+      const body = (await request.json()) as {
         content: string;
         type: 'fact' | 'observation' | 'inference' | 'commitment';
         context?: Record<string, any>;
@@ -39,11 +39,11 @@ export class MemoryTools {
         context: body.context || {},
         timestamp,
         truth_state: 1, // Active
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       await env.TOOLS_KV.put(key, JSON.stringify(memory), {
-        expirationTtl: body.ttl || 86400 * 30 // 30 days default
+        expirationTtl: body.ttl || 86400 * 30, // 30 days default
       });
 
       // Also store in index for search
@@ -53,12 +53,15 @@ export class MemoryTools {
       index.push({ hash: memoryHash, type: body.type, timestamp });
       await env.TOOLS_KV.put(indexKey, JSON.stringify(index.slice(-1000))); // Keep last 1000
 
-      return Response.json({
-        stored: true,
-        hash: memoryHash,
-        key,
-        timestamp
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          stored: true,
+          hash: memoryHash,
+          key,
+          timestamp,
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // GET /tools/memory/retrieve/:hash - Get specific memory
@@ -81,7 +84,7 @@ export class MemoryTools {
 
       const indexKey = `index:${agentId}`;
       const existingIndex = await env.TOOLS_KV.get(indexKey);
-      
+
       if (!existingIndex) {
         return Response.json({ memories: [], count: 0 }, { headers: corsHeaders });
       }
@@ -100,15 +103,18 @@ export class MemoryTools {
         })
       );
 
-      return Response.json({
-        memories: memories.filter(Boolean),
-        count: memories.filter(Boolean).length
-      }, { headers: corsHeaders });
+      return Response.json(
+        {
+          memories: memories.filter(Boolean),
+          count: memories.filter(Boolean).length,
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // POST /tools/memory/search - Search memories
     if (path === '/search' && request.method === 'POST') {
-      const body = await request.json() as { query: string; limit?: number };
+      const body = (await request.json()) as { query: string; limit?: number };
       const indexKey = `index:${agentId}`;
       const existingIndex = await env.TOOLS_KV.get(indexKey);
 
@@ -147,7 +153,7 @@ export class MemoryTools {
       const parsed = JSON.parse(memory);
       parsed.truth_state = -1; // Invalidated (trinary: false)
       parsed.invalidated_at = new Date().toISOString();
-      
+
       await env.TOOLS_KV.put(key, JSON.stringify(parsed));
 
       return Response.json({ invalidated: true, hash }, { headers: corsHeaders });

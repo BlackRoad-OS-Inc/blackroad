@@ -72,7 +72,7 @@ from lucidia_core import get_physicist, get_mathematician
 
 # Load the physicist
 PhysicistSeed, load_seed = get_physicist()
-seed = load_seed("codex21.yaml")
+seed = load_seed("blackroad os21.yaml")
 
 # Load the mathematician
 MathematicianSeed, load_seed = get_mathematician()
@@ -109,13 +109,13 @@ lucidia-core/
 ├── painter.py          # Visual generation (583 lines)
 ├── poet.py             # Creative text (250 lines)
 ├── speaker.py          # Speech/NLP (302 lines)
-├── codex*.yaml         # Agent seed configurations
+├── blackroad os*.yaml         # Agent seed configurations
 └── quantum_engine/     # Quantum computing extensions
 ```
 
 ## Configuration
 
-Each agent is configured via a YAML "seed" file (e.g., `codex21.yaml` for Physicist):
+Each agent is configured via a YAML "seed" file (e.g., `blackroad os21.yaml` for Physicist):
 
 ```yaml
 system_charter:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Codex Output Helper
+BlackRoad OS Output Helper
 
 This module provides convenience functions to write files that embed HTML
 comment-based path metadata. It is designed for the Lucidia build process,

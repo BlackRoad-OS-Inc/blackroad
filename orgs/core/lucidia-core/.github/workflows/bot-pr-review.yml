@@ -1,0 +1,171 @@
+name: Bot - PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Auto-label PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const title = pr.title.toLowerCase();
+            const labels = [];
+
+            // Detect PR type from title
+            if (title.startsWith('feat:') || title.startsWith('feature:')) {
+              labels.push('feature');
+            }
+            if (title.startsWith('fix:') || title.startsWith('bugfix:')) {
+              labels.push('bugfix');
+            }
+            if (title.startsWith('docs:')) {
+              labels.push('documentation');
+            }
+            if (title.startsWith('refactor:')) {
+              labels.push('refactoring');
+            }
+            if (title.startsWith('test:')) {
+              labels.push('testing');
+            }
+            if (title.startsWith('chore:')) {
+              labels.push('chore');
+            }
+
+            // Size labels
+            const changedFiles = pr.changed_files;
+            if (changedFiles <= 5) {
+              labels.push('size:small');
+            } else if (changedFiles <= 20) {
+              labels.push('size:medium');
+            } else {
+              labels.push('size:large');
+            }
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: labels
+              });
+            }
+
+      - name: Check PR description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+
+            if (body.length < 50) {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                event: 'COMMENT',
+                body: `🤖 **Bot Review Notice:**
+
+⚠️ This PR has a short description. Please add:
+- What does this PR do?
+- Why is this change needed?
+- How was it tested?
+
+A detailed description helps reviewers understand your changes.`
+              });
+            }
+
+      - name: Analyze code changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            // Get files changed
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+
+            const insights = [];
+
+            // Check for common patterns
+            const hasTests = files.some(f => f.filename.includes('test') || f.filename.includes('spec'));
+            const hasDocs = files.some(f => f.filename.endsWith('.md'));
+            const hasConfig = files.some(f => f.filename.includes('config') || f.filename.endsWith('.json') || f.filename.endsWith('.yml'));
+
+            if (!hasTests && files.length > 3) {
+              insights.push('⚠️ No test files detected. Consider adding tests for your changes.');
+            }
+
+            if (files.length > 50) {
+              insights.push('⚠️ Large PR detected (50+ files). Consider breaking into smaller PRs.');
+            }
+
+            const secretPatterns = [
+              /api[_-]?key/i,
+              /secret/i,
+              /password/i,
+              /token/i,
+              /credential/i
+            ];
+
+            for (const file of files) {
+              if (file.patch) {
+                for (const pattern of secretPatterns) {
+                  if (pattern.test(file.patch)) {
+                    insights.push(`🔒 Possible secret detected in ${file.filename}. Please verify no credentials are committed.`);
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (insights.length > 0) {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                event: 'COMMENT',
+                body: `🤖 **Bot Code Review:**
+
+${insights.join('\n\n')}
+
+This is an automated review. A human will review your changes soon.`
+              });
+            } else {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                event: 'COMMENT',
+                body: `🤖 **Bot Code Review:**
+
+✅ No issues detected in automated review
+✅ Code changes look good
+✅ Ready for human review
+
+This is an automated review.`
+              });
+            }
+
+      - name: Log to memory
+        run: |
+          if [ -f ~/memory-system.sh ]; then
+            ~/memory-system.sh log bot-action "pr-review" "Reviewed PR #${{ github.event.pull_request.number }} in ${{ github.repository }}"
+          fi

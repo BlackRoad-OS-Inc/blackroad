@@ -1,0 +1,122 @@
+name: Bot - Issue Triage
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auto-label issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = issue.body ? issue.body.toLowerCase() : '';
+            const labels = [];
+
+            // Auto-detect issue type
+            if (title.includes('bug') || body.includes('error') || body.includes('broken')) {
+              labels.push('bug');
+            }
+            if (title.includes('feature') || title.includes('enhancement')) {
+              labels.push('enhancement');
+            }
+            if (title.includes('docs') || title.includes('documentation')) {
+              labels.push('documentation');
+            }
+            if (title.includes('security') || body.includes('vulnerability')) {
+              labels.push('security');
+            }
+            if (title.includes('performance') || body.includes('slow')) {
+              labels.push('performance');
+            }
+            if (title.includes('test')) {
+              labels.push('testing');
+            }
+
+            // Priority detection
+            if (title.includes('urgent') || title.includes('critical') || body.includes('production down')) {
+              labels.push('priority:high');
+            } else if (title.includes('minor') || title.includes('trivial')) {
+              labels.push('priority:low');
+            } else {
+              labels.push('priority:medium');
+            }
+
+            // Add labels
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labels
+              });
+            }
+
+            // Add triage comment
+            const comment = `👋 Thanks for opening this issue!
+
+🤖 **Bot Triage:**
+- Auto-labeled as: ${labels.join(', ')}
+- Assigned priority based on content
+- A team member will review soon
+
+This is an automated message from the BlackRoad bot system.`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: comment
+            });
+
+      - name: Check for duplicates
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+
+            // Search for similar issues
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100
+            });
+
+            const similar = issues.filter(i =>
+              i.number !== issue.number &&
+              i.title.toLowerCase().includes(title.split(' ')[0])
+            );
+
+            if (similar.length > 0) {
+              const duplicateList = similar.slice(0, 5).map(i => `- #${i.number}: ${i.title}`).join('\n');
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `🤖 **Possible Duplicates Detected:**
+
+${duplicateList}
+
+Please check if any of these issues match your report.`
+              });
+            }
+
+      - name: Log to memory
+        run: |
+          if [ -f ~/memory-system.sh ]; then
+            ~/memory-system.sh log bot-action "issue-triage" "Triaged issue #${{ github.event.issue.number }} in ${{ github.repository }}"
+          fi

@@ -1,15 +1,8 @@
 #!/usr/bin/env python3
-"""Guardian Agent
 """Guardian agent wired into the unified intelligence bus."""
 
 from __future__ import annotations
 
-from __future__ import annotations
-
-import time
-from typing import Any, Iterable, Mapping, Optional
-
-from prism_event_bridge import fetch_events
 import asyncio
 import json
 import logging
@@ -20,41 +13,11 @@ from typing import Any, Mapping
 
 import yaml
 
-from lucidia.intelligence.events import make_event, validate_event
-from lucidia.reflex import BUS, start as start_reflex
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from intelligence.events import make_event, validate_event
+from reflex import BUS, start as start_reflex
 
-class Guardian:
-    def __init__(self) -> None:
-        self.cursor: Optional[str] = None
-
-    def handle_event(self, record: Mapping[str, Any]) -> None:
-        topic = record.get("topic", "?")
-        payload = record.get("payload", {})
-        kpis = record.get("kpis")
-        memory_deltas = record.get("memory_deltas")
-        print(f"[guardian] event {topic}: {payload}")
-        if kpis:
-            print(f"[guardian]  KPIs: {kpis}")
-        if isinstance(memory_deltas, Iterable):
-            for delta in memory_deltas:
-                print(f"[guardian]  memory delta: {delta}")
-
-    def loop(self, poll_interval: float = 2.0) -> None:
-        while True:
-            events, cursor = fetch_events(since=self.cursor)
-            if cursor:
-                self.cursor = cursor
-            for record in events:
-                try:
-                    self.handle_event(record)
-                except Exception as exc:  # noqa: BLE001 - Guardian must keep running
-                    print(f"[guardian] failed to handle event: {exc}")
-            time.sleep(poll_interval)
-
-
-def main() -> None:
-    guardian = Guardian()
-    guardian.loop()
 LOGGER = logging.getLogger("lucidia.guardian")
 LOGGER.setLevel(logging.INFO)
 _handler = logging.StreamHandler()

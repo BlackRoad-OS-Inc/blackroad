@@ -10,7 +10,7 @@ try:  # pragma: no cover - optional hardware dependency
 except ImportError:  # pragma: no cover - optional hardware dependency
     GPIO = None
 
-from lucidia.reflex.core import BUS, start
+from .core import BUS, start
 
 LED = 18
 INPUT = 17

@@ -44,6 +44,8 @@ dependencies = [
     "sympy>=1.12",
     "mpmath>=1.3.0",
     "numpy>=1.24.0",
+    "flask>=2.3.0,<4.0",
+    "werkzeug>=3.0.0,<4.0",
 ]
 
 [project.optional-dependencies]
@@ -54,10 +56,6 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "httpx>=0.24.0",
-]
-flask = [
-    "flask>=2.3.0",
-    "werkzeug>=3.0.0",
 ]
 
 [project.scripts]
@@ -71,15 +69,28 @@ Repository = "https://github.com/BlackRoad-OS/lucidia-core"
 Issues = "https://github.com/BlackRoad-OS/lucidia-core/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["lucidia_core"]
+packages = ["lucidia_core", "lucidia"]
 
 [tool.black]
 line-length = 100
 target-version = ["py310", "py311", "py312"]
 
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+testpaths = ["quantum_engine/tests", "quantum/tests"]
+pythonpath = ["."]
+
 [tool.ruff]
 line-length = 100
 select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --import-mode=importlib"
+norecursedirs = ["__pycache__", ".git", "quantum", "quantum_engine", "engines", "intelligence", "modules", "rituals", ".aria", ".trinity"]
 
 [tool.mypy]
 python_version = "3.10"

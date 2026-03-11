@@ -1,37 +1,8 @@
 #!/usr/bin/env python3
-"""Roadie Agent
 """Roadie health monitor connected to the ReflexBus."""
 
 from __future__ import annotations
 
-from __future__ import annotations
-
-import shutil
-import time
-from typing import Dict
-
-from prism_event_bridge import publish_event
-
-
-class Roadie:
-    def __init__(self) -> None:
-        self.last_health_check = 0.0
-
-    def event(self, topic: str, payload: Dict[str, object]) -> None:
-        publish_event(topic, payload, actor="roadie")
-
-    def health_checks(self) -> None:
-        total, used, free = shutil.disk_usage("/")
-        payload = {
-            "disk_total_gb": round(total / (1024**3), 2),
-            "disk_used_gb": round(used / (1024**3), 2),
-            "disk_free_gb": round(free / (1024**3), 2),
-        }
-        self.event("health.disk", payload)
-
-    def mint_roadcoin(self, amount: float, reason: str) -> None:
-        payload = {"amount": amount, "reason": reason}
-        self.event("actions.roadcoin.mint", payload)
 import asyncio
 import logging
 import os
@@ -39,8 +10,10 @@ import shutil
 from pathlib import Path
 from typing import Mapping
 
-from lucidia.intelligence.events import make_event, validate_event
-from lucidia.reflex import BUS, start as start_reflex
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from intelligence.events import make_event, validate_event
+from reflex import BUS, start as start_reflex
 
 LOGGER = logging.getLogger("lucidia.roadie")
 LOGGER.setLevel(logging.INFO)
@@ -136,8 +109,6 @@ class Roadie:
 
 
 def main() -> None:
-    r = Roadie()
-    r.loop()
     start_reflex()
     roadie = Roadie(interval_seconds=float(os.environ.get("LUCIDIA_ROADIE_INTERVAL", "60")))
     LOGGER.info("Roadie started with interval %ss", roadie._interval)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Lucidia Codex Navigator agent.
+"""Lucidia BlackRoad OS Navigator agent.
 
-The Navigator translates Codex exploration seeds into artefacts that combine
+The Navigator translates BlackRoad OS exploration seeds into artefacts that combine
 context, risk awareness, and behavioural rituals. It favours traceable,
 reproducible routes over opaque leaps so that future agents can follow the
 same stars.
@@ -231,7 +231,7 @@ def normalise_emit_path(raw_path: str) -> Path:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Lucidia Codex Navigator agent")
+    parser = argparse.ArgumentParser(description="Lucidia BlackRoad OS Navigator agent")
     parser.add_argument("--seed", required=True, type=str, help="Path to the seed YAML file")
     parser.add_argument("--emit", required=True, type=str, help="Directory to emit navigation artefacts")
     parser.add_argument("--dry-run", action="store_true", help="Preview actions without writing files")

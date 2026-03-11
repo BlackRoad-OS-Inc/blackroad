@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Painter agent for Lucidia Codex.
+"""Painter agent for Lucidia BlackRoad OS.
 
-Codex-7 "Painter" turns telemetry into visual language assets. The goal is to
+BlackRoad OS-7 "Painter" turns telemetry into visual language assets. The goal is to
 translate raw metrics into palettes and gradient narratives that other agents
 (and humans) can read at a glance. The agent focuses on clarity, gentle
 contrast, and honest representation of system mood.
@@ -155,7 +155,7 @@ def load_seed(path: Path) -> PainterSeed:
             raise ValueError(f"Painter seed missing required field: {field}")
 
     return PainterSeed(
-        identifier=str(data.get("id", "codex-7")),
+        identifier=str(data.get("id", "blackroad os-7")),
         agent_name=str(charter["agent_name"]),
         generation=str(charter["generation"]),
         parent=str(charter.get("parent") or "" ) or None,
@@ -540,9 +540,9 @@ def write_outputs(
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Codex-7 Painter — palette generator")
-    parser.add_argument("--seed", default="codex7.yaml", help="Seed definition file (relative to lucidia or absolute path)")
-    parser.add_argument("--emit", default="/codex/prompts/next/", help="Directory for generated artefacts (repo-relative if prefixed with /)")
+    parser = argparse.ArgumentParser(description="BlackRoad OS-7 Painter — palette generator")
+    parser.add_argument("--seed", default="blackroad os7.yaml", help="Seed definition file (relative to lucidia or absolute path)")
+    parser.add_argument("--emit", default="/blackroad os/prompts/next/", help="Directory for generated artefacts (repo-relative if prefixed with /)")
     parser.add_argument("--source", help="Telemetry source (file or directory containing JSON/JSONL)")
     parser.add_argument("--width", type=int, default=1280, help="SVG width in pixels")
     parser.add_argument("--height", type=int, default=720, help="SVG height in pixels")

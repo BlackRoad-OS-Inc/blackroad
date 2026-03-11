@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ψ Model Registry - BlackRoad OS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg-primary: #020308;
+      --bg-secondary: rgba(6, 10, 30, 0.92);
+      --bg-card: rgba(12, 18, 40, 0.85);
+      --text-primary: #f5f5ff;
+      --text-muted: rgba(245, 245, 255, 0.7);
+      --accent-cyan: #00e5ff;
+      --accent-green: #1af59d;
+      --accent-yellow: #ffc400;
+      --accent-purple: #a855f7;
+      --accent-orange: #ff9d00;
+      --accent-pink: #ff0066;
+      --border-subtle: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(circle at top, #050816 0, #020308 45%, #000000 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    /* Nav */
+    .nav {
+      margin-bottom: 24px;
+    }
+
+    .nav a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    /* Header */
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 .psi {
+      color: var(--accent-purple);
+      font-size: 2.2rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+
+    .mono {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    /* Rank Info */
+    .rank-info {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(0, 229, 255, 0.05));
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .rank-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .rank-details {
+      flex: 1;
+    }
+
+    .rank-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .rank-progress {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Skill Tree */
+    .skill-tree {
+      position: relative;
+    }
+
+    .tree-section {
+      margin-bottom: 32px;
+    }
+
+    .tree-section-title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tree-section-title::before {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    .tree-section-title::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* Model Cards */
+    .model-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .model-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .model-card.unlocked {
+      border-color: rgba(26, 245, 157, 0.4);
+    }
+
+    .model-card.locked {
+      opacity: 0.6;
+    }
+
+    .model-card.locked:hover {
+      opacity: 0.8;
+    }
+
+    .model-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .model-id {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+
+    .model-status {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+
+    .model-status.unlocked {
+      background: rgba(26, 245, 157, 0.15);
+      border: 1px solid rgba(26, 245, 157, 0.4);
+      color: var(--accent-green);
+    }
+
+    .model-status.locked {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-muted);
+    }
+
+    .model-name {
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .model-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .model-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .model-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .model-requires {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 0.8rem;
+    }
+
+    .model-requires .label {
+      color: var(--text-muted);
+    }
+
+    .model-requires .rank {
+      color: var(--accent-purple);
+      font-weight: 500;
+    }
+
+    /* Loading State */
+    .loading {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+    }
+
+    .loading .spinner {
+      font-size: 2rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Error State */
+    .error-state {
+      text-align: center;
+      padding: 32px;
+      background: rgba(255, 68, 68, 0.1);
+      border: 1px solid rgba(255, 68, 68, 0.3);
+      border-radius: 12px;
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Navigation -->
+    <div class="nav">
+      <a href="/">&larr; Dashboard</a>
+    </div>
+
+    <!-- Header -->
+    <h1><span class="psi">ψ</span> Model Registry</h1>
+    <p class="subtitle">
+      Quantum ML models unlock as your rank increases.
+      Actor: <span class="mono">{{ actor }}</span>
+    </p>
+
+    <!-- Rank Info -->
+    <div class="rank-info" id="rank-info">
+      <div class="rank-badge" id="rank-badge">?</div>
+      <div class="rank-details">
+        <div class="rank-name" id="rank-name">Loading...</div>
+        <div class="rank-progress" id="rank-progress"></div>
+      </div>
+    </div>
+
+    <!-- Skill Tree -->
+    <div class="skill-tree" id="skill-tree">
+      <div class="loading">
+        <div class="spinner">ψ</div>
+        <p>Loading models...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const actor = "{{ actor }}";
+
+    // Rank order for grouping
+    const RANK_ORDER = [
+      "Novice", "Apprentice", "Practitioner", "Operator",
+      "Quantum Adept", "Math Wizard", "Σ Master", "BlackRoad Sage"
+    ];
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`/api/learning/stats?actor=${actor}`);
+        const data = await res.json();
+
+        if (data.ok && data.stats) {
+          const rank = data.stats.rank || {};
+          document.getElementById('rank-badge').textContent = (rank.rank_index || 0) + 1;
+          document.getElementById('rank-name').textContent = rank.rank_name || 'Novice';
+
+          if (rank.next_rank_name) {
+            document.getElementById('rank-progress').textContent =
+              `${data.stats.xp} / ${rank.xp_for_next} XP to ${rank.next_rank_name}`;
+          } else {
+            document.getElementById('rank-progress').textContent = 'Max rank achieved!';
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load stats:', e);
+      }
+    }
+
+    async function loadModels() {
+      const container = document.getElementById('skill-tree');
+
+      try {
+        const res = await fetch(`/api/models?actor=${actor}`);
+        const data = await res.json();
+
+        if (!data.ok) {
+          container.innerHTML = `
+            <div class="error-state">
+              <p>Failed to load models: ${data.error || 'Unknown error'}</p>
+              <p style="margin-top: 8px; font-size: 0.85rem;">
+                Make sure the Quantum node is running.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        const models = data.data?.models || [];
+
+        // Group by required rank
+        const byRank = {};
+        for (const m of models) {
+          const req = m.required_rank || 'Unknown';
+          if (!byRank[req]) byRank[req] = [];
+          byRank[req].push(m);
+        }
+
+        let html = '';
+
+        for (const rank of RANK_ORDER) {
+          if (!byRank[rank] || byRank[rank].length === 0) continue;
+
+          html += `
+            <div class="tree-section">
+              <div class="tree-section-title">${rank}</div>
+              <div class="model-grid">
+          `;
+
+          for (const m of byRank[rank]) {
+            const unlocked = m.available !== false;
+            const statusClass = unlocked ? 'unlocked' : 'locked';
+            const statusText = unlocked ? '🔓 Unlocked' : '🔒 Locked';
+
+            html += `
+              <div class="model-card ${statusClass}">
+                <div class="model-header">
+                  <div class="model-id">${m.model_id}</div>
+                  <div class="model-status ${statusClass}">${statusText}</div>
+                </div>
+                <div class="model-name">${m.name || m.model_id}</div>
+                <div class="model-desc">${m.description || 'No description available.'}</div>
+                <div class="model-meta">
+                  <span>🔮 ${m.qubits || '?'} qubits</span>
+                  <span>📦 ${m.kind || 'classifier'}</span>
+                  <span>📊 ${m.status || 'unknown'}</span>
+                </div>
+                <div class="model-requires">
+                  <span class="label">Requires:</span>
+                  <span class="rank">${m.required_rank}</span>
+                </div>
+              </div>
+            `;
+          }
+
+          html += '</div></div>';
+        }
+
+        container.innerHTML = html || '<p style="color: var(--text-muted);">No models found.</p>';
+
+      } catch (e) {
+        container.innerHTML = `
+          <div class="error-state">
+            <p>Failed to load models: ${e.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Init
+    loadStats();
+    loadModels();
+  </script>
+</body>
+</html>
