@@ -1,3 +1,11 @@
+# blackroad
+
+> BlackRoad OS monorepo — CLI, agents, CarPool coordination, tools, and core platform
+
+Part of the [BlackRoad OS](https://blackroad.io) ecosystem — [BlackRoad-OS-Inc](https://github.com/BlackRoad-OS-Inc)
+
+---
+
 # BlackRoad OS
 
 **The sovereign AI operating system.** Your hardware. Your data. Your agents.
